@@ -57,7 +57,7 @@ _FIELD_LABELS = {
 class App(ctk.CTk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("Géniescraper")
+        self.title("Géniescraper v0.1")
         self.geometry("620x700")
         self.resizable(False, True)
         self.attributes("-topmost", True)
@@ -98,14 +98,11 @@ class App(ctk.CTk):
             text_color="#fb923c", font=_f(11),
         ).pack(pady=(0, 20))
 
-        self._url_var = ctk.StringVar()
-        self._url_var.trace_add("write", self._on_url_change)
-
         ctk.CTkLabel(self, text="Apple Music URL", anchor="w", font=_f(13)).pack(anchor="w", padx=40)
         self._url_entry = ctk.CTkEntry(
             self, width=540, height=38,
             placeholder_text="https://music.apple.com/us/album/...",
-            font=_f(13), textvariable=self._url_var,
+            font=_f(13),
         )
         self._url_entry.pack(padx=40, pady=(4, 12))
         self._url_entry.bind("<Return>", lambda _: self._start_scrape())
@@ -121,6 +118,8 @@ class App(ctk.CTk):
         self._status_lbl = ctk.CTkLabel(self, text="", text_color="gray", font=_f(12))
         self._status_lbl.pack(pady=8)
 
+        self._check_url_loop()
+
         # Options button — anchored at the bottom
         # Options button — anchored at the bottom
         self._options_btn = ctk.CTkButton(
@@ -132,11 +131,16 @@ class App(ctk.CTk):
         )
         self._options_btn.pack(side="bottom", pady=(0, 16))
 
-    def _on_url_change(self, *args) -> None:
-        if self._url_var.get().strip():
-            self._scrape_btn.configure(state="normal")
-        else:
-            self._scrape_btn.configure(state="disabled")
+    def _check_url_loop(self) -> None:
+        if not hasattr(self, "_url_entry") or not self._url_entry.winfo_exists():
+            return
+        # Only adjust state if the button isn't disabled by an active scrape
+        if hasattr(self, "_status_lbl") and self._status_lbl.cget("text") not in ("Detecting album…", "Scraping metadata…"):
+            if self._url_entry.get().strip():
+                self._scrape_btn.configure(state="normal")
+            else:
+                self._scrape_btn.configure(state="disabled")
+        self.after(200, self._check_url_loop)
 
     def _show_options_screen(self) -> None:
         self._clear()

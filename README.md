@@ -1,6 +1,6 @@
 # Géniescraper
 
-**Géniescraper** is a high-performance, Python-based scraping tool designed to bridge the gap between Apple Music credits and Genius metadata entry. It uses stealth browser automation to extract songwriters, producers, roles, copyrights, and cover art from Apple Music, and provides a customizable hotkey-driven GUI assistant to rapidly paste the scraped metadata directly into Genius.
+**Géniescraper** is a high-performance, Python-based scraping tool designed to bridge the gap between Apple Music credits and Genius.com metadata entry. It uses stealth browser automation to extract songwriters, producers, roles, copyrights, and cover art from Apple Music, and provides a customizable hotkey-driven GUI assistant to rapidly paste the scraped metadata directly into Genius.com.
 
 ## Features
 
