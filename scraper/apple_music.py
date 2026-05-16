@@ -68,9 +68,9 @@ def _is_noise(line: str) -> bool:
     return False
 
 
-async def _parse_credits_page(page: Page) -> list[Credit]:
+async def _parse_credits_page(page: Page, *, strategy_0_only: bool = False) -> list[Credit]:
     """
-    Parses the Apple Music credits page.
+    Parses credits from an Apple Music page.
 
     Strategy 0 (preferred): .artist-name / .artist-roles CSS selectors.
     Each credit card on the page has an artist-name div and an artist-roles
@@ -78,6 +78,9 @@ async def _parse_credits_page(page: Page) -> list[Credit]:
 
     Falls back to body.innerText line-by-line walk if the selectors yield
     nothing (e.g. page structure changes in the future).
+
+    Pass strategy_0_only=True for /song/ pages: the page body contains lyrics
+    and navigation that Strategy 1 would misparse as credit data.
     """
     await asyncio.sleep(1.5)
 
@@ -101,6 +104,9 @@ async def _parse_credits_page(page: Page) -> list[Credit]:
         credits = [Credit(role=r, artists=a) for r, a in role_artists.items()]
         if credits:
             return credits
+
+    if strategy_0_only:
+        return []
 
     # Strategy 1 — innerText line-by-line walk (fallback)
     body_text: str = await page.evaluate("() => document.body.innerText")
@@ -159,15 +165,22 @@ async def _extract_copyright(page: Page) -> tuple[str, str]:
 
 
 async def _extract_cover_url(page: Page) -> str:
-    """Extract album cover URL from Apple Music OG/Twitter meta tags, upgraded to 1000×1000."""
+    """Extract album cover URL from Apple Music OG/Twitter meta tags, upgraded to 1000×1000 PNG."""
     for selector in (
         'meta[property="og:image"]',
         'meta[name="twitter:image"]',
     ):
         try:
             url = await page.locator(selector).first.get_attribute("content", timeout=2_000)
-            if url:
-                return re.sub(r"/\d+x\d+[a-z]+\.\w+$", "/1000x1000bb.jpg", url)
+            if not url:
+                continue
+            base = url.split("?")[0]
+            # Replace trailing /{w}x{h}[flags][-quality].{ext}
+            # Handles: /600x600bb.jpg  /1200x630wp-60.jpg  /296x296.webp
+            normalised = re.sub(
+                r"/\d+x\d+[a-z]*(?:-\d+)?\.[a-z]+$", "/1000x1000bb.png", base, flags=re.IGNORECASE
+            )
+            return normalised
         except Exception:
             continue
     return ""
@@ -190,8 +203,10 @@ async def _click_view_credits(page: Page, nth_index: int = 1) -> bool:
         try:
             if attempt == 1:
                 # Hover the target song row (0-based) to reveal its MORE button.
+                # nth_index=0 means the song page's own button — no track row to hover.
                 try:
-                    await page.locator(".songs-list-row, .track-list__item").nth(nth_index - 1).hover(timeout=3_000)
+                    if nth_index > 0:
+                        await page.locator(".songs-list-row, .track-list__item").nth(nth_index - 1).hover(timeout=3_000)
                     await asyncio.sleep(0.4)
                 except PWTimeout:
                     pass
@@ -260,23 +275,84 @@ async def _new_stealth_page():
     return context, page
 
 
+_TYPE_LABELS = frozenset({"single", "ep", "album", "soundtrack", "deluxe edition", "live"})
+
+
 def _extract_title_artist(page_title: str) -> tuple[str, str]:
-    """Parse 'Title – Artist – Apple Music' into (title, artist). Returns ('', '') on failure."""
+    """Parse 'Title – Artist – Apple Music' into (title, artist). Returns ('', '') on failure.
+
+    Handles various Apple Music title formats:
+      'Shabang – Single – Drake – Apple Music'  →  ('Shabang', 'Drake')
+      '‎UTOPIA - Album by Travis Scott - Apple Music'  →  ('UTOPIA', 'Travis Scott')
+      'Slime You Out (feat. SZA) - Single by Drake on Apple Music' -> ('Slime You Out (feat. SZA)', 'Drake')
+    """
+    if not page_title:
+        return "", ""
+
+    # Strip LRM/RLM and Apple Music suffix
+    clean_title = page_title.strip("‎‏")
+    for suffix in (" - Apple Music", " – Apple Music", " on Apple Music"):
+        if clean_title.endswith(suffix):
+            clean_title = clean_title[: -len(suffix)]
+        elif clean_title.lower().endswith(suffix.lower()):
+            clean_title = clean_title[: -len(suffix)]
+
     for sep in (" – ", " - "):
-        parts = [p.strip() for p in page_title.split(sep)]
+        parts = [p.strip() for p in clean_title.split(sep)]
         if len(parts) >= 2:
             raw_title = parts[0].strip("‎‏")
-            raw_artist = parts[1].replace("Apple Music", "").strip(" -–")
+            raw_artist = parts[1]
+
+            # Skip type labels Apple Music inserts between the title and the artist name
+            if raw_artist.lower() in _TYPE_LABELS and len(parts) >= 3:
+                raw_artist = parts[2]
+
+            # Clean up artist (remove "Song by", "Album by", etc.)
             raw_artist = re.sub(
                 r"^(?:album|ep|single|song)\s+by\s+", "", raw_artist, flags=re.IGNORECASE
             ).strip()
+            
+            # Clean up title (remove " - Single" etc. at the end of the title part)
             title = re.sub(
                 r"\s*[-–—]\s*(?:single|ep|deluxe|expanded|remastered"
                 r"|reissue|bonus track|live|acoustic|remix|radio edit|version|edition)\s*$",
                 "", raw_title, flags=re.IGNORECASE,
             ).strip()
             return title, raw_artist
+
+    # Last resort: if no separator found but has " by ", try splitting there
+    if " by " in clean_title:
+        title, artist = clean_title.split(" by ", 1)
+        return title.strip(), artist.strip()
+
     return "", ""
+
+
+async def _extract_from_dom(page: Page) -> tuple[str, str]:
+    """Fallback: try to extract title and artist from the page content."""
+    title, artist = "", ""
+    
+    # Try title selectors
+    for sel in ('[data-testid="album-title"]', '[data-testid="song-name-value"]', 'h1'):
+        try:
+            val = await page.locator(sel).first.inner_text(timeout=2000)
+            if val and val.strip():
+                title = val.strip()
+                break
+        except Exception:
+            continue
+            
+    # Try artist selectors
+    for sel in ('[data-testid="artist-name"]', '.product-creator a', '.song-name-row__artist-name'):
+        try:
+            val = await page.locator(sel).first.inner_text(timeout=2000)
+            if val and val.strip():
+                artist = val.strip()
+                break
+        except Exception:
+            continue
+            
+    return title, artist
 
 
 # ---------------------------------------------------------------------------
@@ -296,7 +372,12 @@ async def detect_album(url: str) -> AlbumTrackInfo:
         await page.wait_for_load_state("networkidle", timeout=25_000)
 
         try:
-            album_title, artist = _extract_title_artist(await page.title())
+            title, artist = _extract_title_artist(await page.title())
+            if not title or not artist:
+                # Fallback to DOM extraction
+                d_title, d_artist = await _extract_from_dom(page)
+                title = title or d_title
+                artist = artist or d_artist
         except Exception:
             pass
 
@@ -332,7 +413,7 @@ async def detect_album(url: str) -> AlbumTrackInfo:
 
     return AlbumTrackInfo(
         url=url,
-        album_title=album_title,
+        album_title=title,
         artist=artist,
         track_count=track_count,
         track_titles=track_titles,
@@ -355,9 +436,13 @@ async def scrape(url: str, *, track_index: int = 1, track_title: str = "", debug
         await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
         await page.wait_for_load_state("networkidle", timeout=25_000)
 
-        # Extract title/artist from page <title> before we navigate away.
+        # Extract title/artist from page <title> or DOM before we navigate away.
         try:
             title, artist = _extract_title_artist(await page.title())
+            if not title or not artist:
+                d_title, d_artist = await _extract_from_dom(page)
+                title = title or d_title
+                artist = artist or d_artist
         except Exception:
             pass
 
@@ -372,7 +457,7 @@ async def scrape(url: str, *, track_index: int = 1, track_title: str = "", debug
             phonographic_copyright, copyright_notice = await _extract_copyright(page)
 
         # Album pages require MORE → View Credits navigation.
-        # Song pages expose the credits section directly.
+        # Song pages expose credits directly via CSS selectors on the page.
         if "/album/" in url:
             navigated = await _click_view_credits(page, nth_index=track_index)
             if not navigated:
@@ -382,7 +467,9 @@ async def scrape(url: str, *, track_index: int = 1, track_title: str = "", debug
         # Wait for the new page/modal to settle.
         await page.wait_for_load_state("networkidle", timeout=15_000)
 
-        credits = await _parse_credits_page(page)
+        # For /song/ pages only use the CSS-selector strategy — the page body
+        # contains lyrics and navigation that Strategy 1 would misparse as credits.
+        credits = await _parse_credits_page(page, strategy_0_only="/song/" in url)
 
         if debug or not credits:
             debug_dir = Path("debug")

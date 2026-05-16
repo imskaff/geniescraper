@@ -1,20 +1,20 @@
 # Géniescraper
 
-**Géniescraper** is a high-performance, Python-based scraping tool designed to bridge the gap between Apple Music credits and Genius.com metadata entry. It uses stealth browser automation to extract songwriters, producers, roles, copyrights, and cover art from Apple Music, and provides a customizable hotkey-driven GUI assistant to rapidly paste the scraped metadata directly into Genius.com.
+**Géniescraper** is a Python-based tool that bridges Apple Music credits and Genius.com metadata entry. It uses stealth browser automation to extract songwriters, producers, roles, copyrights, and cover art from Apple Music, then provides a hotkey-driven GUI assistant to paste everything directly into Genius.
 
 ## Features
 
-- 🕵️ **Stealth Extraction**: Built on Playwright with stealth patches to reliably extract data from Apple Music (both albums and single tracks) without being blocked.
-- ⚡ **High Performance**: Employs an intelligent background event loop and concurrent network I/O (fetching Deezer/iTunes cover art alongside Apple Music scraping) to eliminate load times.
-- ⌨️ **Hotkey Assistant**: A floating, always-on-top graphical interface that guides you step-by-step through the Genius pasting workflow. Press a single hotkey to paste the next artist or role!
-- 🎛️ **Fully Customizable**: Includes an options menu to rebind hotkeys (e.g., F8 for next, F7 for back) and toggle which metadata fields to include (core credits, copyrights, YouTube MV links, etc.).
-- 🖼️ **Cover Art Finder**: Automatically falls back to high-resolution Deezer and iTunes cover art.
+- 🕵️ **Stealth Extraction**: Built on Playwright with stealth patches to reliably scrape Apple Music (albums and single tracks) without being blocked.
+- ⌨️ **Hotkey Assistant**: A floating, always-on-top window that guides you step-by-step through the Genius pasting workflow. Press `F8` to paste the next field, `F7` to go back.
+- 🤖 **Auto-Tab**: Automatically presses Tab (and Enter where needed) between Genius fields so you rarely need to touch the keyboard between hotkey presses. Works across all field transitions: Written By → Produced By, additional roles, Phonographic Copyright / Copyright, YouTube URL, and Cover Art.
+- ✅ **Auto-Confirm**: Optionally presses Enter after each paste to select the autocomplete suggestion in Genius dropdowns.
+- 🖼️ **Consistent Cover Art**: Always fetches the 1000×1000 PNG version of the cover art from Apple Music, regardless of the source URL format.
+- 🎛️ **Fully Configurable**: Options menu to rebind hotkeys, toggle which fields to include, enable Auto-Tab / Auto-Confirm / Compact Mode / Auto-Start, and set the auto-start countdown.
 
 ## Installation
 
 ### Prerequisites
 - **Python 3.10+**
-- Git (optional, for cloning)
 
 ### Setup
 
@@ -25,40 +25,78 @@
    ```
 
 2. **Install dependencies:**
-   It is recommended to use a virtual environment.
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Install Playwright Browsers:**
-   Since Géniescraper uses Playwright for headless browser automation, you must install the required Chromium binaries:
+3. **Install Playwright browsers:**
    ```bash
    playwright install chromium
    ```
 
 ## Usage
 
-Start the graphical interface:
-
 ```bash
 python gui_main.py
 ```
 
-1. **Scrape**: Paste an Apple Music URL (preferably an `/album/` link so copyright data is preserved) into the URL bar and click **Scrape**.
-2. **Select Track**: If you provided an album URL, select the specific track you are working on.
-3. **Start Assistant**: Click "Start Assistant". The app will transition into an always-on-top widget.
-4. **Paste to Genius**: Go to the Genius edit page. Click on the relevant input field, and press your configured "Next" hotkey (default: `F8`). Géniescraper will automatically type out the artist/role and advance to the next step.
-   - If you make a mistake, use the "Back" hotkey (default: `F7`).
-   - Press `ESC` to cancel the workflow and return to the main menu.
+1. **Scrape** — Paste an Apple Music URL into the URL bar and click **Scrape**. Use an `/album/` URL when possible so that copyright data (℗ / ©) is available.
+2. **Select track** — If you pasted an album URL, pick the specific track from the list.
+3. **Start Assistant** — Click **Start Assistant**. The window becomes always-on-top.
+4. **Paste to Genius** — Open the Genius song edit page. Follow the on-screen instructions for each field:
+   - Press **F8** to paste the current value and advance.
+   - Press **F7** to step back one field.
+   - Press **ESC** to cancel and return to the main menu.
+
+### Field order
+
+The assistant pastes fields in the order Genius expects them:
+
+| # | Field | Notes |
+|---|-------|-------|
+| 1 | Written By | One artist per press |
+| 2 | Produced By | One artist per press |
+| 3 | Additional Credits | Role name, then each artist in that role |
+| 4 | Phonographic Copyright (℗) | Role name typed, then each label |
+| 5 | Copyright (©) | Role name typed, then each label |
+| 6 | YouTube URL | Copied to clipboard |
+| 7 | Cover Art URL | 1000×1000 PNG, copied to clipboard |
+
+### Auto-Tab
+
+When **Auto-Tab** is enabled in Settings, the assistant automatically navigates between Genius fields after each paste:
+
+| After pasting… | Action |
+|---------------|--------|
+| Last songwriter | Tab → Produced By field |
+| Last producer | Tab + Enter → Add additional credits |
+| Last artist in a role | Tab + Enter → Add additional credits |
+| Last copyright label | Tab × 3 → YouTube URL field |
+| YouTube URL | Tab × 3 → Cover Art field |
+
+Auto-Tab is disabled by default.
 
 ## Configuration
 
-Click on the **⚙ Options** button on the main menu to customize your workflow:
-- **Hotkeys**: Click the input fields and press any key to rebind your Next and Back commands.
-- **Feature Toggles**: Toggle on/off the scraping and pasting of Core Metadata (Writers/Producers), Additional Credits, Copyrights, YouTube links, and Cover Art.
+Open **⚙ Options** from the main menu:
 
-Settings are automatically saved to a `.env` file in the root directory.
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Hotkey (Next) | F8 | Paste current field and advance |
+| Hotkey (Back) | F7 | Step back one field |
+| Auto-confirm | On | Press Enter after paste to confirm autocomplete |
+| Auto-tab | Off | Automatically Tab between Genius fields |
+| Compact mode | Off | Hide queue list and shrink the window |
+| Auto-start assistant | Off | Start automatically after a countdown |
+| Auto-start delay | 15 s | Seconds before auto-start fires |
+| Scrape core credits | On | Songwriters and producers |
+| Scrape additional credits | On | All other roles |
+| Scrape copyright | On | ℗ and © |
+| Scrape YouTube | On | YouTube video/MV link |
+| Scrape cover art | On | Album cover at 1000×1000 PNG |
+
+Settings are saved to `.env` in the project root.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE).

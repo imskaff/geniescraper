@@ -22,6 +22,13 @@ class Settings(BaseSettings):
     scrape_youtube: bool = True       # YouTube URL
     scrape_cover_art: bool = True     # Cover art URL
 
+    # Assistant behavior
+    compact_mode: bool = False        # Hide queue list and shrink window during scraping
+    auto_enter: bool = True           # Press Enter after pasting to confirm autocomplete
+    auto_start_assistant: bool = False # Auto-start assistant after countdown on credits screen
+    auto_start_delay: int = 15        # Seconds before auto-starting assistant
+    auto_tab: bool = False            # Auto-press Tab after role/artist to navigate Genius fields
+
     def save(self) -> None:
         """Persist current settings back to .env file."""
         lines = [
@@ -44,6 +51,13 @@ class Settings(BaseSettings):
             f"SCRAPE_COPYRIGHT={str(self.scrape_copyright).lower()}",
             f"SCRAPE_YOUTUBE={str(self.scrape_youtube).lower()}",
             f"SCRAPE_COVER_ART={str(self.scrape_cover_art).lower()}",
+            "",
+            "# Assistant behavior",
+            f"COMPACT_MODE={str(self.compact_mode).lower()}",
+            f"AUTO_ENTER={str(self.auto_enter).lower()}",
+            f"AUTO_START_ASSISTANT={str(self.auto_start_assistant).lower()}",
+            f"AUTO_START_DELAY={self.auto_start_delay}",
+            f"AUTO_TAB={str(self.auto_tab).lower()}",
         ]
         _ENV_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 

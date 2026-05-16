@@ -3,12 +3,33 @@ import re
 from pydantic import BaseModel
 
 
-def _copyright_paste_value(text: str) -> str:
-    """Strip leading ℗/© symbol and year so only the label name is pasted."""
-    return re.sub(r"^[℗©]\s*\d{4}\s*", "", text).strip()
+_COPYRIGHT_CONNECTORS = re.compile(
+    r",?\s+(?:"
+    r"under\s+(?:exclusive\s+)?licen[sc]e\s+(?:to|from)"
+    r"|a\s+division\s+of"
+    r"|an?\s+(?:imprint|label)\s+of"
+    r"|distributed\s+by"
+    r"|released\s+by"
+    r"|marketed\s+by"
+    r")\s+",
+    re.IGNORECASE,
+)
+
+
+def _extract_labels(text: str) -> list[str]:
+    """Parse a ℗/© copyright string into individual label names.
+
+    '℗ 2026 OVO, under exclusive license to Republic Records, a division of UMG Recordings, Inc.'
+    → ['OVO', 'Republic Records', 'UMG Recordings, Inc.']
+    """
+    clean = re.sub(r"^[℗©]\s*\d{4}\s*", "", text).strip()
+    if not clean:
+        return []
+    parts = _COPYRIGHT_CONNECTORS.split(clean)
+    return [p.strip().strip(",").strip() for p in parts if p.strip().strip(",").strip()]
 
 # Roles that map to Genius's dedicated "Written By" field (above "Add additional credits").
-_WRITTEN_BY_ROLES = frozenset({"songwriter", "lyricist", "co-writer", "writer"})
+_WRITTEN_BY_ROLES = frozenset({"songwriter", "lyricist", "lyrics", "co-writer", "writer"})
 # Roles that map to Genius's dedicated "Produced By" field.
 _PRODUCED_BY_ROLES = frozenset({"producer", "co-producer"})
 
@@ -60,6 +81,27 @@ class SongCredits(BaseModel):
             if seen[key]
         ]
 
+    def additional_credits(self) -> list["Credit"]:
+        """Credits that are not Written By or Produced By (i.e. go in the additional roles table)."""
+        return [
+            c for c in self.merged_credits()
+            if c.role.lower() not in _WRITTEN_BY_ROLES and c.role.lower() not in _PRODUCED_BY_ROLES
+        ]
+
+    def written_by(self) -> list[str]:
+        result: list[str] = []
+        for credit in self.merged_credits():
+            if credit.role.lower() in _WRITTEN_BY_ROLES:
+                result.extend(credit.artists)
+        return result
+
+    def produced_by(self) -> list[str]:
+        result: list[str] = []
+        for credit in self.merged_credits():
+            if credit.role.lower() in _PRODUCED_BY_ROLES:
+                result.extend(credit.artists)
+        return result
+
     def typed_queue(
         self,
         *,
@@ -109,16 +151,20 @@ class SongCredits(BaseModel):
                 for artist in credit.artists:
                     queue.append(("artist", artist))
         if include_copyright:
-            if self.phonographic_copyright:
-                queue.append(("phonographic_copyright", _copyright_paste_value(self.phonographic_copyright)))
-            if self.copyright_notice:
-                queue.append(("copyright_notice", _copyright_paste_value(self.copyright_notice)))
-            elif self.phonographic_copyright:
-                queue.append(("copyright_notice", _copyright_paste_value(self.phonographic_copyright)))
-        if include_cover_art:
-            if self.cover_art_url:
-                queue.append(("cover_art", self.cover_art_url))
+            ph_labels = _extract_labels(self.phonographic_copyright) if self.phonographic_copyright else []
+            co_labels = _extract_labels(self.copyright_notice) if self.copyright_notice else ph_labels
+            if ph_labels:
+                queue.append(("copyright_role", "Phonographic Copyright"))
+                for label in ph_labels:
+                    queue.append(("phonographic_copyright", label))
+            if co_labels:
+                queue.append(("copyright_role", "Copyright"))
+                for label in co_labels:
+                    queue.append(("copyright_notice", label))
         if include_youtube:
             if self.youtube_url:
                 queue.append(("youtube_url", self.youtube_url))
+        if include_cover_art:
+            if self.cover_art_url:
+                queue.append(("cover_art", self.cover_art_url))
         return queue

@@ -1,4 +1,3 @@
-import asyncio
 import json
 import re
 
@@ -19,68 +18,162 @@ _SKIP_KEYWORDS = (
     "remix", "parody", "live", "performance", "interview", "behind the scenes",
     "dance practice", "choreography", "teaser", "trailer",
 )
-# Markers that explicitly label a video as audio-only, used to suppress the
-# "official-without-qualifier → likely MV" heuristic below.
 _AUDIO_INDICATORS = ("official audio", "(audio)", "audio only", "audio stream")
 
-# Crew roles that strongly indicate a video production (avoids generic "producer" which could mean song producer).
+# Description-based MV signals — two separate arrays so they can be weighted differently
 _MV_CREW_KEYWORDS = (
-    "directed by", "director", "dir.", "dir:", "director of photography",
-    "creative director", "production company", "production design", 
-    "editor", "edited by", "cinematography", "dp", " d.p.", 
-    "gaffer", "colorist", "color grading", "colour grading", 
-    "visual director", "video producer", "vfx", "visual effects",
-    "wardrobe", "stylist", "choreographer", "production manager",
+    "directed by", "director:", "director,", "d.p.", "dp:", "dop:",
+    "cinematography by", "cinematographer", "shot by", "filmed by",
+    "edited by", "editor:", "color by", "colorist",
+    "visual director", "creative director", "production company",
+)
+_MV_DESC_INDICATORS = (
+    "music video", "official video", "official music video",
+    "official visual", "visual video", "watch the video",
+    "stream & watch", "listen & watch",
 )
 
 
-def _score(video_title: str, channel: str, artist: str, song_title: str = "") -> int:
+# ── helpers ───────────────────────────────────────────────────────────────────
+
+def _clean(text: str) -> str:
+    """Lowercase, strip non-alphanumeric (keep spaces), collapse whitespace."""
+    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s]", "", text.lower())).strip()
+
+
+def _sig_present(video_title: str, song_title: str) -> bool:
+    """True if at least one significant word (>=3 chars) from the song title appears in
+    the video title. Falls back to a collapsed-string check for very short/special-char
+    titles like 'FE!N'."""
+    t = video_title.lower()
+    sig = [w for w in re.split(r"\W+", song_title.lower()) if len(w) >= 3]
+    if sig:
+        return any(w in t for w in sig)
+    # e.g. "FE!N" -> collapsed "fen"; check against collapsed video title
+    ct = re.sub(r"[^a-z0-9]", "", song_title.lower())
+    cv = re.sub(r"[^a-z0-9]", "", t)
+    return bool(ct) and ct in cv
+
+
+def _title_matches_song(video_title: str, song_title: str, artist: str) -> bool:
+    """True when the video title looks like a plain song upload.
+
+    Accepts:
+      "Song Title"
+      "Artist - Song Title"
+      "Artist Song Title ..."       (after punctuation is stripped)
+      any of the above with "(Official Audio)" or feat. suffix appended
+    """
+    vt = _clean(video_title)
+    st = _clean(song_title)
+    ar = _clean(artist)
+
+    if vt == st or vt.startswith(st + " "):
+        return True
+    if vt.startswith(f"{ar} {st}"):
+        return True
+    # All significant words from the song title present (handles feat. variants)
+    sig = [w for w in st.split() if len(w) >= 3]
+    return bool(sig) and all(w in vt for w in sig)
+
+
+_COLLAB_SEP = re.compile(r"\s*[&,]\s*|\s+(?:ft\.?|feat\.?|and|x)\s+", re.IGNORECASE)
+
+
+def _is_artist_ch(channel: str, artist: str) -> bool:
+    ch = channel.lower()
+    is_vevo = "vevo" in ch
+    ch_nospace = ch.replace(" ", "")
+
+    def _one_matches(a: str) -> bool:
+        a_nospace = a.replace(" ", "")
+        vevo_ok = is_vevo and len(a_nospace) >= 3 and a_nospace in ch_nospace
+        # Require >=6 chars for ch-in-a so short generic names don't false-match.
+        return a in ch or (len(ch) >= 6 and ch in a) or vevo_ok
+
+    ar = artist.lower()
+    if _one_matches(ar):
+        return True
+    # For collaborative credits ("Drake & Central Cee"), check each artist separately
+    # so a channel owned by any one of them still qualifies.
+    for part in _COLLAB_SEP.split(ar):
+        part = part.strip()
+        if len(part) >= 3 and _one_matches(part):
+            return True
+    return False
+
+
+# ── per-phase scorers ─────────────────────────────────────────────────────────
+
+def _score_audio(video_title: str, channel: str, artist: str, song_title: str) -> int:
+    """Phase 1 — find the canonical song upload (Topic channel or artist's own channel).
+
+    2  — "Artist - Topic" auto-generated channel (title must match song)
+    1  — artist's official channel with a matching plain title
+   -1  — skip (is an MV, wrong title, unrelated channel, or skip-keyword hit)
+    """
     t = video_title.lower()
     ch = channel.lower()
-    ar = artist.lower()
 
-    if any(kw.lower() in t for kw in _SKIP_KEYWORDS):
+    if any(kw in t for kw in _SKIP_KEYWORDS):
         return -1
 
-    # Require at least one significant word (≥4 chars) from the song title to appear
-    # in the video title — prevents "Savage" (Megan Thee Stallion) scoring high when
-    # searching for "Say Sumn" just because "savage" is in the artist name.
-    if song_title:
-        sig_words = [w for w in re.split(r"\W+", song_title.lower()) if len(w) >= 4]
-        if sig_words and not any(w in t for w in sig_words):
-            return -1
+    # Explicit MV results belong to Phase 2
+    if any(kw.lower() in t for kw in _MV_KEYWORDS):
+        return -1
 
-    is_topic = "- topic" in ch
-    # VEVO channels use CamelCase artist names (e.g. "JamesSavageVEVO") — strip spaces
-    # before comparing so "james savage" matches "jamesavagevevo".
+    if not _sig_present(video_title, song_title):
+        return -1
+
+    if "- topic" in ch:
+        # Topic-channel titles are exactly the song name — require a close match
+        return 2 if _title_matches_song(video_title, song_title, artist) else -1
+
+    if _is_artist_ch(channel, artist):
+        return 1 if _title_matches_song(video_title, song_title, artist) else -1
+
+    return -1
+
+
+def _score_mv(video_title: str, channel: str, artist: str, song_title: str) -> int:
+    """Phase 2 — find the official music video.
+
+    Channel identity is the primary gate; title keywords are secondary.
+
+    3  — VEVO or artist channel + MV signal in title (confirmed)
+    1  — artist channel + matching title, no MV title keywords (provisional; needs description check)
+   -1  — skip (unrecognised channel, wrong title, or skip-keyword)
+    """
+    t = video_title.lower()
+    ch = channel.lower()
+
+    if any(kw in t for kw in _SKIP_KEYWORDS):
+        return -1
+
+    if not _sig_present(video_title, song_title):
+        return -1
+
+    artist_ch = _is_artist_ch(channel, artist)
     is_vevo = "vevo" in ch
-    ar_nospace = ar.replace(" ", "")
-    is_vevo_artist = is_vevo and len(ar_nospace) >= 3 and ar_nospace in ch.replace(" ", "")
-    is_artist_ch = ar in ch or ch in ar or is_vevo_artist
-    # VEVO = official MV platform; treat any VEVO upload as a music video.
-    is_mv = any(kw.lower() in t for kw in _MV_KEYWORDS) or is_vevo or bool(re.search(r"\bm/?v\b", t))
-    # "Official" in title without an explicit audio marker → most likely a video release.
-    # Catches titles like "Artist - Song (Official)" that skip the full MV keyword.
-    is_official_non_audio = "official" in t and not any(kw.lower() in t for kw in _AUDIO_INDICATORS)
 
-    if is_mv and is_artist_ch:
-        return 4
+    # Require a trusted channel — random uploads with "Official Video" in the title
+    # are ignored entirely.
+    if not (artist_ch or is_vevo):
+        return -1
+
+    has_mv_kw = any(kw.lower() in t for kw in _MV_KEYWORDS) or bool(re.search(r"\bm/?v\b", t))
+    is_official = "official" in t and not any(kw in t for kw in _AUDIO_INDICATORS)
+    is_mv = has_mv_kw or is_vevo or is_official
+
     if is_mv:
         return 3
-    if is_artist_ch and is_official_non_audio and not is_topic:
-        return 3  # "Official" on artist channel but no audio tag → treat as MV
-    if is_artist_ch and not is_topic:
-        return 2
-    if is_topic:
+    # Artist channel, plain title — provisional; description check will decide
+    if artist_ch:
         return 1
-    return 0
+    return -1
 
 
-def _has_mv_crew(text: str) -> bool:
-    """Returns True if the text contains MV production crew credits."""
-    t = text.lower()
-    return any(kw.lower() in t for kw in _MV_CREW_KEYWORDS)
-
+# ── YouTube page parsing ──────────────────────────────────────────────────────
 
 def _extract_data(html: str) -> dict | None:
     match = re.search(r"var ytInitialData\s*=\s*", html)
@@ -93,8 +186,25 @@ def _extract_data(html: str) -> dict | None:
         return None
 
 
+async def _fetch_description(client: httpx.AsyncClient, video_id: str) -> str:
+    """Return the description text of a YouTube video, or '' on failure."""
+    try:
+        r = await client.get("https://www.youtube.com/watch", params={"v": video_id})
+        r.raise_for_status()
+    except Exception:
+        return ""
+    m = re.search(r"var ytInitialPlayerResponse\s*=\s*", r.text)
+    if not m:
+        return ""
+    try:
+        obj, _ = json.JSONDecoder().raw_decode(r.text, m.end())
+        return obj.get("videoDetails", {}).get("shortDescription", "")
+    except (json.JSONDecodeError, ValueError):
+        return ""
+
+
 def _iter_videos(data: dict):
-    """Yield (video_id, title, channel, description_snippet) tuples from search results."""
+    """Yield (video_id, title, channel) tuples from a YouTube search-results page."""
     try:
         sections = (
             data["contents"]["twoColumnSearchResultsRenderer"]
@@ -117,84 +227,48 @@ def _iter_videos(data: dict):
                 channel = vr["ownerText"]["runs"][0]["text"]
             except (KeyError, IndexError):
                 pass
-            # Extract the description snippet embedded in search results.
-            snippet = ""
-            try:
-                runs = vr.get("descriptionSnippet", {}).get("runs", [])
-                snippet = " ".join(r.get("text", "") for r in runs)
-                if not snippet:
-                    for s in vr.get("detailedMetadataSnippets", []):
-                        runs2 = s.get("snippetText", {}).get("runs", [])
-                        snippet += " ".join(r.get("text", "") for r in runs2)
-            except Exception:
-                pass
-            yield vr["videoId"], title, channel, snippet
+            yield vr["videoId"], title, channel
 
 
-async def _fetch_description(client: httpx.AsyncClient, video_id: str) -> str:
-    """Fetch the full description of a YouTube video from its watch page.
-    Used as a fallback when the search-result snippet didn't contain crew credits."""
-    try:
-        r = await client.get(
-            f"https://www.youtube.com/watch?v={video_id}",
-            headers=_HEADERS,
-            timeout=8.0,
-        )
-        r.raise_for_status()
-        
-        # Try to get the full description from ytInitialPlayerResponse first
-        match = re.search(r"var ytInitialPlayerResponse\s*=\s*", r.text)
-        if match:
-            try:
-                obj, _ = json.JSONDecoder().raw_decode(r.text, match.end())
-                desc = obj.get("videoDetails", {}).get("shortDescription", "")
-                if desc:
-                    return desc
-            except (json.JSONDecodeError, ValueError):
-                pass
-
-        # Fallback to ytInitialData microformat
-        data = _extract_data(r.text)
-        if not data:
-            return ""
-        return (
-            data.get("microformat", {})
-            .get("playerMicroformatRenderer", {})
-            .get("description", {})
-            .get("simpleText", "")
-        )
-    except Exception:
-        return ""
-
+# ── public API ────────────────────────────────────────────────────────────────
 
 async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
-    """Search YouTube; returns (url, is_music_video) or ('', False) on failure.
+    """Search YouTube for a song. Returns (url, is_music_video).
 
-    Detection layers (in order):
-      1. Title keywords (official music video / official video / music video / official visual)
-      2. VEVO channel → always treated as MV
-      3. Description snippet embedded in search results → crew credits boost score 2 → 3
-      4. Full video description fetch (only when still no MV detected) → same boost
-    is_music_video is True when the winning result scored >= 3.
+    Phase 1 — canonical audio:
+      Searches for the plain song, prioritising the "Artist - Topic" auto-channel
+      (title = exactly the song name) then the artist's own channel with a clean
+      title ("Song" or "Artist - Song").  Explicit MV results are excluded here.
+
+    Phase 2 — official music video:
+      Searches specifically for the MV.  VEVO and artist-channel uploads with MV
+      signals (keywords, "official" without audio tag) score highest.
+
+    Returns the MV URL (is_music_video=True) when Phase 2 succeeds, otherwise
+    the audio URL (is_music_video=False).  Returns ("", False) if neither phase
+    finds a reliable match.
     """
     if not title or not artist:
         return "", False
 
-    candidates: list[tuple[int, int, str]] = []
+    audio_candidates: list[tuple[int, int, str]] = []
+    mv_candidates: list[tuple[int, int, str]] = []
+    provisional_mv: list[tuple[int, int, str]] = []  # artist ch, plain title; needs description
     seen_ids: set[str] = set()
 
     async with httpx.AsyncClient(
         timeout=12.0, headers=_HEADERS, follow_redirects=True
     ) as client:
+
+        # ── Phase 1: canonical audio / Topic channel ───────────────────
         for query in (
-            f'"{artist}" "{title}" official music video',  # exact match + MV filter
-            f'{artist} {title} official music video',      # loose match + MV filter (fallback)
-            f'"{artist}" "{title}"',                       # exact match, no filter
+            f'"{artist}" "{title}"',
+            f'{artist} {title}',
         ):
             try:
                 r = await client.get(
                     "https://www.youtube.com/results",
-                    params={"search_query": query, "sp": "EgIQAQ=="},
+                    params={"search_query": query},
                 )
                 r.raise_for_status()
             except Exception:
@@ -204,45 +278,113 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
             if not data:
                 continue
 
-            for rank, (vid_id, vtitle, channel, snippet) in enumerate(
+            for rank, (vid_id, vtitle, channel) in enumerate(
                 list(_iter_videos(data))[:10]
             ):
                 if vid_id in seen_ids:
                     continue
                 seen_ids.add(vid_id)
-                score = _score(vtitle, channel, artist, title)
-                if score < 0:
-                    continue
-                # Layer 3: crew credits in the search-result snippet → treat as MV.
-                if score == 2 and _has_mv_crew(snippet):
-                    score = 3
-                candidates.append((score, rank, f"https://www.youtube.com/watch?v={vid_id}"))
+                score = _score_audio(vtitle, channel, artist, title)
+                if score > 0:
+                    audio_candidates.append(
+                        (score, rank, f"https://www.youtube.com/watch?v={vid_id}")
+                    )
 
-            # Stop only when we've confirmed an actual MV (score ≥ 3).
-            # An artist-channel audio hit (score 2) isn't enough to skip the MV queries.
-            if any(s >= 3 for s, _, _ in candidates):
+            # Topic-channel hit (score 2) is definitive — skip remaining queries
+            if any(s >= 2 for s, _, _ in audio_candidates):
                 break
 
-        # Layer 4: if still no MV detected, fetch full descriptions for the top
-        # candidates and re-check for crew credits. Only fires when titles are ambiguous
-        # (e.g. both MV and audio are simply titled "Artist - Song").
-        if candidates and not any(s >= 3 for s, _, _ in candidates):
-            best_score = max(s for s, _, _ in candidates)
-            top = [(s, r, u) for s, r, u in candidates if s == best_score][:3]
+        # ── Phase 2: music video ───────────────────────────────────────
+        for query in (
+            f'"{artist}" "{title}" official music video',
+            f'{artist} {title} official music video',
+        ):
+            try:
+                r = await client.get(
+                    "https://www.youtube.com/results",
+                    params={"search_query": query},
+                )
+                r.raise_for_status()
+            except Exception:
+                continue
 
-            async def _check(entry: tuple[int, int, str]) -> tuple[int, int, str]:
-                s, r, u = entry
-                desc = await _fetch_description(client, u.split("=")[-1])
-                return (s + 1, r, u) if _has_mv_crew(desc) else (s, r, u)
+            data = _extract_data(r.text)
+            if not data:
+                continue
 
-            boosted = list(await asyncio.gather(*[_check(e) for e in top]))
-            rest = [(s, r, u) for s, r, u in candidates if s < best_score]
-            candidates = boosted + rest
+            for rank, (vid_id, vtitle, channel) in enumerate(
+                list(_iter_videos(data))[:10]
+            ):
+                if vid_id in seen_ids:
+                    continue
+                seen_ids.add(vid_id)
+                score = _score_mv(vtitle, channel, artist, title)
+                url = f"https://www.youtube.com/watch?v={vid_id}"
+                if score == 3:
+                    mv_candidates.append((score, rank, url))
+                elif score == 1:
+                    provisional_mv.append((score, rank, url))
 
-    if not candidates:
-        return "", False
+            # High-confidence MV found — stop
+            if any(s >= 3 for s, _, _ in mv_candidates):
+                break
 
-    # Sort: highest score first; among equal scores, lowest rank (= top of results) first
-    candidates.sort(key=lambda x: (-x[0], x[1]))
-    best_score, _, best_url = candidates[0]
-    return best_url, best_score >= 3
+        # ── Description boost for MV candidates ───────────────────────
+        # Fetch descriptions for up to 3 top candidates and apply a score
+        # bonus when the description confirms this is a real music video.
+        # Crew keywords (+2) outweigh generic MV indicator words (+1).
+        for i, (score, rank, url) in enumerate(mv_candidates[:3]):
+            vid_id = url.split("=")[-1]
+            desc = (await _fetch_description(client, vid_id)).lower()
+            if not desc:
+                continue
+            if any(kw in desc for kw in _MV_CREW_KEYWORDS):
+                mv_candidates[i] = (score + 2, rank, url)
+            elif any(kw in desc for kw in _MV_DESC_INDICATORS):
+                mv_candidates[i] = (score + 1, rank, url)
+
+        # ── Provisional promotion (Phase 2 plain-title hits) ──────────
+        # Artist-channel videos found in Phase 2 with plain titles: only
+        # add to mv_candidates when the description confirms MV.
+        confirmed_ids = {u.split("=")[-1] for _, _, u in mv_candidates}
+        for score, rank, url in provisional_mv[:3]:
+            vid_id = url.split("=")[-1]
+            if vid_id in confirmed_ids:
+                continue
+            desc = (await _fetch_description(client, vid_id)).lower()
+            if not desc:
+                continue
+            if any(kw in desc for kw in _MV_CREW_KEYWORDS):
+                mv_candidates.append((score + 2, rank, url))
+            elif any(kw in desc for kw in _MV_DESC_INDICATORS):
+                mv_candidates.append((score + 1, rank, url))
+
+        # ── Audio-to-MV promotion (Phase 1 plain-title hits) ──────────
+        # Artist-channel (score=1) audio hits are seen_ids-blocked from
+        # Phase 2, so their descriptions are never checked. Do it here:
+        # if the description confirms MV, reclassify them.
+        mv_ids = {u.split("=")[-1] for _, _, u in mv_candidates}
+        for score, rank, url in audio_candidates[:5]:
+            if score != 1:  # Topic-channel (score=2) is canonical audio; skip
+                continue
+            vid_id = url.split("=")[-1]
+            if vid_id in mv_ids:
+                continue
+            desc = (await _fetch_description(client, vid_id)).lower()
+            if not desc:
+                continue
+            if any(kw in desc for kw in _MV_CREW_KEYWORDS):
+                mv_candidates.append((score + 2, rank, url))
+            elif any(kw in desc for kw in _MV_DESC_INDICATORS):
+                mv_candidates.append((score + 1, rank, url))
+
+    # MV takes priority; audio is the fallback
+    if mv_candidates:
+        mv_candidates.sort(key=lambda x: (-x[0], x[1]))
+        return mv_candidates[0][2], True
+
+    if audio_candidates:
+        audio_candidates.sort(key=lambda x: (-x[0], x[1]))
+        return audio_candidates[0][2], False
+
+    return "", False
