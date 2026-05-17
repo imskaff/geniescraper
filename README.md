@@ -1,6 +1,11 @@
+<div align="center">
+![Géniescraper logo](img/geniescraper.png)
+
 # Géniescraper
 
 **Géniescraper** is a Python-based tool that bridges Apple Music credits and Genius.com metadata entry. It uses stealth browser automation to extract songwriters, producers, roles, copyrights, and cover art from Apple Music, then provides a hotkey-driven GUI assistant to paste everything directly into Genius.
+
+</div>
 
 ## Features
 
