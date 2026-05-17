@@ -17,11 +17,8 @@ _COPYRIGHT_CONNECTORS = re.compile(
 
 
 def _extract_labels(text: str) -> list[str]:
-    """Parse a ℗/© copyright string into individual label names.
-
-    '℗ 2026 OVO, under exclusive license to Republic Records, a division of UMG Recordings, Inc.'
-    → ['OVO', 'Republic Records', 'UMG Recordings, Inc.']
-    """
+    """Parse a ℗/© copyright string into individual label names
+    stripping out the year and connector words."""
     clean = re.sub(r"^[℗©]\s*\d{4}\s*", "", text).strip()
     if not clean:
         return []

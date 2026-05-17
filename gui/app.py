@@ -63,6 +63,9 @@ class App(ctk.CTk):
         self.geometry("620x700")
         self.resizable(False, True)
         self.attributes("-topmost", True)
+        _icon = Path(__file__).parent.parent / "icon.ico"
+        if _icon.exists():
+            self.iconbitmap(str(_icon))
 
         # Dedicated background event loop for Playwright/asyncio
         self._loop = asyncio.new_event_loop()
@@ -156,8 +159,15 @@ class App(ctk.CTk):
 
         self._check_url_loop()
 
-        # Options button — anchored at the bottom
-        # Options button — anchored at the bottom
+        # Options + Help buttons — anchored at the bottom
+        self._help_btn = ctk.CTkButton(
+            self, text="?  Help", width=120, height=32,
+            fg_color="transparent", border_width=1,
+            border_color="#6b7280", text_color="#9ca3af",
+            hover_color="#2d2d2d",
+            command=lambda: None, font=_f(12),
+        )
+        self._help_btn.pack(side="bottom", pady=(0, 16))
         self._options_btn = ctk.CTkButton(
             self, text="⚙  Options", width=120, height=32,
             fg_color="transparent", border_width=1,
@@ -165,7 +175,7 @@ class App(ctk.CTk):
             hover_color="#2d2d2d",
             command=self._show_options_screen, font=_f(12),
         )
-        self._options_btn.pack(side="bottom", pady=(0, 16))
+        self._options_btn.pack(side="bottom", pady=(0, 4))
 
     def _check_url_loop(self) -> None:
         if not hasattr(self, "_url_entry") or not self._url_entry.winfo_exists():
