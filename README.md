@@ -3,17 +3,19 @@
 
 # Géniescraper
 
-**Géniescraper** is a Python-based tool that bridges Apple Music credits and Genius.com metadata entry. It uses stealth browser automation to extract songwriters, producers, roles, copyrights, and cover art from Apple Music, then provides a hotkey-driven GUI assistant to paste everything directly into Genius.
+**Géniescraper** is a Python-based tool that bridges Apple Music credits and Genius.com metadata entry. It uses stealth browser automation to extract songwriters, producers, roles, copyrights, and cover art, then provides a hotkey-driven GUI assistant to paste everything directly into Genius - 100% in accordance with the guidelines.
 
 </div>
 
 ## Features
 
 - 🕵️ **Stealth Extraction**: Built on Playwright with stealth patches to reliably scrape Apple Music (albums and single tracks) without being blocked.
-- ⌨️ **Hotkey Assistant**: A floating, always-on-top window that guides you step-by-step through the Genius pasting workflow. Press `F8` to paste the next field, `F7` to go back.
-- 🤖 **Auto-Tab**: Automatically presses Tab (and Enter where needed) between Genius fields so you rarely need to touch the keyboard between hotkey presses. Works across all field transitions: Written By → Produced By, additional roles, Phonographic Copyright / Copyright, YouTube URL, and Cover Art.
+- ⌨️ **Hotkey Assistant**: A floating, always-on-top window that guides you step-by-step through the Genius pasting workflow. Press `F8` to paste the next field, `F7` to go back. The Start Assistant button also shows your configured keybind so you can trigger it from the keyboard.
+- 🤖 **Auto-Tab**: Automatically presses Tab (and Enter where needed) between Genius fields so you rarely need to touch the keyboard between hotkey presses. Works across all field transitions, including skipping Produced By when there are no producers.
 - ✅ **Auto-Confirm**: Optionally presses Enter after each paste to select the autocomplete suggestion in Genius dropdowns.
 - 🖼️ **Consistent Cover Art**: Always fetches the 1000×1000 PNG version of the cover art from Apple Music, regardless of the source URL format.
+- ⚡ **Background Prefetch**: When working through an album queue, the next 1–2 tracks are scraped in the background while you paste the current one — advancing to the next track is nearly instant.
+- 🔗 **Fast URL Validation**: Invalid Apple Music URLs are detected within seconds instead of timing out after 25+ seconds.
 - 🎛️ **Fully Configurable**: Options menu to rebind hotkeys, toggle which fields to include, enable Auto-Tab / Auto-Confirm / Compact Mode / Auto-Start, and set the auto-start countdown.
 
 ## Installation
@@ -45,7 +47,7 @@
 python gui_main.py
 ```
 
-1. **Scrape** — Paste an Apple Music URL into the URL bar and click **Scrape**. Use an `/album/` URL when possible so that copyright data (℗ / ©) is available.
+1. **Scrape** — Paste an Apple Music URL into the URL bar (use the 📋 button or `Ctrl+V`) and click **Scrape**. Use an `/album/` URL when possible so that copyright data (℗ / ©) is available.
 2. **Select track** — If you pasted an album URL, pick the specific track from the list.
 3. **Start Assistant** — Click **Start Assistant**. The window becomes always-on-top.
 4. **Paste to Genius** — Open the Genius song edit page. Follow the on-screen instructions for each field:
@@ -74,6 +76,7 @@ When **Auto-Tab** is enabled in Settings, the assistant automatically navigates 
 | After pasting… | Action |
 |---------------|--------|
 | Last songwriter | Tab → Produced By field |
+| Last songwriter (no producers) | Tab × 2 + Enter → Add additional credits |
 | Last producer | Tab + Enter → Add additional credits |
 | Last artist in a role | Tab + Enter → Add additional credits |
 | Last copyright label | Tab × 3 → YouTube URL field |

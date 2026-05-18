@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     auto_start_delay: int = 15        # Seconds before auto-starting assistant
     auto_tab: bool = False            # Auto-press Tab after role/artist to navigate Genius fields
 
+    # Window position (-1 = not yet saved, use default centering)
+    win_x: int = -1
+    win_y: int = -1
+
     def save(self) -> None:
         """Persist current settings back to .env file."""
         lines = [
@@ -58,6 +62,10 @@ class Settings(BaseSettings):
             f"AUTO_START_ASSISTANT={str(self.auto_start_assistant).lower()}",
             f"AUTO_START_DELAY={self.auto_start_delay}",
             f"AUTO_TAB={str(self.auto_tab).lower()}",
+            "",
+            "# Last window position (set automatically on close)",
+            f"WIN_X={self.win_x}",
+            f"WIN_Y={self.win_y}",
         ]
         _ENV_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 

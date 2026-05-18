@@ -59,8 +59,9 @@ _FIELD_LABELS = {
 class App(ctk.CTk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("Géniescraper v0.1")
-        self.geometry("620x700")
+        self.title("Géniescraper v0.3")
+        pos = f"+{settings.win_x}+{settings.win_y}" if settings.win_x >= 0 and settings.win_y >= 0 else ""
+        self.geometry(f"620x700{pos}")
         self.resizable(False, True)
         self.attributes("-topmost", True)
         _icon = Path(__file__).parent.parent / "icon.ico"
@@ -70,6 +71,7 @@ class App(ctk.CTk):
         # Dedicated background event loop for Playwright/asyncio
         self._loop = asyncio.new_event_loop()
         threading.Thread(target=self._loop.run_forever, daemon=True).start()
+        self.protocol("WM_DELETE_WINDOW", self.destroy)
 
         self._song: SongCredits | None = None
         self._cover_image: PILImage.Image | None = None
@@ -83,6 +85,9 @@ class App(ctk.CTk):
         self._album_queue_current: int = 0
         self._album_queue_position: int = 0
         self._album_queue_total: int = 0
+        self._prefetch_cache: dict[int, tuple[SongCredits, PILImage.Image | None]] = {}
+        self._prefetch_cache_lock = threading.Lock()
+        self._prefetch_semaphore = threading.Semaphore(1)
         self._track_vars: list = []
         self._scrape_selected_btn: ctk.CTkButton | None = None
         self._credits_in_countdown: bool = False
@@ -111,14 +116,32 @@ class App(ctk.CTk):
 
         def _on_fwd(e):
             if e.event_type == "down":
-                self._on_hotkey()
+                threading.Thread(target=self._on_hotkey, daemon=True).start()
 
         def _on_back(e):
             if e.event_type == "down":
-                self._on_back_hotkey()
+                threading.Thread(target=self._on_back_hotkey, daemon=True).start()
 
         self._kb_hooks.append(keyboard.hook_key(settings.hotkey, _on_fwd, suppress=True))
         self._kb_hooks.append(keyboard.hook_key(settings.back_hotkey, _on_back, suppress=True))
+
+    def _show_help_bubble(self) -> None:
+        self._help_btn.configure(text="Help page coming soon", width=180)
+        self.after(2000, lambda: self._help_btn.configure(text="?  Help", width=120) if self._help_btn.winfo_exists() else None)
+
+    def destroy(self) -> None:
+        try:
+            settings.win_x = self.winfo_x()
+            settings.win_y = self.winfo_y()
+            settings.save()
+        except Exception:
+            pass
+        future = asyncio.run_coroutine_threadsafe(apple_music.close_browser(), self._loop)
+        try:
+            future.result(timeout=5)
+        except Exception:
+            pass
+        super().destroy()
 
     # ── screens ──────────────────────────────────────────────────────────
 
@@ -138,14 +161,34 @@ class App(ctk.CTk):
         ).pack(pady=(0, 20))
 
         ctk.CTkLabel(self, text="Apple Music URL", anchor="w", font=_f(13)).pack(anchor="w", padx=40)
+        url_field = ctk.CTkFrame(
+            self, height=38,
+            fg_color=("gray92", "gray14"),
+            border_color=("gray65", "gray50"),
+            border_width=2,
+            corner_radius=6,
+        )
+        url_field.pack(padx=40, pady=(4, 12), fill="x")
+        url_field.pack_propagate(False)
         self._url_entry = ctk.CTkEntry(
-            self, width=540, height=38,
+            url_field,
+            border_width=0, corner_radius=0,
+            fg_color="transparent",
             placeholder_text="https://music.apple.com/us/album/...",
             font=_f(13),
         )
-        self._url_entry.pack(padx=40, pady=(4, 12))
+        self._url_entry.pack(side="left", fill="both", expand=True, padx=(4, 0), pady=2)
         self._url_entry.bind("<Return>", lambda _: self._start_scrape())
         self._url_entry.focus()
+        ctk.CTkButton(
+            url_field, text="📋 Paste", width=32, height=28,
+            fg_color="gray20", hover_color=("gray80", "gray28"),
+            corner_radius=4, font=_f(14),
+            command=lambda: (
+                self._url_entry.delete(0, "end"),
+                self._url_entry.insert(0, pyperclip.paste()),
+            ),
+        ).pack(side="right", padx=(0, 3), pady=2)
 
         self._scrape_btn = ctk.CTkButton(
             self, text="Scrape", width=160, height=38,
@@ -165,14 +208,14 @@ class App(ctk.CTk):
             fg_color="transparent", border_width=1,
             border_color="#6b7280", text_color="#9ca3af",
             hover_color="#2d2d2d",
-            command=lambda: None, font=_f(12),
+            command=self._show_help_bubble, font=_f(12),
         )
         self._help_btn.pack(side="bottom", pady=(0, 16))
         self._options_btn = ctk.CTkButton(
             self, text="⚙  Options", width=120, height=32,
-            fg_color="transparent", border_width=1,
-            border_color="#6b7280", text_color="#9ca3af",
-            hover_color="#2d2d2d",
+            fg_color="#d1d5db", border_width=0,
+            text_color="#111827",
+            hover_color="#9ca3af",
             command=self._show_options_screen, font=_f(12),
         )
         self._options_btn.pack(side="bottom", pady=(0, 4))
@@ -446,12 +489,18 @@ class App(ctk.CTk):
         btn_row.pack(side="bottom", pady=8)
         _btn_label = (
             f"Start Assistant  ({self._credits_countdown}s)"
-            if settings.auto_start_assistant else "Start Assistant"
+            if settings.auto_start_assistant else f"Start Assistant  ({settings.hotkey.upper()})"
         )
         self._start_assistant_btn = ctk.CTkButton(
             btn_row, text=_btn_label, width=220, height=40,
             command=self._show_assistant_screen, font=_f(13, "bold"),
         )
+
+        def _on_credits_hotkey(e):
+            if e.event_type == "down":
+                self.after(0, self._show_assistant_screen)
+        _hook = keyboard.hook_key(settings.hotkey, _on_credits_hotkey, suppress=True)
+        self._kb_hooks.append(_hook)
         self._start_assistant_btn.pack(side="left", padx=(0, 12))
         if settings.auto_start_assistant:
             self._start_assistant_btn.bind("<Enter>", lambda _: self._pause_credits_countdown())
@@ -708,55 +757,55 @@ class App(ctk.CTk):
         self._status_lbl.configure(text="Detecting album…", text_color="gray")
         threading.Thread(target=self._detect_thread, args=(url,), daemon=True).start()
 
+    async def _async_fetch_track(
+        self, url: str, track_index: int, track_title: str, artist: str
+    ) -> tuple[SongCredits, str]:
+        """Full scrape pipeline: Apple Music + Deezer + YouTube, all concurrent."""
+        search_title = track_title or "Unknown"
+        scrape_task = asyncio.create_task(
+            apple_music.scrape(url, track_index=track_index, track_title=track_title)
+        )
+        if artist and search_title != "Unknown":
+            deezer_task = asyncio.create_task(deezer.fetch_cover_url(search_title, artist))
+            itunes_task = asyncio.create_task(deezer.fetch_itunes_cover_url(search_title, artist))
+            youtube_task = asyncio.create_task(youtube.fetch_youtube_url(search_title, artist))
+            song, deezer_cover, itunes_cover, yt_result = await asyncio.gather(
+                scrape_task, deezer_task, itunes_task, youtube_task
+            )
+            yt_url, yt_is_mv = yt_result
+        else:
+            song = await scrape_task
+            deezer_cover, itunes_cover, yt_url, yt_is_mv = "", "", "", False
+
+        _yt_title = song.title or search_title
+        _yt_artist = song.artist or artist
+        if not yt_url and _yt_title and _yt_artist and _yt_title != "Unknown":
+            try:
+                yt_url, yt_is_mv = await youtube.fetch_youtube_url(_yt_title, _yt_artist)
+            except Exception:
+                pass
+
+        if not deezer_cover and not itunes_cover and song.title and song.artist:
+            try:
+                deezer_cover, itunes_cover = await asyncio.gather(
+                    deezer.fetch_cover_url(song.title, song.artist),
+                    deezer.fetch_itunes_cover_url(song.title, song.artist),
+                )
+            except Exception:
+                pass
+
+        cover_url = deezer_cover or itunes_cover or song.cover_art_url
+        return song.model_copy(
+            update={"cover_art_url": cover_url, "youtube_url": yt_url, "youtube_is_mv": yt_is_mv}
+        ), cover_url
+
     def _scrape_track_thread(self, url: str, track_index: int, track_title: str) -> None:
         try:
             artist = self._album_info.artist if hasattr(self, "_album_info") and self._album_info else ""
-            search_title = track_title or "Unknown"
+            song, cover_url = asyncio.run_coroutine_threadsafe(
+                self._async_fetch_track(url, track_index, track_title, artist), self._loop
+            ).result()
 
-            async def _fetch_all(u: str) -> tuple[SongCredits, str, str, bool]:
-                scrape_task = asyncio.create_task(
-                    apple_music.scrape(u, track_index=track_index, track_title=track_title)
-                )
-
-                # Only run concurrent APIs if we have an artist and title from detect phase
-                if artist and search_title != "Unknown":
-                    deezer_task = asyncio.create_task(deezer.fetch_cover_url(search_title, artist))
-                    itunes_task = asyncio.create_task(deezer.fetch_itunes_cover_url(search_title, artist))
-                    youtube_task = asyncio.create_task(youtube.fetch_youtube_url(search_title, artist))
-
-                    song, deezer_cover, itunes_cover, yt_result = await asyncio.gather(
-                        scrape_task, deezer_task, itunes_task, youtube_task
-                    )
-                    yt_url, yt_is_mv = yt_result
-                else:
-                    song = await scrape_task
-                    deezer_cover, itunes_cover, yt_url, yt_is_mv = "", "", "", False
-
-                # Fallback: retry with best available title/artist from scrape or detection
-                _yt_title = song.title or search_title
-                _yt_artist = song.artist or artist
-                if not yt_url and _yt_title and _yt_artist and _yt_title != "Unknown":
-                    try:
-                        yt_url, yt_is_mv = await youtube.fetch_youtube_url(_yt_title, _yt_artist)
-                    except Exception:
-                        pass
-
-                # Same fallback for cover art
-                if not deezer_cover and not itunes_cover and song.title and song.artist:
-                    try:
-                        deezer_cover, itunes_cover = await asyncio.gather(
-                            deezer.fetch_cover_url(song.title, song.artist),
-                            deezer.fetch_itunes_cover_url(song.title, song.artist),
-                        )
-                    except Exception:
-                        pass
-
-                cover_url = deezer_cover or itunes_cover or song.cover_art_url
-                return song.model_copy(update={"cover_art_url": cover_url, "youtube_url": yt_url, "youtube_is_mv": yt_is_mv}), cover_url
-
-            song, cover_url = asyncio.run_coroutine_threadsafe(_fetch_all(url), self._loop).result()
-
-            # Download thumbnail for the credits screen
             cover_image: PILImage.Image | None = None
             if cover_url:
                 try:
@@ -764,7 +813,6 @@ class App(ctk.CTk):
                     cover_image = PILImage.open(io.BytesIO(resp.content))
                 except Exception:
                     pass
-            # Fall back to the thumbnail already fetched during detection
             if cover_image is None:
                 cover_image = getattr(self, "_album_cover_image", None)
 
@@ -783,6 +831,8 @@ class App(ctk.CTk):
         self._album_queue_current = 0
         self._album_queue_position = 0
         self._album_queue_total = 0
+        with self._prefetch_cache_lock:
+            self._prefetch_cache.clear()
         if hasattr(self, "_status_lbl") and self._status_lbl.winfo_exists():
             self._status_lbl.configure(text=f"Error: {message}", text_color="#f87171")
         if hasattr(self, "_scrape_btn") and self._scrape_btn.winfo_exists():
@@ -963,6 +1013,7 @@ class App(ctk.CTk):
         track_index, track_title = self._album_queue_pending.pop(0)
         self._album_queue_current = track_index
         self._on_track_selected(track_index, track_title)
+        self._prefetch_tracks(2)
 
     def _start_album_queue(self) -> None:
         info = self._album_info
@@ -973,8 +1024,16 @@ class App(ctk.CTk):
         track_index, track_title = self._album_queue_pending.pop(0)
         self._album_queue_current = track_index
         self._on_track_selected(track_index, track_title)
+        self._prefetch_tracks(2)
 
     def _on_track_selected(self, track_index: int, track_title: str) -> None:
+        with self._prefetch_cache_lock:
+            cached = self._prefetch_cache.pop(track_index, None)
+        if cached is not None:
+            self._clear()
+            self.after(0, self._scrape_done, *cached)
+            return
+
         self._clear()
         if self._is_album_queue_mode:
             ctk.CTkLabel(
@@ -1009,6 +1068,59 @@ class App(ctk.CTk):
         self._queue = []
         self._pos = 0
         self._on_track_selected(track_index, track_title)
+        self._prefetch_tracks(2)
+
+    def _prefetch_tracks(self, n: int = 2) -> None:
+        if not self._is_album_queue_mode or self._album_info is None:
+            return
+        with self._prefetch_cache_lock:
+            cached = set(self._prefetch_cache)
+        count = 0
+        for track_index, track_title in self._album_queue_pending:
+            if count >= n:
+                break
+            if track_index not in cached:
+                threading.Thread(
+                    target=self._prefetch_worker,
+                    args=(track_index, track_title),
+                    daemon=True,
+                ).start()
+                count += 1
+
+    def _prefetch_worker(self, track_index: int, track_title: str) -> None:
+        album_info = self._album_info
+        if album_info is None:
+            return
+        url, artist = album_info.url, album_info.artist
+
+        if not self._prefetch_semaphore.acquire(timeout=120):
+            return
+        try:
+            with self._prefetch_cache_lock:
+                if track_index in self._prefetch_cache:
+                    return
+
+            song, cover_url = asyncio.run_coroutine_threadsafe(
+                self._async_fetch_track(url, track_index, track_title, artist),
+                self._loop,
+            ).result()
+
+            cover_image: PILImage.Image | None = None
+            if cover_url:
+                try:
+                    resp = httpx.get(cover_url, timeout=8.0)
+                    cover_image = PILImage.open(io.BytesIO(resp.content))
+                except Exception:
+                    pass
+            if cover_image is None:
+                cover_image = getattr(self, "_album_cover_image", None)
+
+            with self._prefetch_cache_lock:
+                self._prefetch_cache[track_index] = (song, cover_image)
+        except Exception:
+            pass
+        finally:
+            self._prefetch_semaphore.release()
 
     # ── hotkey assistant ─────────────────────────────────────────────────
 
@@ -1037,6 +1149,9 @@ class App(ctk.CTk):
             _tab_only = (
                 kind == "written_by" and next_kind == "produced_by"
             )
+            _skip_produced_by = (
+                kind == "written_by" and next_kind in ("role", "copyright_role")
+            )
             _tab_enter = (
                 (kind in ("produced_by", "artist") and next_kind in ("role", "copyright_role")) or
                 (kind in ("phonographic_copyright", "copyright_notice") and next_kind == "copyright_role")
@@ -1050,6 +1165,13 @@ class App(ctk.CTk):
                 for _ in range(3):
                     keyboard.press_and_release("tab")
                     time.sleep(0.05)
+            elif _skip_produced_by:
+                time.sleep(0.15)
+                keyboard.press_and_release("tab")
+                time.sleep(0.1)
+                keyboard.press_and_release("tab")
+                time.sleep(0.1)
+                keyboard.press_and_release("enter")
             elif _tab_only:
                 time.sleep(0.15)
                 keyboard.press_and_release("tab")
@@ -1248,6 +1370,8 @@ class App(ctk.CTk):
         self._album_queue_current = 0
         self._album_queue_position = 0
         self._album_queue_total = 0
+        with self._prefetch_cache_lock:
+            self._prefetch_cache.clear()
         # _album_info intentionally kept — no re-fetch needed
         self._show_track_select_screen()
 
@@ -1269,6 +1393,8 @@ class App(ctk.CTk):
         self._album_queue_current = 0
         self._album_queue_position = 0
         self._album_queue_total = 0
+        with self._prefetch_cache_lock:
+            self._prefetch_cache.clear()
         self._show_scrape_screen()
 
     def _wait_esc(self) -> None:

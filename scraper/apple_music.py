@@ -244,6 +244,37 @@ _UA = (
     "Chrome/124.0.0.0 Safari/537.36"
 )
 
+class PageNotFoundError(Exception):
+    pass
+
+
+async def _wait_for_page(page: Page) -> None:
+    """Race networkidle against the Apple Music 404 error element.
+
+    For invalid URLs the error element is rendered by JS within ~1-2 s, long
+    before the page ever reaches networkidle.  Racing lets us bail out the
+    moment the error appears instead of waiting the full 25 s timeout.
+    """
+    error_task = asyncio.create_task(
+        page.wait_for_selector(
+            '[data-testid="page-error-title"]', state="visible", timeout=25_000
+        )
+    )
+    idle_task = asyncio.create_task(
+        page.wait_for_load_state("networkidle", timeout=25_000)
+    )
+    await asyncio.wait({error_task, idle_task}, return_when=asyncio.FIRST_COMPLETED)
+    for t in (error_task, idle_task):
+        if not t.done():
+            t.cancel()
+            try:
+                await t
+            except (Exception, asyncio.CancelledError):
+                pass
+    if await page.locator('[data-testid="page-error-title"]').is_visible():
+        raise PageNotFoundError("Page not found — check the URL and try again.")
+
+
 _global_playwright = None
 _global_browser = None
 _browser_lock = asyncio.Lock()
@@ -252,12 +283,23 @@ async def _get_browser():
     global _global_playwright, _global_browser
     async with _browser_lock:
         if _global_playwright is None:
-            # We import here to avoid initializing it on load if not needed
             from playwright.async_api import async_playwright
             _global_playwright = await async_playwright().start()
         if _global_browser is None:
             _global_browser = await _global_playwright.chromium.launch(headless=True)
         return _global_browser
+
+
+async def close_browser() -> None:
+    """Close the shared Playwright browser and stop the Playwright instance."""
+    global _global_browser, _global_playwright
+    async with _browser_lock:
+        if _global_browser is not None:
+            await _global_browser.close()
+            _global_browser = None
+        if _global_playwright is not None:
+            await _global_playwright.stop()
+            _global_playwright = None
 
 async def _new_stealth_page():
     """Create a new stealth context and page on the global browser."""
@@ -369,7 +411,7 @@ async def detect_album(url: str) -> AlbumTrackInfo:
     context, page = await _new_stealth_page()
     try:
         await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
-        await page.wait_for_load_state("networkidle", timeout=25_000)
+        await _wait_for_page(page)
 
         try:
             title, artist = _extract_title_artist(await page.title())
@@ -434,7 +476,7 @@ async def scrape(url: str, *, track_index: int = 1, track_title: str = "", debug
     context, page = await _new_stealth_page()
     try:
         await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
-        await page.wait_for_load_state("networkidle", timeout=25_000)
+        await _wait_for_page(page)
 
         # Extract title/artist from page <title> or DOM before we navigate away.
         try:
