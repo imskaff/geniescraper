@@ -24,3 +24,6 @@ debug/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Claude Code project settings (local paths and tool permissions)
+.claude/
