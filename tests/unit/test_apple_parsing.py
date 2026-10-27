@@ -19,7 +19,6 @@ class TestExtractTitleArtist:
     def test_known_formats(self, page_title, expected):
         assert am._extract_title_artist(page_title) == expected
 
-    @pytest.mark.xfail(strict=True, reason="known bug: 'Song with Lyrics by' prefix is not stripped")
     def test_song_with_lyrics_prefix(self):
         title = "‎Not Like Us - Song with Lyrics by Kendrick Lamar - Apple Music"
         assert am._extract_title_artist(title) == ("Not Like Us", "Kendrick Lamar")

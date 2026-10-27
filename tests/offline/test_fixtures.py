@@ -15,6 +15,7 @@ pytestmark = pytest.mark.browser
 
 CASES = load_cases()
 ALBUM_CASES = [c for c in CASES if "/album/" in c.url]
+SONG_CASES = [c for c in CASES if "/song/" in c.url]
 
 
 @pytest.fixture(autouse=True)
@@ -47,6 +48,13 @@ async def test_album_artist_from_title(case, load_fixture):
     page = await load_fixture(f"{case.id}.page.html")
     _, artist = am._extract_title_artist(await page.title())
     assert artist == load_golden(case.id).artist
+
+
+@pytest.mark.parametrize("case", SONG_CASES, ids=lambda c: c.id)
+async def test_song_title_artist_from_title(case, load_fixture):
+    page = await load_fixture(f"{case.id}.page.html")
+    golden = load_golden(case.id)
+    assert am._extract_title_artist(await page.title()) == (golden.title, golden.artist)
 
 
 @pytest.mark.parametrize("case", ALBUM_CASES, ids=lambda c: c.id)

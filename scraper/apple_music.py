@@ -385,8 +385,10 @@ def _extract_title_artist(page_title: str) -> tuple[str, str]:
             if raw_artist.lower() in _TYPE_LABELS and len(parts) >= 3:
                 raw_artist = parts[2]
 
-            # Clean up artist (remove "Song by", "Album by", etc.)
-            raw_artist = re.sub(r"^(?:album|ep|single|song)\s+by\s+", "", raw_artist, flags=re.IGNORECASE).strip()
+            # Clean up artist (remove "Song by", "Album by", "Song with Lyrics by", etc.)
+            raw_artist = re.sub(
+                r"^(?:album|ep|single|song)(?:\s+with\s+lyrics)?\s+by\s+", "", raw_artist, flags=re.IGNORECASE
+            ).strip()
 
             # Clean up title (remove " - Single" etc. at the end of the title part)
             title = re.sub(
