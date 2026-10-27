@@ -32,7 +32,8 @@ class SettingsWindow(ctk.CTkToplevel):
         self._on_change = on_change
         self._capture_hook: object | None = None
         self._reset_armed = False
-        self.title("Settings")
+        self.title("Géniescraper settings")
+        theme.set_icon(self)
         self.geometry(f"480x660+{master.winfo_rootx() + 70}+{master.winfo_rooty() + 20}")
         self.minsize(440, 420)
         self.configure(fg_color=theme.BG)
@@ -50,7 +51,7 @@ class SettingsWindow(ctk.CTkToplevel):
             w.destroy()
         footer = ctk.CTkFrame(self, fg_color=theme.SURFACE, corner_radius=0)
         footer.pack(side="bottom", fill="x")
-        body = ctk.CTkScrollableFrame(self, fg_color="transparent")
+        body = theme.scroll_frame(self, fg_color="transparent")
         body.pack(fill="both", expand=True, padx=8, pady=(8, 0))
         body.grid_columnconfigure(0, weight=1)
         self._body = body

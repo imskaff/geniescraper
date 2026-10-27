@@ -12,6 +12,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 _FONT_FILE = Path(__file__).parent.parent / "Programme-Regular.ttf"
+APP_ICON = Path(__file__).parent.parent / "icon.ico"
 if sys.platform == "win32" and _FONT_FILE.exists():
     ctypes.windll.gdi32.AddFontResourceExW(str(_FONT_FILE), 0x10, 0)  # FR_PRIVATE: this process only
 
@@ -61,6 +62,24 @@ def display(size: int) -> ctk.CTkFont:
 def mono(size: int = 12) -> ctk.CTkFont:
     """Keys and counters, where fixed-width digits keep things from jumping."""
     return ctk.CTkFont(family=MONO_FAMILY, size=size)
+
+
+# customtkinter scrolls 20 px per mouse-wheel notch on Windows, which feels sluggish.
+_SCROLL_PX_PER_UNIT = 3  # x 20 units per notch = 60 px
+
+
+def scroll_frame(master, **kwargs) -> ctk.CTkScrollableFrame:
+    """A scrollable frame that moves about three list rows per mouse-wheel notch."""
+    frame = ctk.CTkScrollableFrame(master, **kwargs)
+    if sys.platform == "win32":
+        frame._parent_canvas.configure(yscrollincrement=_SCROLL_PX_PER_UNIT)
+    return frame
+
+
+def set_icon(window: ctk.CTk | ctk.CTkToplevel) -> None:
+    """Use the app icon; calling iconbitmap also stops CTkToplevel from installing its own."""
+    if APP_ICON.exists():
+        window.iconbitmap(str(APP_ICON))
 
 
 def apply() -> None:

@@ -66,3 +66,19 @@ def test_leaving_review_screen_releases_its_f8_hotkey():
 
     walk_screens(on_screen)
     assert checked == [True]
+
+
+def test_settings_window_uses_app_icon_and_fast_scroll():
+    from tools.gui_snapshots import walk_screens
+
+    checked: list[str] = []
+
+    def on_screen(window, name):
+        if name != "04-settings":
+            return
+        assert window._iconbitmap_method_called, "the app icon replaces customtkinter's default"
+        assert int(window._body._parent_canvas.cget("yscrollincrement")) == 3
+        checked.append(name)
+
+    walk_screens(on_screen)
+    assert checked == ["04-settings"]

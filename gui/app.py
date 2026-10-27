@@ -3,7 +3,6 @@ import io
 import threading
 import time
 import webbrowser
-from pathlib import Path
 
 import customtkinter as ctk
 import httpx
@@ -59,9 +58,7 @@ class App(ctk.CTk):
         self.geometry(f"620x700{pos}")
         self.resizable(False, True)
         self.attributes("-topmost", settings.always_on_top)
-        _icon = Path(__file__).parent.parent / "icon.ico"
-        if _icon.exists():
-            self.iconbitmap(str(_icon))
+        theme.set_icon(self)
 
         # Dedicated background event loop for Playwright/asyncio
         self._loop = asyncio.new_event_loop()
@@ -253,9 +250,14 @@ class App(ctk.CTk):
         body = ctk.CTkFrame(self, fg_color="transparent")
         body.pack(fill="both", expand=True, padx=40)
 
-        ctk.CTkLabel(body, text="Géniescraper", font=theme.display(34), text_color=theme.TEXT).pack(
-            anchor="w", pady=(18, 2)
-        )
+        ctk.CTkLabel(
+            body,
+            text="Géniescraper",
+            font=theme.display(34),
+            text_color=theme.ACCENT_INK,
+            fg_color=theme.ACCENT,
+            corner_radius=4,
+        ).pack(anchor="w", pady=(18, 8), ipadx=12, ipady=2)
         ctk.CTkLabel(
             body,
             text="Collect a song's credits from Apple Music and paste them into Genius.",
@@ -456,7 +458,7 @@ class App(ctk.CTk):
         ).pack(anchor="w")
         self._settings_summary(summary).pack(anchor="w")
 
-        sf = ctk.CTkScrollableFrame(self, fg_color=theme.SURFACE, corner_radius=8)
+        sf = theme.scroll_frame(self, fg_color=theme.SURFACE, corner_radius=8)
         sf.pack(fill="both", expand=True, padx=40, pady=(0, 6))
         sf.grid_columnconfigure(0, weight=0, minsize=170)
         sf.grid_columnconfigure(1, weight=1)
@@ -643,7 +645,7 @@ class App(ctk.CTk):
             ctk.CTkLabel(self, text=hint, font=_f(11), text_color=theme.FAINT, anchor="w").pack(
                 fill="x", padx=22, pady=(0, 2)
             )
-            self._queue_sf = ctk.CTkScrollableFrame(self, fg_color=theme.SURFACE, corner_radius=8)
+            self._queue_sf = theme.scroll_frame(self, fg_color=theme.SURFACE, corner_radius=8)
             self._queue_sf.pack(fill="both", expand=True, padx=20, pady=(0, 12))
             self._queue_sf.grid_columnconfigure(0, weight=1)
 
@@ -858,7 +860,7 @@ class App(ctk.CTk):
             side="right", padx=(0, 8)
         )
 
-        sf = ctk.CTkScrollableFrame(self, fg_color=theme.SURFACE, corner_radius=8)
+        sf = theme.scroll_frame(self, fg_color=theme.SURFACE, corner_radius=8)
         sf.pack(fill="both", expand=True, padx=40, pady=(0, 4))
 
         for i, title in enumerate(info.track_titles):
