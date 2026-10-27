@@ -267,7 +267,7 @@ Playwright forces pages to report `visibilityState: "visible"` and focus, so it 
 - Looking at the light scheme found that checked boxes were yellow on white; they now use the darker link color.
   The focus ring is clearly visible around the yellow primary button in a screenshot.
 - "New link" now clears the previous link instead of leaving it in the box.
-- Still open: a visible tab flash and history entry per scrape, the popup fallback for Safari, a CDP side panel width narrower than 320 px (not measured), and the YouTube link setting, which has no data to act on until the lookup arrives (slice 8b).
+- Still open: a visible tab flash and history entry per scrape, the popup fallback for Safari, a CDP side panel width narrower than 320 px (not measured), and the YouTube link setting, which has no data to act on until the lookup arrives (slice 8b, now done).
 
 ## 13. Slice 6 decisions: the Genius fill
 
@@ -325,7 +325,7 @@ Verification state:
 - Responses are untrusted: an artwork URL is used only if it is https on `mzstatic.com`, so a hostile or broken response cannot put another host into the paste queue or the panel.
 - `src/lookups/http.ts` is the only place that fetches third-party data: https only, an explicit host allow-list (`itunes.apple.com` for now), no cookies, no referrer, a 10 second timeout, and null on every failure.
 - Live: the golden track's cover through the real worker matches the golden artwork, and SOUR (no usable page header cover) gets its cover from the lookup.
-- Deezer (optional host) arrived in slice 8a; YouTube follows in 8b.
+- Deezer (optional host) arrived in slice 8a; YouTube followed in 8b (section 18).
 
 ## 15. Changes after the first hands-on review
 
@@ -398,3 +398,23 @@ The default is 3 at a time (chosen by the owner after these numbers); one by one
   No parity vector: the Python function is network-bound and its only pure parts (`sameTrack`, the `.png` rewrite) are already covered by the existing vectors and the new unit tests.
 - **Verified.** Unit tests for all of the above; the Deezer lookup was run against the live API (CHIHIRO, SOS and FE!N each gave a 1000x1000 PNG on cdn-images.dzcdn.net that answered 200 image/png, a made-up song gave nothing).
   Chrome's permission prompt cannot be driven over CDP, so the prompt-and-grant step is **not** verified end to end here and needs one manual click.
+
+## 18. Slice 8b: the YouTube link
+
+- **Port.** `lookups/youtube.ts` ports `scraper/youtube.py`: the scorers, the three-phase search (canonical audio, music video, description checks), the candidate promotion rules and the final preference (music video, then audio, then nothing).
+  Page access is behind `YoutubePages`, so the whole lookup runs offline: a test replays all 15 cases of `tests/golden/youtube.json` against the saved pages in `tests/fixtures/lookups/youtube/` and every one returns an accepted video with the right music-video flag.
+  Python's `\W` is Unicode-aware, so the port splits on `[^\p{L}\p{N}_]` (an ASCII `\W` would cut "DÁKITI" in two).
+  The saved pages and golden files are read-only; nothing in them changed.
+- **Not ported: the request headers.** `fetch` cannot reliably set `User-Agent` or `Accept-Language` from an extension, so the requests go out as Chrome's own, with no cookies and no referrer.
+- **One control.** The Chrome permission for `www.youtube.com` is the lookup's switch ("Find a YouTube link for each track" in Settings, off by default, with the same prompt, revoke and live-sync behaviour as Deezer).
+  The existing "YouTube link" box under "What to paste" still decides whether the link is queued; a link is pasted only when both are on.
+- **Traffic.** One worker-wide limit of 3 requests in flight to YouTube (`MAX_YOUTUBE_REQUESTS`), shared by every track being read, so three tracks read at once cannot multiply it.
+  The search starts together with the page read, as in the desktop app: the panel now sends the album's artist with each read.
+  Divergence on purpose: the desktop app repeats the search with the song page's title and artist when the first found nothing, even if they are the same; the extension repeats it only when they differ, so a song with no video does not cost double the traffic.
+- **Verified.** Offline: the 15 golden cases, the scorers, the parsers and malformed pages, the limit, the router wiring.
+  Live: the same lookup code (real `fetch`, permission stubbed as granted) found the accepted video with the right music-video flag for 5 of 5 golden cases (SZA SOS, good 4 u, CHIHIRO, Not Like Us, Pink + White) in about 2 seconds each, and the results page held `ytInitialData` (no consent page from this network).
+  **Not verified:** Chrome's permission prompt and the lookup running inside the real extension with the permission granted, because the prompt cannot be driven over CDP; and an EU network, where a request without cookies can be sent to a consent page - a redirect is refused, so that gives no link rather than a wrong one.
+- **Risk to record.** YouTube has no public API for this: the lookup reads the HTML of its search and watch pages.
+  That is against YouTube's Terms of Service for automated access, can break whenever the page markup changes, and is the part most likely to draw a Chrome Web Store review question (remote host access, scraping a third party).
+  Mitigations: it is off by default, needs the user's explicit grant, is limited to 3 requests at a time and one track's worth of queries, never sends cookies, and is easy to remove (one module, one setting).
+  If the store review objects, shipping without it still leaves a complete extension.

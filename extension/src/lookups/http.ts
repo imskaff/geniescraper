@@ -25,12 +25,21 @@ export type Granted = (origin: string) => Promise<boolean>;
 
 const TIMEOUT_MS = 10_000;
 
+/** Fetch a URL as text; resolves null on any failure. Never throws. */
+export type GetText = (url: string) => Promise<string | null>;
+
+/** Longest page read as text, so a runaway response cannot fill the worker's memory. */
+const MAX_TEXT_CHARS = 8_000_000;
+
 /**
  * A fetcher that checks, at the moment of each request, that the host is allowed: always for a required host,
  * and only while the permission is granted for an optional one (the user may revoke it at any time).
  * Redirects are refused, so a response can never come from a host that was not checked.
  */
-export function createFetchJson(granted: Granted): GetJson {
+function createFetcher<T>(
+  granted: Granted,
+  read: (response: Response) => Promise<T | null>,
+): (url: string) => Promise<T | null> {
   const optional = new Map<string, OptionalHost>(
     (Object.keys(OPTIONAL_LOOKUP_HOSTS) as OptionalHost[]).map((key) => [OPTIONAL_LOOKUP_HOSTS[key], key]),
   );
@@ -49,11 +58,23 @@ export function createFetchJson(granted: Granted): GetJson {
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
       if (!response.ok) return null;
-      return (await response.json()) as unknown;
+      return await read(response);
     } catch {
       return null;
     }
   };
 }
 
-export const fetchJson: GetJson = createFetchJson((origin) => chrome.permissions.contains({ origins: [origin] }));
+export const createFetchJson = (granted: Granted): GetJson =>
+  createFetcher<unknown>(granted, async (response) => (await response.json()) as unknown);
+
+export const createFetchText = (granted: Granted): GetText =>
+  createFetcher<string>(granted, async (response) => {
+    const text = await response.text();
+    return text.length <= MAX_TEXT_CHARS ? text : null;
+  });
+
+const chromeGranted: Granted = (origin) => chrome.permissions.contains({ origins: [origin] });
+
+export const fetchJson: GetJson = createFetchJson(chromeGranted);
+export const fetchText: GetText = createFetchText(chromeGranted);

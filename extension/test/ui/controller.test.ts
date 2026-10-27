@@ -534,3 +534,49 @@ describe("optional hosts", () => {
     expect(panel.state.hosts.deezer).toBe(false);
   });
 });
+
+describe("the YouTube link on a track", () => {
+  it("sends the album's artist with each read, so the search can start early", async () => {
+    const seen: (string | undefined)[] = [];
+    const { panel } = await open({
+      api: {
+        scrapeTrack: (_url, title, artist) => {
+          seen.push(artist);
+          return Promise.resolve({ ok: true, data: scrapeFor(title) });
+        },
+      },
+    });
+    await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
+    await panel.getCredits();
+    expect(seen).toEqual([ALBUM.artist, ALBUM.artist]);
+  });
+
+  it("keeps the link the worker found on the song, and queues it for pasting", async () => {
+    const link = "https://www.youtube.com/watch?v=abc";
+    const { panel } = await open({
+      api: {
+        scrapeTrack: (_url, title) =>
+          Promise.resolve({ ok: true, data: { ...scrapeFor(title), youtubeUrl: link, youtubeIsMv: true } }),
+      },
+    });
+    await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
+    await panel.getCredits();
+    const song = panel.state.session.results[0]?.song;
+    expect(song).toMatchObject({ youtubeUrl: link, youtubeIsMv: true });
+    expect(panel.queueFor(0).some(([kind, value]) => kind === "youtube_url" && value === link)).toBe(true);
+  });
+
+  it("leaves the YouTube step out of the queue when the setting is off", async () => {
+    const link = "https://www.youtube.com/watch?v=abc";
+    const { panel } = await open({
+      api: { scrapeTrack: (_u, t) => Promise.resolve({ ok: true, data: { ...scrapeFor(t), youtubeUrl: link } }) },
+    });
+    await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
+    await panel.getCredits();
+    await panel.setSetting("scrapeYoutube", false);
+    expect(panel.queueFor(0).some(([kind]) => kind === "youtube_url")).toBe(false);
+  });
+});

@@ -63,7 +63,7 @@ export interface FakeApi extends WorkerApi {
 
 export interface ApiScript {
   detect?: (url: string, tabId?: number) => Promise<Result<AlbumInfo>>;
-  scrapeTrack?: (url: string, title: string) => Promise<Result<PageScrape>>;
+  scrapeTrack?: (url: string, title: string, artist?: string) => Promise<Result<PageScrape>>;
   paste?: (command: PasteCommand) => Promise<Result<PasteState>>;
 }
 
@@ -97,11 +97,12 @@ export function fakeApi(script: ApiScript = {}): FakeApi {
       calls.push(`detect:${url}:${String(tabId)}`);
       return (script.detect ?? (() => Promise.resolve({ ok: true, data: ALBUM } as const)))(url, tabId);
     },
-    scrapeTrack(url, title) {
+    scrapeTrack(url, title, artist) {
       calls.push(`scrape:${url}`);
       return (script.scrapeTrack ?? ((_url, t) => Promise.resolve({ ok: true, data: scrapeFor(t) } as const)))(
         url,
         title,
+        artist,
       );
     },
   };

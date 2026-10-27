@@ -94,8 +94,8 @@ export function buildSong(album: AlbumInfo, result: Pick<TrackResult, "url">, sc
     copyrightNotice: album.copyrightNotice,
     // The album's cover comes from Apple's catalog lookup, which is exact; the song page header is only a fallback.
     coverArtUrl: album.coverArtUrl || scrape.coverArtUrl,
-    youtubeUrl: "",
-    youtubeIsMv: false,
+    youtubeUrl: scrape.youtubeUrl ?? "",
+    youtubeIsMv: scrape.youtubeIsMv ?? false,
   };
 }
 
@@ -297,7 +297,7 @@ export class PanelController {
         const next = this.current.session.results.find((result) => result.status === "pending");
         if (!next || myRun !== this.run) return;
         const claimed = this.setResult(next.index, { status: "loading", error: "" });
-        const answer = await this.env.api.scrapeTrack(next.url, next.title);
+        const answer = await this.env.api.scrapeTrack(next.url, next.title, this.current.session.album?.artist);
         await claimed;
         if (myRun !== this.run) return; // stopped or replaced while waiting: drop the late answer
         const album = this.current.session.album;

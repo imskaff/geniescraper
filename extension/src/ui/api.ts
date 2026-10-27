@@ -14,7 +14,7 @@ import {
 export interface WorkerApi {
   /** Read an album or song page; `tabId` reads the user's own tab instead of opening one. */
   detect(url: string, tabId?: number): Promise<Result<AlbumInfo>>;
-  scrapeTrack(url: string, trackTitle: string): Promise<Result<PageScrape>>;
+  scrapeTrack(url: string, trackTitle: string, artist?: string): Promise<Result<PageScrape>>;
   /** Change the paste session. The worker is its only writer; the answer is the state afterwards. */
   paste(command: PasteCommand): Promise<Result<PasteState>>;
 }
@@ -45,7 +45,12 @@ export function createWorkerApi(send: Send): WorkerApi {
   return {
     detect: (url, tabId) =>
       ask(send, tabId === undefined ? { type: "detect", url } : { type: "detect", url, tabId }, isAlbumInfo),
-    scrapeTrack: (url, trackTitle) => ask(send, { type: "scrape-track", url, trackTitle }, isPageScrape),
+    scrapeTrack: (url, trackTitle, artist) =>
+      ask(
+        send,
+        artist ? { type: "scrape-track", url, trackTitle, artist } : { type: "scrape-track", url, trackTitle },
+        isPageScrape,
+      ),
     async paste(command) {
       const answer = await ask(send, command, isRecord);
       return answer.ok ? { ok: true, data: normalisePaste(answer.data) } : answer;

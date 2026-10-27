@@ -4,12 +4,15 @@
 import { isPasteCommand, isWorkerRequest, type AlbumInfo, type Result } from "../shared/messages";
 import { detectAlbum, scrapeTrack, type ClientTiming } from "./appleClient";
 import type { CoverService } from "./covers";
+import { NO_YOUTUBE, type YoutubeService } from "./youtube";
 import type { PasteService } from "./paste";
 import type { BrowserPorts } from "./ports";
 import { Limiter, Serial } from "./serial";
 
 /** Hidden tabs open at once, whatever the panel asks for. */
 export const MAX_OPEN_TABS = 24;
+
+const NO_LINK = { url: "", isMusicVideo: false };
 
 export type Router = (raw: unknown) => Promise<Result<unknown>>;
 
@@ -28,6 +31,7 @@ export function createRouter(
   timing: ClientTiming,
   paste: PasteService,
   covers: CoverService,
+  youtube: YoutubeService = NO_YOUTUBE,
 ): Router {
   const serial = new Serial();
   const reads = new Limiter(MAX_OPEN_TABS);
@@ -51,13 +55,29 @@ export function createRouter(
           if (!result.ok) return result;
           return { ok: true, data: await withCover(result.data, await exact, covers) };
         }
+        // The YouTube search starts with the page read, as in the desktop app, when the album's artist is known.
+        const hintArtist = raw.artist ?? "";
+        const early =
+          raw.trackTitle && hintArtist ? youtube.find(raw.trackTitle, hintArtist).catch(() => NO_LINK) : null;
         const result = await scrapeTrack(ports, raw.url, raw.trackTitle, timing);
-        if (!result.ok || result.data.coverArtUrl) return result;
+        if (!result.ok) return result;
+        const title = raw.trackTitle || result.data.title;
+        const artist = result.data.artist;
+        let link = (await early) ?? NO_LINK;
+        // The song page's own title and artist are the second try, only when they differ from the first: asking the
+        // same question again would double the traffic for nothing.
+        const differs = title !== raw.trackTitle || artist !== hintArtist;
+        if (!link.url && title && artist && (early === null || differs)) {
+          link = await youtube.find(title, artist).catch(() => NO_LINK);
+        }
         // As in the desktop app, a track with no cover of its own is searched by its title, which finds a cover
         // when the album's lookup missed and the song page showed none.
-        const title = raw.trackTitle || result.data.title;
-        const found = title && result.data.artist ? await covers.search(title, result.data.artist).catch(() => "") : "";
-        return { ok: true, data: { ...result.data, coverArtUrl: found } };
+        const cover =
+          result.data.coverArtUrl || (title && artist ? await covers.search(title, artist).catch(() => "") : "");
+        return {
+          ok: true,
+          data: { ...result.data, coverArtUrl: cover, youtubeUrl: link.url, youtubeIsMv: link.isMusicVideo },
+        };
       } finally {
         stopKeepAlive();
       }

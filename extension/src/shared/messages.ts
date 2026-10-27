@@ -26,6 +26,9 @@ export interface PageScrape {
   coverArtUrl: string;
   /** Non-fatal problems, for example that the page held no credits. */
   warnings: string[];
+  /** The song's YouTube link, found by the worker when the user has allowed that look-up. */
+  youtubeUrl?: string;
+  youtubeIsMv?: boolean;
 }
 
 export type ErrorCode = "bad-request" | "invalid-url" | "not-found" | "timeout" | "tab-failed" | "internal";
@@ -53,7 +56,8 @@ export type PasteCommand =
 /** Messages the extension's own pages send to the background worker. */
 export type WorkerRequest =
   | { type: "detect"; url: string; tabId?: number }
-  | { type: "scrape-track"; url: string; trackTitle: string }
+  /** `artist` is the album's, so the YouTube search can start before the page has been read. */
+  | { type: "scrape-track"; url: string; trackTitle: string; artist?: string }
   | PasteCommand;
 
 /** What the Genius content script asks the worker. The worker also checks that it really came from genius.com. */
@@ -125,7 +129,11 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
   if (isPasteCommand(value)) return true;
   if (!isRecord(value) || !hasUrl(value)) return false;
   if (value["type"] === "detect") return value["tabId"] === undefined || Number.isInteger(value["tabId"]);
-  return value["type"] === "scrape-track" && typeof value["trackTitle"] === "string";
+  return (
+    value["type"] === "scrape-track" &&
+    typeof value["trackTitle"] === "string" &&
+    (value["artist"] === undefined || typeof value["artist"] === "string")
+  );
 }
 
 export function isGeniusRequest(value: unknown): value is GeniusRequest {
@@ -198,6 +206,8 @@ export function isPageScrape(value: unknown): value is PageScrape {
     Array.isArray(value["credits"]) &&
     value["credits"].every(isCredit) &&
     typeof value["coverArtUrl"] === "string" &&
-    isStringArray(value["warnings"])
+    isStringArray(value["warnings"]) &&
+    (value["youtubeUrl"] === undefined || typeof value["youtubeUrl"] === "string") &&
+    (value["youtubeIsMv"] === undefined || typeof value["youtubeIsMv"] === "boolean")
   );
 }

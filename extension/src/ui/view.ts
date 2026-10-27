@@ -5,6 +5,7 @@ import type { QueueKind } from "../core/models";
 import type { AlbumInfo } from "../shared/messages";
 import type { TrackResult, TrackStatus } from "../shared/session";
 import { STEP_LABELS, instruction } from "../core/paste";
+import type { OptionalHost } from "../lookups/http";
 import { HOTKEY_CHOICES, PARALLEL_CHOICES, WAIT_RANGE } from "../shared/settings";
 import { el } from "./dom";
 import type { PanelController, PanelState } from "./controller";
@@ -763,26 +764,36 @@ export class PanelView {
   }
 
   private lookupSettings(state: PanelState): HTMLElement {
-    const deezer = el("input", {
-      attrs: { type: "checkbox", "data-key": "host-deezer", "aria-describedby": "host-deezer-help" },
-      on: {
-        change: (event) => {
-          // Straight from the click: Chrome shows its permission prompt only for a call made in the gesture.
-          void this.panel.setHost("deezer", (event.target as HTMLInputElement).checked);
+    const box = (host: OptionalHost, label: string, help: string): HTMLElement[] => {
+      const input = el("input", {
+        attrs: { type: "checkbox", "data-key": `host-${host}`, "aria-describedby": `host-${host}-help` },
+        on: {
+          change: (event) => {
+            // Straight from the click: Chrome shows its permission prompt only for a call made in the gesture.
+            void this.panel.setHost(host, (event.target as HTMLInputElement).checked);
+          },
         },
-      },
-    });
-    deezer.checked = state.hosts.deezer;
+      });
+      input.checked = state.hosts[host];
+      return [
+        el("label", { class: "check" }, input, el("span", { text: label })),
+        el("p", { class: "help", text: help, attrs: { id: `host-${host}-help` } }),
+      ];
+    };
     return el(
       "fieldset",
       { class: "stack" },
       el("legend", { text: "Look-ups on other sites" }),
-      el("label", { class: "check" }, deezer, el("span", { text: "Search Deezer for a cover when Apple has none" })),
-      el("p", {
-        class: "help",
-        text: "Chrome asks before this contacts api.deezer.com, and you can take the permission back here or in chrome://extensions.",
-        attrs: { id: "host-deezer-help" },
-      }),
+      ...box(
+        "deezer",
+        "Search Deezer for a cover when Apple has none",
+        "Chrome asks before this contacts api.deezer.com, and you can take the permission back here or in chrome://extensions.",
+      ),
+      ...box(
+        "youtube",
+        "Find a YouTube link for each track",
+        "Searches www.youtube.com's pages for the song, as the desktop app does. Off until you allow it, and it needs the YouTube link ticked above to be pasted. Chrome asks first; take the permission back here or in chrome://extensions.",
+      ),
     );
   }
 

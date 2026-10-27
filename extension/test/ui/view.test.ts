@@ -341,6 +341,7 @@ describe("settings screen", () => {
       "Cover art link",
       "Choose the exact match in Genius's suggestions for me",
       "Search Deezer for a cover when Apple has none",
+      "Find a YouTube link for each track",
     ]);
     // Selects and the number box are named by their labels too (expectAccessible checks every control).
     expect([...root.querySelectorAll<HTMLElement>("select, input[type=number]")].map(accessibleName)).toEqual([
@@ -438,5 +439,20 @@ describe("the Deezer look-up box", () => {
     env.hosts.changeElsewhere("deezer", false);
     await flush();
     expect(root.querySelector<HTMLInputElement>('[data-key="host-deezer"]')?.checked).toBe(false);
+  });
+});
+
+describe("the YouTube look-up box", () => {
+  it("is off until Chrome says the permission is granted, and asks inside the click", async () => {
+    const { root, env } = await mount();
+    byText(root, "button", "Settings").click();
+    await flush();
+    const box = root.querySelector<HTMLInputElement>('[data-key="host-youtube"]') as HTMLInputElement;
+    expect(box.checked).toBe(false);
+    box.checked = true;
+    box.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(env.hosts.log).toEqual(["request:youtube"]);
+    await flush();
+    expect(root.querySelector<HTMLInputElement>('[data-key="host-youtube"]')?.checked).toBe(true);
   });
 });

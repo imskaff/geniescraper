@@ -446,6 +446,14 @@ try {
   await sleep(300);
   await shot("9f-settings-pasting-light");
   await panel.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "dark" }] });
+  await panel.evaluate("document.querySelector('[data-key=\"host-youtube\"]').scrollIntoView({ block: 'end' })");
+  check(
+    "the look-ups on other sites start unticked, with no permission asked",
+    (await panel.evaluate(
+      "['deezer', 'youtube'].every((h) => document.querySelector('[data-key=\"host-' + h + '\"]').checked === false)",
+    )) === true,
+  );
+  await shot("9j-settings-lookups");
   const settingsOverflow = await horizontalOverflow();
   check("the settings screen has no horizontal scrollbar", settingsOverflow.scroll <= settingsOverflow.client);
   await clickButton("Back");
