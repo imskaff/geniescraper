@@ -27,7 +27,7 @@ export interface Settings {
  */
 export const HOTKEY_CHOICES = ["F2", "F4", "F7", "F8", "F9"] as const;
 
-/** Choices for reading tracks at once; 0 stands for all of them. One is the polite default. */
+/** Choices for reading tracks at once; 0 stands for all of them. Three is the default: a good speed-up that stays modest. */
 export const PARALLEL_CHOICES = [1, 2, 3, 5, 0] as const;
 
 export const WAIT_RANGE = { min: 0.2, max: 3 } as const;
@@ -42,7 +42,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   backHotkey: "F7",
   autoConfirm: true,
   autocompleteWaitSeconds: 0.6,
-  parallelReads: 1,
+  parallelReads: 3,
 };
 
 export const SETTINGS_KEY = "settings";

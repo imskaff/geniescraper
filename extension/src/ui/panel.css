@@ -187,12 +187,72 @@ h2 + .help {
 }
 
 .paste-error {
-  margin: 8px 0 0;
-  padding: 8px 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 10px 12px;
   color: var(--danger-ink);
   background: var(--danger);
-  border-radius: 6px;
+  border-radius: 8px;
   font-weight: 600;
+  /* A static halo always (it survives reduced motion); the pulse and the entrance shake are motion only. */
+  box-shadow: 0 0 12px 2px rgb(255 111 94 / 45%);
+  animation: error-pulse 2.4s ease-in-out infinite;
+}
+
+.paste-error.fresh {
+  animation:
+    error-shake 0.45s ease-out,
+    error-flash 0.9s ease-out,
+    error-pulse 2.4s ease-in-out 0.9s infinite;
+}
+
+.paste-error-mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  color: var(--danger);
+  background: var(--danger-ink);
+  border-radius: 50%;
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+@keyframes error-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 10px 1px rgb(255 111 94 / 35%);
+  }
+  50% {
+    box-shadow: 0 0 20px 5px rgb(255 111 94 / 70%);
+  }
+}
+
+@keyframes error-flash {
+  0% {
+    box-shadow: 0 0 34px 12px rgb(255 111 94 / 95%);
+  }
+  100% {
+    box-shadow: 0 0 12px 2px rgb(255 111 94 / 45%);
+  }
+}
+
+@keyframes error-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
 }
 
 .status {

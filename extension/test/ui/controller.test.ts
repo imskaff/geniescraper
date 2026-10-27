@@ -295,11 +295,17 @@ describe("reading tracks in parallel", () => {
     for (let i = 0; i < 5; i++) await new Promise((resolve) => setTimeout(resolve, 0));
   };
 
-  it("reads one track at a time by default", async () => {
+  it("reads three tracks at a time unless told otherwise", async () => {
+    const { panel } = await open();
+    expect(panel.state.settings.parallelReads).toBe(3);
+  });
+
+  it("reads one track at a time when set to 1", async () => {
     const gate = gated();
     const { panel } = await open({ api: { scrapeTrack: gate.scrapeTrack } });
     await panel.detect(ALBUM_URL);
     await panel.setAllSelected(true);
+    await panel.setSetting("parallelReads", 1);
     const run = panel.getCredits();
     await tick();
     expect(gate.waiting()).toBe(1);

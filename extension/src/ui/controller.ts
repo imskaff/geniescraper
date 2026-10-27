@@ -32,6 +32,8 @@ export interface PanelState {
   paste: PasteState;
   /** Which track is being pasted (null when unknown, for example after a restart with no match). */
   pasteIndex: number | null;
+  /** Counts every error shown, so the same message appearing again (a repeated attempt) can still be told apart. */
+  errorSeq: number;
   /** What the panel is waiting for; the buttons that would start another job are disabled meanwhile. */
   busy: "detect" | "scrape" | null;
   /** A problem the user has to act on; announced assertively. */
@@ -106,6 +108,7 @@ export class PanelController {
       settings,
       paste,
       pasteIndex,
+      errorSeq: 0,
       settingsOpen: false,
       busy: null,
       error: "",
@@ -143,7 +146,8 @@ export class PanelController {
   }
 
   private update(patch: Partial<PanelState>): void {
-    this.current = { ...this.current, ...patch };
+    const errorSeq = patch.error ? this.current.errorSeq + 1 : this.current.errorSeq;
+    this.current = { ...this.current, ...patch, errorSeq };
     for (const listener of this.listeners) listener();
   }
 

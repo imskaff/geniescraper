@@ -49,6 +49,7 @@ export class PanelView {
   /** What the user typed into the link box; kept across re-renders, which would otherwise reset it. */
   private draft: string | null = null;
   /** Which collapsible lists the user has opened; re-rendering rebuilds them, so the choice is kept here. */
+  private shownErrorSeq = 0;
   private readonly expanded = new Map<string, boolean>();
 
   constructor(
@@ -533,7 +534,7 @@ export class PanelView {
         // Leaving a paste in progress looks like the other ways out, so it is easy to tell from the step buttons.
         this.button("Back to credits", "nav", "pstop", () => void this.panel.stopPaste(), false),
       ),
-      state.error ? el("p", { class: "paste-error", text: state.error, attrs: { "aria-hidden": "true" } }) : null,
+      this.pasteError(state),
       el("p", {
         class: "help",
         text: "Keep the song's Edit Metadata form open on Genius. Nothing is saved for you: check the form, then save it there.",
@@ -542,6 +543,19 @@ export class PanelView {
       doneCount > 0 ? this.disclosure("stepsdone", `Steps done (${String(doneCount)})`, doneSteps) : null,
       total - doneCount > 0 ? this.disclosure("steps", `Steps left (${String(total - doneCount)})`, steps, true) : null,
     ].filter((node): node is HTMLElement => node !== null);
+  }
+
+  /** The error under the key buttons. A new error, or the same one on a new attempt, plays the attention animation once. */
+  private pasteError(state: PanelState): HTMLElement | null {
+    if (!state.error) return null;
+    const fresh = state.errorSeq !== this.shownErrorSeq;
+    this.shownErrorSeq = state.errorSeq;
+    return el(
+      "div",
+      { class: `paste-error${fresh ? " fresh" : ""}`, attrs: { "aria-hidden": "true" } },
+      el("span", { class: "paste-error-mark", text: "!" }),
+      el("span", { text: state.error }),
+    );
   }
 
   // ── done ────────────────────────────────────────────────────────────
@@ -741,7 +755,7 @@ export class PanelView {
       reads,
       el("p", {
         class: "help",
-        text: "More at once is faster for an album, but opens that many hidden tabs on Apple Music together. One by one is the gentlest.",
+        text: "More at once is faster for an album, but opens that many hidden tabs on Apple Music together. One by one is the gentlest; three is the default.",
         attrs: { id: "setting-parallelReads-help" },
       }),
     );

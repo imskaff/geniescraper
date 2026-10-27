@@ -381,4 +381,4 @@ Measured live on the 11-track album (10 readable tracks), `node scripts/live-par
 | 3 at a time | 4.0 s | 3 | 0 | yes |
 | all at once | 2.0 s | 10 | 0 | yes |
 
-The default stays at 1 until the owner chooses: more at once means that many Apple Music tabs opened together, which is more traffic than one normal run.
+The default is 3 at a time (chosen by the owner after these numbers); one by one is the gentlest and stays available in Settings.

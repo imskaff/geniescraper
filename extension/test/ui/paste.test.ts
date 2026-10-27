@@ -1,3 +1,4 @@
+import type { PasteState } from "../../src/core/paste";
 import { afterEach, describe, expect, it } from "vitest";
 import { report, begin } from "../../src/core/paste";
 import { PanelController } from "../../src/ui/controller";
@@ -251,5 +252,31 @@ describe("pasting settings", () => {
     wait.dispatchEvent(new Event("change", { bubbles: true }));
     await flush();
     expect(panel.state.settings.autocompleteWaitSeconds).toBe(3);
+  });
+});
+
+describe("the paste error box", () => {
+  const attention = (env: { api: { pasteState: PasteState } }, message: string): PasteState => ({
+    ...env.api.pasteState,
+    tone: "attention",
+    message,
+  });
+
+  it("shows under the key buttons and plays its animation once per attempt, not on every redraw", async () => {
+    const { root, env, panel } = await onPaste();
+    expect(root.querySelector(".paste-error")).toBeNull();
+    panel.setPaste(attention(env, "Genius has no field named Writer."));
+    await flush();
+    const box = $(root, ".paste-error");
+    expect(box.textContent).toContain("Genius has no field named Writer.");
+    expect(box.classList.contains("fresh")).toBe(true);
+    expect(box.previousElementSibling?.classList.contains("row")).toBe(true);
+    panel.openSettings();
+    panel.closeSettings();
+    await flush();
+    expect($(root, ".paste-error").classList.contains("fresh")).toBe(false);
+    panel.setPaste(attention(env, "Genius has no field named Writer."));
+    await flush();
+    expect($(root, ".paste-error").classList.contains("fresh")).toBe(true);
   });
 });
