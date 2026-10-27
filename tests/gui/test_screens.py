@@ -49,3 +49,20 @@ def test_assistant_controls_skip_jump_and_toggle():
 
     walk_screens(on_screen)
     assert checked == ["09-assistant-middle"]
+
+
+def test_leaving_review_screen_releases_its_f8_hotkey():
+    """F8 on the review screen starts pasting; after Back it must not fire any more."""
+    from tools.gui_snapshots import walk_screens
+
+    checked: list[bool] = []
+
+    def on_screen(app, name):
+        if name != "07-credits":
+            return
+        assert app._kb_hooks, "the review screen registers F8"
+        app._back_from_credits()
+        checked.append(app._kb_hooks == [])
+
+    walk_screens(on_screen)
+    assert checked == [True]
