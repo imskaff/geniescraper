@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  schedule:
+    # Weekly live run, Mondays 06:00 UTC, so Apple Music markup changes surface without blocking pushes.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_PYTHON: "3.13"
+
+jobs:
+  checks:
+    name: Lint, type check, offline tests
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.9.29"
+          enable-cache: true
+          cache-python: true
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Ruff check
+        run: uv run ruff check --output-format=github .
+      - name: Ruff format
+        run: uv run ruff format --check .
+      - name: Type check
+        run: uv run basedpyright
+      - name: Install Chromium
+        run: uv run playwright install chromium
+      - name: Offline tests
+        run: uv run pytest
+
+  live:
+    name: Live tests (Apple Music)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.9.29"
+          enable-cache: true
+          cache-python: true
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Install Chromium
+        run: uv run playwright install chromium
+      - name: Live tests
+        run: uv run pytest -m live
