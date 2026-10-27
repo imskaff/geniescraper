@@ -219,6 +219,9 @@ Each slice ends working, tested and committable.
 - Save and Cancel are `button[aria-label="Save"]` and `button[aria-label="Cancel"]`; the extension never touches them.
 - Genius shows a cookie consent dialog that can intercept clicks; the extension must not interact with it.
 - The fixture omits the Tags, Albums and Song Relationships sections, which the extension never touches.
+- **Hidden-tab side effects (slice 5)**: every scrape shows a tab briefly in the tab strip and adds a history entry for the song page; check whether a minimized window avoids the flash before relying on it.
+- **Real worker end to end (slice 5)**: the live checks drive tabs from the service worker directly, so `chromePorts()`, the router, the sender filter and the user-tab detect path have only run against fakes; the panel's acceptance check must go through the real worker.
+- **Live coverage**: one track of one album has run live; the other six cases are covered by saved pages only.
 - **Safari**: confirm which APIs (`sidePanel`, `scripting`, session storage) are available before committing to the shared UI page.
 - **Genius ToS review**: confirm the per-press fill stays within the guidelines before the store listing.
 - **Versioning**: extension version follows the app version (`0.5.x`) until the first store release.
