@@ -10,6 +10,7 @@ const dist = join(root, "dist");
 
 const ENTRY_POINTS = {
   "background/worker": "src/background/worker.ts",
+  "apple/content": "src/apple/content.ts",
 };
 const STATIC_PATHS = ["manifest.json", "_locales", "icons"];
 

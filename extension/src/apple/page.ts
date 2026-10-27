@@ -2,11 +2,15 @@
 import { trackCountFromFooter, splitCopyright } from "../core/copyright";
 import { pickCoverUrl } from "../core/cover";
 import { extractTitleArtist } from "./title";
+import { parseAppleMusicUrl } from "./url";
 
 /** The page is usable once the hydrated tracklist (album) or the song header (song) is there. */
 export const READY_SELECTOR = '[data-testid="track-list-item"], .song-header-page';
 /** Apple Music has used both markers for its "Page Not Found" view. */
 export const NOT_FOUND_SELECTOR = '[data-testid="not-found-heading"], [data-testid="page-error-title"]';
+
+/** One row per track of an album tracklist. */
+export const TRACK_ROW_SELECTOR = '[data-testid="track-list-item"]';
 
 const FOOTER_SELECTOR = '[data-testid="tracklist-footer-description"]';
 const TRACK_TITLE_SELECTORS = [
@@ -78,6 +82,19 @@ export function readTrackTitles(doc: Document, trackCount: number): string[] {
   const cleaned = titles.map((title) => title.trim()).filter(Boolean);
   while (cleaned.length < trackCount) cleaned.push(`Track ${String(cleaned.length + 1)}`);
   return cleaned.slice(0, trackCount);
+}
+
+/**
+ * Song page of each of the first `trackCount` tracks, aligned with the rows ("" for a row without a valid
+ * song link: Apple renders unavailable tracks as plain rows, and those have no page to read credits from).
+ */
+export function readTrackUrls(doc: Document, trackCount: number): string[] {
+  const rows = [...doc.querySelectorAll(TRACK_ROW_SELECTOR)];
+  return Array.from({ length: trackCount }, (_, index) => {
+    const href = rows[index]?.querySelector('a[href*="/song/"]')?.getAttribute("href") ?? "";
+    // Only absolute Apple Music song links are kept: a link is data, never a place to send the worker blindly.
+    return URL.canParse(href) && parseAppleMusicUrl(href)?.kind === "song" ? href : "";
+  });
 }
 
 /** Number of songs in the album footer ("12 songs, 45 minutes"); 1 for songs and singles without one. */

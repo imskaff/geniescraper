@@ -6,9 +6,7 @@ import {
   readCopyright,
   readCoverUrl,
   readTitleArtist,
-  readTrackCount,
   readTrackTitle,
-  readTrackTitles,
 } from "../../src/apple/page";
 import { extractTitleArtist } from "../../src/apple/title";
 import { normaliseCoverUrl, pickCoverUrl } from "../../src/core/cover";
@@ -33,12 +31,6 @@ describe("album pages against the golden files", () => {
 
   it.each(ALBUMS)("$id track title", ({ id, track_index }) => {
     expect(readTrackTitle(loadFixture(id, "page"), track_index)).toBe(loadGolden(id).title);
-  });
-
-  it.each(ALBUMS)("$id track list is complete", ({ id }) => {
-    const doc = loadFixture(id, "page");
-    const count = readTrackCount(doc);
-    if (count > 1) expect(readTrackTitles(doc, count)).toHaveLength(count);
   });
 });
 

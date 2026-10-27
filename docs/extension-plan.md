@@ -64,7 +64,7 @@ Decisions already confirmed with the project owner:
 | `chrome.commands` does not accept a bare F8 (a modifier is required). | Hotkeys are a `keydown` listener in the Genius content script, where the user's focus already is. Optional `chrome.commands` can add Alt-based shortcuts later. |
 | MV3 service workers are ephemeral. | All state lives in `chrome.storage.session` or `.local`; no in-memory queue is trusted across events. |
 | `chrome.sidePanel` is Chrome and Edge only; Safari lacks it. | The UI is a single page that renders either as a side panel or a popup. Verify Safari support before relying on the side panel. |
-| Apple Music credits sit behind MORE then View Credits. | Per track, open an inactive background tab, drive the same click path through `chrome.scripting`, read the result, close the tab in `finally`. One tab at a time, mirroring `_prefetch_semaphore`. |
+| Apple Music credits sit behind MORE then View Credits, and that menu cannot be opened in a hidden tab (measured, section 11). | Per track, open the track's own song page (linked from the album row) in an inactive background tab, read the credit cards, close the tab in `finally`. One tab at a time, mirroring `_prefetch_semaphore`. Tracks with no song link are shown as unavailable. |
 | Apple's internal API and embedded token are undocumented. | Not used. Only the rendered DOM the user could see is read. |
 | Genius edit-form DOM is unknown to us and changes. | Captured as a script-stripped fixture (blocked on a signed-in session, see section 8). Selectors are isolated in one module. |
 | Genius Terms of Service and the project rule of 100% guideline compliance. | One field per user key press, no Save, no bulk automation. Keep the posture identical to the desktop app. |
@@ -118,7 +118,7 @@ Principles:
 
 1. The panel asks the active tab (Apple Music) for album info through a content script, or the worker reads it with `chrome.scripting`.
 2. The user picks tracks.
-3. The worker processes one track at a time: background tab, click path, parse, close tab; in parallel it runs the cover and YouTube lookups.
+3. The worker processes one track at a time: background tab on the track's song page, parse, close tab; in parallel it runs the cover and YouTube lookups.
 4. The result is stored in `chrome.storage.session` as a `SongCredits` plus its `typedQueue()`.
 5. The Genius content script reads the queue, shows the step overlay, and on the Next key fills the field for the current step.
 
@@ -193,7 +193,7 @@ Each slice ends working, tested and committable.
 | 1 | Scaffold: `extension/` skeleton, manifest, build, lint, Vitest, CI job, roles export, vectors export (done) | `npm run check` green; Python staleness tests green |
 | 2 | Port `typedQueue`, copyright helpers, flow logic (done) | All Python vectors pass in Vitest |
 | 3 | Apple Music credits parser (done) | Every fixture in `tests/fixtures` matches `tests/golden` |
-| 4 | Album and track detection, background-tab credits driver | Unit tests with a fake `chrome.scripting`; manual run on a real album |
+| 4 | Album and track detection, background-tab credits reader (done; reads song pages, see section 11) | Unit tests with fake `chrome.*` ports; real hidden-tab run matches golden |
 | 5 | Panel UI showing the queue, settings, accessibility pass | Component tests plus axe-style checks; keyboard walkthrough |
 | 6 | Genius fill (blocked on the edit-form fixture) | Fill tests against the captured fixture; manual run on a real edit form |
 | 7 | iTunes cover lookup | Replays `tests/fixtures/lookups/covers` |
@@ -222,3 +222,24 @@ Each slice ends working, tested and committable.
 - **Safari**: confirm which APIs (`sidePanel`, `scripting`, session storage) are available before committing to the shared UI page.
 - **Genius ToS review**: confirm the per-press fill stays within the guidelines before the store listing.
 - **Versioning**: extension version follows the app version (`0.5.x`) until the first store release.
+
+## 11. Findings from the Apple Music background-tab work (slice 4)
+
+All measured on real Chromium with the unpacked extension, driven over raw CDP so no automation tool applies focus emulation.
+Playwright forces pages to report `visibilityState: "visible"` and focus, so it cannot show hidden-tab behaviour.
+
+- The MORE button only opens its menu after a hover: `mouseover`, a pause of a few hundred milliseconds, then a click.
+  A click alone, or `mousemove` then click without the pause, does nothing.
+  That matches the hover fallback in `scraper/apple_music.py`.
+- In a visible tab the hover-then-click driver opened View Credits and matched the golden file.
+- In a hidden tab (`visibilityState: "hidden"`) the album page hydrates normally (rows, MORE buttons and footer are all there) but the menu never opens: 0 of 5 runs.
+- View Credits only navigates, in place, to the track's song page.
+  A song page renders its credit cards within 2 seconds even in a hidden tab, with no clicks.
+- Each album row holds one `MORE` button and, for available tracks, one `a[href*="/song/"]` link.
+  Some rows have none: the Eilish album has 11 songs and 10 links, and TTPD has 17 songs and 16 links.
+- Decision: the extension reads each track's song page directly, which removes the synthetic-event path and its nth-MORE indexing.
+  Song pages carry no ℗/© footer, so the album's copyright is read once, from the album page, at detection time.
+- Result: 5 of 5 hidden-tab runs matched `tests/golden/eilish-hmhas-t3.json` (credits, title, artist, copyright); a scrape took about 0.75 s.
+  A bad song link returns `not-found` after about 3 s.
+- This differs from the Python app, which clicks through MORE; benchmark and golden-compare it there before porting the idea back.
+- `chrome.tabs.sendMessage` waits for the answer, so the worker keeps itself alive with a periodic API call while a request runs.
