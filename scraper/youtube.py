@@ -1,10 +1,11 @@
 import json
 import re
-import unicodedata
 from collections.abc import Iterator
 from typing import NamedTuple
 
 import httpx
+
+from scraper.text import core_title_words, words
 
 _HEADERS = {
     "User-Agent": (
@@ -71,12 +72,6 @@ _MV_DESC_INDICATORS = (
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 
-def _words(text: str) -> list[str]:
-    """Lowercase, accent-folded words: "BAD BUNNY x DÁKITI (Audio)" -> ["bad", "bunny", "x", "dakiti", "audio"]."""
-    folded = "".join(c for c in unicodedata.normalize("NFKD", text.lower()) if not unicodedata.combining(c))
-    return re.findall(r"[^\W_]+", folded)
-
-
 def _sig_present(video_title: str, song_title: str) -> bool:
     """True if at least one significant word (>=3 chars) from the song title appears in
     the video title. Falls back to a collapsed-string check for very short/special-char
@@ -96,7 +91,6 @@ _PLAIN_TITLE_FILLER = frozenset(
     {"official", "audio", "video", "music", "visualizer", "visualiser", "explicit", "clean", "hd", "hq", "4k"}
     | {"feat", "ft", "featuring", "with", "x", "and", "vevo", "topic"}
 )
-_FEAT_SPLIT = re.compile(r"[(\[]\s*(?:feat|ft|featuring|with)\b|\b(?:feat|ft|featuring)\b\.?", re.IGNORECASE)
 
 
 def _title_matches_song(video_title: str, song_title: str, artist: str) -> bool:
@@ -107,11 +101,11 @@ def _title_matches_song(video_title: str, song_title: str, artist: str) -> bool:
     Rejects any extra words: "SZA - SOS Where The Hell Have You Been ?" is a
     short film, not the song "SOS", even on the artist's channel.
     """
-    core = _words(_FEAT_SPLIT.split(song_title, maxsplit=1)[0])
+    core = core_title_words(song_title)
     if not core:
         return False
-    title = _words(video_title)
-    allowed = set(_words(song_title)) | set(_words(artist)) | _PLAIN_TITLE_FILLER
+    title = words(video_title)
+    allowed = set(words(song_title)) | set(words(artist)) | _PLAIN_TITLE_FILLER
     return set(core) <= set(title) and all(w in allowed for w in title)
 
 
@@ -143,9 +137,9 @@ def _is_artist_ch(channel: str, artist: str) -> bool:
 
 def _names_artist(text: str, artist: str) -> bool:
     """True if the full artist credit, or one collaborator (>=3 chars), appears as whole words in text."""
-    haystack = f" {' '.join(_words(text))} "
+    haystack = f" {' '.join(words(text))} "
     names = [artist, *_COLLAB_SEP.split(artist)]
-    return any(len(name) >= 3 and f" {name} " in haystack for name in (" ".join(_words(n)) for n in names if n.strip()))
+    return any(len(name) >= 3 and f" {name} " in haystack for name in (" ".join(words(n)) for n in names if n.strip()))
 
 
 def _is_topic_upload(channel: str, snippet: str, artist: str, trusted_channel: bool) -> bool:

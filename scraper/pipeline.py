@@ -13,15 +13,11 @@ from scraper.models import SongCredits
 
 
 async def detect(url: str) -> AlbumTrackInfo:
-    """Detect album/track info and upgrade the cover URL via Deezer/iTunes when possible."""
+    """Detect album/track info and upgrade the cover URL via iTunes/Deezer when possible."""
     info = await apple_music.detect_album(url)
     if not (info.album_title and info.artist):
         return info
-    deezer_cover, itunes_cover = await asyncio.gather(
-        deezer.fetch_cover_url(info.album_title, info.artist),
-        deezer.fetch_itunes_cover_url(info.album_title, info.artist),
-    )
-    cover_url = deezer_cover or itunes_cover or info.cover_art_url
+    cover_url = await fetch_cover(url, info.album_title, info.artist) or info.cover_art_url
     if cover_url == info.cover_art_url:
         return info
     return AlbumTrackInfo(
@@ -35,12 +31,20 @@ async def detect(url: str) -> AlbumTrackInfo:
 
 
 async def fetch_cover(url: str, title: str, artist: str) -> str:
-    """Best-effort 1000x1000 PNG cover for a track, or '' when no source has one."""
-    deezer_cover, itunes_cover = await asyncio.gather(
-        deezer.fetch_cover_url(title, artist),
+    """Best-effort 1000x1000 PNG cover for an album or track, or '' when no source has one.
+
+    The iTunes lookup of the URL's catalog ID returns the artwork of exactly the
+    release the user opened. Only without it do the title searches run: iTunes
+    first, being the same catalog as Apple Music, then Deezer.
+    """
+    exact = await deezer.fetch_itunes_lookup_cover_url(url)
+    if exact:
+        return exact
+    itunes_cover, deezer_cover = await asyncio.gather(
         deezer.fetch_itunes_cover_url(title, artist),
+        deezer.fetch_cover_url(title, artist),
     )
-    return deezer_cover or itunes_cover
+    return itunes_cover or deezer_cover
 
 
 async def fetch_track(url: str, track_index: int, track_title: str, artist: str) -> SongCredits:

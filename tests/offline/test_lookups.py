@@ -15,12 +15,7 @@ from tests import lookup_fixtures as lf
 
 YOUTUBE_ENTRIES = load_youtube_golden()
 KNOWN_YOUTUBE_BUGS: dict[str, str] = {}
-_WRONG_EDITION = "Deezer field search finds nothing; iTunes title search returns another edition's artwork"
-KNOWN_COVER_BUGS: dict[str, str] = {
-    "sza-sos-t1": _WRONG_EDITION,
-    "rodrigo-sour-t6": _WRONG_EDITION,
-    "swift-ttpd-t1": _WRONG_EDITION,
-}
+KNOWN_COVER_BUGS: dict[str, str] = {}
 
 
 def _param(item, item_id: str, known: dict[str, str]):
@@ -45,3 +40,15 @@ async def test_cover_matches_golden_artwork(monkeypatch, case):
     url = await pipeline.fetch_cover(case.url, golden.title, golden.artist)
 
     assert cover_correct(url, golden.cover_art_url), url
+
+
+@pytest.mark.parametrize("case", load_cases(), ids=lambda c: c.id)
+async def test_cover_without_catalog_id_falls_back_to_title_search(monkeypatch, case):
+    fixture = lf.load(lf.COVERS_DIR, case.id)
+    lf.route_clients(monkeypatch, pipeline.deezer, lf.covers_handler(fixture))
+    golden = load_golden(case.id)
+
+    url = await pipeline.fetch_cover("", golden.title, golden.artist)
+
+    # Some edition of the same track, from the same catalog as Apple Music.
+    assert url.startswith("https://is1-ssl.mzstatic.com/") and url.endswith("/1000x1000bb.png"), url
