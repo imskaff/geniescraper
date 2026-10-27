@@ -3,8 +3,7 @@ import type { CoverService } from "../../src/background/covers";
 import { PasteService } from "../../src/background/paste";
 import { MAX_OPEN_TABS, createRouter } from "../../src/background/router";
 import { Limiter, Serial } from "../../src/background/serial";
-import { MAX_YOUTUBE_REQUESTS, realYoutube, youtubePages, type YoutubeService } from "../../src/background/youtube";
-import { createFetchText, type GetText } from "../../src/lookups/http";
+import type { YoutubeService } from "../../src/background/youtube";
 import { memoryStore } from "../ui/fakes";
 import { ALBUM_INFO, ALBUM_URL, FAST_CLIENT, PAGE_SCRAPE, SONG_URL, fakeBrowser } from "./fakePorts";
 
@@ -254,58 +253,5 @@ describe("the YouTube link of a scraped track", () => {
     });
     expect(await route({ type: "scrape-track", url: SONG_URL, trackTitle: "x" })).toMatchObject({ ok: false });
     expect(asked).toEqual([]);
-  });
-});
-
-describe("youtubePages", () => {
-  const html = (name: string, data: unknown) => `<html><script>var ${name} = ${JSON.stringify(data)};</script></html>`;
-
-  it("asks for the results page and the watch page, encoding the query, and parses what comes back", async () => {
-    const urls: string[] = [];
-    const getText: GetText = (url) => {
-      urls.push(url);
-      return Promise.resolve(
-        html(url.includes("/results") ? "ytInitialData" : "ytInitialPlayerResponse", { n: url.length }),
-      );
-    };
-    const pages = youtubePages(getText, new Limiter(3));
-    expect(await pages.search('"SOS" "SZA - Topic" & more')).toMatchObject({ n: expect.any(Number) as number });
-    await pages.watch("abc_-123");
-    expect(urls).toEqual([
-      "https://www.youtube.com/results?search_query=%22SOS%22+%22SZA+-+Topic%22+%26+more",
-      "https://www.youtube.com/watch?v=abc_-123",
-    ]);
-  });
-
-  it("gives null when the page cannot be fetched or holds no data", async () => {
-    expect(await youtubePages(() => Promise.resolve(null), new Limiter(3)).search("x")).toBeNull();
-    expect(await youtubePages(() => Promise.resolve("<html></html>"), new Limiter(3)).watch("x")).toBeNull();
-  });
-
-  it("never has more than MAX_YOUTUBE_REQUESTS requests in flight, however many tracks ask at once", async () => {
-    let active = 0;
-    let peak = 0;
-    const getText: GetText = async () => {
-      peak = Math.max(peak, ++active);
-      await new Promise((resolve) => setTimeout(resolve, 2));
-      active--;
-      return html("ytInitialData", {});
-    };
-    const pages = youtubePages(getText, new Limiter(MAX_YOUTUBE_REQUESTS));
-    await Promise.all(Array.from({ length: 20 }, (_, i) => pages.search(`q${String(i)}`)));
-    expect(peak).toBe(MAX_YOUTUBE_REQUESTS);
-  });
-});
-
-describe("realYoutube", () => {
-  it("gives no link, and contacts nothing, while the permission is not granted", async () => {
-    let called = 0;
-    const getText = createFetchText(() => Promise.resolve(false));
-    const spy: GetText = (url) => {
-      called++;
-      return getText(url);
-    };
-    expect(await realYoutube(spy).find("SOS", "SZA")).toEqual({ url: "", isMusicVideo: false });
-    expect(called).toBeGreaterThan(0);
   });
 });

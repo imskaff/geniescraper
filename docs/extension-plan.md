@@ -408,7 +408,8 @@ The default is 3 at a time (chosen by the owner after these numbers); one by one
 - **Not ported: the request headers.** `fetch` cannot reliably set `User-Agent` or `Accept-Language` from an extension, so the requests go out as Chrome's own, with no cookies and no referrer.
 - **One control.** The Chrome permission for `www.youtube.com` is the lookup's switch ("Find a YouTube link for each track" in Settings, off by default, with the same prompt, revoke and live-sync behaviour as Deezer).
   The existing "YouTube link" box under "What to paste" still decides whether the link is queued; a link is pasted only when both are on.
-- **Traffic.** One worker-wide limit of 3 requests in flight to YouTube (`MAX_YOUTUBE_REQUESTS`), shared by every track being read, so three tracks read at once cannot multiply it.
+- **Traffic.** One worker-wide `YoutubeGate` shared by every track being read, so three tracks read at once cannot multiply the load: 2 requests in flight, 300 ms between starts, and after 3 failures in a row YouTube is left alone for 60 seconds.
+  Nothing is asked, and no failure counted, while the permission is off.
   The search starts together with the page read, as in the desktop app: the panel now sends the album's artist with each read.
   Divergence on purpose: the desktop app repeats the search with the song page's title and artist when the first found nothing, even if they are the same; the extension repeats it only when they differ, so a song with no video does not cost double the traffic.
 - **Verified.** Offline: the 15 golden cases, the scorers, the parsers and malformed pages, the limit, the router wiring.
@@ -416,5 +417,18 @@ The default is 3 at a time (chosen by the owner after these numbers); one by one
   **Not verified:** Chrome's permission prompt and the lookup running inside the real extension with the permission granted, because the prompt cannot be driven over CDP; and an EU network, where a request without cookies can be sent to a consent page - a redirect is refused, so that gives no link rather than a wrong one.
 - **Risk to record.** YouTube has no public API for this: the lookup reads the HTML of its search and watch pages.
   That is against YouTube's Terms of Service for automated access, can break whenever the page markup changes, and is the part most likely to draw a Chrome Web Store review question (remote host access, scraping a third party).
-  Mitigations: it is off by default, needs the user's explicit grant, is limited to 3 requests at a time and one track's worth of queries, never sends cookies, and is easy to remove (one module, one setting).
+  Mitigations: it is off by default, needs the user's explicit grant, goes through one shared gate (below), never sends cookies, and is easy to remove (one module, one setting).
   If the store review objects, shipping without it still leaves a complete extension.
+
+### Finding: Google throttles this approach
+
+Live, from the real extension worker (Chrome's own network stack), sequential search requests 400 ms apart worked for about 7 requests and then every further request was redirected to `google.com/sorry` (Google's automated-traffic interstitial), for at least the following minutes.
+The same happened from Node.
+A whole-album run with the permission granted gave links for 2 of 10 tracks, then 0 of 10 on a second run; the credits, cover and timing were unaffected (6.5 s for three at a time with YouTube on, against 4.0 s before it existed; 10.0 s one at a time, the same as before).
+The earlier 5 of 5 golden cases from Node were run on a fresh address, before any block.
+Because redirects are refused, a block gives no link rather than a wrong one, and the gate stops the extension hammering a blocked service.
+What this means: the lookup works for a few tracks at a time and then stops for a while, so on an album most tracks will have no YouTube link and the user adds it by hand.
+The desktop app uses the same pages with the same scoring and may be affected the same way from the same address.
+Not tried: slower pacing was no better in one run (one request at a time, 700 ms apart), and the cause of the threshold is not known.
+If this matters, the options are a much lower request budget per track (for example the audio phase only, no watch pages), looking up only the track being pasted rather than the whole album, or dropping the YouTube lookup.
+Stop in the panel drops late answers there, but requests already in flight in the worker finish.

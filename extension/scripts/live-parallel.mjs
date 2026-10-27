@@ -4,10 +4,16 @@
 // same credits as reading one at a time.
 //
 //   npm run build
-//   node scripts/live-parallel.mjs --chrome <chrome.exe> [--modes 1,3,0] [--reps 1]
+//   node scripts/live-parallel.mjs --chrome <chrome.exe> [--modes 1,3,0] [--reps 1] [--grant-optional]
+//
+// --grant-optional runs a throwaway copy of the build whose manifest lists the optional hosts (Deezer, YouTube) as
+// granted, so the worker's whole path, YouTube lookup included, runs without Chrome's permission prompt (which a
+// script cannot click). The copy is made in the temp folder and never shipped; the real build is not touched.
 //
 // Modes are the setting values: 1 = one by one, N = N at once, 0 = every track at once. This sends more traffic
 // than one normal run, so it is meant for occasional, deliberate use.
+import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { connect, findServiceWorker, launchChromium, sleep, waitUntilReady } from "./lib/cdp.mjs";
@@ -21,7 +27,20 @@ const modes = option("--modes", "1,3,0").split(",").map(Number);
 const reps = Number(option("--reps", "1"));
 const ALBUM_URL = "https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134";
 
-const browser = launchChromium({ chromePath, dist: join(root, "dist"), port: 9336 });
+let dist = join(root, "dist");
+const grant = args.includes("--grant-optional");
+if (grant) {
+  dist = join(mkdtempSync(join(tmpdir(), "geniescraper-granted-")), "dist");
+  cpSync(join(root, "dist"), dist, { recursive: true });
+  const manifestPath = join(dist, "manifest.json");
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
+  manifest.host_permissions = [...manifest.host_permissions, ...manifest.optional_host_permissions];
+  delete manifest.optional_host_permissions;
+  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+}
+const golden = JSON.parse(readFileSync(join(root, "..", "tests", "golden", "youtube.json"), "utf-8"));
+const chihiro = golden.find((g) => g.id === "eilish-hmhas-t3");
+const browser = launchChromium({ chromePath, dist, port: 9336 });
 const runs = [];
 let reference = null;
 try {
@@ -80,11 +99,14 @@ try {
         "chrome.storage.session.get('session').then((r) => r.session.results.map((t) => ({ index: t.index, status: t.status, song: t.song })))",
       );
       const errors = results.filter((t) => t.status !== "done").length;
-      const songs = JSON.stringify(results.map((t) => t.song));
+      const withLink = results.filter((t) => t.song?.youtubeUrl).length;
+      const chihiroLink = results.find((t) => t.index === 2)?.song?.youtubeUrl ?? "";
+      const chihiroOk = chihiro.accept.includes(chihiroLink.split("=").pop() ?? "");
+      const songs = JSON.stringify(results.map((t) => ({ ...t.song, youtubeUrl: undefined, youtubeIsMv: undefined })));
       reference ??= songs;
-      runs.push({ mode, seconds, peak, errors, status, same: songs === reference });
+      runs.push({ mode, seconds, peak, errors, status, same: songs === reference, withLink, chihiroOk });
       console.log(
-        `mode ${mode === 0 ? "all" : mode}: ${seconds.toFixed(1)} s, peak ${peak} reads at once, ${errors} not done, same credits as one-by-one: ${songs === reference}  (${status})`,
+        `mode ${mode === 0 ? "all" : mode}: ${seconds.toFixed(1)} s, peak ${peak} reads at once, ${errors} not done, same credits as one-by-one: ${songs === reference}, YouTube links ${withLink}/${results.length}, CHIHIRO link accepted: ${chihiroOk}  (${status})`,
       );
       await sleep(5000);
     }
@@ -98,7 +120,7 @@ try {
     console.log(
       `  ${mode === 0 ? "all at once" : `${mode} at a time`}: median ${median.toFixed(1)} s over ${mine.length} run(s), ` +
         `peak ${Math.max(...mine.map((r) => r.peak))}, failures ${mine.reduce((n, r) => n + r.errors, 0)}, ` +
-        `identical to one-by-one ${mine.every((r) => r.same)}`,
+        `identical to one-by-one ${mine.every((r) => r.same)}, links ${mine.map((r) => r.withLink).join("/")}`,
     );
   }
 } finally {
