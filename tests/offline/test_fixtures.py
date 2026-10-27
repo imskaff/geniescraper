@@ -49,6 +49,12 @@ async def test_album_artist_from_title(case, load_fixture):
     assert artist == load_golden(case.id).artist
 
 
+@pytest.mark.parametrize("case", ALBUM_CASES, ids=lambda c: c.id)
+async def test_album_track_title(case, load_fixture):
+    page = await load_fixture(f"{case.id}.page.html")
+    assert await am._extract_track_title(page, case.track_index) == load_golden(case.id).title
+
+
 @pytest.mark.xfail(strict=True, reason="known bug: og:image meta is gone from hydrated Apple Music pages")
 @pytest.mark.parametrize("case", ALBUM_CASES[:1], ids=lambda c: c.id)
 async def test_cover_from_page(case, load_fixture):

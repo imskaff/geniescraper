@@ -433,6 +433,18 @@ async def _extract_from_dom(page: Page) -> tuple[str, str]:
     return title, artist
 
 
+async def _extract_track_title(page: Page, track_index: int) -> str:
+    """Title of the 1-based track_index row in an album tracklist ('' if there is no such row).
+
+    The page <title> names the album, so album tracks must take their title from the tracklist row.
+    """
+    for selector in ('[data-testid="track-list-item"] [data-testid="track-title"]', ".songs-list-row__song-name"):
+        titles = await page.locator(selector).all_text_contents()
+        if len(titles) >= track_index:
+            return titles[track_index - 1].strip()
+    return ""
+
+
 def track_count_from_footer(raw: str) -> int:
     """Parse '12 songs, 45 minutes' style footers; defaults to 1."""
     m = re.search(r"(\d+)\s+songs?", raw)
@@ -531,8 +543,11 @@ async def scrape(url: str, *, track_index: int = 1, track_title: str = "", debug
             pass
 
         # If caller already knows the track title (from album track list), use it.
+        # Otherwise album pages name the album in <title>, so read the track's row instead.
         if track_title:
             title = track_title
+        elif "/album/" in url:
+            title = await _extract_track_title(page, track_index) or title
 
         # Cover art + copyright both live on the album/song page — extract before navigating away.
         cover_art_url = await _extract_cover_url(page)
