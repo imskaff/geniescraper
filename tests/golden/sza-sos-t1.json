@@ -1,0 +1,57 @@
+{
+  "title": "SOS",
+  "artist": "SZA",
+  "apple_music_url": "https://music.apple.com/us/album/sos/1658650093",
+  "credits": [
+    {
+      "role": "Vocals",
+      "artists": [
+        "SZA"
+      ]
+    },
+    {
+      "role": "Songwriter",
+      "artists": [
+        "Jahlil Gunter",
+        "Rob Bisel",
+        "Gabriel Samuel Hardeman",
+        "Solána Rowe"
+      ]
+    },
+    {
+      "role": "Producer",
+      "artists": [
+        "Jay Versace"
+      ]
+    },
+    {
+      "role": "Mixing Engineer",
+      "artists": [
+        "Shawn Everett",
+        "Rob Bisel"
+      ]
+    },
+    {
+      "role": "Mastering Engineer",
+      "artists": [
+        "Dale Becker"
+      ]
+    },
+    {
+      "role": "Assistant Engineer",
+      "artists": [
+        "Katie Harvey",
+        "Noah McCorkle"
+      ]
+    },
+    {
+      "role": "Engineer",
+      "artists": [
+        "Carson Graham"
+      ]
+    }
+  ],
+  "phonographic_copyright": "℗ 2022 Top Dawg Entertainment, under exclusive license to RCA Records",
+  "copyright_notice": "",
+  "cover_art_url": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/62/93/13/6293132e-20ff-67ab-3d1f-96bb6797a6ba/196589564955.jpg/1000x1000bb.png"
+}
