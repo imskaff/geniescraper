@@ -48,6 +48,8 @@ export class PanelView {
   private screenKey = "";
   /** What the user typed into the link box; kept across re-renders, which would otherwise reset it. */
   private draft: string | null = null;
+  /** Which collapsible lists the user has opened; re-rendering rebuilds them, so the choice is kept here. */
+  private readonly expanded = new Set<string>();
 
   constructor(
     private readonly root: HTMLElement,
@@ -67,18 +69,52 @@ export class PanelView {
       el(
         "header",
         { class: "bar" },
-        el("h1", { text: "Géniescraper" }),
-        el("button", {
-          class: "button quiet",
-          text: "Settings",
-          attrs: { type: "button", id: "settings-toggle", "data-key": "settings-toggle" },
-          on: {
-            click: () => {
-              if (this.panel.state.settingsOpen) this.panel.closeSettings();
-              else this.panel.openSettings();
+        el(
+          "div",
+          { class: "bar-row" },
+          el("h1", { text: "Géniescraper" }),
+          el(
+            "div",
+            { class: "bar-actions" },
+            // Start pasting lives here, in the header that stays in view, so it is never a scroll away.
+            el("button", {
+              class: "button primary glow",
+              text: "Start pasting",
+              attrs: { type: "button", id: "paste-top", "data-key": "paste-top", hidden: "" },
+              on: {
+                click: () => {
+                  const index = this.startableIndex(this.panel.state);
+                  if (index !== null) void this.panel.startPaste(index);
+                },
+              },
+            }),
+            el("button", {
+              class: "button quiet",
+              text: "Settings",
+              attrs: { type: "button", id: "settings-toggle", "data-key": "settings-toggle" },
+              on: {
+                click: () => {
+                  if (this.panel.state.settingsOpen) this.panel.closeSettings();
+                  else this.panel.openSettings();
+                },
+              },
+            }),
+          ),
+        ),
+        el(
+          "div",
+          { class: "bar-row", attrs: { id: "menu-row", hidden: "" } },
+          el("button", {
+            class: "button nav",
+            text: "Back to main menu",
+            attrs: { type: "button", id: "menu-toggle", "data-key": "menu-toggle" },
+            on: {
+              click: () => {
+                void this.panel.newAlbum();
+              },
             },
-          },
-        }),
+          }),
+        ),
       ),
       // Both regions exist from the start and only their text changes, so screen readers announce updates.
       el("div", { class: "alert", attrs: { id: "alert", role: "alert" } }),
@@ -109,6 +145,7 @@ export class PanelView {
     this.region("status").textContent = state.status;
     const toggle = this.region("settings-toggle");
     toggle.textContent = state.settingsOpen ? "Back" : "Settings";
+    this.updateHeader(state);
 
     const key = state.settingsOpen ? "settings" : state.paste.active ? "paste" : state.session.screen;
     // Starting over with a new link forgets the old one; opening and closing settings does not.
@@ -146,6 +183,46 @@ export class PanelView {
 
   private heading(text: string): HTMLElement {
     return el("h2", { text, attrs: { tabindex: "-1" } });
+  }
+
+  /** The track whose credits are on screen and can be pasted now, or null. */
+  private startableIndex(state: PanelState): number | null {
+    if (state.settingsOpen || state.paste.active || state.session.screen !== "review") return null;
+    const { results, current } = state.session;
+    const shown = results.find((r) => r.index === current) ?? results[0];
+    return shown?.song && this.panel.queueFor(shown.index).length > 0 ? shown.index : null;
+  }
+
+  /** The header's two shortcuts follow the screen: the way back, and the way on to pasting. */
+  private updateHeader(state: PanelState): void {
+    const away = !state.settingsOpen && !state.paste.active && state.session.screen !== "link";
+    this.region("menu-row").hidden = !away;
+
+    const top = this.region("paste-top") as HTMLButtonElement;
+    const index = this.startableIndex(state);
+    top.hidden = index === null;
+    top.disabled = state.busy !== null;
+    // It glows while it is the thing to do next, not while it cannot be pressed.
+    top.classList.toggle("glow", !top.disabled);
+    const title = state.session.results.find((r) => r.index === index)?.song?.title;
+    if (title) top.setAttribute("aria-label", `Start pasting ${title}`);
+    else top.removeAttribute("aria-label");
+  }
+
+  /** A section the user can open and close, closed until they do. Its state survives re-rendering. */
+  private disclosure(id: string, summary: string, body: Node): HTMLElement {
+    const details = el(
+      "details",
+      { class: "disclosure" },
+      el("summary", { text: summary, attrs: { "data-key": `details-${id}` } }),
+      body,
+    );
+    details.open = this.expanded.has(id);
+    details.addEventListener("toggle", () => {
+      if (details.open) this.expanded.add(id);
+      else this.expanded.delete(id);
+    });
+    return details;
   }
 
   // ── link ────────────────────────────────────────────────────────────
@@ -230,14 +307,10 @@ export class PanelView {
         el(
           "div",
           { class: "row" },
-          this.button("Select all", "quiet", "all", () => void this.panel.setAllSelected(true), available === 0),
-          this.button(
-            "Select none",
-            "quiet",
-            "none",
-            () => void this.panel.setAllSelected(false),
-            selected.length === 0,
-          ),
+          // Nothing is picked to begin with, so the first move is highlighted, like the button it leads to.
+          // Neither button disables itself after it is used: a disabled button drops keyboard focus.
+          this.button("Select all", "primary", "all", () => void this.panel.setAllSelected(true), available === 0),
+          this.button("Select none", "quiet", "none", () => void this.panel.setAllSelected(false), available === 0),
         ),
         list,
       ),
@@ -251,7 +324,6 @@ export class PanelView {
           () => void this.panel.getCredits(),
           busy || selected.length === 0,
         ),
-        this.button("New link", "quiet", "new", () => void this.panel.newAlbum(), busy),
       ),
     ];
   }
@@ -330,7 +402,6 @@ export class PanelView {
         { class: "row" },
         busy ? this.button("Stop", "quiet", "stop", () => void this.panel.stop(), false) : null,
         this.button("Back to tracks", "quiet", "back", () => void this.panel.backToTracks(), busy),
-        this.button("New link", "quiet", "new", () => void this.panel.newAlbum(), busy),
       ),
     ].filter((node): node is HTMLElement => node !== null);
   }
@@ -380,29 +451,17 @@ export class PanelView {
     const queue = this.panel.queueFor(result.index);
     section.append(
       song.credits.length === 0 ? el("p", { class: "problem", text: "No credits were found for this track." }) : groups,
-      ...(queue.length > 0
-        ? [
-            el(
-              "div",
-              { class: "row" },
-              this.button(
-                "Start pasting",
-                "primary",
-                "paste-start",
-                () => void this.panel.startPaste(result.index),
-                state.busy !== null,
-              ),
-            ),
-          ]
-        : []),
-      el("h4", { text: "Paste queue" }),
       queue.length === 0
         ? el("p", { class: "help", text: "Nothing to paste with the current settings." })
-        : el(
-            "ol",
-            { class: "queue", attrs: { "aria-label": "Paste queue" } },
-            ...queue.map(([kind, value]) =>
-              el("li", {}, el("span", { class: "tag", text: FIELD_LABELS[kind] }), el("span", { text: value })),
+        : this.disclosure(
+            "queue",
+            `Paste queue (${String(queue.length)} ${queue.length === 1 ? "step" : "steps"})`,
+            el(
+              "ol",
+              { class: "queue", attrs: { "aria-label": "Paste queue" } },
+              ...queue.map(([kind, value]) =>
+                el("li", {}, el("span", { class: "tag", text: FIELD_LABELS[kind] }), el("span", { text: value })),
+              ),
             ),
           ),
     );
@@ -471,8 +530,7 @@ export class PanelView {
         class: "help",
         text: "Keep the song's Edit Metadata form open on Genius. Nothing is saved for you: check the form, then save it there.",
       }),
-      el("h3", { class: "section", text: "All steps" }),
-      steps,
+      this.disclosure("steps", `All steps (${String(total)})`, steps),
     ].filter((node): node is HTMLElement => node !== null);
   }
 
@@ -590,7 +648,7 @@ export class PanelView {
 
   private button(
     text: string,
-    variant: "primary" | "quiet",
+    variant: "primary" | "quiet" | "nav",
     key: string,
     onClick: () => void,
     disabled: boolean,

@@ -115,21 +115,40 @@ try {
   );
   check("track list shows 11 tracks", boxes.length === 11, String(boxes.length));
   check(
-    "exactly the track Apple gives no page is disabled and unpicked",
-    boxes.filter(([, disabled]) => disabled).length === 1 && boxes.filter(([isOn]) => isOn).length === 10,
+    "nothing is picked for the user, and exactly the track Apple gives no page is disabled",
+    boxes.filter(([, disabled]) => disabled).length === 1 && boxes.filter(([isOn]) => isOn).length === 0,
+  );
+  const style = (selector, prop) =>
+    panel.evaluate(`getComputedStyle(document.querySelector(${JSON.stringify(selector)})).${prop}`);
+  check(
+    "Select all is highlighted yellow, the same as Get credits",
+    (await style('[data-key="all"]', "backgroundColor")) === (await style('[data-key="go"]', "backgroundColor")) &&
+      (await style('[data-key="all"]', "backgroundColor")) !== (await style('[data-key="none"]', "backgroundColor")),
+  );
+  check(
+    "Get credits is disabled until something is picked",
+    await panel.evaluate("document.querySelector('[data-key=go]').disabled"),
+  );
+  check(
+    "the main menu button is in the header",
+    await panel.evaluate("document.querySelector('header #menu-toggle')?.textContent === 'Back to main menu'"),
   );
   await shot("2-tracks");
 
+  await press("Tab");
+  check("Tab reaches Select all first", (await focused()) === "all", String(await focused()));
+  await press("Enter");
+  const afterAll = await panel.evaluate(
+    "[...document.querySelectorAll('input[type=checkbox]')].filter((b) => b.checked).length",
+  );
+  check("Enter on Select all picks the ten available tracks", afterAll === 10, String(afterAll));
+  check("focus stays on Select all after it is used", (await focused()) === "all", String(await focused()));
   const order = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 2; i++) {
     await press("Tab");
     order.push(await focused());
   }
-  check(
-    "Tab visits Select all, Select none, then the first track",
-    order.join(",") === "all,none,track-0",
-    order.join(","),
-  );
+  check("Tab then visits Select none and the first track", order.join(",") === "none,track-0", order.join(","));
   await press("Space");
   check("Space unpicks the focused track", (await checked("track-0")) === false);
   check("focus stays on the checkbox after it changes", (await focused()) === "track-0", String(await focused()));
@@ -173,6 +192,91 @@ try {
     `scroll ${String(overflow.scroll)} vs client ${String(overflow.client)}; ${overflow.wide.join("; ")}`,
   );
   await shot("4-review-golden-track");
+
+  // ── the header, the glow, the collapsed queue, Genius role names ──
+  await panel.send("Emulation.setEmulatedMedia", {
+    features: [{ name: "prefers-reduced-motion", value: "no-preference" }],
+  });
+  await sleep(200);
+  const top = await panel.evaluate(`(() => {
+    const b = document.querySelector('#paste-top');
+    const r = b.getBoundingClientRect();
+    return { hidden: b.hidden, text: b.textContent, label: b.getAttribute('aria-label'), animation: getComputedStyle(b).animationName,
+      inHeader: !!b.closest('header'), nextIsSettings: b.nextElementSibling?.id === 'settings-toggle', top: r.top };
+  })()`);
+  check(
+    "Start pasting is at the top, next to Settings",
+    !top.hidden && top.inHeader && top.nextIsSettings && top.top < 80,
+    JSON.stringify(top),
+  );
+  check("Start pasting pulses when motion is allowed", top.animation === "glow", top.animation);
+  check(
+    "Start pasting has a halo",
+    (await style("#paste-top", "boxShadow")) !== "none",
+    String(await style("#paste-top", "boxShadow")),
+  );
+  check("Start pasting names its track for screen readers", top.label === "Start pasting CHIHIRO", String(top.label));
+  check(
+    "Start pasting is not repeated further down",
+    !(await panel.evaluate(
+      "[...document.querySelector('main').querySelectorAll('button')].some((b) => b.textContent === 'Start pasting')",
+    )),
+  );
+  check(
+    "the main menu button is a different color from Settings",
+    (await style("#menu-toggle", "color")) !== (await style("#settings-toggle", "color")) &&
+      (await style("#menu-toggle", "borderColor")) !== (await style("#settings-toggle", "borderColor")),
+  );
+  await shot("4a-header-top");
+  // The header stays in view: scroll to the bottom and it is still at the top of the window.
+  await panel.evaluate("window.scrollTo(0, document.body.scrollHeight)");
+  await sleep(300);
+  const sticky = await panel.evaluate(
+    "(() => { const h = document.querySelector('header').getBoundingClientRect(); const b = document.querySelector('#paste-top').getBoundingClientRect(); return { scrolled: window.scrollY, headerTop: h.top, buttonVisible: b.top >= 0 && b.bottom <= innerHeight }; })()",
+  );
+  check("the page really scrolled", sticky.scrolled > 50, String(sticky.scrolled));
+  check(
+    "the header, with Start pasting, stays in view while scrolled",
+    Math.abs(sticky.headerTop) < 2 && sticky.buttonVisible,
+    JSON.stringify(sticky),
+  );
+  await shot("4b-header-sticky-scrolled");
+  await panel.evaluate("window.scrollTo(0, 0)");
+
+  const queueOpen = () => panel.evaluate("document.querySelector('details.disclosure').open");
+  check("the paste queue is collapsed by default", (await queueOpen()) === false);
+  check(
+    "its heading says how long it is",
+    /^Paste queue \(\d+ steps\)$/.test((await text("details.disclosure > summary")) ?? ""),
+    String(await text("details.disclosure > summary")),
+  );
+  await panel.evaluate("document.querySelector('[data-key=details-queue]').focus()");
+  await press("Space");
+  check("Space on its heading expands it", (await queueOpen()) === true);
+  await shot("4c-queue-expanded");
+  await press("Space");
+  check("Space again collapses it", (await queueOpen()) === false);
+  const programmer = await panel.evaluate(
+    "[...document.querySelectorAll('ol.queue li')].map((li) => li.textContent).filter((t) => /Programm/.test(t))",
+  );
+  check(
+    "Programming is shown as Programmer, the name Genius uses",
+    programmer.length > 0 &&
+      programmer.every((t) => t.endsWith("Programmer")) &&
+      !programmer.some((t) => t.endsWith("Programming")),
+    programmer.join(" | "),
+  );
+
+  await panel.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
+  await sleep(200);
+  check(
+    "the pulse stops when the system asks for reduced motion",
+    (await style("#paste-top", "animationName")) === "none",
+  );
+  check("the halo stays, so the button still stands out", (await style("#paste-top", "boxShadow")) !== "none");
+  await panel.send("Emulation.setEmulatedMedia", {
+    features: [{ name: "prefers-reduced-motion", value: "no-preference" }],
+  });
 
   const credits = await panel.evaluate(`Object.fromEntries(
     [...document.querySelectorAll('dl.credits dt')].map((dt) => [dt.textContent, dt.nextElementSibling.textContent]))`);
@@ -249,7 +353,7 @@ try {
   check(
     "Back is disabled at the first step",
     await panel.evaluate(
-      "[...document.querySelectorAll('button')].find((b) => b.textContent.startsWith('Back')).disabled",
+      "[...document.querySelectorAll('button')].find((b) => b.textContent.startsWith('Back (')).disabled",
     ),
   );
   await shot("9-paste-screen-dark");
@@ -364,10 +468,10 @@ try {
   );
 
   // ── a missing page is reported in words ──
-  await clickButton("New link");
+  await clickButton("Back to main menu");
   await until("!!document.querySelector('#link')", "a fresh link screen");
   check(
-    "New link starts with an empty link box",
+    "Back to main menu starts with an empty link box",
     (await panel.evaluate("document.querySelector('#link').value")) === "",
   );
   await panel.evaluate(`(() => {

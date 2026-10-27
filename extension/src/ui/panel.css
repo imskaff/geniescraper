@@ -13,6 +13,7 @@
   --accent-hover: #ffd124;
   --accent-ink: #0d0d0c;
   --link: #f3c003;
+  --nav: #6cb6ff;
   --danger: #ff6f5e;
   --focus: #f4f3ee;
 }
@@ -29,6 +30,7 @@
     --accent-hover: #ffd124;
     --accent-ink: #0d0d0c;
     --link: #6b4f00;
+    --nav: #0b5cad;
     --danger: #b3261e;
     --focus: #1a1916;
   }
@@ -58,12 +60,38 @@ body {
   padding: 16px;
 }
 
+/* The header stays in view: the way back and the way on to pasting are never a scroll away. */
 .bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin: -16px -16px 12px;
+  padding: 12px 16px 10px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--surface-hi);
+}
+
+.bar-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 8px 12px;
+}
+
+.bar-row + .bar-row {
+  margin-top: 8px;
+}
+
+.bar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+[hidden] {
+  display: none !important;
 }
 
 h1 {
@@ -333,4 +361,71 @@ fieldset + fieldset {
 
 legend {
   margin-bottom: 6px;
+}
+
+/* A different color from the quiet buttons, so the way back to the main menu is easy to tell apart. */
+.button.nav {
+  color: var(--nav);
+  border-color: var(--nav);
+}
+
+.button.nav:hover:not(:disabled) {
+  background: var(--surface-hi);
+}
+
+/* A soft yellow halo around the button that starts pasting. It is always there, so it still shows when the system
+   asks for reduced motion; the slow pulse on top of it (nowhere near flashing) is dropped in that case by the rule
+   at the end of this file. */
+.button.glow {
+  box-shadow: 0 0 10px 2px rgb(243 192 3 / 40%);
+  animation: glow 2.4s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px 1px rgb(243 192 3 / 30%);
+  }
+  50% {
+    box-shadow: 0 0 18px 5px rgb(243 192 3 / 65%);
+  }
+}
+
+/* Collapsible lists */
+.disclosure {
+  margin: 4px 0 12px;
+}
+
+.disclosure > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure > summary::before {
+  content: "\25B8";
+  color: var(--link);
+}
+
+.disclosure[open] > summary::before {
+  content: "\25BE";
+}
+
+.disclosure > summary:hover {
+  background: var(--surface-hi);
+}
+
+.disclosure[open] > summary {
+  margin-bottom: 8px;
 }

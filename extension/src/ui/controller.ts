@@ -2,6 +2,7 @@
 // Everything that touches the outside (the worker, storage, the browser's tabs) is injected, so the whole flow
 // runs in tests with fakes.
 import { parseAppleMusicUrl } from "../apple/url";
+import { geniusRole } from "../core/geniusRoles";
 import { typedQueue, type QueueItem, type SongCredits } from "../core/models";
 import type { PasteCommand } from "../shared/messages";
 import { IDLE_PASTE, type PasteState } from "../core/paste";
@@ -167,11 +168,20 @@ export class PanelController {
     }
     const album = result.data;
     const available = album.trackUrls.map((link, index) => (link ? index : -1)).filter((index) => index >= 0);
-    await this.updateSession({ screen: "tracks", album, selected: available, results: [], current: 0 });
+    // Nothing is picked for the user on an album, so a click is always a choice. A single track has nothing to
+    // choose from and goes straight on.
+    const onlyTrack = album.trackCount === 1 && available.length === 1;
+    await this.updateSession({
+      screen: "tracks",
+      album,
+      selected: onlyTrack ? available : [],
+      results: [],
+      current: 0,
+    });
     // The track list names the album and its track count itself, and its heading takes focus, so nothing is announced twice.
     this.update({ busy: null, status: "" });
     // One track has nothing to choose from.
-    if (album.trackCount === 1 && available.length === 1) await this.getCredits();
+    if (onlyTrack) await this.getCredits();
     else if (available.length === 0) this.update({ error: MESSAGES.noPage });
   }
 
@@ -281,7 +291,11 @@ export class PanelController {
   /** The paste queue of one track under the current settings; empty until its credits are in. */
   queueFor(index: number): QueueItem[] {
     const song = this.current.session.results.find((r) => r.index === index)?.song;
-    return song ? typedQueue(song, queueOptions(this.current.settings)) : [];
+    if (!song) return [];
+    // Roles are shown, and pasted, under the names Genius uses ("Programming" is "Programmer" there).
+    return typedQueue(song, queueOptions(this.current.settings)).map(([kind, value]): QueueItem =>
+      kind === "role" ? [kind, geniusRole(value)] : [kind, value],
+    );
   }
 
   // ── settings ────────────────────────────────────────────────────────

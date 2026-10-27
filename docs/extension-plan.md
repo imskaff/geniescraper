@@ -326,3 +326,22 @@ Verification state:
 - `src/lookups/http.ts` is the only place that fetches third-party data: https only, an explicit host allow-list (`itunes.apple.com` for now), no cookies, no referrer, a 10 second timeout, and null on every failure.
 - Live: the golden track's cover through the real worker matches the golden artwork, and SOUR (no usable page header cover) gets its cover from the lookup.
 - Deezer (optional host) and YouTube arrive in slice 8; the Deezer cover fallback is not in this slice, so a track iTunes cannot find gets no cover from the extension.
+
+## 15. Changes after the first hands-on review
+
+From the owner's first try of the extension:
+
+- **Main menu.** "New link" is now "Back to main menu", in its own blue (`--nav`, checked for contrast in both schemes) so it is not mistaken for the quiet outline buttons.
+  It is in the header, on the track list and on the credits, and works even while credits are still being read (the late answer is dropped).
+  It is not offered over Settings or the paste screen, where leaving would end work in progress.
+- **Nothing is picked for the user.** An album opens with no track ticked and **Select all** highlighted yellow like Get credits.
+  A single track still goes straight on.
+  Select all and Select none never disable themselves: a disabled button drops keyboard focus, which the first version did (and Select none already did).
+- **Start pasting in the header.** It sits next to Settings and the header is sticky, so the way on and the way back are never a scroll away; it is hidden until a track's credits are in, disabled while reading, and its accessible name includes the track.
+  It has a soft yellow halo that is always on plus a slow pulse that is dropped under reduced motion: this machine reports reduced motion (Windows animations off), where a pulse alone would have been invisible.
+- **Genius role names.** Apple's "Programming" is "Programmer" on Genius.
+  Checked on the live form against every role in the golden credits: Genius has Programmer, Drum Programmer, Additional Production and Vocal Engineer, and nothing for Editing Engineer.
+  `geniusRole` maps "Programming" and "<X> Programming" to "... Programmer", "Additional Producer" to "Additional Production" and "Vocal Recording Engineer" to "Vocal Engineer"; the queue shows, and the extension types, the Genius name.
+  The mapping is the extension's own: `scraper/roles.py` and the golden files, shared with the desktop app, are unchanged, so the desktop app still types "Programming" (a separate task if wanted).
+- **Collapsible queues.** The paste queue on the credits and the step list on the paste screen are native `details` elements, closed by default, with their length in the heading; each keeps its open state across redraws and keeps keyboard focus.
+- Not changed: the credits-screen queue still labels the first steps "Written By" while the paste screen says "Writer" (Genius's name).

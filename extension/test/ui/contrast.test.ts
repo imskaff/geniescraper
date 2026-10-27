@@ -40,6 +40,8 @@ const PAIRS: readonly [string, string, number, string][] = [
   ["danger", "surface", 4.5, "error text on cards"],
   ["link", "bg", 4.5, "links"],
   ["link", "surface", 4.5, "links on cards"],
+  ["nav", "bg", 4.5, "the main menu button"],
+  ["nav", "surface-hi", 4.5, "the main menu button on hover"],
   ["control-border", "bg", 3, "control edges"],
   ["control-border", "surface-hi", 3, "input edges"],
   ["focus", "bg", 3, "focus ring on the page"],

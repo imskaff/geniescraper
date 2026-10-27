@@ -36,11 +36,11 @@ describe("detect", () => {
     expect(env.api.calls).toEqual([]);
   });
 
-  it("opens the track list with every available track picked and the unavailable one left out", async () => {
+  it("opens the track list with nothing picked: every choice is the user's own", async () => {
     const { panel } = await open();
     await panel.detect(`  ${ALBUM_URL}  `);
     expect(panel.state.session.screen).toBe("tracks");
-    expect(panel.state.session.selected).toEqual([0, 2]);
+    expect(panel.state.session.selected).toEqual([]);
     expect(panel.state.busy).toBeNull();
     expect(panel.state.status).toBe("");
   });
@@ -65,6 +65,13 @@ describe("detect", () => {
     expect(panel.state.busy).toBeNull();
   });
 
+  it("goes straight to the credits for a single track, picking it itself", async () => {
+    const { panel } = await open({ api: { detect: () => Promise.resolve({ ok: true, data: SINGLE }) } });
+    await panel.detect(SINGLE.url);
+    expect(panel.state.session.selected).toEqual([0]);
+    expect(panel.state.session.screen).toBe("review");
+  });
+
   it("goes straight to the credits when there is a single track", async () => {
     const { panel } = await open({ api: { detect: () => Promise.resolve({ ok: true, data: SINGLE }) } });
     await panel.detect(SINGLE.url);
@@ -84,10 +91,14 @@ describe("choosing tracks", () => {
   it("toggles tracks, keeps them sorted, and never selects a track without a page", async () => {
     const { panel } = await open();
     await panel.detect(ALBUM_URL);
+    expect(panel.state.session.selected).toEqual([]);
+    await panel.setTrackSelected(2, true);
+    await panel.setTrackSelected(0, true);
+    await panel.setTrackSelected(1, true); // unavailable
+    expect(panel.state.session.selected).toEqual([0, 2]);
     await panel.setTrackSelected(0, false);
     expect(panel.state.session.selected).toEqual([2]);
     await panel.setTrackSelected(0, true);
-    await panel.setTrackSelected(1, true); // unavailable
     expect(panel.state.session.selected).toEqual([0, 2]);
     await panel.setAllSelected(false);
     expect(panel.state.session.selected).toEqual([]);
@@ -109,6 +120,7 @@ describe("getting credits", () => {
   it("reads the picked tracks in order, one at a time, and keeps the album's copyright", async () => {
     const { env, panel } = await open();
     await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
     await panel.getCredits();
 
     expect(env.api.calls.filter((c) => c.startsWith("scrape"))).toEqual([
@@ -138,6 +150,7 @@ describe("getting credits", () => {
       },
     });
     await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
     await panel.getCredits();
     expect(peak).toBe(1);
   });
@@ -157,6 +170,7 @@ describe("getting credits", () => {
       },
     });
     await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
     await panel.getCredits();
     expect(panel.state.session.results.map((r) => r.status)).toEqual(["error", "done"]);
     expect(panel.state.session.results[0]?.error).toContain("too long");
@@ -176,6 +190,7 @@ describe("getting credits", () => {
       },
     });
     await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
     const running = panel.getCredits();
     await new Promise((resolve) => setTimeout(resolve, 5));
     expect(panel.state.session.results.map((r) => r.status)).toEqual(["done", "loading"]);
@@ -189,6 +204,7 @@ describe("getting credits", () => {
     const gate = deferred<Result<PageScrape>>();
     const { panel } = await open({ api: { scrapeTrack: () => gate.promise } });
     await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
     const running = panel.getCredits();
     await new Promise((resolve) => setTimeout(resolve, 5));
     await panel.stop();
@@ -202,6 +218,7 @@ describe("getting credits", () => {
   it("builds the paste queue from the settings, without reading anything again", async () => {
     const { env, panel } = await open();
     await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
     await panel.getCredits();
     const kinds = () => panel.queueFor(0).map(([kind]) => kind);
 
@@ -217,6 +234,30 @@ describe("getting credits", () => {
     expect(env.api.calls).toHaveLength(reads);
   });
 
+  it("shows and pastes roles under the names Genius uses", async () => {
+    const credits = [
+      { role: "Songwriter", artists: ["W"] },
+      { role: "Programming", artists: ["P"] },
+      { role: "Drum Programming", artists: ["D"] },
+      { role: "Mixing Engineer", artists: ["M"] },
+    ];
+    const { panel, env } = await open({
+      api: { scrapeTrack: (_url, title) => Promise.resolve({ ok: true, data: { ...scrapeFor(title), credits } }) },
+    });
+    await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
+    await panel.getCredits();
+
+    const roles = panel
+      .queueFor(0)
+      .filter(([kind]) => kind === "role")
+      .map(([, value]) => value);
+    expect(roles).toEqual(["Programmer", "Drum Programmer", "Mixing Engineer"]);
+
+    await panel.startPaste(0);
+    expect(env.api.pasteState.queue.filter(([kind]) => kind === "role").map(([, value]) => value)).toEqual(roles);
+  });
+
   it("has an empty queue for a track whose credits are not in yet", async () => {
     const { panel } = await open();
     await panel.detect(ALBUM_URL);
@@ -228,6 +269,7 @@ describe("navigation", () => {
   it("goes back to the track list and starts over with a new link", async () => {
     const { panel } = await open();
     await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
     await panel.getCredits();
     await panel.showTrack(2);
     expect(panel.state.session.current).toBe(2);
@@ -240,6 +282,7 @@ describe("navigation", () => {
   it("drops the last job's progress message when settings open", async () => {
     const { panel } = await open();
     await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
     await panel.getCredits();
     expect(panel.state.status).not.toBe("");
     panel.openSettings();
@@ -263,6 +306,7 @@ describe("persistence", () => {
   it("keeps the session, so closing and reopening the panel loses nothing", async () => {
     const first = await open();
     await first.panel.detect(ALBUM_URL);
+    await first.panel.setAllSelected(true);
     await first.panel.getCredits();
 
     const second = await PanelController.create({

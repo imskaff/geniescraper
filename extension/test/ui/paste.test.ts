@@ -28,6 +28,7 @@ async function onReview() {
   const panel = await PanelController.create(env);
   new PanelView(root, panel);
   await panel.detect(ALBUM.url);
+  await panel.setAllSelected(true);
   await panel.getCredits();
   await flush();
   return { root, env, panel };
@@ -76,7 +77,7 @@ describe("starting to paste", () => {
       await panel.setSetting(key, false);
     }
     await flush();
-    expect([...root.querySelectorAll("button")].some((b) => b.textContent === "Start pasting")).toBe(false);
+    expect($(root, "#paste-top").hidden).toBe(true);
   });
 });
 
@@ -94,7 +95,7 @@ describe("the paste screen", () => {
   it("is accessible: labelled buttons, ordered headings, a marked current step", async () => {
     const { root } = await onPaste();
     for (const control of root.querySelectorAll("button")) expect(control.textContent.trim()).not.toBe("");
-    expect([...root.querySelectorAll("h1, h2, h3")].map((h) => h.tagName)).toEqual(["H1", "H2", "H3"]);
+    expect([...root.querySelectorAll("h1, h2, h3")].map((h) => h.tagName)).toEqual(["H1", "H2"]);
     expect(root.querySelectorAll('[aria-current="step"]')).toHaveLength(1);
     expect($(root, '[aria-current="step"]').textContent).toContain("Next");
     expect($(root, "ol.steps").getAttribute("aria-label")).toBe("All steps");
@@ -103,7 +104,7 @@ describe("the paste screen", () => {
   it("names the keys on the buttons from the settings", async () => {
     const { root, panel } = await onPaste();
     expect(button(root, "Fill next").textContent).toBe("Fill next (F8)");
-    expect(button(root, "Back").textContent).toBe("Back (F7)");
+    expect(button(root, "Back (").textContent).toBe("Back (F7)");
     await panel.setSetting("nextHotkey", "F9");
     expect(button(root, "Fill next").textContent).toBe("Fill next (F9)");
   });
@@ -120,14 +121,14 @@ describe("the paste screen", () => {
     expect($(root, '[aria-current="step"]').textContent).toContain("Next");
     expect(root.querySelector("li.done")?.textContent).toContain("Done");
 
-    button(root, "Back").click();
+    button(root, "Back (").click();
     await flush();
     expect($(root, ".progress").textContent).toMatch(/^Step 1 of/);
   });
 
   it("disables Back at the first step", async () => {
     const { root } = await onPaste();
-    expect(button(root, "Back").disabled).toBe(true);
+    expect(button(root, "Back (").disabled).toBe(true);
   });
 
   it("follows the worker when a hotkey press on Genius moves the position", async () => {
@@ -197,6 +198,7 @@ describe("the paste screen", () => {
     const panel = await PanelController.create(env);
     new PanelView(root, panel);
     await panel.detect(ALBUM.url);
+    await panel.setAllSelected(true);
     await panel.getCredits();
     await panel.startPaste(0);
     panel.setPaste({ ...env.api.pasteState, active: true, queue: [["written_by", "A"]], title: "T" });

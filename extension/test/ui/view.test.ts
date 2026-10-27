@@ -111,10 +111,10 @@ describe("link screen", () => {
     expect($input(root, "#link").getAttribute("aria-invalid")).toBe("true");
   });
 
-  it("forgets the old link after New link, and offers the current page again", async () => {
+  it("forgets the old link after Back to main menu, and offers the current page again", async () => {
     const { root, panel } = await mount({ tab: { tabId: 3, url: "https://music.apple.com/us/album/other/77" } });
     await submitLink(root, ALBUM.url);
-    byText(root, "button", "New link").click();
+    byText(root, "button", "Back to main menu").click();
     await flush();
     expect($input(root, "#link").value).toBe("https://music.apple.com/us/album/other/77");
     expect(panel.state.session.screen).toBe("link");
@@ -156,10 +156,11 @@ describe("track screen", () => {
     const { root } = await onTracks();
     expectAccessible(root);
     const boxes = [...root.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
+    // Nothing is picked for the user; the track without a page cannot be picked at all.
     expect(boxes.map((b) => [b.checked, b.disabled])).toEqual([
-      [true, false],
+      [false, false],
       [false, true],
-      [true, false],
+      [false, false],
     ]);
     expect(root.textContent).toContain("No Apple Music page");
     expect(accessibleName(boxes[0] as HTMLElement)).toBe("1. One");
@@ -177,22 +178,43 @@ describe("track screen", () => {
     const { root } = await onTracks();
     const box = $input(root, '[data-key="track-0"]');
     box.focus();
-    box.checked = false;
+    box.checked = true;
     box.dispatchEvent(new Event("change", { bubbles: true }));
     await flush();
     expect(document.activeElement).toBe($(root, '[data-key="track-0"]'));
     expect(byText(root, "button", "Get credits for").textContent).toBe("Get credits for 1 track");
   });
 
-  it("disables Get credits when nothing is picked, and Select none follows", async () => {
+  it("starts with Get credits disabled, and Select all highlighted like Get credits", async () => {
     const { root } = await onTracks();
-    byText(root, "button", "Select none").click();
-    await flush();
+    expect(byText(root, "button", "Get credits for").textContent).toBe("Get credits for 0 tracks");
     expect(byText(root, "button", "Get credits for").hasAttribute("disabled")).toBe(true);
-    expect(byText(root, "button", "Select none").hasAttribute("disabled")).toBe(true);
+    // The first move is the yellow one, the same style as the button it leads to.
+    expect(byText(root, "button", "Select all").classList.contains("primary")).toBe(true);
+    expect(byText(root, "button", "Select all").hasAttribute("disabled")).toBe(false);
+    expect(byText(root, "button", "Get credits for").classList.contains("primary")).toBe(true);
+    expect(byText(root, "button", "Select none").classList.contains("primary")).toBe(false);
+  });
+
+  it("Select all picks every available track and Select none clears them", async () => {
+    const { root } = await onTracks();
     byText(root, "button", "Select all").click();
     await flush();
     expect(byText(root, "button", "Get credits for").textContent).toBe("Get credits for 2 tracks");
+    byText(root, "button", "Select none").click();
+    await flush();
+    expect(byText(root, "button", "Get credits for").hasAttribute("disabled")).toBe(true);
+  });
+
+  it("keeps keyboard focus on Select all and Select none after they are used", async () => {
+    const { root } = await onTracks();
+    for (const key of ["all", "none", "all"]) {
+      const button = $(root, `[data-key="${key}"]`);
+      button.focus();
+      button.click();
+      await flush();
+      expect(document.activeElement, key).toBe($(root, `[data-key="${key}"]`));
+    }
   });
 });
 
@@ -200,6 +222,8 @@ describe("review screen", () => {
   async function onReview(api: Parameters<typeof fakeEnv>[0] = {}) {
     const ui = await mount(api);
     await submitLink(ui.root, ALBUM.url);
+    byText(ui.root, "button", "Select all").click();
+    await flush();
     byText(ui.root, "button", "Get credits for").click();
     await flush();
     return ui;
@@ -282,7 +306,7 @@ describe("review screen", () => {
     byText(root, "button", "Back to tracks").click();
     await flush();
     expect($(root, "h2").textContent).toBe("Demo Album");
-    byText(root, "button", "New link").click();
+    byText(root, "button", "Back to main menu").click();
     await flush();
     expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
   });
@@ -352,6 +376,8 @@ describe("untrusted text", () => {
     };
     const ui = await mount({ api: { detect: () => Promise.resolve({ ok: true, data: album }) } });
     await submitLink(ui.root, ALBUM.url);
+    byText(ui.root, "button", "Select all").click();
+    await flush();
     byText(ui.root, "button", "Get credits for").click();
     await flush();
 
@@ -366,6 +392,8 @@ describe("untrusted text", () => {
   it("makes an https cover URL a safe external link", async () => {
     const { root } = await mount();
     await submitLink(root, ALBUM.url);
+    byText(root, "button", "Select all").click();
+    await flush();
     byText(root, "button", "Get credits for").click();
     await flush();
     const link = $link(root, "dd a");

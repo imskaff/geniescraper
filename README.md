@@ -181,7 +181,8 @@ uv run python -m tools.export_roles && uv run python -m tools.export_vectors
 A Python test fails when either file is stale, so run both after changing `scraper/roles.py`, `scraper/models.py`, `scraper/apple_music.py`, `scraper/deezer.py`, `scraper/text.py` or `assistant/flow.py`.
 
 To try the extension, run `npm run build`, open `chrome://extensions`, switch on Developer mode, choose Load unpacked and pick `extension/dist`.
-The toolbar button opens the side panel: paste an Apple Music album or song link (or open one and the panel offers it), choose tracks, and review the credits and the paste queue.
+The toolbar button opens the side panel: paste an Apple Music album or song link (or open one and the panel offers it), choose tracks with **Select all** or by ticking them (none are ticked for you), and review the credits and the paste queue (collapsed until you open it).
+**Start pasting** is in the header next to Settings, and **Back to main menu** returns to the start.
 The cover is Apple's exact 1000x1000 PNG for the album you opened, looked up by its catalog id on `itunes.apple.com`, and it is filled into Genius's Song Art field.
 Review the credits, click **Start pasting**, open the song's **Edit Metadata** form on Genius, and press **F8** once per field (**F7** goes back).
 The extension finds each field itself and fills one per press; it never clicks Save, so you check the form and save it yourself.
