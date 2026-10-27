@@ -14,7 +14,7 @@ _HEADERS = {
 
 _MV_KEYWORDS = ("official music video", "official video", "music video", "official visual")
 _SKIP_KEYWORDS = (
-    "lyrics", "lyric", "audio only", "visualizer", "cover by", "reaction", "reacts",
+    "lyrics", "lyric", "audio only", "cover by", "reaction", "reacts",
     "remix", "parody", "live", "performance", "interview", "behind the scenes",
     "dance practice", "choreography", "teaser", "trailer",
 )
@@ -70,7 +70,7 @@ def _title_matches_song(video_title: str, song_title: str, artist: str) -> bool:
 
     if vt == st or vt.startswith(st + " "):
         return True
-    if vt.startswith(f"{ar} {st}"):
+    if vt.startswith(f"{ar} {st}") or vt.startswith(f"{st} {ar}"):
         return True
     # All significant words from the song title present (handles feat. variants)
     sig = [w for w in st.split() if len(w) >= 3]
@@ -254,7 +254,8 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
     audio_candidates: list[tuple[int, int, str]] = []
     mv_candidates: list[tuple[int, int, str]] = []
     provisional_mv: list[tuple[int, int, str]] = []  # artist ch, plain title; needs description
-    seen_ids: set[str] = set()
+    p1_seen: set[str] = set()
+    p2_seen: set[str] = set()
 
     async with httpx.AsyncClient(
         timeout=12.0, headers=_HEADERS, follow_redirects=True
@@ -262,6 +263,7 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
 
         # ── Phase 1: canonical audio / Topic channel ───────────────────
         for query in (
+            f'"{title}" "{artist} - Topic"',   # targeted Topic-channel lookup
             f'"{artist}" "{title}"',
             f'{artist} {title}',
         ):
@@ -281,9 +283,9 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
             for rank, (vid_id, vtitle, channel) in enumerate(
                 list(_iter_videos(data))[:10]
             ):
-                if vid_id in seen_ids:
+                if vid_id in p1_seen:
                     continue
-                seen_ids.add(vid_id)
+                p1_seen.add(vid_id)
                 score = _score_audio(vtitle, channel, artist, title)
                 if score > 0:
                     audio_candidates.append(
@@ -295,6 +297,8 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
                 break
 
         # ── Phase 2: music video ───────────────────────────────────────
+        # Uses its own seen-set so Phase 1 rejects (MV-keyword videos that
+        # scored -1 in _score_audio) can still be evaluated here.
         for query in (
             f'"{artist}" "{title}" official music video',
             f'{artist} {title} official music video',
@@ -315,9 +319,9 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
             for rank, (vid_id, vtitle, channel) in enumerate(
                 list(_iter_videos(data))[:10]
             ):
-                if vid_id in seen_ids:
+                if vid_id in p2_seen:
                     continue
-                seen_ids.add(vid_id)
+                p2_seen.add(vid_id)
                 score = _score_mv(vtitle, channel, artist, title)
                 url = f"https://www.youtube.com/watch?v={vid_id}"
                 if score == 3:
@@ -360,9 +364,9 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
                 mv_candidates.append((score + 1, rank, url))
 
         # ── Audio-to-MV promotion (Phase 1 plain-title hits) ──────────
-        # Artist-channel (score=1) audio hits are seen_ids-blocked from
-        # Phase 2, so their descriptions are never checked. Do it here:
-        # if the description confirms MV, reclassify them.
+        # Artist-channel (score=1) audio hits may not appear in Phase 2
+        # search results at all; check their descriptions here and
+        # reclassify as MV if confirmed.
         mv_ids = {u.split("=")[-1] for _, _, u in mv_candidates}
         for score, rank, url in audio_candidates[:5]:
             if score != 1:  # Topic-channel (score=2) is canonical audio; skip

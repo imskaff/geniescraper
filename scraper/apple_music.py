@@ -46,6 +46,9 @@ def _parse_artists(raw: str) -> list[str]:
 
 _NOISE_PREFIXES = ("more by", "© ", "℗ ", "all rights", "℗©", "apple music")
 
+# Roles that exist on Apple Music credits pages but are not accepted on Genius.
+_SKIP_ROLES: frozenset[str] = frozenset({"Performer", "Mixed Artist"})
+
 _SECTION_HEADERS = frozenset({
     "composition, lyrics", "production, engineering", "performance",
     "audio", "arranging", "management", "visual", "liner notes",
@@ -101,7 +104,8 @@ async def _parse_credits_page(page: Page, *, strategy_0_only: bool = False) -> l
                     role_artists[role] = []
                 if artist not in role_artists[role]:
                     role_artists[role].append(artist)
-        credits = [Credit(role=r, artists=a) for r, a in role_artists.items()]
+        credits = [Credit(role=r, artists=a) for r, a in role_artists.items()
+                   if r not in _SKIP_ROLES]
         if credits:
             return credits
 
@@ -131,7 +135,7 @@ async def _parse_credits_page(page: Page, *, strategy_0_only: bool = False) -> l
     if current_role and current_artists:
         credits.append(Credit(role=current_role, artists=current_artists))
 
-    return credits
+    return [c for c in credits if c.role not in _SKIP_ROLES]
 
 
 async def _extract_copyright(page: Page) -> tuple[str, str]:

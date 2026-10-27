@@ -94,6 +94,10 @@ class App(ctk.CTk):
         self._credits_countdown: int = settings.auto_start_delay
         self._credits_countdown_paused: bool = False
         self._kb_hooks: list = []
+        self._app_focused: bool = False
+
+        self.bind("<FocusIn>",  lambda _: setattr(self, "_app_focused", True))
+        self.bind("<FocusOut>", lambda _: setattr(self, "_app_focused", False))
 
         self._show_scrape_screen()
 
@@ -1156,11 +1160,19 @@ class App(ctk.CTk):
                 (kind in ("produced_by", "artist") and next_kind in ("role", "copyright_role")) or
                 (kind in ("phonographic_copyright", "copyright_notice") and next_kind == "copyright_role")
             )
+            _six_tab = (
+                kind in ("artist", "copyright_notice") and next_kind == "cover_art"
+            )
             _triple_tab = (
                 (kind in ("artist", "copyright_notice") and next_kind == "youtube_url") or
                 (kind == "youtube_url" and next_kind == "cover_art")
             )
-            if _triple_tab:
+            if _six_tab:
+                time.sleep(0.15)
+                for _ in range(6):
+                    keyboard.press_and_release("tab")
+                    time.sleep(0.05)
+            elif _triple_tab:
                 time.sleep(0.15)
                 for _ in range(3):
                     keyboard.press_and_release("tab")
@@ -1398,31 +1410,27 @@ class App(ctk.CTk):
         self._show_scrape_screen()
 
     def _wait_esc(self) -> None:
-        keyboard.wait("esc")
-        # First ESC: show confirmation (don't quit yet)
-        self.after(0, self._show_esc_confirm)
+        while True:
+            keyboard.wait("esc")
+            if self._app_focused:
+                self.after(0, self._show_esc_confirm)
+                return
 
     def _show_esc_confirm(self) -> None:
-        """Show a confirmation overlay — press ESC again to quit, or resume."""
         # Unhook the assistant hotkeys so they don't fire during confirmation
         self._clear_kb_hooks()
 
         # Dark overlay frame on top of everything
         self._esc_overlay = ctk.CTkFrame(self, fg_color="#0d0d0d", corner_radius=12)
-        self._esc_overlay.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.85, relheight=0.35)
+        self._esc_overlay.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.85, relheight=0.3)
 
         ctk.CTkLabel(
             self._esc_overlay, text="Quit assistant?",
             font=_f(18, "bold"), text_color="#f87171",
-        ).pack(pady=(24, 4))
-        ctk.CTkLabel(
-            self._esc_overlay,
-            text="Press ESC again to quit to main menu",
-            text_color="#9ca3af", font=_f(12),
-        ).pack(pady=(0, 16))
+        ).pack(pady=(28, 20))
 
         btn_row = ctk.CTkFrame(self._esc_overlay, fg_color="transparent")
-        btn_row.pack(pady=(0, 16))
+        btn_row.pack(pady=(0, 20))
 
         ctk.CTkButton(
             btn_row, text="Resume", width=140, height=38,
@@ -1437,13 +1445,6 @@ class App(ctk.CTk):
             text_color="white",
             command=self._confirm_esc_quit, font=_f(13, "bold"),
         ).pack(side="left")
-
-        # Listen for second ESC press to confirm quit
-        threading.Thread(target=self._wait_esc_confirm, daemon=True).start()
-
-    def _wait_esc_confirm(self) -> None:
-        keyboard.wait("esc")
-        self.after(0, self._confirm_esc_quit)
 
     def _dismiss_esc_confirm(self) -> None:
         """User chose to resume — remove overlay and re-register hotkeys."""
