@@ -1,0 +1,130 @@
+{
+  "title": "CHIHIRO",
+  "artist": "Billie Eilish",
+  "apple_music_url": "https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134",
+  "credits": [
+    {
+      "role": "Vocals",
+      "artists": [
+        "Billie Eilish",
+        "FINNEAS"
+      ]
+    },
+    {
+      "role": "Keyboards",
+      "artists": [
+        "Billie Eilish",
+        "FINNEAS"
+      ]
+    },
+    {
+      "role": "Synthesizer",
+      "artists": [
+        "FINNEAS"
+      ]
+    },
+    {
+      "role": "Programming",
+      "artists": [
+        "FINNEAS"
+      ]
+    },
+    {
+      "role": "Bass",
+      "artists": [
+        "FINNEAS"
+      ]
+    },
+    {
+      "role": "Percussion",
+      "artists": [
+        "FINNEAS"
+      ]
+    },
+    {
+      "role": "Guitar",
+      "artists": [
+        "FINNEAS"
+      ]
+    },
+    {
+      "role": "Glockenspiel",
+      "artists": [
+        "FINNEAS"
+      ]
+    },
+    {
+      "role": "Drums",
+      "artists": [
+        "FINNEAS"
+      ]
+    },
+    {
+      "role": "Songwriter",
+      "artists": [
+        "Billie Eilish",
+        "FINNEAS"
+      ]
+    },
+    {
+      "role": "Editing Engineer",
+      "artists": [
+        "Billie Eilish",
+        "FINNEAS"
+      ]
+    },
+    {
+      "role": "Producer",
+      "artists": [
+        "FINNEAS"
+      ]
+    },
+    {
+      "role": "Vocal Recording Engineer",
+      "artists": [
+        "FINNEAS"
+      ]
+    },
+    {
+      "role": "Assistant Mastering Engineer",
+      "artists": [
+        "Katie Harvey",
+        "Noah McCorkle"
+      ]
+    },
+    {
+      "role": "Mixing Engineer",
+      "artists": [
+        "Aron Forbes",
+        "Jon Castelli"
+      ]
+    },
+    {
+      "role": "Assistant Mixing Engineer",
+      "artists": [
+        "Brad Lauchert"
+      ]
+    },
+    {
+      "role": "Mastering Engineer",
+      "artists": [
+        "Dale Becker"
+      ]
+    },
+    {
+      "role": "Immersive Mastering Engineer",
+      "artists": [
+        "Dale Becker"
+      ]
+    },
+    {
+      "role": "Immersive Mixing Engineer",
+      "artists": [
+        "Matt Cerritos"
+      ]
+    }
+  ],
+  "phonographic_copyright": "℗ 2024 Darkroom/Interscope Records",
+  "copyright_notice": "",
+  "cover_art_url": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/92/9f/69/929f69f1-9977-3a44-d674-11f70c852d1b/24UMGIM36186.rgb.jpg/1000x1000bb.png"
+}

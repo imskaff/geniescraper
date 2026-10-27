@@ -1,0 +1,116 @@
+{
+  "title": "good 4 u",
+  "artist": "Olivia Rodrigo",
+  "apple_music_url": "https://music.apple.com/us/album/sour/1560734944",
+  "credits": [
+    {
+      "role": "Vocals",
+      "artists": [
+        "Olivia Rodrigo"
+      ]
+    },
+    {
+      "role": "Background Vocals",
+      "artists": [
+        "Olivia Rodrigo",
+        "Alexander 23",
+        "Daniel Nigro"
+      ]
+    },
+    {
+      "role": "Bass",
+      "artists": [
+        "Alexander 23",
+        "Daniel Nigro"
+      ]
+    },
+    {
+      "role": "Electric Guitar",
+      "artists": [
+        "Alexander 23",
+        "Daniel Nigro"
+      ]
+    },
+    {
+      "role": "Programming",
+      "artists": [
+        "Alexander 23",
+        "Daniel Nigro"
+      ]
+    },
+    {
+      "role": "Drum Programming",
+      "artists": [
+        "Alexander 23",
+        "Daniel Nigro"
+      ]
+    },
+    {
+      "role": "Synthesizer",
+      "artists": [
+        "Daniel Nigro"
+      ]
+    },
+    {
+      "role": "Acoustic Guitar",
+      "artists": [
+        "Daniel Nigro"
+      ]
+    },
+    {
+      "role": "Songwriter",
+      "artists": [
+        "Olivia Rodrigo",
+        "Daniel Nigro",
+        "Hayley Williams",
+        "Josh Farro"
+      ]
+    },
+    {
+      "role": "Co-Producer",
+      "artists": [
+        "Alexander 23"
+      ]
+    },
+    {
+      "role": "Producer",
+      "artists": [
+        "Daniel Nigro"
+      ]
+    },
+    {
+      "role": "Recording Engineer",
+      "artists": [
+        "Daniel Nigro"
+      ]
+    },
+    {
+      "role": "Assistant Recording Engineer",
+      "artists": [
+        "Ryan Linvill",
+        "Dan Viafore"
+      ]
+    },
+    {
+      "role": "Mixing Engineer",
+      "artists": [
+        "Mitch McCarthy"
+      ]
+    },
+    {
+      "role": "Mastering Engineer",
+      "artists": [
+        "Randy Merrill"
+      ]
+    },
+    {
+      "role": "Immersive Mixing Engineer",
+      "artists": [
+        "Dustin Richardson"
+      ]
+    }
+  ],
+  "phonographic_copyright": "℗ 2021 Olivia Rodrigo, under exclusive license to Geffen Records",
+  "copyright_notice": "",
+  "cover_art_url": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/02/ed/8c/02ed8cab-c089-2fdd-7ce6-ab334a9a4e19/21UMGIM26093.rgb.jpg/1000x1000bb.png"
+}

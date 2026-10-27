@@ -8,7 +8,7 @@ Genius UI contract
 ------------------
   - Each role is added ONCE via "Add additional credits".
   - Multiple artists for the same role are added sequentially in the
-    "Artists in this role" field (tag/chip input — select one, field clears,
+    "Artists in this role" field (tag/chip input - select one, field clears,
     type the next).
 
 Flow per F8 press
@@ -26,12 +26,14 @@ before pressing F8 (e.g. "Click 'Add additional credits' first").
 
 import threading
 import time
+
 import keyboard
 import pyperclip
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
+
 from scraper.models import SongCredits
 from utils.config import settings
 
@@ -92,7 +94,7 @@ class HotkeyQueueAssistant:
     def _next_instruction(self) -> str:
         """Returns the instruction shown to the user before they press F8."""
         if self._pos >= len(self._queue):
-            return "All done — save the page."
+            return "All done. Save the page on Genius."
 
         kind, _ = self._queue[self._pos]
         hotkey = f"[bold cyan]{settings.hotkey.upper()}[/bold cyan]"
@@ -101,12 +103,12 @@ class HotkeyQueueAssistant:
         if kind == "written_by":
             if prev_kind != "written_by":
                 return f"Click the [bold]Written By[/bold] field, then press {hotkey}"
-            return f"Field is ready — press {hotkey} to add the next songwriter"
+            return f"Field is ready. Press {hotkey} to add the next songwriter"
 
         if kind == "produced_by":
             if prev_kind != "produced_by":
                 return f"Click the [bold]Produced By[/bold] field, then press {hotkey}"
-            return f"Field is ready — press {hotkey} to add the next producer"
+            return f"Field is ready. Press {hotkey} to add the next producer"
 
         if kind == "role":
             return (
@@ -118,16 +120,18 @@ class HotkeyQueueAssistant:
         # kind == "artist"
         if prev_kind == "role":
             return f"Tab to [bold]Artists in this role[/bold], then press {hotkey}"
-        return f"Field is ready — press {hotkey} to add the next artist"
+        return f"Field is ready. Press {hotkey} to add the next artist"
 
     def _render(self) -> None:
         console.clear()
 
-        console.print(Panel(
-            f"[bold]{self._song.title}[/bold]  —  {self._song.artist}",
-            title="[cyan]A Music to Genius[/cyan]",
-            border_style="cyan",
-        ))
+        console.print(
+            Panel(
+                f"[bold]{self._song.title}[/bold]  ·  {self._song.artist}",
+                title="[cyan]A Music to Genius[/cyan]",
+                border_style="cyan",
+            )
+        )
 
         total = len(self._queue)
 
@@ -140,18 +144,20 @@ class HotkeyQueueAssistant:
                 "artist": "Artists in this role",
             }.get(kind, kind)
 
-            console.print(Panel(
-                f"[dim]{field_label}[/dim]\n"
-                f"[bold yellow]{value}[/bold yellow]\n\n"
-                f"{self._next_instruction()}",
-                title=f"[green]Next[/green]  ({self._pos + 1}/{total})",
-                border_style="green",
-            ))
+            console.print(
+                Panel(
+                    f"[dim]{field_label}[/dim]\n[bold yellow]{value}[/bold yellow]\n\n{self._next_instruction()}",
+                    title=f"[green]Next[/green]  ({self._pos + 1}/{total})",
+                    border_style="green",
+                )
+            )
         else:
-            console.print(Panel(
-                "[bold green]All credits entered! Save the Genius page.[/bold green]",
-                border_style="green",
-            ))
+            console.print(
+                Panel(
+                    "[bold green]All credits entered! Save the Genius page.[/bold green]",
+                    border_style="green",
+                )
+            )
 
         # ── Full queue table ──────────────────────────────────────────
         table = Table(show_header=True, header_style="bold magenta", box=None)

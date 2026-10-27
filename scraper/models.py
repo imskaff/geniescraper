@@ -2,7 +2,6 @@ import re
 
 from pydantic import BaseModel
 
-
 _COPYRIGHT_CONNECTORS = re.compile(
     r",?\s+(?:"
     r"under\s+(?:exclusive\s+)?licen[sc]e\s+(?:to|from)"
@@ -24,6 +23,7 @@ def _extract_labels(text: str) -> list[str]:
         return []
     parts = _COPYRIGHT_CONNECTORS.split(clean)
     return [p.strip().strip(",").strip() for p in parts if p.strip().strip(",").strip()]
+
 
 # Roles that map to Genius's dedicated "Written By" field (above "Add additional credits").
 _WRITTEN_BY_ROLES = frozenset({"songwriter", "lyricist", "lyrics", "co-writer", "writer"})
@@ -72,16 +72,13 @@ class SongCredits(BaseModel):
             if key not in role_casing:
                 role_casing[key] = credit.role
 
-        return [
-            Credit(role=role_casing[key], artists=seen[key])
-            for key in order
-            if seen[key]
-        ]
+        return [Credit(role=role_casing[key], artists=seen[key]) for key in order if seen[key]]
 
     def additional_credits(self) -> list["Credit"]:
         """Credits that are not Written By or Produced By (i.e. go in the additional roles table)."""
         return [
-            c for c in self.merged_credits()
+            c
+            for c in self.merged_credits()
             if c.role.lower() not in _WRITTEN_BY_ROLES and c.role.lower() not in _PRODUCED_BY_ROLES
         ]
 
@@ -112,8 +109,8 @@ class SongCredits(BaseModel):
         Returns a typed queue consumed by the hotkey assistant.
 
         Ordering matches the Genius metadata form layout:
-          1. ("written_by",  <artist>) — Songwriter/Lyricist → Written By field
-          2. ("produced_by", <artist>) — Producer → Produced By field
+          1. ("written_by",  <artist>) - Songwriter/Lyricist → Written By field
+          2. ("produced_by", <artist>) - Producer → Produced By field
           3. ("role",   <role_name>)   \\
              ("artist", <artist>)       > everything else via Add additional credits
              ...
@@ -158,10 +155,8 @@ class SongCredits(BaseModel):
                 queue.append(("copyright_role", "Copyright"))
                 for label in co_labels:
                     queue.append(("copyright_notice", label))
-        if include_youtube:
-            if self.youtube_url:
-                queue.append(("youtube_url", self.youtube_url))
-        if include_cover_art:
-            if self.cover_art_url:
-                queue.append(("cover_art", self.cover_art_url))
+        if include_youtube and self.youtube_url:
+            queue.append(("youtube_url", self.youtube_url))
+        if include_cover_art and self.cover_art_url:
+            queue.append(("cover_art", self.cover_art_url))
         return queue

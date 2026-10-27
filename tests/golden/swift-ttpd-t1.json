@@ -1,0 +1,116 @@
+{
+  "title": "Fortnight (feat. Post Malone)",
+  "artist": "Taylor Swift",
+  "apple_music_url": "https://music.apple.com/us/album/the-tortured-poets-department/1736268215",
+  "credits": [
+    {
+      "role": "Lead Vocals",
+      "artists": [
+        "Taylor Swift",
+        "Post Malone"
+      ]
+    },
+    {
+      "role": "Programming",
+      "artists": [
+        "Jack Antonoff"
+      ]
+    },
+    {
+      "role": "Drums",
+      "artists": [
+        "Jack Antonoff",
+        "Sean Hutchinson"
+      ]
+    },
+    {
+      "role": "Synthesizer",
+      "artists": [
+        "Jack Antonoff"
+      ]
+    },
+    {
+      "role": "Percussion",
+      "artists": [
+        "Jack Antonoff"
+      ]
+    },
+    {
+      "role": "Electric Guitar",
+      "artists": [
+        "Jack Antonoff"
+      ]
+    },
+    {
+      "role": "Acoustic Guitar",
+      "artists": [
+        "Jack Antonoff"
+      ]
+    },
+    {
+      "role": "Composer",
+      "artists": [
+        "Taylor Swift",
+        "Austin Post",
+        "Jack Antonoff"
+      ]
+    },
+    {
+      "role": "Producer",
+      "artists": [
+        "Taylor Swift",
+        "Jack Antonoff"
+      ]
+    },
+    {
+      "role": "Assistant Recording Engineer",
+      "artists": [
+        "Jon Sher",
+        "Jack Manning",
+        "Lauren Marquez"
+      ]
+    },
+    {
+      "role": "Vocal Producer",
+      "artists": [
+        "Louis Bell"
+      ]
+    },
+    {
+      "role": "Vocal Recording Engineer",
+      "artists": [
+        "Louis Bell"
+      ]
+    },
+    {
+      "role": "Mixing Engineer",
+      "artists": [
+        "Serban Ghenea"
+      ]
+    },
+    {
+      "role": "Assistant Mixing Engineer",
+      "artists": [
+        "Bryce Bordone"
+      ]
+    },
+    {
+      "role": "Recording Engineer",
+      "artists": [
+        "Laura Sisk",
+        "Oli Jacobs",
+        "Sean Hutchinson",
+        "Michael Riddleberger"
+      ]
+    },
+    {
+      "role": "Mastering Engineer",
+      "artists": [
+        "Randy Merrill"
+      ]
+    }
+  ],
+  "phonographic_copyright": "℗ 2024 Taylor Swift",
+  "copyright_notice": "",
+  "cover_art_url": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/7d/61/6b7d61e4-e6f1-83bc-d645-463aa06b33c4/24UMGIM29563.rgb.jpg/1000x1000bb.png"
+}
