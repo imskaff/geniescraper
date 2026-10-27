@@ -125,10 +125,12 @@ uv run pytest -m live
 uv run python -m bench.run
 ```
 
-- `uv run pytest` runs the fast offline suite: unit tests plus the real parsers against saved Apple Music HTML in `tests/fixtures/`.
+- `uv run pytest` runs the fast offline suite: unit tests, the real parsers against saved Apple Music HTML in `tests/fixtures/`, and the lookups against saved responses.
 - `-m live` runs the full scrape flow against live Apple Music and compares it with the hand-reviewed expectations in `tests/golden/`.
 - `bench.run` measures latency, accuracy and run-to-run stability over the cases in `bench/cases.json`.
 - `uv run python -m bench.capture` refreshes fixtures when Apple changes its markup; it never overwrites a golden file.
+- `uv run python -m bench.lookups` measures the YouTube and cover art lookups alone: accuracy against the hand-verified videos in `tests/golden/youtube.json` and the golden cover artwork, plus latency.
+- `uv run python -m bench.capture_lookups` refreshes the saved YouTube, Deezer and iTunes responses in `tests/fixtures/lookups/` that the offline lookup tests replay.
 
 ## License
 
