@@ -82,3 +82,26 @@ def test_settings_window_uses_app_icon_and_fast_scroll():
 
     walk_screens(on_screen)
     assert checked == ["04-settings"]
+
+
+def _dark_title_bar_attr(window) -> int:
+    import ctypes
+
+    hwnd = ctypes.windll.user32.GetParent(window.winfo_id())
+    value = ctypes.c_int(-1)
+    ctypes.windll.dwmapi.DwmGetWindowAttribute(hwnd, 20, ctypes.byref(value), ctypes.sizeof(value))
+    return value.value
+
+
+def test_main_and_settings_windows_have_dark_title_bars():
+    """transient() replaces the Settings window frame; the dark title bar must survive it."""
+    from tools.gui_snapshots import walk_screens
+
+    seen: dict[str, int] = {}
+
+    def on_screen(window, name):
+        if name in ("01-start", "04-settings"):
+            seen[name] = _dark_title_bar_attr(window)
+
+    walk_screens(on_screen)
+    assert seen == {"01-start": 1, "04-settings": 1}

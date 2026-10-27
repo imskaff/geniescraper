@@ -82,6 +82,28 @@ def set_icon(window: ctk.CTk | ctk.CTkToplevel) -> None:
         window.iconbitmap(str(APP_ICON))
 
 
+_DWMWA_USE_IMMERSIVE_DARK_MODE = 20  # Windows 10 20H1 and later
+_DWMWA_USE_IMMERSIVE_DARK_MODE_OLD = 19  # Windows 10 1809 to 1909
+_SWP_REFRAME = 0x0001 | 0x0002 | 0x0004 | 0x0010 | 0x0020  # NOSIZE NOMOVE NOZORDER NOACTIVATE FRAMECHANGED
+
+
+def dark_title_bar(window: ctk.CTk | ctk.CTkToplevel) -> None:
+    """Ask Windows for a dark title bar on the window's current frame, and repaint it.
+
+    customtkinter does this when a window is created, but Tk replaces the frame when a
+    window is made transient, which silently brings the light title bar back.
+    """
+    if sys.platform != "win32":
+        return
+    window.update_idletasks()
+    hwnd = ctypes.windll.user32.GetParent(window.winfo_id())
+    on = ctypes.c_int(1)
+    for attr in (_DWMWA_USE_IMMERSIVE_DARK_MODE, _DWMWA_USE_IMMERSIVE_DARK_MODE_OLD):
+        if ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, attr, ctypes.byref(on), ctypes.sizeof(on)) == 0:
+            break
+    ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, _SWP_REFRAME)
+
+
 def apply() -> None:
     """Install the palette as the customtkinter widget theme. Call before creating any widget."""
     ctk.set_appearance_mode("dark")

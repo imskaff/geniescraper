@@ -39,6 +39,7 @@ class SettingsWindow(ctk.CTkToplevel):
         self.configure(fg_color=theme.BG)
         self.transient(master)
         self.attributes("-topmost", True)
+        theme.dark_title_bar(self)  # after transient(), which replaces the window frame
         self.protocol("WM_DELETE_WINDOW", self.close)
         self.bind("<Escape>", lambda _: self.close())
         self._build()
