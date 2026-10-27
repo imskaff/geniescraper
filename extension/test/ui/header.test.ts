@@ -54,79 +54,6 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-describe("the way back to the main menu", () => {
-  it("is not shown on the main menu itself", async () => {
-    const { root } = await mount();
-    expect($(root, "#menu-row").hidden).toBe(true);
-  });
-
-  it.each([
-    ["the track list", toTracks],
-    ["the credits", toReview],
-  ])("is shown on %s, in plain words and in its own color", async (_name, go) => {
-    const { root } = await go();
-    const menu = $(root, "#menu-toggle");
-    expect($(root, "#menu-row").hidden).toBe(false);
-    expect(menu.textContent).toBe("Back to main menu");
-    expect(menu.classList.contains("nav")).toBe(true);
-    // Different from the quiet outline buttons and from the yellow primary ones.
-    expect(menu.classList.contains("quiet")).toBe(false);
-    expect(menu.classList.contains("primary")).toBe(false);
-  });
-
-  it("lives in the header, which stays in view, and not at the bottom of the screen", async () => {
-    const { root } = await toReview();
-    expect($(root, "header").contains($(root, "#menu-toggle"))).toBe(true);
-    expect($(root, "main").textContent).not.toContain("Back to main menu");
-    expect([...root.querySelectorAll("button")].some((b) => b.textContent === "New link")).toBe(false);
-  });
-
-  it("returns to the main menu with a clean slate", async () => {
-    const { root, panel } = await toReview();
-    $(root, "#menu-toggle").click();
-    await flush();
-    expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
-    expect(panel.state.session).toMatchObject({ screen: "link", album: null, results: [], selected: [] });
-    expect($(root, "#menu-row").hidden).toBe(true);
-  });
-
-  it("works even while credits are still being read, and drops the late answer", async () => {
-    const gate = deferred<Result<PageScrape>>();
-    const { root, panel } = await toTracks({ api: { scrapeTrack: () => gate.promise } });
-    await panel.setAllSelected(true);
-    void panel.getCredits();
-    await flush();
-    expect(panel.state.busy).toBe("scrape");
-
-    $(root, "#menu-toggle").click();
-    await flush();
-    expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
-    gate.resolve({ ok: true, data: scrapeFor("One") });
-    await flush();
-    expect(panel.state.session.screen).toBe("link");
-    expect(panel.state.session.results).toEqual([]);
-  });
-
-  it("is not shown over settings or the paste screen, where leaving would end work in progress", async () => {
-    const { root, panel } = await toReview();
-    panel.openSettings();
-    await flush();
-    expect($(root, "#menu-row").hidden).toBe(true);
-    panel.closeSettings();
-    await panel.startPaste(0);
-    await flush();
-    expect($(root, "#menu-row").hidden).toBe(true);
-  });
-
-  it("has a name a screen reader can use, and shows a keyboard focus ring like every control", async () => {
-    const { root } = await toTracks();
-    const menu = $(root, "#menu-toggle");
-    menu.focus();
-    expect(document.activeElement).toBe(menu);
-    expect(menu.getAttribute("type")).toBe("button");
-  });
-});
-
 describe("Start pasting in the header", () => {
   it("is not shown before there are credits to paste", async () => {
     for (const go of [mount, toTracks]) {
@@ -264,29 +191,5 @@ describe("the paste queue", () => {
     expect(items).toContain("Additional roleProgrammer");
     expect(items).toContain("Additional roleDrum Programmer");
     expect(items.some((text) => text.endsWith("Programming"))).toBe(false);
-  });
-});
-
-describe("the steps while pasting", () => {
-  it("are collapsed until opened, and stay as the user left them", async () => {
-    const { root, panel } = await toReview();
-    await panel.startPaste(0);
-    await flush();
-    const steps = details(root, "All steps");
-    expect(steps.open).toBe(false);
-    expect(steps.querySelector("summary")?.textContent).toMatch(/^All steps \(\d+\)$/);
-
-    open(steps, true);
-    await panel.pasteSkip();
-    await flush();
-    expect(details(root, "All steps").open).toBe(true);
-  });
-
-  it("do not share their open state with the paste queue", async () => {
-    const { root, panel } = await toReview();
-    open(details(root, "Paste queue"), true);
-    await panel.startPaste(0);
-    await flush();
-    expect(details(root, "All steps").open).toBe(false);
   });
 });

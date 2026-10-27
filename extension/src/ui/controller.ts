@@ -30,6 +30,8 @@ export interface PanelState {
   settingsOpen: boolean;
   /** The paste session, as the worker stores it. */
   paste: PasteState;
+  /** Which track is being pasted (null when unknown, for example after a restart with no match). */
+  pasteIndex: number | null;
   /** What the panel is waiting for; the buttons that would start another job are disabled meanwhile. */
   busy: "detect" | "scrape" | null;
   /** A problem the user has to act on; announced assertively. */
@@ -44,6 +46,7 @@ export const MESSAGES = {
   invalidLink: "That is not an Apple Music album or song link.",
   noTracks: "Pick at least one track.",
   noPage: "Apple Music has no page for this track, so its credits cannot be read.",
+  allDone: "All credits entered. Check the Genius page, then press Save there.",
 } as const;
 
 /** What to tell the user about a failure; the codes are stable, the wording is for people. */
@@ -95,7 +98,20 @@ export class PanelController {
     pageUrl: string,
     paste: PasteState = { ...IDLE_PASTE },
   ) {
-    this.current = { session, settings, paste, settingsOpen: false, busy: null, error: "", status: "", pageUrl };
+    const pasteIndex = paste.active
+      ? (session.results.find((r) => (r.song?.title || r.title) === paste.title)?.index ?? null)
+      : null;
+    this.current = {
+      session,
+      settings,
+      paste,
+      pasteIndex,
+      settingsOpen: false,
+      busy: null,
+      error: "",
+      status: "",
+      pageUrl,
+    };
   }
 
   /** Load settings, the stored session and the active tab, and build the controller from them. */
@@ -331,6 +347,10 @@ export class PanelController {
   /** The worker changed the paste session (a hotkey press on Genius, or one of our own commands). */
   setPaste(paste: PasteState): void {
     // An attention message needs the user to act, so it is announced assertively; progress is announced politely.
+    if (paste.active && paste.queue.length > 0 && paste.position >= paste.queue.length) {
+      this.update({ paste, error: "", status: MESSAGES.allDone });
+      return;
+    }
     this.update(
       paste.active
         ? {
@@ -358,6 +378,24 @@ export class PanelController {
       title: result.song.title || result.title,
       queue: queue.map(([kind, value]) => [kind, value]),
     });
+    this.update({ pasteIndex: index });
+    await this.updateSession({ current: index });
+  }
+
+  /** The next track after the one being pasted whose credits are in and give something to paste, or null. */
+  nextPastable(): number | null {
+    const from = this.current.pasteIndex;
+    if (from === null) return null;
+    const later = this.current.session.results.filter((r) => r.index > from && r.song !== null);
+    return later.find((r) => this.queueFor(r.index).length > 0)?.index ?? null;
+  }
+
+  /** Leave the finished paste: end the session quietly and go where the user chose. */
+  async leavePasting(destination: "credits" | "tracks" | "menu"): Promise<void> {
+    await this.pasteCommand({ type: "paste-stop" });
+    this.update({ error: "", status: "", pasteIndex: null });
+    if (destination === "tracks") await this.backToTracks();
+    else if (destination === "menu") await this.newAlbum();
   }
 
   fillNext(): Promise<void> {

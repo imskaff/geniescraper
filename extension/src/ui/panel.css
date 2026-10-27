@@ -342,9 +342,15 @@ a {
   color: var(--muted);
 }
 
+/* The step to do now is filled yellow, like the primary buttons, so it is found at a glance. */
 .steps li.here {
-  border-color: var(--link);
-  box-shadow: inset 3px 0 0 var(--link);
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.steps li.here .tag {
+  color: var(--accent-ink);
 }
 
 select.field {
@@ -428,4 +434,40 @@ legend {
 
 .disclosure[open] > summary {
   margin-bottom: 8px;
+}
+
+/* The finished screen */
+.done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 16px 0 20px;
+  text-align: center;
+}
+
+.done h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.done p {
+  margin: 0;
+}
+
+.done-mark {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 8px;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-radius: 50%;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.button.wide {
+  width: 100%;
 }

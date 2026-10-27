@@ -345,3 +345,14 @@ From the owner's first try of the extension:
   The mapping is the extension's own: `scraper/roles.py` and the golden files, shared with the desktop app, are unchanged, so the desktop app still types "Programming" (a separate task if wanted).
 - **Collapsible queues.** The paste queue on the credits and the step list on the paste screen are native `details` elements, closed by default, with their length in the heading; each keeps its open state across redraws and keeps keyboard focus.
 - Not changed: the credits-screen queue still labels the first steps "Written By" while the paste screen says "Writer" (Genius's name).
+
+### Second round of hands-on feedback
+
+- **One song has no track list.** Back to tracks is only offered for an album with more than one track.
+- **Ways out under the paste queue.** Back to main menu moved from the header into the bottom row of the track list and the credits (next to Back to tracks), and is no longer in the header.
+- **Steps open while pasting.** The paste screen's step list is open by default and keeps the user's choice across redraws.
+- **Current step filled yellow.** The step to do now uses the primary yellow with dark ink (`--accent`, `--accent-ink`), not only an outline.
+- **Stop pasting** uses the Back to main menu style.
+- **Finished screen.** When the last step is done a success screen replaces the paste screen, as in the desktop app: a check mark, "All credits entered", the song, "Check the Genius page, then press Save there.", and the ways on: Paste next track (when a later track has credits), Back to the credits, Back to the track list (albums only), Back to main menu.
+  Leaving it ends the paste session quietly.
+  Focus moves to its heading and the message is announced.

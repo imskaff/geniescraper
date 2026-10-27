@@ -130,8 +130,10 @@ try {
     await panel.evaluate("document.querySelector('[data-key=go]').disabled"),
   );
   check(
-    "the main menu button is in the header",
-    await panel.evaluate("document.querySelector('header #menu-toggle')?.textContent === 'Back to main menu'"),
+    "Back to main menu is at the bottom of the track list, not in the header",
+    await panel.evaluate(
+      "document.querySelector('main [data-key=menu]')?.textContent === 'Back to main menu' && !document.querySelector('header').textContent.includes('Back to main menu')",
+    ),
   );
   await shot("2-tracks");
 
@@ -224,8 +226,14 @@ try {
   );
   check(
     "the main menu button is a different color from Settings",
-    (await style("#menu-toggle", "color")) !== (await style("#settings-toggle", "color")) &&
-      (await style("#menu-toggle", "borderColor")) !== (await style("#settings-toggle", "borderColor")),
+    (await style('[data-key="menu"]', "color")) !== (await style("#settings-toggle", "color")) &&
+      (await style('[data-key="menu"]', "borderColor")) !== (await style("#settings-toggle", "borderColor")),
+  );
+  check(
+    "Back to main menu sits in the same row as Back to tracks, below the paste queue",
+    await panel.evaluate(
+      "(() => { const menu = document.querySelector('main [data-key=menu]'); const back = document.querySelector('main [data-key=back]'); const queue = document.querySelector('details.disclosure'); return menu.parentElement === back.parentElement && !!(queue.compareDocumentPosition(menu) & Node.DOCUMENT_POSITION_FOLLOWING); })()",
+    ),
   );
   await shot("4a-header-top");
   // The header stays in view: scroll to the bottom and it is still at the top of the window.
@@ -345,6 +353,17 @@ try {
   const progress = (await text(".progress")) ?? "";
   const stepCount = Number(progress.match(/of (\d+)/)?.[1] ?? 0);
   check("the progress starts at step 1", /^Step 1 of \d+$/.test(progress), progress);
+  check("all steps are open from the start", await panel.evaluate("document.querySelector('details.disclosure').open"));
+  check(
+    "the current step is filled yellow, like the primary buttons",
+    (await style("ol.steps li.here", "backgroundColor")) === (await style('[data-key="fill"]', "backgroundColor")),
+    String(await style("ol.steps li.here", "backgroundColor")),
+  );
+  check(
+    "Stop pasting has the style of Back to main menu, not the quiet buttons",
+    (await style('[data-key="pstop"]', "color")) !== (await style('[data-key="pskip"]', "color")) &&
+      (await style('[data-key="pstop"]', "borderColor")) !== (await style('[data-key="pskip"]', "borderColor")),
+  );
   check("the first step is named and shown", Boolean(await text(".step .tag")) && Boolean(await text(".step .value")));
   check(
     "the instruction names the Next key and never asks the user to click",
@@ -421,7 +440,50 @@ try {
   await clickButton("Back");
   await until("document.querySelector('h2')?.textContent === 'Paste into Genius'", "the paste screen again");
 
+  // From the last step, one more step finishes the paste: the screen in front of it says so.
+  await clickButton("Skip");
+  await until("document.querySelector('h2')?.textContent === 'All credits entered'", "the finished screen");
+  check(
+    "a success screen replaces the paste screen when the last step is done",
+    (await text("h2")) === "All credits entered",
+  );
+  check(
+    "it shows a check mark and tells the user to save on Genius",
+    (await text(".done-mark")) === "\u2713" &&
+      ((await text(".done")) ?? "").includes("Check the Genius page, then press Save there."),
+  );
+  check("focus moved to its heading", (await focused()) === "H2");
+  check(
+    "it is announced",
+    ((await text("#status")) ?? "").startsWith("All credits entered"),
+    String(await text("#status")),
+  );
+  const nextLabel = await text('[data-key="pnext"]');
+  check(
+    "it offers the next track, as the main action",
+    /^Paste next track: .+/.test(nextLabel ?? ""),
+    String(nextLabel),
+  );
+  check(
+    "it offers the credits, the track list and the main menu",
+    await panel.evaluate(
+      "['pcredits', 'ptracks', 'pmenu'].every((k) => document.querySelector('[data-key=' + k + ']'))",
+    ),
+  );
+  const doneOverflow = await horizontalOverflow();
+  check("the finished screen has no horizontal scrollbar", doneOverflow.scroll <= doneOverflow.client);
+  await shot("9g-done-screen");
+  await panel.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "light" }] });
+  await sleep(300);
+  await shot("9h-done-screen-light");
+  await panel.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "dark" }] });
+  await clickButton("Back to the credits");
+  await until("document.querySelector('h2')?.textContent === 'Credits'", "the credits after finishing");
+  check("Back to the credits leaves quietly", (await text("h2")) === "Credits" && (await text("#status")) === "");
+
   // Stop with the keyboard and land back on the credits.
+  await clickButton("Start pasting");
+  await until("document.querySelector('h2')?.textContent === 'Paste into Genius'", "the paste screen once more");
   let onStop = false;
   for (let i = 0; i < 8 && !onStop; i++) {
     await press("Tab");

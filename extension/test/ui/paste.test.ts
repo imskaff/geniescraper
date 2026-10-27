@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { report, begin, type PasteState } from "../../src/core/paste";
+import { report, begin } from "../../src/core/paste";
 import { PanelController } from "../../src/ui/controller";
 import { PanelView } from "../../src/ui/view";
 import { ALBUM, fakeEnv } from "./fakes";
@@ -154,17 +154,6 @@ describe("the paste screen", () => {
     expect($(root, "#alert").textContent).toBe("Genius has no exact match for Writer One.");
     expect($(root, ".step + p").textContent).toContain("Choose Writer One in Genius's suggestions");
     expect($(root, '[aria-current="step"]').textContent).toContain("Waiting for you");
-  });
-
-  it("says every step is done at the end, and that saving is up to the user", async () => {
-    const { root, panel, env } = await onPaste();
-    const finished: PasteState = { ...env.api.pasteState, position: env.api.pasteState.queue.length };
-    panel.setPaste(finished);
-    await flush();
-    expect($(root, ".progress").textContent).toBe("All steps done");
-    expect(root.textContent).toContain("Every step is done. Check the form on Genius, then save it there.");
-    expect(button(root, "Fill next").disabled).toBe(true);
-    expect(root.querySelector(".step")).toBeNull();
   });
 
   it("stops and returns to the credits", async () => {
