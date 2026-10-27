@@ -43,6 +43,7 @@ timeout = 120
 addopts = "-ra --strict-markers -m 'not live'"
 markers = [
     "browser: needs a local Playwright Chromium but no network",
+    "gui: opens the real customtkinter window (needs a desktop session)",
     "live: hits real Apple Music/YouTube/Deezer; run with -m live",
 ]
 
