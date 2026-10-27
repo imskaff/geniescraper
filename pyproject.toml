@@ -22,6 +22,8 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "basedpyright>=1.20",
+    "pre-commit>=4.0",
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
     "pytest-timeout>=2.3",
@@ -58,3 +60,10 @@ ignore = [
     "RUF003",
     "SIM105",  # contextlib.suppress is not clearer than try/except/pass here
 ]
+
+[tool.basedpyright]
+pythonVersion = "3.10"
+pythonPlatform = "Windows"
+typeCheckingMode = "standard"
+venvPath = "."
+venv = ".venv"

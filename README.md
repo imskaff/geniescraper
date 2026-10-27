@@ -109,8 +109,23 @@ Settings are saved to `.env` in the project root.
 
 ## Development
 
+Install the git hooks once per clone (all worktrees of a clone share them):
+
+```bash
+uv run pre-commit install
+```
+
+Every commit then runs ruff check, ruff format --check, basedpyright and the offline `pytest` suite, the same checks CI runs on each push and pull request.
+The offline suite includes the fixture parsers, so run `uv run playwright install chromium` first.
+Never skip the hooks with `--no-verify`; fix the failure instead.
+CI (`.github/workflows/ci.yml`, `windows-latest`) runs the same checks on every push and pull request; the live tests run weekly and on manual dispatch, so Apple Music markup changes show up without blocking pushes.
+
 ```bash
 uv run ruff check . && uv run ruff format --check .
+```
+
+```bash
+uv run basedpyright
 ```
 
 ```bash
@@ -125,6 +140,9 @@ uv run pytest -m live
 uv run python -m bench.run
 ```
 
+- `basedpyright` type checks the project in `standard` mode (configured in `pyproject.toml`).
+  Known errors in `gui/app.py` are recorded in `.basedpyright/baseline.json`, so only new errors fail; fixed ones drop out of the baseline automatically on the next run.
+  Never regenerate the baseline (`--writebaseline`) to hide a new error; fix it instead.
 - `uv run pytest` runs the fast offline suite: unit tests, the real parsers against saved Apple Music HTML in `tests/fixtures/`, and the lookups against saved responses.
 - `-m live` runs the full scrape flow against live Apple Music and compares it with the hand-reviewed expectations in `tests/golden/`.
 - `bench.run` measures latency, accuracy and run-to-run stability over the cases in `bench/cases.json`.

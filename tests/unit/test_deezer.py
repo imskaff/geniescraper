@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 import httpx
 import pytest
 
@@ -7,7 +9,11 @@ from scraper import deezer
 @pytest.fixture
 def mock_http(monkeypatch):
     """Route every httpx.AsyncClient the module creates through state['handler']."""
-    state = {"handler": None}
+
+    def unset(req: httpx.Request) -> httpx.Response:
+        raise AssertionError(f"mock_http['handler'] not set for {req.url}")
+
+    state: dict[str, Callable[[httpx.Request], httpx.Response]] = {"handler": unset}
     real_client = httpx.AsyncClient
 
     def factory(*args, **kwargs):
