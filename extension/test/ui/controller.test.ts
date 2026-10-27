@@ -510,7 +510,7 @@ describe("optional hosts", () => {
     env.hosts.allow = false;
     await panel.setHost("deezer", true);
     expect(panel.state.hosts.deezer).toBe(false);
-    expect(panel.state.status).toBe("Chrome did not grant access, so that look-up stays off.");
+    expect(panel.state.error).toBe("Chrome did not grant access, so that look-up stays off.");
   });
 
   it("takes the permission back when it is turned off", async () => {
@@ -527,11 +527,13 @@ describe("optional hosts", () => {
     expect(panel.state.hosts.deezer).toBe(false);
   });
 
-  it("copes with Chrome failing to answer", async () => {
+  it("says why when Chrome rejects the request, and what to do about a manifest that was not reloaded", async () => {
     const { env, panel } = await open();
-    env.hosts.request = () => Promise.reject(new Error("boom"));
+    env.hosts.request = () => Promise.reject(new Error("Only optional permissions can be requested"));
     await panel.setHost("deezer", true);
     expect(panel.state.hosts.deezer).toBe(false);
+    expect(panel.state.error).toContain("Only optional permissions can be requested");
+    expect(panel.state.error).toContain("reload it in chrome://extensions");
   });
 });
 

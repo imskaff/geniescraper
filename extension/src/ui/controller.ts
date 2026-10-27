@@ -194,13 +194,19 @@ export class PanelController {
    */
   async setHost(host: OptionalHost, on: boolean): Promise<void> {
     const asked = on ? this.env.hosts.request(host) : this.env.hosts.remove(host);
-    const ok = await asked.catch(() => false);
+    let problem = "";
+    let ok = false;
+    try {
+      ok = await asked;
+    } catch (error) {
+      // Typically a manifest that was not reloaded: Chrome rejects a host the loaded manifest does not list.
+      const reason = error instanceof Error ? error.message : "";
+      problem = `Chrome refused the permission request${reason ? ` (${reason})` : ""}. If you just updated the extension, reload it in chrome://extensions and try again.`;
+    }
+    if (on && !ok && !problem) problem = "Chrome did not grant access, so that look-up stays off.";
     await this.refreshHosts();
     // Redraw even when nothing changed, so a box the user ticked and Chrome refused goes back to unticked.
-    this.update({
-      hosts: { ...this.current.hosts },
-      status: ok ? "" : on ? "Chrome did not grant access, so that look-up stays off." : "",
-    });
+    this.update({ hosts: { ...this.current.hosts }, error: problem });
   }
 
   /** Re-read which Apple Music page the user is on, after they switch tabs or navigate. */
