@@ -1,0 +1,300 @@
+// The panel's behaviour: one object holds the state, the actions change it, and the view only renders it.
+// Everything that touches the outside (the worker, storage, the browser's tabs) is injected, so the whole flow
+// runs in tests with fakes.
+import { parseAppleMusicUrl } from "../apple/url";
+import { typedQueue, type QueueItem, type SongCredits } from "../core/models";
+import type { AlbumInfo, AppError, PageScrape } from "../shared/messages";
+import { EMPTY_SESSION, type Session, type TrackResult } from "../shared/session";
+import { queueOptions, type Settings } from "../shared/settings";
+import { loadSession, loadSettings, saveSession, saveSettings, type Stores } from "../shared/storage";
+import type { WorkerApi } from "./api";
+
+export interface ActiveTab {
+  tabId: number;
+  url: string;
+}
+
+export interface Env {
+  api: WorkerApi;
+  stores: Stores;
+  /** The tab the user is looking at, or null when there is none to read. */
+  activeTab(): Promise<ActiveTab | null>;
+}
+
+export interface PanelState {
+  session: Session;
+  settings: Settings;
+  settingsOpen: boolean;
+  /** What the panel is waiting for; the buttons that would start another job are disabled meanwhile. */
+  busy: "detect" | "scrape" | null;
+  /** A problem the user has to act on; announced assertively. */
+  error: string;
+  /** Progress and results; announced politely. */
+  status: string;
+  /** The Apple Music page the user is on, offered as the default link ("" when there is none). */
+  pageUrl: string;
+}
+
+export const MESSAGES = {
+  invalidLink: "That is not an Apple Music album or song link.",
+  noTracks: "Pick at least one track.",
+  noPage: "Apple Music has no page for this track, so its credits cannot be read.",
+} as const;
+
+/** What to tell the user about a failure; the codes are stable, the wording is for people. */
+export function describeError(error: AppError): string {
+  switch (error.code) {
+    case "invalid-url":
+      return MESSAGES.invalidLink;
+    case "not-found":
+      return "Apple Music could not find that page. Check the link and try again.";
+    case "timeout":
+      return "Apple Music took too long to respond. Try again.";
+    case "tab-failed":
+      return `Could not read the page: ${error.message}`;
+    case "bad-request":
+    case "internal":
+      return `Something went wrong while reading the page: ${error.message}`;
+  }
+}
+
+/** The song the extension holds for a track: the page's credits, with the album's copyright lines added. */
+export function buildSong(album: AlbumInfo, result: Pick<TrackResult, "url">, scrape: PageScrape): SongCredits {
+  return {
+    title: scrape.title,
+    artist: scrape.artist,
+    appleMusicUrl: result.url,
+    credits: scrape.credits,
+    // Song pages carry no ℗/© footer, so these come from the album page read at detection time.
+    phonographicCopyright: album.phonographicCopyright,
+    copyrightNotice: album.copyrightNotice,
+    coverArtUrl: scrape.coverArtUrl || album.coverArtUrl,
+    youtubeUrl: "",
+    youtubeIsMv: false,
+  };
+}
+
+type Listener = () => void;
+
+export class PanelController {
+  private current: PanelState;
+  private readonly listeners = new Set<Listener>();
+  /** Bumped whenever a scrape run is stopped or replaced, so a late answer from the old run is dropped. */
+  private run = 0;
+
+  constructor(
+    private readonly env: Env,
+    settings: Settings,
+    session: Session,
+    pageUrl: string,
+  ) {
+    this.current = { session, settings, settingsOpen: false, busy: null, error: "", status: "", pageUrl };
+  }
+
+  /** Load settings, the stored session and the active tab, and build the controller from them. */
+  static async create(env: Env): Promise<PanelController> {
+    const [settings, session, tab] = await Promise.all([
+      loadSettings(env.stores),
+      loadSession(env.stores),
+      env.activeTab().catch(() => null),
+    ]);
+    const pageUrl = tab && parseAppleMusicUrl(tab.url) ? tab.url : "";
+    const controller = new PanelController(env, settings, session, pageUrl);
+    // Tracks that were mid-read when the panel closed were restored as pending: carry on with them.
+    if (session.screen === "review" && session.results.some((r) => r.status === "pending")) {
+      void controller.scrapePending();
+    }
+    return controller;
+  }
+
+  get state(): PanelState {
+    return this.current;
+  }
+
+  subscribe(listener: Listener): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private update(patch: Partial<PanelState>): void {
+    this.current = { ...this.current, ...patch };
+    for (const listener of this.listeners) listener();
+  }
+
+  private async updateSession(patch: Partial<Session>): Promise<void> {
+    const session = { ...this.current.session, ...patch };
+    this.update({ session });
+    try {
+      await saveSession(this.env.stores, session);
+    } catch {
+      // A full or unavailable store must not break the panel; the session simply is not kept.
+    }
+  }
+
+  /** Re-read which Apple Music page the user is on, after they switch tabs or navigate. */
+  async refreshPage(): Promise<void> {
+    const tab = await this.env.activeTab().catch(() => null);
+    const pageUrl = tab && parseAppleMusicUrl(tab.url) ? tab.url : "";
+    if (pageUrl !== this.current.pageUrl) this.update({ pageUrl });
+  }
+
+  // ── link ────────────────────────────────────────────────────────────
+
+  /** Read the album or song behind `rawUrl` and move to the track list. */
+  async detect(rawUrl: string): Promise<void> {
+    const url = rawUrl.trim();
+    if (!parseAppleMusicUrl(url)) {
+      this.update({ error: MESSAGES.invalidLink, status: "" });
+      return;
+    }
+    this.run++;
+    this.update({ busy: "detect", error: "", status: "Reading the page…" });
+    const tab = await this.env.activeTab().catch(() => null);
+    // The user's own tab is read in place when it shows this page: nothing opens, nothing flashes.
+    const result = await this.env.api.detect(url, tab?.url === url ? tab.tabId : undefined);
+    if (!result.ok) {
+      this.update({ busy: null, error: describeError(result.error), status: "" });
+      return;
+    }
+    const album = result.data;
+    const available = album.trackUrls.map((link, index) => (link ? index : -1)).filter((index) => index >= 0);
+    await this.updateSession({ screen: "tracks", album, selected: available, results: [], current: 0 });
+    // The track list names the album and its track count itself, and its heading takes focus, so nothing is announced twice.
+    this.update({ busy: null, status: "" });
+    // One track has nothing to choose from.
+    if (album.trackCount === 1 && available.length === 1) await this.getCredits();
+    else if (available.length === 0) this.update({ error: MESSAGES.noPage });
+  }
+
+  // ── tracks ──────────────────────────────────────────────────────────
+
+  async setTrackSelected(index: number, on: boolean): Promise<void> {
+    const { album, selected } = this.current.session;
+    if (!album?.trackUrls[index]) return;
+    const next = on ? [...new Set([...selected, index])].sort((a, b) => a - b) : selected.filter((i) => i !== index);
+    await this.updateSession({ selected: next });
+  }
+
+  async setAllSelected(on: boolean): Promise<void> {
+    const { album } = this.current.session;
+    if (!album) return;
+    const available = album.trackUrls.map((link, index) => (link ? index : -1)).filter((index) => index >= 0);
+    await this.updateSession({ selected: on ? available : [] });
+  }
+
+  /** Read the credits of every picked track, one after another, showing each as it arrives. */
+  async getCredits(): Promise<void> {
+    const { album, selected } = this.current.session;
+    if (!album || this.current.busy) return;
+    if (selected.length === 0) {
+      this.update({ error: MESSAGES.noTracks });
+      return;
+    }
+    const results: TrackResult[] = selected.map((index) => ({
+      index,
+      title: album.trackTitles[index] ?? "",
+      url: album.trackUrls[index] ?? "",
+      status: "pending",
+      song: null,
+      error: "",
+    }));
+    this.update({ error: "" });
+    await this.updateSession({ screen: "review", results, current: selected[0] ?? 0 });
+    await this.scrapePending();
+  }
+
+  // ── review ──────────────────────────────────────────────────────────
+
+  private async scrapePending(): Promise<void> {
+    const myRun = ++this.run;
+    this.update({ busy: "scrape", error: "" });
+    for (;;) {
+      const next = this.current.session.results.find((result) => result.status === "pending");
+      if (!next || myRun !== this.run) break;
+      await this.setResult(next.index, { status: "loading", error: "" });
+      const answer = await this.env.api.scrapeTrack(next.url, next.title);
+      if (myRun !== this.run) return; // stopped or replaced while waiting: drop the late answer
+      const album = this.current.session.album;
+      if (answer.ok && album) {
+        await this.setResult(next.index, { status: "done", song: buildSong(album, next, answer.data), error: "" });
+      } else if (!answer.ok) {
+        await this.setResult(next.index, { status: "error", error: describeError(answer.error) });
+      }
+    }
+    if (myRun !== this.run) return;
+    const { results } = this.current.session;
+    const done = results.filter((r) => r.status === "done").length;
+    const failed = results.filter((r) => r.status === "error").length;
+    const status =
+      failed === 0
+        ? `Got credits for ${String(done)} ${done === 1 ? "track" : "tracks"}.`
+        : `Got credits for ${String(done)} of ${String(results.length)} tracks; ${String(failed)} failed.`;
+    this.update({ busy: null, status });
+  }
+
+  private async setResult(index: number, patch: Partial<TrackResult>): Promise<void> {
+    const results = this.current.session.results.map((r) => (r.index === index ? { ...r, ...patch } : r));
+    await this.updateSession({ results });
+  }
+
+  /** Stop reading further tracks; whatever was read stays. */
+  async stop(): Promise<void> {
+    this.run++;
+    const results = this.current.session.results.map((r) =>
+      r.status === "loading" ? { ...r, status: "pending" as const } : r,
+    );
+    await this.updateSession({ results });
+    this.update({ busy: null, status: "Stopped." });
+  }
+
+  async retry(index: number): Promise<void> {
+    if (this.current.busy) return;
+    await this.setResult(index, { status: "pending", error: "" });
+    await this.scrapePending();
+  }
+
+  async showTrack(index: number): Promise<void> {
+    await this.updateSession({ current: index });
+  }
+
+  async backToTracks(): Promise<void> {
+    await this.updateSession({ screen: "tracks" });
+    this.update({ error: "" });
+  }
+
+  /** Start over with another link. */
+  async newAlbum(): Promise<void> {
+    this.run++;
+    await this.updateSession({ ...EMPTY_SESSION });
+    this.update({ busy: null, error: "", status: "" });
+  }
+
+  /** The paste queue of one track under the current settings; empty until its credits are in. */
+  queueFor(index: number): QueueItem[] {
+    const song = this.current.session.results.find((r) => r.index === index)?.song;
+    return song ? typedQueue(song, queueOptions(this.current.settings)) : [];
+  }
+
+  // ── settings ────────────────────────────────────────────────────────
+
+  openSettings(): void {
+    // The last job's progress message means nothing on the settings screen.
+    this.update({ settingsOpen: true, status: "" });
+  }
+
+  closeSettings(): void {
+    this.update({ settingsOpen: false });
+  }
+
+  async setSetting(key: keyof Settings, value: boolean): Promise<void> {
+    const settings = { ...this.current.settings, [key]: value };
+    this.update({ settings });
+    try {
+      await saveSettings(this.env.stores, settings);
+    } catch {
+      // Changed settings still apply for this session if they cannot be saved.
+    }
+  }
+}

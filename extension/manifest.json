@@ -17,7 +17,10 @@
     },
     "default_title": "__MSG_extName__"
   },
-  "permissions": ["scripting"],
+  "side_panel": {
+    "default_path": "ui/panel.html"
+  },
+  "permissions": ["scripting", "sidePanel", "storage"],
   "host_permissions": ["https://music.apple.com/*"],
   "background": {
     "service_worker": "background/worker.js"

@@ -18,6 +18,7 @@ interface Manifest {
   web_accessible_resources?: unknown;
   externally_connectable?: unknown;
   background?: { service_worker?: string };
+  side_panel?: { default_path?: string };
   content_scripts?: { matches: string[]; js?: string[] }[];
   icons?: Record<string, string>;
 }
@@ -100,6 +101,27 @@ describe("manifest files", () => {
     expect(worker).toBeDefined();
     const source = worker?.replace(/\.js$/, ".ts") ?? "";
     expect(existsSync(join(ROOT, "src", source)), source).toBe(true);
+  });
+
+  it("serves the side panel from a page the build copies", () => {
+    const panel = manifest.side_panel?.default_path;
+    expect(panel).toBe("ui/panel.html");
+    const build = readFileSync(join(ROOT, "scripts", "build.mjs"), "utf-8");
+    expect(build).toContain(`"src/${panel ?? ""}": "${panel ?? ""}"`);
+    expect(existsSync(join(ROOT, "src", panel ?? ""))).toBe(true);
+    // The page loads its script and stylesheet next to itself, so the build has to produce both.
+    const html = readFileSync(join(ROOT, "src", panel ?? ""), "utf-8");
+    expect(html).toContain('src="panel.js"');
+    expect(build).toContain('"ui/panel": "src/ui/panel.ts"');
+    expect(html).toContain('href="panel.css"');
+    expect(build).toContain('"src/ui/panel.css": "ui/panel.css"');
+  });
+
+  it("loads no remote or inline code in the panel page", () => {
+    const html = readFileSync(join(ROOT, "src", "ui", "panel.html"), "utf-8");
+    expect(html).not.toMatch(/<script(?![^>]*\ssrc=)[^>]*>/);
+    expect(html).not.toMatch(/(?:src|href)="(?:https?:)?\/\//);
+    expect(html).not.toMatch(/\son\w+=/);
   });
 
   it("has icons at 16, 48 and 128", () => {

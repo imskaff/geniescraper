@@ -11,8 +11,14 @@ const dist = join(root, "dist");
 const ENTRY_POINTS = {
   "background/worker": "src/background/worker.ts",
   "apple/content": "src/apple/content.ts",
+  "ui/panel": "src/ui/panel.ts",
 };
 const STATIC_PATHS = ["manifest.json", "_locales", "icons"];
+// Files copied as they are, from source path to path inside dist/.
+const STATIC_FILES = {
+  "src/ui/panel.html": "ui/panel.html",
+  "src/ui/panel.css": "ui/panel.css",
+};
 
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
@@ -31,4 +37,9 @@ await build({
 
 for (const path of STATIC_PATHS) {
   await cp(join(root, path), join(dist, path), { recursive: true });
+}
+
+for (const [from, to] of Object.entries(STATIC_FILES)) {
+  await mkdir(dirname(join(dist, to)), { recursive: true });
+  await cp(join(root, from), join(dist, to));
 }

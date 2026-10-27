@@ -194,7 +194,7 @@ Each slice ends working, tested and committable.
 | 2 | Port `typedQueue`, copyright helpers, flow logic (done) | All Python vectors pass in Vitest |
 | 3 | Apple Music credits parser (done) | Every fixture in `tests/fixtures` matches `tests/golden` |
 | 4 | Album and track detection, background-tab credits reader (done; reads song pages, see section 11) | Unit tests with fake `chrome.*` ports; real hidden-tab run matches golden |
-| 5 | Panel UI showing the queue, settings, accessibility pass | Component tests plus axe-style checks; keyboard walkthrough |
+| 5 | Side panel UI: link, track picker, credits and paste queue, settings; accessibility pass (done) | Unit tests with fake worker and storage; `npm run live:panel` drives the real panel, worker and live Apple Music |
 | 6 | Genius fill (blocked on the edit-form fixture) | Fill tests against the captured fixture; manual run on a real edit form |
 | 7 | iTunes cover lookup | Replays `tests/fixtures/lookups/covers` |
 | 8 | Deezer and YouTube lookups with optional permissions | Replays `tests/fixtures/lookups/youtube` and matches `tests/golden/youtube.json` |
@@ -220,7 +220,7 @@ Each slice ends working, tested and committable.
 - Genius shows a cookie consent dialog that can intercept clicks; the extension must not interact with it.
 - The fixture omits the Tags, Albums and Song Relationships sections, which the extension never touches.
 - **Hidden-tab side effects (slice 5)**: every scrape shows a tab briefly in the tab strip and adds a history entry for the song page; check whether a minimized window avoids the flash before relying on it.
-- **Real worker end to end (slice 5)**: the live checks drive tabs from the service worker directly, so `chromePorts()`, the router, the sender filter and the user-tab detect path have only run against fakes; the panel's acceptance check must go through the real worker.
+- **Real worker end to end**: done in slice 5; `npm run live:panel` goes through the real panel page, `chromePorts()`, the router and the sender filter. The user-tab detect path (panel opened while the user is on the album) is only unit tested.
 - **Live coverage**: one track of one album has run live; the other six cases are covered by saved pages only.
 - **Safari**: confirm which APIs (`sidePanel`, `scripting`, session storage) are available before committing to the shared UI page.
 - **Genius ToS review**: confirm the per-press fill stays within the guidelines before the store listing.
@@ -246,3 +246,16 @@ Playwright forces pages to report `visibilityState: "visible"` and focus, so it 
   A bad song link returns `not-found` after about 3 s.
 - This differs from the Python app, which clicks through MORE; benchmark and golden-compare it there before porting the idea back.
 - `chrome.tabs.sendMessage` waits for the answer, so the worker keeps itself alive with a periodic API call while a request runs.
+
+## 12. Slice 5 decisions: the side panel
+
+- The UI is a Chrome side panel (`side_panel.default_path`, opened by the toolbar button). The popup fallback for Safari stays an open item.
+- State lives in a controller that takes the worker, storage and the active tab as injected ports, so the whole flow runs in tests; the view only renders it and uses `textContent` and attributes, never markup.
+- The working session (album, picked tracks, credits, screen) is kept in `chrome.storage.session`, so closing the panel loses nothing; a track that was mid-read when the panel closed is read again on reopening.
+- Only the five scrape toggles are settings in this slice, because they are the only ones with an effect yet; hotkeys, auto-confirm, autocomplete wait and auto-tab arrive with the Genius fill in slice 6.
+- Single-track pages skip the track picker; tracks Apple gives no page are listed, disabled and labelled.
+- Accessibility: one `h1`, a focused `h2` on every screen change, labelled controls, never-rebuilt status and alert regions, focus kept across re-renders, `aria-invalid` on a rejected link, `prefers-color-scheme` and `prefers-reduced-motion` handled.
+  A test holds every color pair in `panel.css` to WCAG AA (4.5:1 text, 3:1 control edges), in both schemes, instead of an axe dependency, which has not been approved.
+  That test found a real problem: the yellow selected-track edge failed on the light scheme, so it uses the darker link color.
+- The live run at 400 px wide found a horizontal scrollbar caused by the unbreakable cover art URL in the paste queue; items now wrap.
+- Reading an album or song page needs no extra step from the user: when the active tab already shows the pasted link it is read in place, otherwise a hidden tab is used and closed again.

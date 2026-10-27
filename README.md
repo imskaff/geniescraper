@@ -180,6 +180,12 @@ uv run python -m tools.export_roles && uv run python -m tools.export_vectors
 
 A Python test fails when either file is stale, so run both after changing `scraper/roles.py`, `scraper/models.py`, `scraper/apple_music.py`, `scraper/deezer.py`, `scraper/text.py` or `assistant/flow.py`.
 
+To try the extension, run `npm run build`, open `chrome://extensions`, switch on Developer mode, choose Load unpacked and pick `extension/dist`.
+The toolbar button opens the side panel: paste an Apple Music album or song link (or open one and the panel offers it), choose tracks, and review the credits and the paste queue.
+Pasting into Genius is not part of the extension yet.
+
+`npm run live:panel -- --chrome <path to Chromium> --screenshots <folder>` drives the real panel against the real service worker and live Apple Music, checks the result against the golden file, and saves screenshots.
+
 `npm run live:hidden-tab -- --chrome <path to Chromium>` is an opt-in live check against Apple Music that the extension can read song pages in a genuinely hidden tab; run `npm run build` first, and find a Chromium with `uv run python -c "from playwright.sync_api import sync_playwright as s; p = s().start(); print(p.chromium.executable_path); p.stop()"`.
 
 ## License

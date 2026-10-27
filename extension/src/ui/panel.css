@@ -1,0 +1,285 @@
+/* Géniescraper panel: the logo's yellow on warm black (the desktop app's palette), with a light scheme for
+   browsers set to light. Colors live only in the tokens below; test/ui/contrast.test.ts holds every pair
+   that carries text or marks a control to WCAG AA. */
+:root {
+  color-scheme: dark light;
+  --bg: #0d0d0c;
+  --surface: #171715;
+  --surface-hi: #22221f;
+  --text: #f4f3ee;
+  --muted: #a9a69b;
+  --control-border: #8a877c;
+  --accent: #f3c003;
+  --accent-hover: #ffd124;
+  --accent-ink: #0d0d0c;
+  --link: #f3c003;
+  --danger: #ff6f5e;
+  --focus: #f4f3ee;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #fbfaf6;
+    --surface: #ffffff;
+    --surface-hi: #eeece4;
+    --text: #1a1916;
+    --muted: #5c5a51;
+    --control-border: #75726a;
+    --accent: #f3c003;
+    --accent-hover: #ffd124;
+    --accent-ink: #0d0d0c;
+    --link: #6b4f00;
+    --danger: #b3261e;
+    --focus: #1a1916;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    14px/1.5 "Segoe UI",
+    system-ui,
+    sans-serif;
+}
+
+#app {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+h2 {
+  margin: 0 0 8px;
+  font-size: 1.125rem;
+}
+
+h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+h4 {
+  margin: 12px 0 4px;
+  font-size: 0.875rem;
+}
+
+/* Screens take focus on arrival, but a heading is not a control and needs no ring. */
+h2:focus {
+  outline: none;
+}
+
+main {
+  display: block;
+  min-width: 0;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+legend {
+  padding: 0;
+  font-weight: 600;
+}
+
+label {
+  font-weight: 600;
+}
+
+.field {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  color: var(--text);
+  background: var(--surface-hi);
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.help {
+  margin: 0;
+  color: var(--muted);
+}
+
+h2 + .help {
+  margin-bottom: 12px;
+}
+
+.status,
+.alert {
+  margin: 0 0 8px;
+}
+
+.status {
+  color: var(--muted);
+}
+
+.alert:not(:empty),
+.problem {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.button {
+  min-height: 36px;
+  padding: 6px 14px;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button.primary {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.button.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.button.quiet:hover:not(:disabled),
+.button.track:hover:not(:disabled) {
+  background: var(--surface-hi);
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.button.track {
+  width: 100%;
+  text-align: left;
+  font-weight: 400;
+}
+
+.button.track.current {
+  border-color: var(--link);
+  box-shadow: inset 3px 0 0 var(--link);
+}
+
+/* Every control shows where focus is. The ring sits 2px outside the control, so it is drawn on the page
+   background even around a yellow button. */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.tracks,
+.queue {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.queue li {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* Cover art and YouTube links are long and have no break points. */
+  overflow-wrap: anywhere;
+  padding: 6px 10px;
+  background: var(--surface);
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  font-weight: 400;
+}
+
+.check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.check.muted {
+  color: var(--muted);
+}
+
+.tag {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.credits {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 0;
+  padding: 10px;
+  background: var(--surface);
+  border-radius: 6px;
+}
+
+.credits dt {
+  max-width: 11rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.credits dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+a {
+  color: var(--link);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}
