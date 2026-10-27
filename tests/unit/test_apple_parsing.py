@@ -83,6 +83,51 @@ class TestSmallHelpers:
     def test_normalise_cover_url(self, url):
         assert am.normalise_cover_url(url) == "https://is1-ssl.mzstatic.com/image/thumb/A/b.jpg/1000x1000bb.png"
 
+    @pytest.mark.parametrize(
+        ("url", "expected"),
+        [
+            ("https://music.apple.com/us/album/sour/1560734944", ("1560734944", "us")),
+            ("https://music.apple.com/gb/album/sour/1560734944?i=1560735551", ("1560734944", "gb")),
+            ("https://music.apple.com/us/song/not-like-us/1781353929", ("1781353929", "us")),
+            ("https://music.apple.com/us/album/no-id", ("", "")),
+            ("https://example.com/us/album/x/123", ("", "")),
+        ],
+    )
+    def test_catalog_id(self, url, expected):
+        assert am.catalog_id(url) == expected
+
+    def test_cover_from_lookup(self):
+        art = "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/02/ed/8c/x/21UMGIM26093.rgb.jpg"
+        data = {"resultCount": 1, "results": [{"wrapperType": "collection", "artworkUrl100": f"{art}/100x100bb.jpg"}]}
+        assert am.cover_from_lookup(data) == f"{art}/1000x1000bb.png"
+
+    @pytest.mark.parametrize("data", [{}, {"results": []}, {"results": [{"artworkUrl100": ""}]}, {"results": None}])
+    def test_cover_from_lookup_empty(self, data):
+        assert am.cover_from_lookup(data) == ""
+
+    @pytest.mark.parametrize(
+        ("urls", "expected"),
+        [
+            (
+                [
+                    "https://x/image/thumb/Video1/a.png/296x296bb.webp",
+                    "https://x/image/thumb/Music1/b.jpg/296x296bb.webp",
+                ],
+                "https://x/image/thumb/Music1/b.jpg/1000x1000bb.png",
+            ),
+            (
+                [
+                    "https://x/image/thumb/Features1/a.png/296x296bb.webp",
+                    "https://x/image/thumb/Video1/b.png/1x1bb.webp",
+                ],
+                "",
+            ),
+            ([], ""),
+        ],
+    )
+    def test_pick_cover_url_only_accepts_music_artwork(self, urls, expected):
+        assert am.pick_cover_url(urls) == expected
+
     @pytest.mark.parametrize(("raw", "count"), [("23 songs, 1 hour 8 minutes", 23), ("1 song, 2 minutes", 1), ("", 1)])
     def test_track_count_from_footer(self, raw, count):
         assert am.track_count_from_footer(raw) == count

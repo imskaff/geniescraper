@@ -15,6 +15,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import httpx
 from playwright.async_api import Page
 from playwright.async_api import TimeoutError as PWTimeout
 from playwright_stealth import Stealth
@@ -189,20 +190,81 @@ def split_copyright(raw: str) -> tuple[str, str]:
     return phonographic, copyright_
 
 
+# Artwork URLs from the page header (album or song), in DOM order, then the legacy meta tags.
+# Only the header is searched: shelves further down hold other albums and editorial banners.
+_HEADER_ARTWORK_JS = """() => {
+    const header = document.querySelector('[data-testid="container-detail-header"]')
+        || document.querySelector('.song-header-page')
+        || document.querySelector('[data-testid="section-content"]');
+    const urls = [];
+    if (header) {
+        for (const el of header.querySelectorAll('[data-testid="artwork-component"] source, [data-testid="artwork-component"] img')) {
+            const raw = el.getAttribute('srcset') || el.getAttribute('src') || '';
+            const url = raw.trim().split(/\\s+/)[0];
+            if (url) urls.push(url);
+        }
+    }
+    for (const sel of ['meta[property="og:image"]', 'meta[name="twitter:image"]']) {
+        const content = document.querySelector(sel)?.getAttribute('content');
+        if (content) urls.push(content);
+    }
+    return urls;
+}"""
+
+
 async def _extract_cover_url(page: Page) -> str:
-    """Extract album cover URL from Apple Music OG/Twitter meta tags, upgraded to 1000×1000 PNG."""
-    for selector in (
-        'meta[property="og:image"]',
-        'meta[name="twitter:image"]',
-    ):
-        try:
-            url = await page.locator(selector).first.get_attribute("content", timeout=2_000)
-            if not url:
-                continue
-            return normalise_cover_url(url)
-        except Exception:
-            continue
-    return ""
+    """Extract the album cover URL from the page header artwork, upgraded to 1000x1000 PNG."""
+    try:
+        urls: list[str] = await page.evaluate(_HEADER_ARTWORK_JS)
+    except Exception:
+        return ""
+    return pick_cover_url(urls)
+
+
+def pick_cover_url(urls: list[str]) -> str:
+    """Pick the album artwork among header image URLs, normalised to 1000x1000 PNG ('' if none).
+
+    Album artwork lives under /image/thumb/Music...  Headers of albums with motion artwork
+    carry only /image/thumb/Video... stills and /image/thumb/Features... editorial images;
+    those are never the album cover, so no cover beats a wrong one.
+    """
+    music = [u for u in urls if "/image/thumb/Music" in u]
+    return normalise_cover_url(music[0]) if music else ""
+
+
+_CATALOG_URL_RE = re.compile(r"^https://music\.apple\.com/([a-z]{2})/(?:album|song)/(?:[^/?#]+/)?(\d+)(?:[/?#]|$)")
+_LOOKUP_URL = "https://itunes.apple.com/lookup"
+
+
+def catalog_id(url: str) -> tuple[str, str]:
+    """Return (catalog id, storefront) of an Apple Music album or song URL, or ('', '')."""
+    m = _CATALOG_URL_RE.match(url)
+    return (m.group(2), m.group(1)) if m else ("", "")
+
+
+def cover_from_lookup(data: dict) -> str:
+    """1000x1000 PNG artwork URL from an iTunes lookup response ('' if absent)."""
+    results = data.get("results") or []
+    art = results[0].get("artworkUrl100", "") if results else ""
+    return normalise_cover_url(art) if art else ""
+
+
+async def _lookup_cover_url(url: str) -> str:
+    """Exact cover art for an album or song URL via Apple's iTunes lookup by catalog id.
+
+    Pages of albums with motion artwork never show the cover itself, so the page DOM alone
+    cannot find it.  Best-effort: returns '' on any failure.
+    """
+    item_id, storefront = catalog_id(url)
+    if not item_id:
+        return ""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(_LOOKUP_URL, params={"id": item_id, "country": storefront})
+            r.raise_for_status()
+            return cover_from_lookup(r.json())
+    except Exception:
+        return ""
 
 
 def normalise_cover_url(url: str) -> str:
@@ -465,6 +527,7 @@ async def detect_album(url: str) -> AlbumTrackInfo:
     """
     title, artist = "", ""
 
+    lookup_task = asyncio.create_task(_lookup_cover_url(url))
     context, page = await _new_stealth_page()
     try:
         await _open(page, url)
@@ -500,9 +563,9 @@ async def detect_album(url: str) -> AlbumTrackInfo:
                 titles.append(f"Track {len(titles) + 1}")
             track_titles = titles[:track_count]
 
-        # Extract cover art URL before closing the context
-        cover_art_url = await _extract_cover_url(page)
+        cover_art_url = await lookup_task or await _extract_cover_url(page)
     finally:
+        lookup_task.cancel()
         await context.close()
 
     return AlbumTrackInfo(
@@ -530,6 +593,7 @@ async def scrape(url: str, *, track_index: int = 1, track_title: str = "", debug
     """
     title, artist = "", ""
 
+    lookup_task = asyncio.create_task(_lookup_cover_url(url))
     context, page = await _new_stealth_page()
     try:
         await _open(page, url)
@@ -551,8 +615,8 @@ async def scrape(url: str, *, track_index: int = 1, track_title: str = "", debug
         elif "/album/" in url:
             title = await _extract_track_title(page, track_index) or title
 
-        # Cover art + copyright both live on the album/song page — extract before navigating away.
-        cover_art_url = await _extract_cover_url(page)
+        # Header artwork + copyright both live on the album/song page — extract before navigating away.
+        page_cover_url = await _extract_cover_url(page)
         phonographic_copyright, copyright_notice = "", ""
         if "/album/" in url:
             phonographic_copyright, copyright_notice = await _extract_copyright(page)
@@ -582,7 +646,9 @@ async def scrape(url: str, *, track_index: int = 1, track_title: str = "", debug
                     "[debug] No credits found after 'View Credits' navigation.\n"
                     "        Saved debug/page.html and debug/page.png for inspection."
                 )
+        cover_art_url = await lookup_task or page_cover_url
     finally:
+        lookup_task.cancel()
         await context.close()
 
     return SongCredits(

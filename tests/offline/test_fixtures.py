@@ -63,12 +63,20 @@ async def test_album_track_title(case, load_fixture):
     assert await am._extract_track_title(page, case.track_index) == load_golden(case.id).title
 
 
-@pytest.mark.xfail(strict=True, reason="known bug: og:image meta is gone from hydrated Apple Music pages")
-@pytest.mark.parametrize("case", ALBUM_CASES[:1], ids=lambda c: c.id)
+# Albums whose page header shows only motion artwork and an editorial still, never the album artwork.
+HEADER_WITHOUT_ARTWORK = {"rodrigo-sour-t6"}
+
+
+@pytest.mark.parametrize("case", CASES, ids=lambda c: c.id)
 async def test_cover_from_page(case, load_fixture):
+    """The header album artwork, never motion artwork (sza-sos-t1) or editorial images (rodrigo-sour-t6)."""
     page = await load_fixture(f"{case.id}.page.html")
     url = await am._extract_cover_url(page)
-    assert artwork_key(url) == artwork_key(load_golden(case.id).cover_art_url)
+    if case.id in HEADER_WITHOUT_ARTWORK:
+        assert url == ""
+    else:
+        assert url.endswith("/1000x1000bb.png")
+        assert artwork_key(url) == artwork_key(load_golden(case.id).cover_art_url)
 
 
 @pytest.mark.parametrize("testid", ["not-found-heading", "page-error-title"])
