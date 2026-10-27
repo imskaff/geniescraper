@@ -85,13 +85,13 @@ def _walk(on_screen: Callable[[Any, str], None]) -> None:
     app = App()
     app.report_callback_exception = lambda exc, val, tb: errors.append(val)
 
-    def screen(name: str) -> None:
+    def screen(name: str, window: Any = None) -> None:
         for _ in range(5):
             app.update()
             time.sleep(0.05)
         if errors:
             raise RuntimeError(f"Tk callback failed on {name}") from errors[0]
-        on_screen(app, name)
+        on_screen(window or app, name)
 
     try:
         screen("01-start")
@@ -100,8 +100,12 @@ def _walk(on_screen: Callable[[Any, str], None]) -> None:
         app._scrape_error("Page not found — check the URL and try again.")
         screen("03-start-error")
 
-        app._show_options_screen()
-        screen("04-options")
+        app._open_settings()
+        settings_win = app._settings_win
+        assert settings_win is not None
+        time.sleep(0.3)  # the window grabs focus after 100 ms
+        screen("04-settings", settings_win)
+        settings_win.close()
 
         app._album_info, app._album_cover_image = album, _cover()
         app._show_track_select_screen()
@@ -111,7 +115,7 @@ def _walk(on_screen: Callable[[Any, str], None]) -> None:
 
         app._is_album_queue_mode = True
         app._album_queue_position, app._album_queue_total = 1, 1
-        app._scrape_track_thread = lambda url, track_index, track_title: None  # keep the loading screen up, offline
+        app._scrape_track_thread = lambda url, track_index, track_title, job=None: None  # keep loading up, offline
         app._on_track_selected(3, "CHIHIRO")
         screen("06-loading")
 

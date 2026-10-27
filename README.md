@@ -49,13 +49,20 @@
 uv run python gui_main.py
 ```
 
-1. **Scrape** — Paste an Apple Music URL into the URL bar (use the 📋 button or `Ctrl+V`) and click **Scrape**. Use an `/album/` URL when possible so that copyright data (℗ / ©) is available.
-2. **Select track** — If you pasted an album URL, pick the specific track from the list.
-3. **Start Assistant** — Click **Start Assistant**. The window becomes always-on-top.
-4. **Paste to Genius** — Open the Genius song edit page. Follow the on-screen instructions for each field:
-   - Press **F8** to paste the current value and advance.
-   - Press **F7** to step back one field.
-   - Press **ESC** to cancel and return to the main menu.
+1. **Link** - Paste an Apple Music album or song link and click **Scrape**.
+   The app tells you right away if the link is not one it can read.
+   Album links are best, because they include the copyright lines (℗ and ©).
+2. **Tracks** - For an album, tick the songs to paste, or choose all of them.
+3. **Review** - Check the credits, copyright lines, YouTube link and cover art that were found, then click **Start pasting** (or press **F8**).
+4. **Paste** - Open the song's edit page on Genius, click **Written By**, and follow the on-screen instruction for each step:
+   - Press **F8** to paste the current value and move on.
+   - Press **F7** or click **Back** to go back one step.
+   - Click **Skip** for a field that is already filled on Genius.
+   - Click any step in the list to jump to it.
+   - Press **Esc** to end pasting for the song.
+
+**⚙ Settings** is on every screen, including while you paste, and every change applies and saves immediately.
+Auto-tab and Auto-confirm can also be switched on or off from the pasting screen.
 
 ### Field order
 
@@ -88,13 +95,14 @@ Auto-Tab is disabled by default.
 
 ## Configuration
 
-Open **⚙ Options** from the main menu:
+Open **⚙ Settings** from any screen:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
 | Hotkey (Next) | F8 | Paste current field and advance |
 | Hotkey (Back) | F7 | Step back one field |
 | Auto-confirm | On | Press Enter after paste to confirm autocomplete |
+| Autocomplete wait | 0.6 s | How long to wait for Genius's suggestions before confirming |
 | Auto-tab | Off | Automatically Tab between Genius fields |
 | Compact mode | Off | Hide queue list and shrink the window |
 | Always on top | On | Keep the window above the browser |

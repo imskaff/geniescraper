@@ -1,5 +1,4 @@
 import asyncio
-import ctypes
 import io
 import threading
 import time
@@ -13,6 +12,9 @@ import pyperclip
 from PIL import Image as PILImage
 
 from assistant import flow
+from gui import theme
+from gui.logic import STEPS, friendly_error, queue_summary, url_hint
+from gui.settings_window import SettingsWindow
 from scraper import apple_music, pipeline
 from scraper.apple_music import AlbumTrackInfo
 from scraper.models import SongCredits
@@ -21,15 +23,8 @@ from utils.config import settings
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
-# Load custom font before the Tk window is created
-_FONT_FILE = Path(__file__).parent.parent / "Programme-Regular.ttf"
-if _FONT_FILE.exists():
-    ctypes.windll.gdi32.AddFontResourceExW(str(_FONT_FILE), 0x10, 0)
-_FF = "Programme Regular"  # the family name inside Programme-Regular.ttf
-
-
-def _f(size: int = 13, weight: str = "normal") -> ctk.CTkFont:
-    return ctk.CTkFont(family=_FF, size=size, weight=weight)
+_FF = theme.FONT_FAMILY
+_f = theme.font
 
 
 _TYPE_COLORS = {
@@ -57,6 +52,19 @@ _FIELD_LABELS = {
 }
 
 
+# Labels in the assistant's step list. Artists and labels sit indented under their
+# role or copyright line, so they carry no label of their own.
+_LIST_LABELS = {
+    "written_by": "Written By",
+    "produced_by": "Produced By",
+    "role": "Role",
+    "copyright_role": "Copyright",
+    "youtube_url": "YouTube URL",
+    "cover_art": "Cover Art URL",
+}
+_NESTED_KINDS = frozenset({"artist", "phonographic_copyright", "copyright_notice"})
+
+
 class App(ctk.CTk):
     def __init__(self) -> None:
         super().__init__()
@@ -64,7 +72,7 @@ class App(ctk.CTk):
         pos = f"+{settings.win_x}+{settings.win_y}" if settings.win_x >= 0 and settings.win_y >= 0 else ""
         self.geometry(f"620x700{pos}")
         self.resizable(False, True)
-        self.attributes("-topmost", True)
+        self.attributes("-topmost", settings.always_on_top)
         _icon = Path(__file__).parent.parent / "icon.ico"
         if _icon.exists():
             self.iconbitmap(str(_icon))
@@ -96,6 +104,12 @@ class App(ctk.CTk):
         self._credits_countdown_paused: bool = False
         self._kb_hooks: list = []
         self._queue_sf: ctk.CTkScrollableFrame | None = None
+        self._screen: str = ""
+        self._job: int = 0  # bumped on every new scrape or cancel; stale results are dropped
+        self._settings_win: SettingsWindow | None = None
+        self._normal_height: int = 700
+        self._chips: dict[str, ctk.CTkButton] = {}
+        self._chip_label: dict[str, str] = {}
         self._app_focused: bool = False
 
         self.bind("<FocusIn>", lambda _: setattr(self, "_app_focused", True))
@@ -106,7 +120,11 @@ class App(ctk.CTk):
     # ── helpers ──────────────────────────────────────────────────────────
 
     def _clear(self) -> None:
+        """Remove the current screen, including its global hotkeys, so no stale key handler survives."""
+        self._clear_kb_hooks()
         for w in self.winfo_children():
+            if isinstance(w, ctk.CTkToplevel):
+                continue
             w.destroy()
 
     def _clear_kb_hooks(self) -> None:
@@ -131,10 +149,88 @@ class App(ctk.CTk):
         self._kb_hooks.append(keyboard.hook_key(settings.hotkey, _on_fwd, suppress=True))
         self._kb_hooks.append(keyboard.hook_key(settings.back_hotkey, _on_back, suppress=True))
 
-    def _show_help_bubble(self) -> None:
-        self._help_btn.configure(text="Help page coming soon", width=180)
-        self.after(
-            2000, lambda: self._help_btn.configure(text="?  Help", width=120) if self._help_btn.winfo_exists() else None
+    def _header(self, step: int | None) -> None:
+        """Top bar on every screen: where you are in the flow, and Settings."""
+        bar = ctk.CTkFrame(self, fg_color="transparent")
+        bar.pack(fill="x", padx=20, pady=(12, 6))
+        crumbs = ctk.CTkFrame(bar, fg_color="transparent")
+        crumbs.pack(side="left")
+        for i, name in enumerate(STEPS):
+            if i:
+                ctk.CTkLabel(crumbs, text="›", font=_f(12), text_color=theme.DONE).pack(side="left", padx=6)
+            if step is None:
+                color, weight = theme.FAINT, "normal"
+            elif i < step:
+                color, weight = theme.MUTED, "normal"
+            elif i == step:
+                color, weight = theme.TEXT, "bold"
+            else:
+                color, weight = theme.DONE, "normal"
+            ctk.CTkLabel(crumbs, text=name, font=_f(12, weight), text_color=color).pack(side="left")
+        ctk.CTkButton(
+            bar,
+            text="⚙  Settings",
+            width=104,
+            height=28,
+            font=_f(12),
+            fg_color=theme.SURFACE,
+            hover_color=theme.SURFACE_HI,
+            text_color=theme.TEXT,
+            border_width=1,
+            border_color=theme.BORDER,
+            command=self._open_settings,
+        ).pack(side="right")
+
+    def _open_settings(self) -> None:
+        if self._settings_win is not None and self._settings_win.winfo_exists():
+            self._settings_win.lift()
+            self._settings_win.focus_force()
+            return
+        self._settings_win = SettingsWindow(self, on_change=self._settings_changed)
+
+    def _settings_changed(self) -> None:
+        """Apply a setting the moment it changes, on whatever screen is showing."""
+        self.attributes("-topmost", settings.always_on_top)
+        if self._screen == "assistant":
+            pos = self._pos
+            self._show_assistant_screen()
+            with self._lock:
+                self._pos = min(pos, len(self._queue))
+            self._render_assistant()
+        elif self._screen == "credits":
+            self._show_credits_screen()
+        elif self._screen == "start":
+            self._show_scrape_screen()
+
+    def _set_compact(self, compact: bool) -> None:
+        if compact:
+            if self.winfo_height() > 320:
+                self._normal_height = self.winfo_height()
+            self.geometry("620x300")
+        elif self.winfo_height() <= 320:
+            self.geometry(f"620x{self._normal_height}")
+
+    def _button(self, master, text: str, command, *, primary: bool = False, width: int = 140, **kw) -> ctk.CTkButton:
+        """Primary actions are filled; everything else is outlined, so the main step is obvious."""
+        style = (
+            {}
+            if primary
+            else {
+                "fg_color": "transparent",
+                "border_width": 1,
+                "border_color": theme.BORDER,
+                "text_color": theme.TEXT,
+                "hover_color": theme.SURFACE_HI,
+            }
+        )
+        return ctk.CTkButton(
+            master,
+            text=text,
+            command=command,
+            width=width,
+            height=38,
+            font=_f(13, "bold" if primary else "normal"),
+            **(style | kw),
         )
 
     def destroy(self) -> None:
@@ -154,33 +250,30 @@ class App(ctk.CTk):
     # ── screens ──────────────────────────────────────────────────────────
 
     def _show_scrape_screen(self) -> None:
-        self.geometry("620x700")
+        self._screen = "start"
+        self._busy = False
+        self._set_compact(False)
         self._clear()
+        self._header(0)
 
-        ctk.CTkLabel(self, text="Géniescraper", font=_f(22, "bold")).pack(pady=(32, 4))
-        ctk.CTkLabel(
-            self,
-            text="Paste an Apple Music URL to scrape credits",
-            text_color="gray",
-            font=_f(13),
-        ).pack(pady=(0, 4))
-        ctk.CTkLabel(
-            self,
-            text="Recommended: use an /album/ URL — it includes copyright information",
-            text_color="#fb923c",
-            font=_f(11),
-        ).pack(pady=(0, 20))
+        body = ctk.CTkFrame(self, fg_color="transparent")
+        body.pack(fill="both", expand=True, padx=40)
 
-        ctk.CTkLabel(self, text="Apple Music URL", anchor="w", font=_f(13)).pack(anchor="w", padx=40)
-        url_field = ctk.CTkFrame(
-            self,
-            height=38,
-            fg_color=("gray92", "gray14"),
-            border_color=("gray65", "gray50"),
-            border_width=2,
-            corner_radius=6,
+        ctk.CTkLabel(body, text="Géniescraper", font=_f(26, "bold"), text_color=theme.TEXT).pack(
+            anchor="w", pady=(18, 2)
         )
-        url_field.pack(padx=40, pady=(4, 12), fill="x")
+        ctk.CTkLabel(
+            body,
+            text="Collect a song's credits from Apple Music and paste them into Genius.",
+            font=_f(13),
+            text_color=theme.MUTED,
+        ).pack(anchor="w", pady=(0, 22))
+
+        ctk.CTkLabel(body, text="Apple Music link", font=_f(13, "bold"), text_color=theme.TEXT).pack(anchor="w")
+        url_field = ctk.CTkFrame(
+            body, height=40, fg_color=theme.SURFACE, border_color=theme.BORDER, border_width=1, corner_radius=6
+        )
+        url_field.pack(fill="x", pady=(6, 6))
         url_field.pack_propagate(False)
         self._url_entry = ctk.CTkEntry(
             url_field,
@@ -190,311 +283,128 @@ class App(ctk.CTk):
             placeholder_text="https://music.apple.com/us/album/...",
             font=_f(13),
         )
-        self._url_entry.pack(side="left", fill="both", expand=True, padx=(4, 0), pady=2)
+        self._url_entry.pack(side="left", fill="both", expand=True, padx=(6, 0), pady=3)
         self._url_entry.bind("<Return>", lambda _: self._start_scrape())
         self._url_entry.focus()
         ctk.CTkButton(
             url_field,
-            text="📋 Paste",
-            width=32,
-            height=28,
-            fg_color="gray20",
-            hover_color=("gray80", "gray28"),
+            text="Paste",
+            width=64,
+            height=30,
+            fg_color=theme.SURFACE_HI,
+            hover_color=theme.BORDER,
+            text_color=theme.TEXT,
             corner_radius=4,
-            font=_f(14),
-            command=lambda: (
-                self._url_entry.delete(0, "end"),
-                self._url_entry.insert(0, pyperclip.paste()),
-            ),
-        ).pack(side="right", padx=(0, 3), pady=2)
+            font=_f(12),
+            command=self._paste_url,
+        ).pack(side="right", padx=(0, 5), pady=4)
+        self._hint_lbl = ctk.CTkLabel(body, text="", font=_f(12), text_color=theme.MUTED, anchor="w", justify="left")
+        self._hint_lbl.pack(anchor="w", fill="x")
 
-        self._scrape_btn = ctk.CTkButton(
-            self,
-            text="Scrape",
-            width=160,
-            height=38,
-            command=self._start_scrape,
-            font=_f(13, "bold"),
-            state="disabled",
+        actions = ctk.CTkFrame(body, fg_color="transparent")
+        actions.pack(fill="x", pady=(14, 0))
+        self._scrape_btn = self._button(actions, "Scrape", self._start_scrape, primary=True, width=150)
+        self._scrape_btn.configure(state="disabled")
+        self._scrape_btn.pack(side="left")
+        self._cancel_btn = self._button(actions, "Cancel", self._cancel_scrape, width=100)
+
+        self._progress = ctk.CTkProgressBar(body, mode="indeterminate", height=4, progress_color=theme.ACCENT)
+        self._status_lbl = ctk.CTkLabel(body, text="", font=_f(12), text_color=theme.MUTED, anchor="w", justify="left")
+        self._status_lbl.pack(anchor="w", fill="x", pady=(10, 0))
+
+        how = ctk.CTkFrame(body, fg_color=theme.SURFACE, corner_radius=8)
+        how.pack(fill="x", pady=(24, 0))
+        ctk.CTkLabel(how, text="HOW IT WORKS", font=_f(11, "bold"), text_color=theme.FAINT).pack(
+            anchor="w", padx=16, pady=(12, 6)
         )
-        self._scrape_btn.pack(pady=4)
+        hk = settings.hotkey.upper()
+        for n, text in enumerate(
+            (
+                "Paste an album or song link and press Scrape.",
+                "Choose the tracks, then check the credits that were found.",
+                f"Open the song's edit page on Genius, click Written By, and press {hk} once per field.",
+            ),
+            start=1,
+        ):
+            row = ctk.CTkFrame(how, fg_color="transparent")
+            row.pack(fill="x", padx=16, pady=(0, 8))
+            ctk.CTkLabel(row, text=str(n), width=22, font=_f(13, "bold"), text_color=theme.ACCENT, anchor="w").pack(
+                side="left", anchor="n"
+            )
+            ctk.CTkLabel(
+                row, text=text, font=_f(13), text_color=theme.TEXT, anchor="w", justify="left", wraplength=470
+            ).pack(side="left", fill="x")
+        ctk.CTkFrame(how, height=4, fg_color="transparent").pack()
 
-        self._status_lbl = ctk.CTkLabel(self, text="", text_color="gray", font=_f(12))
-        self._status_lbl.pack(pady=8)
-
+        self._settings_summary(self).pack(side="bottom", pady=(0, 14))
         self._check_url_loop()
 
-        # Options + Help buttons — anchored at the bottom
-        self._help_btn = ctk.CTkButton(
-            self,
-            text="?  Help",
-            width=120,
-            height=32,
+    def _settings_summary(self, master) -> ctk.CTkButton:
+        """One clickable line with the settings that change how pasting behaves."""
+        text = (
+            f"Auto-tab {'on' if settings.auto_tab else 'off'}   ·   "
+            f"Auto-confirm {'on' if settings.auto_enter else 'off'}   ·   "
+            f"Hotkeys {settings.hotkey.upper()} / {settings.back_hotkey.upper()}"
+        )
+        return ctk.CTkButton(
+            master,
+            text=text,
+            height=26,
+            font=_f(12),
             fg_color="transparent",
-            border_width=1,
-            border_color="#6b7280",
-            text_color="#9ca3af",
-            hover_color="#2d2d2d",
-            command=self._show_help_bubble,
-            font=_f(12),
+            hover_color=theme.SURFACE,
+            text_color=theme.MUTED,
+            command=self._open_settings,
         )
-        self._help_btn.pack(side="bottom", pady=(0, 16))
-        self._options_btn = ctk.CTkButton(
-            self,
-            text="⚙  Options",
-            width=120,
-            height=32,
-            fg_color="#d1d5db",
-            border_width=0,
-            text_color="#111827",
-            hover_color="#9ca3af",
-            command=self._show_options_screen,
-            font=_f(12),
-        )
-        self._options_btn.pack(side="bottom", pady=(0, 4))
+
+    def _paste_url(self) -> None:
+        self._url_entry.delete(0, "end")
+        self._url_entry.insert(0, pyperclip.paste().strip())
+        self._url_entry.focus()
 
     def _check_url_loop(self) -> None:
         if not hasattr(self, "_url_entry") or not self._url_entry.winfo_exists():
             return
-        # Only adjust state if the button isn't disabled by an active scrape
-        if hasattr(self, "_status_lbl") and self._status_lbl.cget("text") not in (
-            "Detecting album…",
-            "Scraping metadata…",
-        ):
-            if self._url_entry.get().strip():
-                self._scrape_btn.configure(state="normal")
-            else:
-                self._scrape_btn.configure(state="disabled")
+        if not self._busy:
+            ok, hint = url_hint(self._url_entry.get())
+            empty = not self._url_entry.get().strip()
+            self._scrape_btn.configure(state="normal" if ok else "disabled")
+            color = theme.MUTED if ok or empty else theme.WARN
+            if self._hint_lbl.cget("text") != hint or self._hint_lbl.cget("text_color") != color:
+                self._hint_lbl.configure(text=hint, text_color=color)
         self.after(200, self._check_url_loop)
 
-    def _show_options_screen(self) -> None:
-        self._clear()
+    def _set_busy(self, busy: bool, status: str = "") -> None:
+        """Start-screen state while detecting: progress bar and Cancel instead of Scrape."""
+        self._busy = busy
+        if not self._scrape_btn.winfo_exists():
+            return
+        if busy:
+            self._scrape_btn.configure(state="disabled")
+            self._url_entry.configure(state="disabled")
+            self._cancel_btn.pack(side="left", padx=(8, 0))
+            self._progress.pack(fill="x", pady=(14, 0), before=self._status_lbl)
+            self._progress.start()
+        else:
+            self._url_entry.configure(state="normal")
+            self._cancel_btn.pack_forget()
+            self._progress.stop()
+            self._progress.pack_forget()
+        self._status_lbl.configure(text=status, text_color=theme.MUTED)
 
-        ctk.CTkLabel(self, text="Options", font=_f(22, "bold")).pack(pady=(28, 16))
+    def _cancel_scrape(self) -> None:
+        """Drop whatever is in flight; a late result for the old job is ignored."""
+        self._job += 1
+        if self._screen == "start":
+            self._set_busy(False, "Cancelled.")
+        elif self._album_info is not None and self._album_info.track_count > 1:
+            self._back_to_album_list()
+        else:
+            self._go_to_main()
 
-        outer = ctk.CTkScrollableFrame(self, width=540)
-        outer.pack(fill="both", expand=True, padx=40, pady=(0, 8))
-
-        # ── Hotkey rebinding ────────────────────────────────────────────
-        ctk.CTkLabel(outer, text="Hotkey Bindings", font=_f(15, "bold")).pack(anchor="w", pady=(4, 8))
-
-        hk_frame = ctk.CTkFrame(outer, fg_color="transparent")
-        hk_frame.pack(fill="x", pady=(0, 12))
-        hk_frame.grid_columnconfigure(1, weight=1)
-
-        # Stored key values (updated when user records a new key)
-        self._next_hk_value = settings.hotkey
-        self._back_hk_value = settings.back_hotkey
-
-        ctk.CTkLabel(hk_frame, text="Next (paste & advance)", font=_f(13), anchor="w").grid(
-            row=0,
-            column=0,
-            sticky="w",
-            padx=(0, 12),
-            pady=4,
-        )
-        self._next_hk_btn = ctk.CTkButton(
-            hk_frame,
-            text=settings.hotkey.upper(),
-            width=140,
-            height=32,
-            font=_f(13, "bold"),
-            fg_color="#2a3a20",
-            hover_color="#3a4a30",
-            border_width=1,
-            border_color="#4ade80",
-            text_color="#4ade80",
-            command=lambda: self._record_hotkey("next"),
-        )
-        self._next_hk_btn.grid(row=0, column=1, sticky="w", pady=4)
-
-        ctk.CTkLabel(hk_frame, text="Back (go back one step)", font=_f(13), anchor="w").grid(
-            row=1,
-            column=0,
-            sticky="w",
-            padx=(0, 12),
-            pady=4,
-        )
-        self._back_hk_btn = ctk.CTkButton(
-            hk_frame,
-            text=settings.back_hotkey.upper(),
-            width=140,
-            height=32,
-            font=_f(13, "bold"),
-            fg_color="#1a2535",
-            hover_color="#2a3545",
-            border_width=1,
-            border_color="#60a5fa",
-            text_color="#60a5fa",
-            command=lambda: self._record_hotkey("back"),
-        )
-        self._back_hk_btn.grid(row=1, column=1, sticky="w", pady=4)
-
-        ctk.CTkLabel(
-            outer,
-            text="Click a button then press the desired key",
-            text_color="#6b7280",
-            font=_f(11),
-        ).pack(anchor="w", pady=(0, 4))
-
-        # ── Scrape feature toggles ──────────────────────────────────────
-        sep = ctk.CTkFrame(outer, height=1, fg_color="#374151")
-        sep.pack(fill="x", pady=(4, 12))
-
-        ctk.CTkLabel(outer, text="Features to Scrape", font=_f(15, "bold")).pack(anchor="w", pady=(0, 8))
-
-        toggle_defs = [
-            ("Core metadata (songwriters & producers)", "scrape_core", "#4ade80"),
-            ("Additional credits (other roles)", "scrape_additional", "#c084fc"),
-            ("Copyrights (℗ and ©)", "scrape_copyright", "#fb923c"),
-            ("YouTube URL", "scrape_youtube", "#ef4444"),
-            ("Cover art URL", "scrape_cover_art", "#f472b6"),
-        ]
-
-        self._toggle_vars: dict[str, ctk.BooleanVar] = {}
-        for label, key, color in toggle_defs:
-            var = ctk.BooleanVar(value=getattr(settings, key))
-            self._toggle_vars[key] = var
-            row = ctk.CTkFrame(outer, fg_color="transparent")
-            row.pack(fill="x", pady=2)
-            ctk.CTkSwitch(
-                row,
-                text=label,
-                variable=var,
-                font=_f(13),
-                text_color=color,
-                progress_color=color,
-            ).pack(anchor="w")
-
-        # ── Assistant behavior ──────────────────────────────────────────
-        sep2 = ctk.CTkFrame(outer, height=1, fg_color="#374151")
-        sep2.pack(fill="x", pady=(12, 12))
-
-        ctk.CTkLabel(outer, text="Assistant Behavior", font=_f(15, "bold")).pack(anchor="w", pady=(0, 8))
-
-        for label, key in [
-            ("Auto-confirm (press Enter after pasting artist name/role)", "auto_enter"),
-            ("Auto-tab (press Tab automatically to navigate Genius credit fields)", "auto_tab"),
-            ("Compact mode (hide queue list, shrink window)", "compact_mode"),
-        ]:
-            var = ctk.BooleanVar(value=getattr(settings, key))
-            self._toggle_vars[key] = var
-            row = ctk.CTkFrame(outer, fg_color="transparent")
-            row.pack(fill="x", pady=2)
-            ctk.CTkSwitch(
-                row,
-                text=label,
-                variable=var,
-                font=_f(13),
-                text_color="#94a3b8",
-                progress_color="#94a3b8",
-            ).pack(anchor="w")
-
-        # Inline row: [switch] Auto-start assistant … after [N] seconds
-        auto_row = ctk.CTkFrame(outer, fg_color="transparent")
-        auto_row.pack(fill="x", pady=2)
-        _as_var = ctk.BooleanVar(value=settings.auto_start_assistant)
-        self._toggle_vars["auto_start_assistant"] = _as_var
-        ctk.CTkSwitch(
-            auto_row,
-            text="",
-            variable=_as_var,
-            width=0,
-            font=_f(13),
-            progress_color="#94a3b8",
-        ).pack(side="left")
-        ctk.CTkLabel(
-            auto_row,
-            text="Auto-start assistant on credit-details screen after",
-            font=_f(13),
-            text_color="#94a3b8",
-        ).pack(side="left")
-        self._auto_start_delay_entry = ctk.CTkEntry(auto_row, width=38, font=_f(13))
-        self._auto_start_delay_entry.insert(0, str(settings.auto_start_delay))
-        _digits_vcmd = (self.register(lambda s: s == "" or s.isdigit()), "%P")
-        self._auto_start_delay_entry._entry.config(
-            validate="key",
-            validatecommand=_digits_vcmd,
-        )
-        self._auto_start_delay_entry.pack(side="left", padx=(8, 0))
-        ctk.CTkLabel(
-            auto_row,
-            text="seconds",
-            font=_f(13),
-            text_color="#94a3b8",
-        ).pack(side="left", padx=(6, 0))
-
-        # ── Bottom buttons ──────────────────────────────────────────────
-        btn_row = ctk.CTkFrame(self, fg_color="transparent")
-        btn_row.pack(padx=(0, 12))
-        ctk.CTkButton(
-            btn_row,
-            text="Save",
-            width=160,
-            height=40,
-            command=self._save_options,
-            font=_f(13, "bold"),
-        ).pack(side="left")
-        ctk.CTkButton(
-            btn_row,
-            text="← Back",
-            width=120,
-            height=40,
-            fg_color="transparent",
-            border_width=1,
-            border_color="#6b7280",
-            text_color="#9ca3af",
-            hover_color="#2d2d2d",
-            command=self._show_scrape_screen,
-            font=_f(13),
-        ).pack(side="left", padx=(4, 12), pady=(12))
-
-    def _record_hotkey(self, which: str) -> None:
-        """Put a hotkey button into 'listening' mode and capture the next key press."""
-        btn = self._next_hk_btn if which == "next" else self._back_hk_btn
-        btn.configure(text="Press a key…", text_color="#fbbf24", border_color="#fbbf24")
-
-        def _on_key(event):
-            key_name = event.name.lower()
-            # Ignore modifier-only presses
-            if key_name in ("shift", "ctrl", "alt", "windows", "unknown"):
-                return
-            keyboard.unhook(hook)
-            if which == "next":
-                self._next_hk_value = key_name
-            else:
-                self._back_hk_value = key_name
-            self.after(0, _update_btn, key_name)
-
-        def _update_btn(key_name: str):
-            try:
-                if which == "next":
-                    btn.configure(text=key_name.upper(), text_color="#4ade80", border_color="#4ade80")
-                else:
-                    btn.configure(text=key_name.upper(), text_color="#60a5fa", border_color="#60a5fa")
-            except Exception:
-                pass
-
-        hook = keyboard.on_press(_on_key, suppress=False)
-
-    def _save_options(self) -> None:
-        """Persist options and return to scrape screen."""
-        settings.hotkey = getattr(self, "_next_hk_value", settings.hotkey)
-        settings.back_hotkey = getattr(self, "_back_hk_value", settings.back_hotkey)
-        for key, var in self._toggle_vars.items():
-            setattr(settings, key, var.get())
-        try:
-            settings.auto_start_delay = max(1, int(self._auto_start_delay_entry.get()))
-        except (ValueError, AttributeError):
-            pass
-        settings.save()
-        self._show_scrape_screen()
-
-    def _show_credits_screen(self) -> None:
-        self._clear()
-        song = self._song
-        additional = song.additional_credits()
-        queue = song.typed_queue(
+    def _current_queue(self) -> list[tuple[str, str]]:
+        assert self._song is not None
+        return self._song.typed_queue(
             include_core=settings.scrape_core,
             include_additional=settings.scrape_additional,
             include_copyright=settings.scrape_copyright,
@@ -502,309 +412,123 @@ class App(ctk.CTk):
             include_cover_art=settings.scrape_cover_art,
         )
 
-        # Cover thumbnail + title block
-        top = ctk.CTkFrame(self, fg_color="transparent")
-        top.pack(fill="x", padx=40, pady=(20, 8))
+    def _show_credits_screen(self) -> None:
+        self._screen = "credits"
+        self._clear_kb_hooks()
+        self._set_compact(False)
+        self._clear()
+        self._header(2)
+        song = self._song
+        assert song is not None
+        queue = self._current_queue()
 
-        if self._cover_image is not None:
-            thumb = ctk.CTkImage(self._cover_image, size=(100, 100))
-            ctk.CTkLabel(top, image=thumb, text="").pack(side="left", padx=(0, 16))
-
-        info = ctk.CTkFrame(top, fg_color="transparent")
-        info.pack(side="left", fill="y", anchor="w")
-        ctk.CTkLabel(info, text=song.title, font=_f(18, "bold"), anchor="w").pack(anchor="w")
-        ctk.CTkLabel(info, text=song.artist, text_color="gray", font=_f(13), anchor="w").pack(anchor="w")
-        ctk.CTkLabel(
-            info,
-            text=f"Found {len(additional)} roles · {len(queue)} total entries",
-            text_color="#4ade80",
-            font=_f(13),
-            anchor="w",
-        ).pack(anchor="w", pady=(6, 0))
+        extra = ""
         if self._is_album_queue_mode and self._album_info:
-            ctk.CTkLabel(
-                info,
-                text=f"Album queue · song {self._album_queue_position} of {self._album_queue_total}",
-                text_color="#60a5fa",
-                font=_f(12),
-                anchor="w",
-            ).pack(anchor="w", pady=(2, 0))
-
-        # Written By / Produced By summary card
-        written_by = song.written_by()
-        produced_by = song.produced_by()
-        no_credits = len(song.credits) == 0
-        card = ctk.CTkFrame(self, fg_color="#1a2535", corner_radius=8)
-        card.pack(fill="x", padx=40, pady=(0, 8))
-        card.grid_columnconfigure(0, weight=0, minsize=130)
-        card.grid_columnconfigure(1, weight=1)
-        card_row = 0
-        if no_credits:
-            for label in ("Written By", "Produced By"):
-                tp, bp = (12, 4) if card_row == 0 else (4, 12)
-                ctk.CTkLabel(
-                    card,
-                    text=label,
-                    anchor="w",
-                    font=_f(13),
-                    text_color="#9ca3af",
-                ).grid(row=card_row, column=0, sticky="w", padx=(16, 8), pady=(tp, bp))
-                ctk.CTkLabel(
-                    card,
-                    text="Not found",
-                    anchor="w",
-                    font=_f(13),
-                    text_color="#6b7280",
-                ).grid(row=card_row, column=1, sticky="w", padx=(0, 16), pady=(tp, bp))
-                card_row += 1
-        else:
-            if written_by:
-                top_pad = 12
-                bot_pad = 4 if produced_by else 12
-                ctk.CTkLabel(
-                    card,
-                    text="Written By",
-                    anchor="w",
-                    font=_f(13),
-                    text_color="#9ca3af",
-                ).grid(row=card_row, column=0, sticky="w", padx=(16, 8), pady=(top_pad, bot_pad))
-                ctk.CTkLabel(
-                    card,
-                    text=", ".join(written_by),
-                    anchor="w",
-                    wraplength=330,
-                    font=_f(13),
-                ).grid(row=card_row, column=1, sticky="w", padx=(0, 16), pady=(top_pad, bot_pad))
-                card_row += 1
-            if produced_by:
-                top_pad = 4 if written_by else 12
-                ctk.CTkLabel(
-                    card,
-                    text="Produced By",
-                    anchor="w",
-                    font=_f(13),
-                    text_color="#9ca3af",
-                ).grid(row=card_row, column=0, sticky="w", padx=(16, 8), pady=(top_pad, 12))
-                ctk.CTkLabel(
-                    card,
-                    text=", ".join(produced_by),
-                    anchor="w",
-                    wraplength=330,
-                    font=_f(13),
-                ).grid(row=card_row, column=1, sticky="w", padx=(0, 16), pady=(top_pad, 12))
+            extra = (
+                f"Song {self._album_queue_position} of {self._album_queue_total} from {self._album_info.album_title}"
+            )
+        self._release_header(self, song.title, song.artist, self._cover_image, extra)
 
         # Buttons anchored to bottom before the scrollable frame so they're always visible
         self._credits_in_countdown = settings.auto_start_assistant
         self._credits_countdown = settings.auto_start_delay
         self._credits_countdown_paused = False
 
-        btn_row = ctk.CTkFrame(self, fg_color="transparent")
-        btn_row.pack(side="bottom", pady=8)
-        _btn_label = (
-            f"Start Assistant  ({self._credits_countdown}s)"
-            if settings.auto_start_assistant
-            else f"Start Assistant  ({settings.hotkey.upper()})"
-        )
-        self._start_assistant_btn = ctk.CTkButton(
-            btn_row,
-            text=_btn_label,
-            width=220,
-            height=40,
-            command=self._show_assistant_screen,
-            font=_f(13, "bold"),
-        )
+        bottom = ctk.CTkFrame(self, fg_color="transparent")
+        bottom.pack(side="bottom", fill="x", padx=40, pady=(6, 14))
+        self._button(bottom, "Back", self._back_from_credits, width=90).pack(side="left")
+        self._start_assistant_btn = self._button(bottom, "", self._show_assistant_screen, primary=True, width=230)
+        self._start_assistant_btn.pack(side="right")
+        self._update_start_label()
+        if not queue:
+            self._start_assistant_btn.configure(state="disabled")
+        else:
 
-        def _on_credits_hotkey(e):
-            if e.event_type == "down":
-                self.after(0, self._show_assistant_screen)
+            def _on_credits_hotkey(e):
+                if e.event_type == "down":
+                    self.after(0, self._show_assistant_screen)
 
-        _hook = keyboard.hook_key(settings.hotkey, _on_credits_hotkey, suppress=True)
-        self._kb_hooks.append(_hook)
-        self._start_assistant_btn.pack(side="left", padx=(0, 12))
-        if settings.auto_start_assistant:
-            self._start_assistant_btn.bind("<Enter>", lambda _: self._pause_credits_countdown())
-            self._start_assistant_btn.bind("<Leave>", lambda _: self._resume_credits_countdown())
-            self.after(1000, self._tick_credits_countdown)
-        ctk.CTkButton(
-            btn_row,
-            text="← Back",
-            width=120,
-            height=40,
-            fg_color="transparent",
-            border_width=1,
-            border_color="#6b7280",
-            text_color="#9ca3af",
-            hover_color="#2d2d2d",
-            command=self._back_from_credits,
-            font=_f(13),
-        ).pack(side="left")
+            self._kb_hooks.append(keyboard.hook_key(settings.hotkey, _on_credits_hotkey, suppress=True))
+            if settings.auto_start_assistant:
+                self._start_assistant_btn.bind("<Enter>", lambda _: self._pause_credits_countdown())
+                self._start_assistant_btn.bind("<Leave>", lambda _: self._resume_credits_countdown())
+                self.after(1000, self._tick_credits_countdown)
 
-        # Combined credits + metadata table — fills remaining space
-        sf = ctk.CTkScrollableFrame(self, width=540)
-        sf.pack(fill="both", expand=True, padx=40, pady=(0, 4))
-        sf.grid_columnconfigure(0, weight=0, minsize=190)
+        summary = ctk.CTkFrame(self, fg_color="transparent")
+        summary.pack(side="bottom", fill="x", padx=40)
+        ctk.CTkLabel(
+            summary, text=queue_summary(queue), font=_f(12), text_color=theme.MUTED, anchor="w", wraplength=540
+        ).pack(anchor="w")
+        self._settings_summary(summary).pack(anchor="w")
+
+        sf = ctk.CTkScrollableFrame(self, fg_color=theme.SURFACE, corner_radius=8)
+        sf.pack(fill="both", expand=True, padx=40, pady=(0, 6))
+        sf.grid_columnconfigure(0, weight=0, minsize=170)
         sf.grid_columnconfigure(1, weight=1)
+        row = 0
 
-        ctk.CTkLabel(sf, text="Role", font=_f(13, "bold"), anchor="w").grid(
-            row=0,
-            column=0,
-            sticky="w",
-            padx=4,
-            pady=(0, 6),
-        )
-        ctk.CTkLabel(sf, text="Details", font=_f(13, "bold"), anchor="w").grid(
-            row=0,
-            column=1,
-            sticky="w",
-            padx=4,
-            pady=(0, 6),
-        )
+        def section(title: str) -> None:
+            nonlocal row
+            ctk.CTkLabel(sf, text=title.upper(), font=_f(11, "bold"), text_color=theme.FAINT, anchor="w").grid(
+                row=row, column=0, columnspan=2, sticky="w", padx=10, pady=(12 if row else 6, 4)
+            )
+            row += 1
 
-        row_idx = 1
-        if no_credits:
-            ctk.CTkLabel(
-                sf,
-                text="Additional roles",
-                anchor="w",
-                font=_f(13),
-                text_color="#9ca3af",
-            ).grid(row=row_idx, column=0, sticky="w", padx=4, pady=2)
-            ctk.CTkLabel(
-                sf,
-                text="Not found",
-                anchor="w",
-                font=_f(13),
-                text_color="#6b7280",
-            ).grid(row=row_idx, column=1, sticky="w", padx=4, pady=2)
-            row_idx += 1
-        else:
-            for credit in additional:
-                ctk.CTkLabel(sf, text=credit.role, anchor="w", font=_f(13)).grid(
-                    row=row_idx,
-                    column=0,
-                    sticky="w",
-                    padx=4,
-                    pady=2,
+        def line(label: str, value: str, *, missing: bool = False, link: str = "", note: str = "") -> None:
+            nonlocal row
+            ctk.CTkLabel(sf, text=label, font=_f(13), text_color=theme.MUTED, anchor="w").grid(
+                row=row, column=0, sticky="nw", padx=10, pady=3
+            )
+            color = theme.FAINT if missing else (theme.ACCENT if link else theme.TEXT)
+            font = ctk.CTkFont(family=_FF, size=13, underline=bool(link)) if link else _f(13)
+            val = ctk.CTkLabel(sf, text=value, font=font, text_color=color, anchor="w", justify="left", wraplength=330)
+            val.grid(row=row, column=1, sticky="w", padx=(0, 10), pady=3)
+            if link:
+                val.configure(cursor="hand2")
+                val.bind("<Button-1>", lambda _, u=link: webbrowser.open(u))
+            row += 1
+            if note:
+                ctk.CTkLabel(sf, text=note, font=_f(11), text_color=theme.FAINT, anchor="w").grid(
+                    row=row, column=1, sticky="w", padx=(0, 10), pady=(0, 3)
                 )
-                ctk.CTkLabel(
-                    sf,
-                    text=", ".join(credit.artists),
-                    anchor="w",
-                    wraplength=300,
-                    font=_f(13),
-                ).grid(row=row_idx, column=1, sticky="w", padx=4, pady=2)
-                row_idx += 1
+                row += 1
 
-        # Separator before metadata rows
-        sep = ctk.CTkFrame(sf, height=1, fg_color="#374151")
-        sep.grid(row=row_idx, column=0, columnspan=2, sticky="ew", padx=4, pady=(6, 4))
-        row_idx += 1
+        section("Main credits")
+        line("Written By", ", ".join(song.written_by()) or "Not found", missing=not song.written_by())
+        line("Produced By", ", ".join(song.produced_by()) or "Not found", missing=not song.produced_by())
 
-        # Phonographic copyright
-        ctk.CTkLabel(
-            sf,
-            text="℗  Phonographic",
-            anchor="w",
-            font=_f(13),
-            text_color="#fb923c",
-        ).grid(row=row_idx, column=0, sticky="w", padx=4, pady=2)
-        phono_text = song.phonographic_copyright if song.phonographic_copyright else "Not found"
-        phono_color = "#fb923c" if song.phonographic_copyright else "#6b7280"
-        ctk.CTkLabel(
-            sf,
-            text=phono_text,
-            anchor="w",
-            wraplength=300,
-            font=_f(13),
-            text_color=phono_color,
-        ).grid(row=row_idx, column=1, sticky="w", padx=4, pady=2)
-        row_idx += 1
+        additional = song.additional_credits()
+        section(f"Additional credits ({len(additional)})")
+        if not additional:
+            line("Roles", "Not found", missing=True)
+        for credit in additional:
+            line(credit.role, ", ".join(credit.artists))
 
-        # Copyright notice
-        ctk.CTkLabel(
-            sf,
-            text="©  Copyright",
-            anchor="w",
-            font=_f(13),
-            text_color="#fb923c",
-        ).grid(row=row_idx, column=0, sticky="w", padx=4, pady=2)
-        phono = song.phonographic_copyright
-        copy_notice = song.copyright_notice
-        if copy_notice and copy_notice != phono:
-            copy_text, copy_color = copy_notice, "#fb923c"
+        section("Release")
+        phono, notice = song.phonographic_copyright, song.copyright_notice
+        line("℗ Phonographic", phono or "Not found", missing=not phono)
+        if notice and notice != phono:
+            line("© Copyright", notice)
         elif phono:
-            copy_text, copy_color = "Not found - copied from Phonographic Copyright", "#fb923c"
+            line("© Copyright", "Same as ℗", note="Apple Music lists no separate © line")
         else:
-            copy_text, copy_color = "Not found", "#6b7280"
-        ctk.CTkLabel(
-            sf,
-            text=copy_text,
-            anchor="w",
-            wraplength=300,
-            font=_f(13),
-            text_color=copy_color,
-        ).grid(row=row_idx, column=1, sticky="w", padx=4, pady=2)
-        row_idx += 1
-
-        # Cover art
-        ctk.CTkLabel(
-            sf,
-            text="Cover Art",
-            anchor="w",
-            font=_f(13),
-            text_color="#f472b6",
-        ).grid(row=row_idx, column=0, sticky="w", padx=4, pady=2)
-        if song.cover_art_url:
-            _link_font = ctk.CTkFont(family=_FF, size=13, underline=True)
-            ca_lbl = ctk.CTkLabel(
-                sf,
-                text="✓  Found",
-                anchor="w",
-                font=_link_font,
-                text_color="#4ade80",
-                cursor="hand2",
-            )
-            ca_lbl.bind("<Button-1>", lambda _, u=song.cover_art_url: webbrowser.open(u))
-        else:
-            ca_lbl = ctk.CTkLabel(
-                sf,
-                text="✗  Not found",
-                anchor="w",
-                font=_f(13),
-                text_color="#f87171",
-            )
-        ca_lbl.grid(row=row_idx, column=1, sticky="w", padx=4, pady=2)
-        row_idx += 1
-
-        # YouTube
-        ctk.CTkLabel(
-            sf,
-            text="YouTube",
-            anchor="w",
-            font=_f(13),
-            text_color="#ef4444",
-        ).grid(row=row_idx, column=0, sticky="w", padx=4, pady=2)
+            line("© Copyright", "Not found", missing=True)
         if song.youtube_url:
-            yt_label = "✓  Found Music Video" if song.youtube_is_mv else "✓  Found"
-            _link_font = ctk.CTkFont(family=_FF, size=13, underline=True)
-            yt_lbl = ctk.CTkLabel(
-                sf,
-                text=yt_label,
-                anchor="w",
-                font=_link_font,
-                text_color="#4ade80",
-                cursor="hand2",
-            )
-            yt_lbl.bind("<Button-1>", lambda _, u=song.youtube_url: webbrowser.open(u))
+            line("YouTube", "Music video" if song.youtube_is_mv else "Official audio", link=song.youtube_url)
         else:
-            yt_lbl = ctk.CTkLabel(
-                sf,
-                text="✗  Not found",
-                anchor="w",
-                font=_f(13),
-                text_color="#f87171",
-            )
-        yt_lbl.grid(row=row_idx, column=1, sticky="w", padx=4, pady=2)
+            line("YouTube", "Not found", missing=True)
+        if song.cover_art_url:
+            line("Cover art", "1000×1000 PNG", link=song.cover_art_url)
+        else:
+            line("Cover art", "Not found", missing=True)
+
+    def _update_start_label(self) -> None:
+        hk = settings.hotkey.upper()
+        if self._credits_in_countdown:
+            text = f"Start pasting in {self._credits_countdown}s  ({hk})"
+        else:
+            text = f"Start pasting  ({hk})"
+        self._start_assistant_btn.configure(text=text)
 
     def _back_from_credits(self) -> None:
         self._credits_in_countdown = False
@@ -819,192 +543,226 @@ class App(ctk.CTk):
             self._show_scrape_screen()
 
     def _show_assistant_screen(self) -> None:
+        self._screen = "assistant"
         self._credits_in_countdown = False
         self._clear()
-        self._queue = self._song.typed_queue(
-            include_core=settings.scrape_core,
-            include_additional=settings.scrape_additional,
-            include_copyright=settings.scrape_copyright,
-            include_youtube=settings.scrape_youtube,
-            include_cover_art=settings.scrape_cover_art,
-        )
+        self._queue = self._current_queue()
         self._pos = 0
         self._row_widgets = []
         self._queue_sf = None
+        song = self._song
+        assert song is not None
+        self._set_compact(settings.compact_mode)
 
-        # ── Top bar: song title + progress ──────────────────────────────
-        hdr = ctk.CTkFrame(self, fg_color="transparent")
-        hdr.pack(fill="x", padx=20, pady=(12, 2))
-        ctk.CTkLabel(
-            hdr,
-            text=f"{self._song.title}  —  {self._song.artist}",
-            font=_f(12),
-            text_color="#9ca3af",
-            anchor="w",
-        ).pack(side="left")
-        self._prog_lbl = ctk.CTkLabel(hdr, text="", text_color="gray", font=_f(12))
-        self._prog_lbl.pack(side="right")
+        if settings.compact_mode:
+            bar = ctk.CTkFrame(self, fg_color="transparent")
+            bar.pack(fill="x", padx=20, pady=(10, 2))
+            ctk.CTkButton(
+                bar,
+                text="⚙",
+                width=30,
+                height=26,
+                font=_f(13),
+                fg_color=theme.SURFACE,
+                hover_color=theme.SURFACE_HI,
+                command=self._open_settings,
+            ).pack(side="right")
+        else:
+            self._header(3)
+            bar = ctk.CTkFrame(self, fg_color="transparent")
+            bar.pack(fill="x", padx=20, pady=(0, 2))
+        ctk.CTkLabel(bar, text=f"{song.title}  ·  {song.artist}", font=_f(12), text_color=theme.MUTED, anchor="w").pack(
+            side="left"
+        )
+        self._prog_lbl = ctk.CTkLabel(bar, text="", text_color=theme.MUTED, font=_f(12))
+        self._prog_lbl.pack(side="right", padx=(0, 8))
 
-        # Progress bar
-        self._progress_bar = ctk.CTkProgressBar(self, width=560, height=4, progress_color="#4ade80")
-        self._progress_bar.pack(padx=20, pady=(0, 6))
+        self._progress_bar = ctk.CTkProgressBar(self, height=4, progress_color=theme.ACCENT)
+        self._progress_bar.pack(fill="x", padx=20, pady=(0, 8))
         self._progress_bar.set(0)
 
-        # ── Hero card: the main focus ───────────────────────────────────
+        # ── Hero card: the value the next hotkey press pastes ───────────
         self._hero_card = ctk.CTkFrame(
             self, corner_radius=12, fg_color="#1a1a2e", border_width=1, border_color="#2d2d4a"
         )
-        self._hero_card.pack(fill="x", padx=20, pady=(0, 4))
-
-        # Badge row inside hero (field type label + step counter)
+        self._hero_card.pack(fill="x", padx=20, pady=(0, 6))
         badge_row = ctk.CTkFrame(self._hero_card, fg_color="transparent")
         badge_row.pack(fill="x", padx=16, pady=(14, 0))
-
         self._hero_badge = ctk.CTkLabel(
-            badge_row,
-            text="",
-            font=_f(12, "bold"),
-            text_color="#1a1a2e",
-            fg_color="#4ade80",
-            corner_radius=4,
-            width=10,
+            badge_row, text="", font=_f(12, "bold"), text_color="#1a1a2e", fg_color=theme.ACCENT, corner_radius=4
         )
         self._hero_badge.pack(side="left", padx=(0, 8), ipadx=8, ipady=2)
-
-        self._hero_step_lbl = ctk.CTkLabel(
-            badge_row,
-            text="",
-            font=_f(11),
-            text_color="#6b7280",
-        )
+        self._hero_step_lbl = ctk.CTkLabel(badge_row, text="", font=_f(11), text_color=theme.FAINT)
         self._hero_step_lbl.pack(side="left")
-
-        # Value: the big text (artist name / role / URL)
         self._hero_value_lbl = ctk.CTkLabel(
-            self._hero_card,
-            text="",
-            font=_f(26, "bold"),
-            text_color="white",
-            anchor="w",
-            wraplength=540,
+            self._hero_card, text="", font=_f(26, "bold"), text_color="white", anchor="w", wraplength=540
         )
-        self._hero_value_lbl.pack(anchor="w", padx=16, pady=(8, 12))
-
-        # ── Instruction bar ─────────────────────────────────────────────
-        self._instr_frame = ctk.CTkFrame(self, fg_color="#111118", corner_radius=6)
-        self._instr_frame.pack(fill="x", padx=20, pady=(0, 4))
+        self._hero_value_lbl.pack(anchor="w", padx=16, pady=(6, 4))
         self._card_instr_lbl = ctk.CTkLabel(
-            self._instr_frame,
+            self._hero_card,
             text="",
             anchor="w",
             justify="left",
             wraplength=540,
             font=_f(12),
-            text_color="#9ca3af",
+            text_color=theme.MUTED,
         )
-        self._card_instr_lbl.pack(anchor="w", padx=12, pady=8)
+        self._card_instr_lbl.pack(anchor="w", padx=16, pady=(0, 12))
 
-        # ── Hotkey hint pills ───────────────────────────────────────────
-        hint_bar = ctk.CTkFrame(self, fg_color="transparent")
-        hint_bar.pack(fill="x", padx=20, pady=(0, 6))
-        for key, label, color in [
-            (settings.hotkey.upper(), "next", "#4ade80"),
-            (settings.back_hotkey.upper(), "back", "#60a5fa"),
-            ("ESC", "quit", "#f87171"),
-        ]:
-            pill = ctk.CTkFrame(hint_bar, fg_color="#1a1a1a", corner_radius=4)
-            pill.pack(side="left", padx=(0, 6))
-            ctk.CTkLabel(pill, text=key, font=_f(11, "bold"), text_color=color).pack(
-                side="left",
-                padx=(8, 3),
-                pady=3,
+        # ── Controls: mouse equivalents of the hotkeys, and live toggles ─
+        controls = ctk.CTkFrame(self, fg_color="transparent")
+        controls.pack(fill="x", padx=20, pady=(0, 6))
+        back_text = f"‹ Back  {settings.back_hotkey.upper()}"
+        for text, command in ((back_text, self._on_back_hotkey), ("Skip ›", self._skip)):
+            ctk.CTkButton(
+                controls,
+                text=text,
+                width=92,
+                height=28,
+                font=_f(12),
+                fg_color=theme.SURFACE,
+                hover_color=theme.SURFACE_HI,
+                text_color=theme.TEXT,
+                command=command,
+            ).pack(side="left", padx=(0, 6))
+        self._chips = {}
+        for key, label in (("auto_enter", "Auto-confirm"), ("auto_tab", "Auto-tab")):
+            chip = ctk.CTkButton(
+                controls,
+                text="",
+                width=118,
+                height=28,
+                font=_f(12),
+                corner_radius=14,
+                border_width=1,
+                command=lambda k=key: self._toggle_chip(k),
             )
-            ctk.CTkLabel(pill, text=label, font=_f(11), text_color="#6b7280").pack(
-                side="left",
-                padx=(0, 8),
-                pady=3,
-            )
+            chip.pack(side="right", padx=(6, 0))
+            self._chips[key] = chip
+            self._chip_label[key] = label
+        self._refresh_chips()
 
-        if settings.compact_mode:
-            # Compact: hide the queue list and shrink the window
-            self.geometry("620x270")
-        else:
-            # ── Queue list ──────────────────────────────────────────────
-            self._queue_sf = ctk.CTkScrollableFrame(self, fg_color="transparent")
-            self._queue_sf.pack(fill="both", expand=True, padx=20, pady=(0, 8))
+        if not settings.compact_mode:
+            hint = f"Press {settings.hotkey.upper()} to paste.  Esc ends pasting.  Click a step to jump to it."
+            ctk.CTkLabel(self, text=hint, font=_f(11), text_color=theme.FAINT, anchor="w").pack(
+                fill="x", padx=22, pady=(0, 2)
+            )
+            self._queue_sf = ctk.CTkScrollableFrame(self, fg_color=theme.SURFACE, corner_radius=8)
+            self._queue_sf.pack(fill="both", expand=True, padx=20, pady=(0, 12))
             self._queue_sf.grid_columnconfigure(0, weight=1)
 
             for i, (kind, value) in enumerate(self._queue):
-                row_frame = ctk.CTkFrame(self._queue_sf, fg_color="transparent", corner_radius=4, height=32)
-                row_frame.grid(row=i, column=0, sticky="ew", padx=0, pady=1)
+                row_frame = ctk.CTkFrame(self._queue_sf, fg_color="transparent", corner_radius=4, height=28)
+                row_frame.grid(row=i, column=0, sticky="ew", padx=0, pady=0)
                 row_frame.grid_columnconfigure(0, minsize=24)
                 row_frame.grid_columnconfigure(1, minsize=150)
                 row_frame.grid_columnconfigure(2, weight=1)
 
                 m = ctk.CTkLabel(row_frame, text="", width=20, anchor="center", font=_f(11))
-                m.grid(row=0, column=0, sticky="w", padx=(4, 0), pady=3)
-
-                display_kind = _FIELD_LABELS.get(kind, kind)
+                m.grid(row=0, column=0, sticky="w", padx=(4, 0), pady=2)
+                nested = kind in _NESTED_KINDS
                 t = ctk.CTkLabel(
                     row_frame,
-                    text=display_kind,
+                    text="" if nested else _LIST_LABELS.get(kind, kind),
                     width=140,
                     anchor="w",
                     font=_f(11),
-                    text_color=_TYPE_COLORS.get(kind, "#6b7280"),
                 )
-                t.grid(row=0, column=1, sticky="w", padx=4, pady=3)
-
-                display_value = f"  {value}" if kind == "artist" else value
-                v = ctk.CTkLabel(row_frame, text=display_value, anchor="w", font=_f(11), text_color="#6b7280")
-                v.grid(row=0, column=2, sticky="w", padx=4, pady=3)
-
+                t.grid(row=0, column=1, sticky="w", padx=4, pady=2)
+                v = ctk.CTkLabel(row_frame, text=value, anchor="w", font=_f(12))
+                v.grid(row=0, column=2, sticky="w", padx=(20 if nested else 4, 4), pady=2)
+                for w in (row_frame, m, t, v):
+                    w.bind("<Button-1>", lambda _, idx=i: self._jump_to(idx))
+                    w.configure(cursor="hand2")
                 self._row_widgets.append((row_frame, m, t, v, kind))
 
         self._render_assistant()
         self._register_assistant_keys()
         threading.Thread(target=self._wait_esc, daemon=True).start()
 
+    def _refresh_chips(self) -> None:
+        for key, chip in self._chips.items():
+            on = bool(getattr(settings, key))
+            chip.configure(
+                text=f"{self._chip_label[key]}  {'on' if on else 'off'}",
+                fg_color=theme.ACCENT_DIM if on else "transparent",
+                border_color=theme.ACCENT if on else theme.BORDER,
+                text_color=theme.ACCENT if on else theme.MUTED,
+                hover_color=theme.SURFACE_HI,
+            )
+
+    def _toggle_chip(self, key: str) -> None:
+        setattr(settings, key, not getattr(settings, key))
+        settings.save()
+        self._refresh_chips()
+        self._card_instr_lbl.configure(text=self._instruction_text())
+
+    def _skip(self) -> None:
+        """Move to the next step without pasting, for a field that is already filled on Genius."""
+        with self._lock:
+            if self._pos >= len(self._queue):
+                return
+            self._pos += 1
+            done = self._pos >= len(self._queue)
+        if done:
+            self._finish_song()
+        else:
+            self._render_assistant()
+
+    def _jump_to(self, index: int) -> None:
+        with self._lock:
+            self._pos = max(0, min(index, len(self._queue) - 1))
+        self._render_assistant()
+
+    def _finish_song(self) -> None:
+        if self._is_album_queue_mode:
+            self.after(500, self._advance_album_queue)
+        else:
+            self.after(500, self._show_done_screen)
+
     # ── scrape ───────────────────────────────────────────────────────────
 
     def _start_scrape(self) -> None:
         url = self._url_entry.get().strip()
-        if not url:
+        if self._busy or not url_hint(url)[0]:
             return
-        self._scrape_btn.configure(state="disabled")
-        if hasattr(self, "_options_btn") and self._options_btn.winfo_exists():
-            self._options_btn.configure(state="disabled")
-        self._status_lbl.configure(text="Detecting album…", text_color="gray")
-        threading.Thread(target=self._detect_thread, args=(url,), daemon=True).start()
+        self._job += 1
+        self._set_busy(True, "Opening the Apple Music page…")
+        threading.Thread(target=self._detect_thread, args=(url, self._job), daemon=True).start()
 
-    def _scrape_track_thread(self, url: str, track_index: int, track_title: str) -> None:
+    @staticmethod
+    def _download_cover(url: str) -> PILImage.Image | None:
+        if not url:
+            return None
         try:
-            artist = self._album_info.artist if hasattr(self, "_album_info") and self._album_info else ""
+            resp = httpx.get(url, timeout=8.0)
+            resp.raise_for_status()
+            return PILImage.open(io.BytesIO(resp.content))
+        except (httpx.HTTPError, OSError):
+            return None
+
+    def _scrape_track_thread(self, url: str, track_index: int, track_title: str, job: int | None = None) -> None:
+        job = self._job if job is None else job
+        try:
+            artist = self._album_info.artist if self._album_info else ""
             song = asyncio.run_coroutine_threadsafe(
                 pipeline.fetch_track(url, track_index, track_title, artist), self._loop
             ).result()
-            cover_url = song.cover_art_url
-
-            cover_image: PILImage.Image | None = None
-            if cover_url:
-                try:
-                    resp = httpx.get(cover_url, timeout=8.0)
-                    cover_image = PILImage.open(io.BytesIO(resp.content))
-                except Exception:
-                    pass
-            if cover_image is None:
-                cover_image = getattr(self, "_album_cover_image", None)
-
-            self.after(0, self._scrape_done, song, cover_image)
+            cover_image = self._download_cover(song.cover_art_url) or getattr(self, "_album_cover_image", None)
+            self.after(0, self._scrape_done, song, cover_image, job)
         except Exception as exc:
-            self.after(0, self._scrape_error, str(exc))
+            self.after(0, self._scrape_error, str(exc), job)
 
-    def _scrape_done(self, song: SongCredits, cover_image: PILImage.Image | None) -> None:
+    def _scrape_done(self, song: SongCredits, cover_image: PILImage.Image | None, job: int | None = None) -> None:
+        if job is not None and job != self._job:
+            return
         self._song = song
         self._cover_image = cover_image
         self._show_credits_screen()
 
-    def _scrape_error(self, message: str) -> None:
+    def _scrape_error(self, message: str, job: int | None = None) -> None:
+        if job is not None and job != self._job:
+            return
         self._is_album_queue_mode = False
         self._album_queue_pending = []
         self._album_queue_current = 0
@@ -1012,115 +770,99 @@ class App(ctk.CTk):
         self._album_queue_total = 0
         with self._prefetch_cache_lock:
             self._prefetch_cache.clear()
-        if hasattr(self, "_status_lbl") and self._status_lbl.winfo_exists():
-            self._status_lbl.configure(text=f"Error: {message}", text_color="#f87171")
-        if hasattr(self, "_scrape_btn") and self._scrape_btn.winfo_exists():
-            self._scrape_btn.configure(state="normal")
-        if hasattr(self, "_options_btn") and self._options_btn.winfo_exists():
-            self._options_btn.configure(state="normal")
-        elif self._album_info is not None and self._album_info.track_count > 1:
-            self._show_track_select_screen()
+        if self._screen != "start":
+            if self._album_info is not None and self._album_info.track_count > 1:
+                self._show_track_select_screen()
+            else:
+                self._show_scrape_screen()
+        self._set_busy(False)
+        if self._screen == "start":
+            self._status_lbl.configure(text=friendly_error(message), text_color=theme.DANGER)
         else:
-            self._show_scrape_screen()
+            self._toast(friendly_error(message), error=True)
 
-    def _detect_thread(self, url: str) -> None:
+    def _detect_thread(self, url: str, job: int) -> None:
         try:
             info = asyncio.run_coroutine_threadsafe(pipeline.detect(url), self._loop).result()
-
-            # Download cover thumbnail
-            cover_image: PILImage.Image | None = None
-            if info.cover_art_url:
-                try:
-                    resp = httpx.get(info.cover_art_url, timeout=8.0)
-                    cover_image = PILImage.open(io.BytesIO(resp.content))
-                except Exception:
-                    pass
-
-            self.after(0, self._detect_done, info, cover_image)
+            cover_image = self._download_cover(info.cover_art_url)
+            self.after(0, self._detect_done, info, cover_image, job)
         except Exception as exc:
-            self.after(0, self._scrape_error, str(exc))
+            self.after(0, self._scrape_error, str(exc), job)
 
-    def _detect_done(self, info: AlbumTrackInfo, cover_image: PILImage.Image | None = None) -> None:
+    def _detect_done(self, info: AlbumTrackInfo, cover_image: PILImage.Image | None = None, job: int = 0) -> None:
+        if job != self._job:
+            return
         # Always store so _scrape_track_thread can access artist + cover fallback
         self._album_info = info
         self._album_cover_image = cover_image
         if info.track_count <= 1:
-            self._status_lbl.configure(text="Scraping metadata…", text_color="gray")
+            self._status_lbl.configure(text="Reading the credits…")
             threading.Thread(
                 target=self._scrape_track_thread,
-                args=(info.url, 1, info.album_title),
+                args=(info.url, 1, info.album_title, job),
                 daemon=True,
             ).start()
         else:
             self._show_track_select_screen()
 
+    def _toast(self, text: str, *, error: bool = False) -> None:
+        """Short message at the bottom of the window that disappears on its own."""
+        lbl = ctk.CTkLabel(
+            self,
+            text=text,
+            font=_f(12),
+            text_color=theme.TEXT,
+            fg_color=theme.DANGER_DIM if error else theme.SURFACE_HI,
+            corner_radius=6,
+            wraplength=520,
+        )
+        lbl.place(relx=0.5, rely=1.0, y=-16, anchor="s")
+        lbl.lift()
+        self.after(6000, lambda: lbl.destroy() if lbl.winfo_exists() else None)
+
     def _show_track_select_screen(self) -> None:
+        self._screen = "tracks"
+        self._set_compact(False)
         self._clear()
+        self._header(1)
         info = self._album_info
+        assert info is not None
         self._track_vars = []
         self._scrape_selected_btn = None
 
-        # Cover thumbnail + album info header
-        top = ctk.CTkFrame(self, fg_color="transparent")
-        top.pack(fill="x", padx=40, pady=(20, 8))
+        self._release_header(self, info.album_title, info.artist, getattr(self, "_album_cover_image", None))
 
-        album_cover = getattr(self, "_album_cover_image", None)
-        if album_cover is not None:
-            thumb = ctk.CTkImage(album_cover, size=(100, 100))
-            ctk.CTkLabel(top, image=thumb, text="").pack(side="left", padx=(0, 16))
-
-        info_frame = ctk.CTkFrame(top, fg_color="transparent")
-        info_frame.pack(side="left", fill="y", anchor="w")
-        ctk.CTkLabel(info_frame, text=info.album_title, font=_f(20, "bold"), anchor="w").pack(anchor="w")
-        ctk.CTkLabel(info_frame, text=info.artist, text_color="gray", font=_f(13), anchor="w").pack(anchor="w")
+        tools = ctk.CTkFrame(self, fg_color="transparent")
+        tools.pack(fill="x", padx=40, pady=(4, 4))
         ctk.CTkLabel(
-            info_frame,
-            text=f"{info.track_count} songs — check songs below to scrape a selection",
-            text_color="#4ade80",
-            font=_f(13),
-            anchor="w",
-        ).pack(anchor="w", pady=(6, 0))
+            tools, text=f"{info.track_count} songs. Tick the ones to paste.", font=_f(13), text_color=theme.MUTED
+        ).pack(side="left")
+        for text, value in (("Clear", False), ("Select all", True)):
+            ctk.CTkButton(
+                tools,
+                text=text,
+                width=80,
+                height=26,
+                font=_f(12),
+                fg_color="transparent",
+                hover_color=theme.SURFACE,
+                text_color=theme.ACCENT,
+                command=lambda v=value: self._select_all(v),
+            ).pack(side="right")
 
         # Bottom buttons — packed before the scrollable frame so they're always visible
         btn_row = ctk.CTkFrame(self, fg_color="transparent")
-        btn_row.pack(side="bottom", pady=8)
-        ctk.CTkButton(
-            btn_row,
-            text="Scrape all songs",
-            width=158,
-            height=38,
-            fg_color="#166534",
-            hover_color="#15803d",
-            command=self._start_album_queue,
-            font=_f(13, "bold"),
-        ).pack(side="left", padx=(0, 8))
-        self._scrape_selected_btn = ctk.CTkButton(
-            btn_row,
-            text="Scrape selected (0)",
-            width=178,
-            height=38,
-            fg_color="#1d4ed8",
-            hover_color="#1e40af",
-            command=self._start_selected_queue,
-            font=_f(13, "bold"),
-            state="disabled",
+        btn_row.pack(side="bottom", fill="x", padx=40, pady=(8, 14))
+        self._button(btn_row, "Back", self._go_to_main_from_album, width=90).pack(side="left")
+        self._scrape_selected_btn = self._button(
+            btn_row, "Start with selected", self._start_selected_queue, primary=True, width=190
         )
-        self._scrape_selected_btn.pack(side="left", padx=(0, 8))
-        ctk.CTkButton(
-            btn_row,
-            text="← Back to main menu",
-            width=158,
-            height=38,
-            fg_color="transparent",
-            border_width=1,
-            border_color="#6b7280",
-            text_color="#9ca3af",
-            hover_color="#2d2d2d",
-            command=self._go_to_main_from_album,
-            font=_f(13),
-        ).pack(side="left")
+        self._scrape_selected_btn.pack(side="right")
+        self._button(btn_row, f"All {info.track_count} songs", self._start_album_queue, width=130).pack(
+            side="right", padx=(0, 8)
+        )
 
-        sf = ctk.CTkScrollableFrame(self, width=540)
+        sf = ctk.CTkScrollableFrame(self, fg_color=theme.SURFACE, corner_radius=8)
         sf.pack(fill="both", expand=True, padx=40, pady=(0, 4))
 
         for i, title in enumerate(info.track_titles):
@@ -1129,7 +871,7 @@ class App(ctk.CTk):
             self._track_vars.append(var)
 
             row = ctk.CTkFrame(sf, fg_color="transparent", corner_radius=4)
-            row.pack(fill="x", padx=2, pady=2)
+            row.pack(fill="x", padx=2, pady=1)
 
             cb = ctk.CTkCheckBox(
                 row,
@@ -1145,13 +887,13 @@ class App(ctk.CTk):
             )
             cb.pack(side="left", padx=(8, 4))
 
-            num_lbl = ctk.CTkLabel(row, text=str(n), width=28, text_color="#6b7280", anchor="e", font=_f(13))
-            num_lbl.pack(side="left", padx=(0, 8))
-            title_lbl = ctk.CTkLabel(row, text=title, anchor="w", font=_f(13), cursor="hand2")
-            title_lbl.pack(side="left", fill="x", expand=True)
+            num_lbl = ctk.CTkLabel(row, text=str(n), width=28, text_color=theme.FAINT, anchor="e", font=_f(13))
+            num_lbl.pack(side="left", padx=(0, 10))
+            title_lbl = ctk.CTkLabel(row, text=title, anchor="w", font=_f(13), text_color=theme.TEXT)
+            title_lbl.pack(side="left", fill="x", expand=True, pady=4)
 
             def _hover_on(_, r=row):
-                r.configure(fg_color="#1a2535")
+                r.configure(fg_color=theme.FOCUS)
 
             def _hover_off(_, r=row):
                 r.configure(fg_color="transparent")
@@ -1163,9 +905,32 @@ class App(ctk.CTk):
             for w in (row, num_lbl, title_lbl):
                 w.bind("<Enter>", _hover_on)
                 w.bind("<Leave>", _hover_off)
-            for w in (num_lbl, title_lbl):
+            for w in (row, num_lbl, title_lbl):
                 w.bind("<Button-1>", _toggle)
                 w.configure(cursor="hand2")
+        self._update_selection_btn()
+
+    def _release_header(self, master, title: str, artist: str, cover: PILImage.Image | None, extra: str = "") -> None:
+        top = ctk.CTkFrame(master, fg_color="transparent")
+        top.pack(fill="x", padx=40, pady=(10, 10))
+        if cover is not None:
+            thumb = ctk.CTkImage(cover, size=(88, 88))
+            ctk.CTkLabel(top, image=thumb, text="").pack(side="left", padx=(0, 16))
+        info = ctk.CTkFrame(top, fg_color="transparent")
+        info.pack(side="left", fill="both", expand=True)
+        ctk.CTkLabel(
+            info, text=title, font=_f(20, "bold"), text_color=theme.TEXT, anchor="w", justify="left", wraplength=400
+        ).pack(anchor="w")
+        ctk.CTkLabel(info, text=artist, font=_f(14), text_color=theme.MUTED, anchor="w").pack(anchor="w")
+        if extra:
+            ctk.CTkLabel(info, text=extra, font=_f(12), text_color=theme.ACCENT, anchor="w").pack(
+                anchor="w", pady=(6, 0)
+            )
+
+    def _select_all(self, value: bool) -> None:
+        for var in self._track_vars:
+            var.set(value)
+        self._update_selection_btn()
 
     def _update_selection_btn(self) -> None:
         btn = self._scrape_selected_btn
@@ -1178,9 +943,9 @@ class App(ctk.CTk):
             return
         count = sum(1 for v in self._track_vars if v.get())
         if count == 0:
-            btn.configure(state="disabled", text="Scrape selected (0)")
+            btn.configure(state="disabled", text="Start with selected")
         else:
-            btn.configure(state="normal", text=f"Scrape selected ({count})")
+            btn.configure(state="normal", text=f"Start with {count} selected")
 
     def _start_selected_queue(self) -> None:
         info = self._album_info
@@ -1219,26 +984,44 @@ class App(ctk.CTk):
             self.after(0, self._scrape_done, *cached)
             return
 
-        self._clear()
-        if self._is_album_queue_mode:
-            ctk.CTkLabel(
-                self,
-                text=f"Scraping song {self._album_queue_position} of {self._album_queue_total}…",
-                font=_f(16),
-            ).pack(pady=(180, 8))
-            ctk.CTkLabel(self, text=f'"{track_title}"', text_color="#4ade80", font=_f(14)).pack(pady=(0, 4))
-        else:
-            ctk.CTkLabel(
-                self,
-                text=f'Scraping "{track_title}"…',
-                font=_f(16),
-            ).pack(pady=(200, 8))
-        ctk.CTkLabel(self, text="Please wait", text_color="gray", font=_f(13)).pack()
+        self._show_loading_screen(track_title)
         threading.Thread(
             target=self._scrape_track_thread,
-            args=(self._album_info.url, track_index, track_title),
+            args=(self._album_info.url, track_index, track_title, self._job),
             daemon=True,
         ).start()
+
+    def _show_loading_screen(self, track_title: str) -> None:
+        self._screen = "loading"
+        self._job += 1
+        self._clear()
+        self._header(1)
+        box = ctk.CTkFrame(self, fg_color="transparent")
+        box.pack(expand=True)
+        if self._is_album_queue_mode:
+            ctk.CTkLabel(
+                box,
+                text=f"Song {self._album_queue_position} of {self._album_queue_total}",
+                font=_f(12),
+                text_color=theme.FAINT,
+            ).pack()
+        ctk.CTkLabel(box, text=track_title, font=_f(20, "bold"), text_color=theme.TEXT, wraplength=480).pack(
+            pady=(2, 14)
+        )
+        bar = ctk.CTkProgressBar(box, mode="indeterminate", width=320, height=4, progress_color=theme.ACCENT)
+        bar.pack()
+        bar.start()
+        ctk.CTkLabel(
+            box,
+            text=(
+                "Reading the credits on Apple Music and finding the YouTube link and cover art.\n"
+                "This usually takes 3 to 8 seconds."
+            ),
+            font=_f(12),
+            text_color=theme.MUTED,
+            justify="center",
+        ).pack(pady=(14, 18))
+        self._button(box, "Cancel", self._cancel_scrape, width=110).pack()
 
     def _advance_album_queue(self) -> None:
         self._clear_kb_hooks()
@@ -1344,10 +1127,7 @@ class App(ctk.CTk):
             queue_len = len(self._queue)
 
         if new_pos >= queue_len:
-            if self._is_album_queue_mode:
-                self.after(500, self._advance_album_queue)
-            else:
-                self.after(500, self._show_done_screen)
+            self._finish_song()
         else:
             self.after(0, self._render_assistant)
 
@@ -1379,76 +1159,56 @@ class App(ctk.CTk):
         for i, (row_frame, m, t, v, kind) in enumerate(self._row_widgets):
             if i < pos:
                 row_frame.configure(fg_color="transparent")
-                m.configure(text="✓", text_color="#3f3f46")
-                t.configure(text_color="#3f3f46", font=_f(11))
-                v.configure(text_color="#3f3f46", font=_f(11))
+                m.configure(text="✓", text_color=theme.DONE)
+                t.configure(text_color=theme.DONE, font=_f(11))
+                v.configure(text_color=theme.DONE, font=_f(12))
             elif i == pos:
-                row_frame.configure(fg_color="#1a2535")
-                m.configure(text="▶", text_color="#4ade80")
-                t.configure(text_color=_TYPE_COLORS.get(kind, "white"), font=_f(11, "bold"))
-                v.configure(text_color="#fbbf24", font=_f(11, "bold"))
+                row_frame.configure(fg_color=theme.FOCUS)
+                m.configure(text="▶", text_color=theme.ACCENT)
+                t.configure(text_color=_TYPE_COLORS.get(kind, theme.TEXT), font=_f(11, "bold"))
+                v.configure(text_color=theme.WARN, font=_f(12, "bold"))
             else:
                 row_frame.configure(fg_color="transparent")
                 m.configure(text="")
-                t.configure(text_color=_TYPE_COLORS.get(kind, "#6b7280"), font=_f(11))
-                v.configure(text_color="#6b7280", font=_f(11))
+                t.configure(text_color=_TYPE_COLORS.get(kind, theme.MUTED), font=_f(11))
+                v.configure(text_color=theme.MUTED, font=_f(12))
 
     def _instruction_text(self) -> str:
         return flow.instruction_text(self._queue, self._pos, settings.hotkey)
 
     def _show_done_screen(self) -> None:
-        self._clear_kb_hooks()
-        self.geometry("620x700")
+        self._screen = "done"
+        self._set_compact(False)
         self._clear()
+        self._header(3)
         self._in_countdown = True
         self._countdown = 10
         self._countdown_paused = False
 
-        ctk.CTkLabel(self, text="✓", font=_f(52, "bold"), text_color="#4ade80").pack(pady=(60, 6))
-        ctk.CTkLabel(self, text="All credits entered!", font=_f(20, "bold")).pack()
+        box = ctk.CTkFrame(self, fg_color="transparent")
+        box.pack(expand=True)
+        ctk.CTkLabel(box, text="✓", font=_f(52, "bold"), text_color=theme.ACCENT).pack()
+        ctk.CTkLabel(box, text="All credits entered", font=_f(22, "bold"), text_color=theme.TEXT).pack()
+        ctk.CTkLabel(
+            box,
+            text="Check the Genius page, then press Save there.",
+            font=_f(13),
+            text_color=theme.MUTED,
+        ).pack(pady=(4, 22))
 
-        self._back_btn = ctk.CTkButton(
-            self,
-            text=f"Go back to main menu  ({self._countdown}s)",
-            width=300,
-            height=44,
-            command=self._go_to_main,
-            font=_f(13, "bold"),
-        )
-        self._back_btn.pack(pady=(0, 12))
+        self._back_btn = self._button(box, "", self._go_to_main, primary=True, width=260)
+        self._back_btn.pack(pady=(0, 8))
         self._back_btn.bind("<Enter>", lambda _: self._pause_countdown())
         self._back_btn.bind("<Leave>", lambda _: self._resume_countdown())
-
-        if self._album_info is not None:
-            ctk.CTkButton(
-                self,
-                text="← Back to album list",
-                width=200,
-                height=38,
-                fg_color="transparent",
-                border_width=1,
-                border_color="#4ade80",
-                text_color="#4ade80",
-                hover_color="#1a2d1a",
-                command=self._back_to_album_list,
-                font=_f(13),
-            ).pack(pady=(0, 8))
-
-        ctk.CTkButton(
-            self,
-            text="Quit",
-            width=120,
-            height=38,
-            fg_color="transparent",
-            border_width=1,
-            border_color="#6b7280",
-            text_color="#9ca3af",
-            hover_color="#2d2d2d",
-            command=self.destroy,
-            font=_f(13),
-        ).pack()
+        self._update_done_label()
+        if self._album_info is not None and self._album_info.track_count > 1:
+            self._button(box, "Back to the track list", self._back_to_album_list, width=260).pack(pady=(0, 8))
+        self._button(box, "Close Géniescraper", self.destroy, width=260).pack()
 
         self.after(1000, self._tick_countdown)
+
+    def _update_done_label(self) -> None:
+        self._back_btn.configure(text=f"Paste another song  ({self._countdown}s)")
 
     def _tick_countdown(self) -> None:
         if not getattr(self, "_in_countdown", False):
@@ -1461,7 +1221,7 @@ class App(ctk.CTk):
             self._go_to_main()
             return
         try:
-            self._back_btn.configure(text=f"Go back to main menu  ({self._countdown}s)")
+            self._update_done_label()
         except Exception:
             return
         self.after(1000, self._tick_countdown)
@@ -1484,7 +1244,7 @@ class App(ctk.CTk):
             self._show_assistant_screen()
             return
         try:
-            self._start_assistant_btn.configure(text=f"Start Assistant  ({self._credits_countdown}s)")
+            self._update_start_label()
         except Exception:
             return
         self.after(1000, self._tick_credits_countdown)
@@ -1546,21 +1306,21 @@ class App(ctk.CTk):
 
         # Dark overlay frame on top of everything
         self._esc_overlay = ctk.CTkFrame(self, fg_color="#0d0d0d", corner_radius=12)
-        self._esc_overlay.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.85, relheight=0.3)
+        self._esc_overlay.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.85)
 
         ctk.CTkLabel(
             self._esc_overlay,
-            text="Quit assistant?",
+            text="End pasting for this song?",
             font=_f(18, "bold"),
             text_color="#f87171",
         ).pack(pady=(28, 20))
 
         btn_row = ctk.CTkFrame(self._esc_overlay, fg_color="transparent")
-        btn_row.pack(pady=(0, 20))
+        btn_row.pack(pady=(0, 28))
 
         ctk.CTkButton(
             btn_row,
-            text="Resume",
+            text="Keep pasting",
             width=140,
             height=38,
             fg_color="transparent",
@@ -1573,7 +1333,7 @@ class App(ctk.CTk):
         ).pack(side="left", padx=(0, 12))
         ctk.CTkButton(
             btn_row,
-            text="Quit to menu",
+            text="End and start over",
             width=160,
             height=38,
             fg_color="#7f1d1d",
