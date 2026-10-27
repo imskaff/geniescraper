@@ -13,16 +13,20 @@ from scraper.models import SongCredits
 
 
 async def detect(url: str) -> AlbumTrackInfo:
-    """Detect album/track info and upgrade the cover URL via Deezer/iTunes when possible."""
+    """Detect album/track info; fall back to Deezer/iTunes title search when Apple has no cover.
+
+    Apple's cover comes from a lookup by catalog id and is exact; title searches can return
+    another edition of the album (for example SOUR vs SOUR (Video Version)).
+    """
     info = await apple_music.detect_album(url)
-    if not (info.album_title and info.artist):
+    if info.cover_art_url or not (info.album_title and info.artist):
         return info
     deezer_cover, itunes_cover = await asyncio.gather(
         deezer.fetch_cover_url(info.album_title, info.artist),
         deezer.fetch_itunes_cover_url(info.album_title, info.artist),
     )
-    cover_url = deezer_cover or itunes_cover or info.cover_art_url
-    if cover_url == info.cover_art_url:
+    cover_url = deezer_cover or itunes_cover
+    if not cover_url:
         return info
     return AlbumTrackInfo(
         url=info.url,
@@ -37,7 +41,8 @@ async def detect(url: str) -> AlbumTrackInfo:
 async def fetch_track(url: str, track_index: int, track_title: str, artist: str) -> SongCredits:
     """Full scrape pipeline: Apple Music + Deezer + YouTube, all concurrent.
 
-    The returned SongCredits carries the best cover URL found and the YouTube link.
+    The returned SongCredits carries the best cover URL found and the YouTube link:
+    Apple's exact cover first, then the Deezer/iTunes title-search results.
     """
     search_title = track_title or "Unknown"
     scrape_task = asyncio.create_task(apple_music.scrape(url, track_index=track_index, track_title=track_title))
@@ -61,7 +66,7 @@ async def fetch_track(url: str, track_index: int, track_title: str, artist: str)
         except Exception:
             pass
 
-    if not deezer_cover and not itunes_cover and song.title and song.artist:
+    if not song.cover_art_url and not deezer_cover and not itunes_cover and song.title and song.artist:
         try:
             deezer_cover, itunes_cover = await asyncio.gather(
                 deezer.fetch_cover_url(song.title, song.artist),
@@ -70,5 +75,5 @@ async def fetch_track(url: str, track_index: int, track_title: str, artist: str)
         except Exception:
             pass
 
-    cover_url = deezer_cover or itunes_cover or song.cover_art_url
+    cover_url = song.cover_art_url or deezer_cover or itunes_cover
     return song.model_copy(update={"cover_art_url": cover_url, "youtube_url": yt_url, "youtube_is_mv": yt_is_mv})
