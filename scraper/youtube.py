@@ -14,27 +14,59 @@ _HEADERS = {
 
 _MV_KEYWORDS = ("official music video", "official video", "music video", "official visual")
 _SKIP_KEYWORDS = (
-    "lyrics", "lyric", "audio only", "cover by", "reaction", "reacts",
-    "remix", "parody", "live", "performance", "interview", "behind the scenes",
-    "dance practice", "choreography", "teaser", "trailer",
+    "lyrics",
+    "lyric",
+    "audio only",
+    "cover by",
+    "reaction",
+    "reacts",
+    "remix",
+    "parody",
+    "live",
+    "performance",
+    "interview",
+    "behind the scenes",
+    "dance practice",
+    "choreography",
+    "teaser",
+    "trailer",
 )
 _AUDIO_INDICATORS = ("official audio", "(audio)", "audio only", "audio stream")
 
 # Description-based MV signals — two separate arrays so they can be weighted differently
 _MV_CREW_KEYWORDS = (
-    "directed by", "director:", "director,", "d.p.", "dp:", "dop:",
-    "cinematography by", "cinematographer", "shot by", "filmed by",
-    "edited by", "editor:", "color by", "colorist",
-    "visual director", "creative director", "production company",
+    "directed by",
+    "director:",
+    "director,",
+    "d.p.",
+    "dp:",
+    "dop:",
+    "cinematography by",
+    "cinematographer",
+    "shot by",
+    "filmed by",
+    "edited by",
+    "editor:",
+    "color by",
+    "colorist",
+    "visual director",
+    "creative director",
+    "production company",
 )
 _MV_DESC_INDICATORS = (
-    "music video", "official video", "official music video",
-    "official visual", "visual video", "watch the video",
-    "stream & watch", "listen & watch",
+    "music video",
+    "official video",
+    "official music video",
+    "official visual",
+    "visual video",
+    "watch the video",
+    "stream & watch",
+    "listen & watch",
 )
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
+
 
 def _clean(text: str) -> str:
     """Lowercase, strip non-alphanumeric (keep spaces), collapse whitespace."""
@@ -105,12 +137,13 @@ def _is_artist_ch(channel: str, artist: str) -> bool:
 
 # ── per-phase scorers ─────────────────────────────────────────────────────────
 
+
 def _score_audio(video_title: str, channel: str, artist: str, song_title: str) -> int:
     """Phase 1 — find the canonical song upload (Topic channel or artist's own channel).
 
-    2  — "Artist - Topic" auto-generated channel (title must match song)
-    1  — artist's official channel with a matching plain title
-   -1  — skip (is an MV, wrong title, unrelated channel, or skip-keyword hit)
+     2  — "Artist - Topic" auto-generated channel (title must match song)
+     1  — artist's official channel with a matching plain title
+    -1  — skip (is an MV, wrong title, unrelated channel, or skip-keyword hit)
     """
     t = video_title.lower()
     ch = channel.lower()
@@ -138,11 +171,11 @@ def _score_audio(video_title: str, channel: str, artist: str, song_title: str) -
 def _score_mv(video_title: str, channel: str, artist: str, song_title: str) -> int:
     """Phase 2 — find the official music video.
 
-    Channel identity is the primary gate; title keywords are secondary.
+     Channel identity is the primary gate; title keywords are secondary.
 
-    3  — VEVO or artist channel + MV signal in title (confirmed)
-    1  — artist channel + matching title, no MV title keywords (provisional; needs description check)
-   -1  — skip (unrecognised channel, wrong title, or skip-keyword)
+     3  — VEVO or artist channel + MV signal in title (confirmed)
+     1  — artist channel + matching title, no MV title keywords (provisional; needs description check)
+    -1  — skip (unrecognised channel, wrong title, or skip-keyword)
     """
     t = video_title.lower()
     ch = channel.lower()
@@ -175,6 +208,7 @@ def _score_mv(video_title: str, channel: str, artist: str, song_title: str) -> i
 
 # ── YouTube page parsing ──────────────────────────────────────────────────────
 
+
 def _extract_data(html: str) -> dict | None:
     match = re.search(r"var ytInitialData\s*=\s*", html)
     if not match:
@@ -206,10 +240,9 @@ async def _fetch_description(client: httpx.AsyncClient, video_id: str) -> str:
 def _iter_videos(data: dict):
     """Yield (video_id, title, channel) tuples from a YouTube search-results page."""
     try:
-        sections = (
-            data["contents"]["twoColumnSearchResultsRenderer"]
-            ["primaryContents"]["sectionListRenderer"]["contents"]
-        )
+        sections = data["contents"]["twoColumnSearchResultsRenderer"]["primaryContents"]["sectionListRenderer"][
+            "contents"
+        ]
     except (KeyError, TypeError):
         return
     for section in sections:
@@ -231,6 +264,7 @@ def _iter_videos(data: dict):
 
 
 # ── public API ────────────────────────────────────────────────────────────────
+
 
 async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
     """Search YouTube for a song. Returns (url, is_music_video).
@@ -257,15 +291,12 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
     p1_seen: set[str] = set()
     p2_seen: set[str] = set()
 
-    async with httpx.AsyncClient(
-        timeout=12.0, headers=_HEADERS, follow_redirects=True
-    ) as client:
-
+    async with httpx.AsyncClient(timeout=12.0, headers=_HEADERS, follow_redirects=True) as client:
         # ── Phase 1: canonical audio / Topic channel ───────────────────
         for query in (
-            f'"{title}" "{artist} - Topic"',   # targeted Topic-channel lookup
+            f'"{title}" "{artist} - Topic"',  # targeted Topic-channel lookup
             f'"{artist}" "{title}"',
-            f'{artist} {title}',
+            f"{artist} {title}",
         ):
             try:
                 r = await client.get(
@@ -280,17 +311,13 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
             if not data:
                 continue
 
-            for rank, (vid_id, vtitle, channel) in enumerate(
-                list(_iter_videos(data))[:10]
-            ):
+            for rank, (vid_id, vtitle, channel) in enumerate(list(_iter_videos(data))[:10]):
                 if vid_id in p1_seen:
                     continue
                 p1_seen.add(vid_id)
                 score = _score_audio(vtitle, channel, artist, title)
                 if score > 0:
-                    audio_candidates.append(
-                        (score, rank, f"https://www.youtube.com/watch?v={vid_id}")
-                    )
+                    audio_candidates.append((score, rank, f"https://www.youtube.com/watch?v={vid_id}"))
 
             # Topic-channel hit (score 2) is definitive — skip remaining queries
             if any(s >= 2 for s, _, _ in audio_candidates):
@@ -301,7 +328,7 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
         # scored -1 in _score_audio) can still be evaluated here.
         for query in (
             f'"{artist}" "{title}" official music video',
-            f'{artist} {title} official music video',
+            f"{artist} {title} official music video",
         ):
             try:
                 r = await client.get(
@@ -316,9 +343,7 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
             if not data:
                 continue
 
-            for rank, (vid_id, vtitle, channel) in enumerate(
-                list(_iter_videos(data))[:10]
-            ):
+            for rank, (vid_id, vtitle, channel) in enumerate(list(_iter_videos(data))[:10]):
                 if vid_id in p2_seen:
                     continue
                 p2_seen.add(vid_id)

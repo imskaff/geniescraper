@@ -20,7 +20,9 @@
 ## Installation
 
 ### Prerequisites
+- **Windows**
 - **Python 3.10+**
+- **[uv](https://docs.astral.sh/uv/)** (`pip install uv`)
 
 ### Setup
 
@@ -30,20 +32,21 @@
    cd geniescraper
    ```
 
-2. **Install dependencies:**
+2. **Install dependencies** (creates `.venv` from the locked versions in `uv.lock`):
    ```bash
-   pip install -r requirements.txt
+   uv sync
    ```
+   Without uv, `pip install -r requirements.txt` also works, with unpinned versions.
 
-3. **Install Playwright browsers:**
+3. **Install the Playwright browser:**
    ```bash
-   playwright install chromium
+   uv run playwright install chromium
    ```
 
 ## Usage
 
 ```bash
-python gui_main.py
+uv run python gui_main.py
 ```
 
 1. **Scrape** — Paste an Apple Music URL into the URL bar (use the 📋 button or `Ctrl+V`) and click **Scrape**. Use an `/album/` URL when possible so that copyright data (℗ / ©) is available.
@@ -103,6 +106,29 @@ Open **⚙ Options** from the main menu:
 | Scrape cover art | On | Album cover at 1000×1000 PNG |
 
 Settings are saved to `.env` in the project root.
+
+## Development
+
+```bash
+uv run ruff check . && uv run ruff format --check .
+```
+
+```bash
+uv run pytest
+```
+
+```bash
+uv run pytest -m live
+```
+
+```bash
+uv run python -m bench.run
+```
+
+- `uv run pytest` runs the fast offline suite: unit tests plus the real parsers against saved Apple Music HTML in `tests/fixtures/`.
+- `-m live` runs the full scrape flow against live Apple Music and compares it with the hand-reviewed expectations in `tests/golden/`.
+- `bench.run` measures latency, accuracy and run-to-run stability over the cases in `bench/cases.json`.
+- `uv run python -m bench.capture` refreshes fixtures when Apple changes its markup; it never overwrites a golden file.
 
 ## License
 

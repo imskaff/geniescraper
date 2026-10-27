@@ -27,3 +27,5 @@ Thumbs.db
 
 # Claude Code project settings (local paths and tool permissions)
 .claude/
+tests/golden/*.candidate.json
+bench/results/

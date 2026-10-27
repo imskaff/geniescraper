@@ -14,10 +14,13 @@ import asyncio
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from playwright.async_api import async_playwright, Page, TimeoutError as PWTimeout
+
+from playwright.async_api import Page
+from playwright.async_api import TimeoutError as PWTimeout
 from playwright_stealth import Stealth
+
 from scraper.models import Credit, SongCredits
-from scraper.roles import ROLE_MAP, ALL_ROLE_KEYS
+from scraper.roles import ALL_ROLE_KEYS, ROLE_MAP
 
 
 @dataclass
@@ -49,12 +52,23 @@ _NOISE_PREFIXES = ("more by", "© ", "℗ ", "all rights", "℗©", "apple music
 # Roles that exist on Apple Music credits pages but are not accepted on Genius.
 _SKIP_ROLES: frozenset[str] = frozenset({"Performer", "Mixed Artist"})
 
-_SECTION_HEADERS = frozenset({
-    "composition, lyrics", "production, engineering", "performance",
-    "audio", "arranging", "management", "visual", "liner notes",
-    "additional credits", "credits", "performers", "personnel",
-    "recording information",
-})
+_SECTION_HEADERS = frozenset(
+    {
+        "composition, lyrics",
+        "production, engineering",
+        "performance",
+        "audio",
+        "arranging",
+        "management",
+        "visual",
+        "liner notes",
+        "additional credits",
+        "credits",
+        "performers",
+        "personnel",
+        "recording information",
+    }
+)
 
 
 def _is_noise(line: str) -> bool:
@@ -66,9 +80,7 @@ def _is_noise(line: str) -> bool:
         if lower.startswith(prefix):
             return True
     # Lines longer than 80 chars are almost certainly not an artist name.
-    if len(line) > 80:
-        return True
-    return False
+    return len(line) > 80
 
 
 async def _parse_credits_page(page: Page, *, strategy_0_only: bool = False) -> list[Credit]:
@@ -90,33 +102,40 @@ async def _parse_credits_page(page: Page, *, strategy_0_only: bool = False) -> l
     # Strategy 0 — CSS selector pairs
     names = await page.locator(".artist-name").all_text_contents()
     roles_texts = await page.locator(".artist-roles").all_text_contents()
-    if names and roles_texts and len(names) == len(roles_texts):
-        role_artists: dict[str, list[str]] = {}
-        for name_raw, roles_raw in zip(names, roles_texts):
-            artist = name_raw.strip()
-            if not artist:
-                continue
-            for role_raw in roles_raw.split(","):
-                role = _normalise_role(role_raw)
-                if not role:
-                    continue
-                if role not in role_artists:
-                    role_artists[role] = []
-                if artist not in role_artists[role]:
-                    role_artists[role].append(artist)
-        credits = [Credit(role=r, artists=a) for r, a in role_artists.items()
-                   if r not in _SKIP_ROLES]
-        if credits:
-            return credits
-
-    if strategy_0_only:
-        return []
+    credits = credits_from_cards(names, roles_texts)
+    if credits or strategy_0_only:
+        return credits
 
     # Strategy 1 — innerText line-by-line walk (fallback)
     body_text: str = await page.evaluate("() => document.body.innerText")
-    lines = [l.strip() for l in body_text.splitlines() if l.strip()]
+    return credits_from_text(body_text)
 
-    credits = []
+
+def credits_from_cards(names: list[str], roles_texts: list[str]) -> list[Credit]:
+    """Strategy 0: pair each .artist-name with its comma-separated .artist-roles."""
+    if not names or not roles_texts or len(names) != len(roles_texts):
+        return []
+    role_artists: dict[str, list[str]] = {}
+    for name_raw, roles_raw in zip(names, roles_texts, strict=True):
+        artist = name_raw.strip()
+        if not artist:
+            continue
+        for role_raw in roles_raw.split(","):
+            role = _normalise_role(role_raw)
+            if not role:
+                continue
+            if role not in role_artists:
+                role_artists[role] = []
+            if artist not in role_artists[role]:
+                role_artists[role].append(artist)
+    return [Credit(role=r, artists=a) for r, a in role_artists.items() if r not in _SKIP_ROLES]
+
+
+def credits_from_text(body_text: str) -> list[Credit]:
+    """Strategy 1: walk page innerText; a known role line starts a new credit."""
+    lines = [line.strip() for line in body_text.splitlines() if line.strip()]
+
+    credits: list[Credit] = []
     current_role: str | None = None
     current_artists: list[str] = []
 
@@ -144,12 +163,14 @@ async def _extract_copyright(page: Page) -> tuple[str, str]:
     Returns (phonographic, copyright_notice) — copyright_notice may be empty."""
     raw = ""
     try:
-        raw = await page.locator(
-            '[data-testid="tracklist-footer-description"]'
-        ).first.inner_text(timeout=3_000)
+        raw = await page.locator('[data-testid="tracklist-footer-description"]').first.inner_text(timeout=3_000)
     except Exception:
         pass
+    return split_copyright(raw)
 
+
+def split_copyright(raw: str) -> tuple[str, str]:
+    """Return the first ℗ line and first © line from a tracklist footer description."""
     # Split at every ℗/© boundary so they're found even when on the same line.
     phonographic = ""
     copyright_ = ""
@@ -178,21 +199,24 @@ async def _extract_cover_url(page: Page) -> str:
             url = await page.locator(selector).first.get_attribute("content", timeout=2_000)
             if not url:
                 continue
-            base = url.split("?")[0]
-            # Replace trailing /{w}x{h}[flags][-quality].{ext}
-            # Handles: /600x600bb.jpg  /1200x630wp-60.jpg  /296x296.webp
-            normalised = re.sub(
-                r"/\d+x\d+[a-z]*(?:-\d+)?\.[a-z]+$", "/1000x1000bb.png", base, flags=re.IGNORECASE
-            )
-            return normalised
+            return normalise_cover_url(url)
         except Exception:
             continue
     return ""
 
 
+def normalise_cover_url(url: str) -> str:
+    """Rewrite an Apple Music artwork URL to its 1000x1000 PNG variant."""
+    base = url.split("?")[0]
+    # Replace trailing /{w}x{h}[flags][-quality].{ext}
+    # Handles: /600x600bb.jpg  /1200x630wp-60.jpg  /296x296.webp
+    return re.sub(r"/\d+x\d+[a-z]*(?:-\d+)?\.[a-z]+$", "/1000x1000bb.png", base, flags=re.IGNORECASE)
+
+
 # ---------------------------------------------------------------------------
 # Navigation: MORE → View Credits
 # ---------------------------------------------------------------------------
+
 
 async def _click_view_credits(page: Page, nth_index: int = 1) -> bool:
     """
@@ -242,11 +266,8 @@ async def _click_view_credits(page: Page, nth_index: int = 1) -> bool:
 # Shared browser context helper
 # ---------------------------------------------------------------------------
 
-_UA = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/124.0.0.0 Safari/537.36"
-)
+_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+
 
 class PageNotFoundError(Exception):
     pass
@@ -260,13 +281,9 @@ async def _wait_for_page(page: Page) -> None:
     moment the error appears instead of waiting the full 25 s timeout.
     """
     error_task = asyncio.create_task(
-        page.wait_for_selector(
-            '[data-testid="page-error-title"]', state="visible", timeout=25_000
-        )
+        page.wait_for_selector('[data-testid="page-error-title"]', state="visible", timeout=25_000)
     )
-    idle_task = asyncio.create_task(
-        page.wait_for_load_state("networkidle", timeout=25_000)
-    )
+    idle_task = asyncio.create_task(page.wait_for_load_state("networkidle", timeout=25_000))
     await asyncio.wait({error_task, idle_task}, return_when=asyncio.FIRST_COMPLETED)
     for t in (error_task, idle_task):
         if not t.done():
@@ -283,11 +300,13 @@ _global_playwright = None
 _global_browser = None
 _browser_lock = asyncio.Lock()
 
+
 async def _get_browser():
     global _global_playwright, _global_browser
     async with _browser_lock:
         if _global_playwright is None:
             from playwright.async_api import async_playwright
+
             _global_playwright = await async_playwright().start()
         if _global_browser is None:
             _global_browser = await _global_playwright.chromium.launch(headless=True)
@@ -304,6 +323,7 @@ async def close_browser() -> None:
         if _global_playwright is not None:
             await _global_playwright.stop()
             _global_playwright = None
+
 
 async def _new_stealth_page():
     """Create a new stealth context and page on the global browser."""
@@ -338,9 +358,7 @@ def _extract_title_artist(page_title: str) -> tuple[str, str]:
     # Strip LRM/RLM and Apple Music suffix
     clean_title = page_title.strip("‎‏")
     for suffix in (" - Apple Music", " – Apple Music", " on Apple Music"):
-        if clean_title.endswith(suffix):
-            clean_title = clean_title[: -len(suffix)]
-        elif clean_title.lower().endswith(suffix.lower()):
+        if clean_title.endswith(suffix) or clean_title.lower().endswith(suffix.lower()):
             clean_title = clean_title[: -len(suffix)]
 
     for sep in (" – ", " - "):
@@ -354,15 +372,15 @@ def _extract_title_artist(page_title: str) -> tuple[str, str]:
                 raw_artist = parts[2]
 
             # Clean up artist (remove "Song by", "Album by", etc.)
-            raw_artist = re.sub(
-                r"^(?:album|ep|single|song)\s+by\s+", "", raw_artist, flags=re.IGNORECASE
-            ).strip()
-            
+            raw_artist = re.sub(r"^(?:album|ep|single|song)\s+by\s+", "", raw_artist, flags=re.IGNORECASE).strip()
+
             # Clean up title (remove " - Single" etc. at the end of the title part)
             title = re.sub(
                 r"\s*[-–—]\s*(?:single|ep|deluxe|expanded|remastered"
                 r"|reissue|bonus track|live|acoustic|remix|radio edit|version|edition)\s*$",
-                "", raw_title, flags=re.IGNORECASE,
+                "",
+                raw_title,
+                flags=re.IGNORECASE,
             ).strip()
             return title, raw_artist
 
@@ -377,9 +395,9 @@ def _extract_title_artist(page_title: str) -> tuple[str, str]:
 async def _extract_from_dom(page: Page) -> tuple[str, str]:
     """Fallback: try to extract title and artist from the page content."""
     title, artist = "", ""
-    
+
     # Try title selectors
-    for sel in ('[data-testid="album-title"]', '[data-testid="song-name-value"]', 'h1'):
+    for sel in ('[data-testid="album-title"]', '[data-testid="song-name-value"]', "h1"):
         try:
             val = await page.locator(sel).first.inner_text(timeout=2000)
             if val and val.strip():
@@ -387,9 +405,9 @@ async def _extract_from_dom(page: Page) -> tuple[str, str]:
                 break
         except Exception:
             continue
-            
+
     # Try artist selectors
-    for sel in ('[data-testid="artist-name"]', '.product-creator a', '.song-name-row__artist-name'):
+    for sel in ('[data-testid="artist-name"]', ".product-creator a", ".song-name-row__artist-name"):
         try:
             val = await page.locator(sel).first.inner_text(timeout=2000)
             if val and val.strip():
@@ -397,20 +415,27 @@ async def _extract_from_dom(page: Page) -> tuple[str, str]:
                 break
         except Exception:
             continue
-            
+
     return title, artist
+
+
+def track_count_from_footer(raw: str) -> int:
+    """Parse '12 songs, 45 minutes' style footers; defaults to 1."""
+    m = re.search(r"(\d+)\s+songs?", raw)
+    return int(m.group(1)) if m else 1
 
 
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
+
 async def detect_album(url: str) -> AlbumTrackInfo:
     """Navigate to an Apple Music album page and return track count + titles.
 
     For single-track albums or /song/ URLs, track_count == 1 and track_titles is empty.
     """
-    album_title, artist = "", ""
+    title, artist = "", ""
 
     context, page = await _new_stealth_page()
     try:
@@ -430,12 +455,8 @@ async def detect_album(url: str) -> AlbumTrackInfo:
         # Song count from tracklist footer (only present on /album/ pages)
         track_count = 1
         try:
-            raw = await page.locator(
-                '[data-testid="tracklist-footer-description"]'
-            ).first.inner_text(timeout=3_000)
-            m = re.search(r"(\d+)\s+songs?", raw)
-            if m:
-                track_count = int(m.group(1))
+            raw = await page.locator('[data-testid="tracklist-footer-description"]').first.inner_text(timeout=3_000)
+            track_count = track_count_from_footer(raw)
         except Exception:
             pass
 
@@ -465,6 +486,11 @@ async def detect_album(url: str) -> AlbumTrackInfo:
         track_titles=track_titles,
         cover_art_url=cover_art_url,
     )
+
+
+def _write_debug_html(debug_dir: Path, html: str) -> None:
+    debug_dir.mkdir(exist_ok=True)
+    (debug_dir / "page.html").write_text(html, encoding="utf-8")
 
 
 async def scrape(url: str, *, track_index: int = 1, track_title: str = "", debug: bool = False) -> SongCredits:
@@ -519,9 +545,8 @@ async def scrape(url: str, *, track_index: int = 1, track_title: str = "", debug
 
         if debug or not credits:
             debug_dir = Path("debug")
-            debug_dir.mkdir(exist_ok=True)
             html = await page.content()
-            (debug_dir / "page.html").write_text(html, encoding="utf-8")
+            await asyncio.to_thread(_write_debug_html, debug_dir, html)
             await page.screenshot(path=str(debug_dir / "page.png"), full_page=True)
             if not credits:
                 print(

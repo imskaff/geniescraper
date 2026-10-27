@@ -1,8 +1,6 @@
-import os
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 
 _ENV_PATH = Path(__file__).parent.parent / ".env"
 
@@ -16,18 +14,18 @@ class Settings(BaseSettings):
     autocomplete_wait: float = 0.6
 
     # Scrape feature toggles
-    scrape_core: bool = True          # Songwriters & producers
-    scrape_additional: bool = True    # Additional credits (roles beyond core)
-    scrape_copyright: bool = True     # ℗ and ©
-    scrape_youtube: bool = True       # YouTube URL
-    scrape_cover_art: bool = True     # Cover art URL
+    scrape_core: bool = True  # Songwriters & producers
+    scrape_additional: bool = True  # Additional credits (roles beyond core)
+    scrape_copyright: bool = True  # ℗ and ©
+    scrape_youtube: bool = True  # YouTube URL
+    scrape_cover_art: bool = True  # Cover art URL
 
     # Assistant behavior
-    compact_mode: bool = False        # Hide queue list and shrink window during scraping
-    auto_enter: bool = True           # Press Enter after pasting to confirm autocomplete
-    auto_start_assistant: bool = False # Auto-start assistant after countdown on credits screen
-    auto_start_delay: int = 15        # Seconds before auto-starting assistant
-    auto_tab: bool = False            # Auto-press Tab after role/artist to navigate Genius fields
+    compact_mode: bool = False  # Hide queue list and shrink window during scraping
+    auto_enter: bool = True  # Press Enter after pasting to confirm autocomplete
+    auto_start_assistant: bool = False  # Auto-start assistant after countdown on credits screen
+    auto_start_delay: int = 15  # Seconds before auto-starting assistant
+    auto_tab: bool = False  # Auto-press Tab after role/artist to navigate Genius fields
 
     # Window position (-1 = not yet saved, use default centering)
     win_x: int = -1
