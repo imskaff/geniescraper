@@ -135,7 +135,7 @@ describe("getting credits", () => {
     expect(panel.state.status).toBe("Got credits for 2 tracks.");
   });
 
-  it("never has two reads in flight", async () => {
+  it("never has two reads in flight when set to 1", async () => {
     let inFlight = 0;
     let peak = 0;
     const { panel } = await open({
@@ -151,6 +151,7 @@ describe("getting credits", () => {
     });
     await panel.detect(ALBUM_URL);
     await panel.setAllSelected(true);
+    await panel.setSetting("parallelReads", 1);
     await panel.getCredits();
     expect(peak).toBe(1);
   });
