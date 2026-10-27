@@ -1,6 +1,8 @@
 <div align="center">
 <img src="img/geniescraper.png" alt="Géniescraper logo" width="400">
 
+🧩 **A browser extension is in development:** Géniescraper for Chrome, Edge and Safari, on Windows and macOS.
+
 # Géniescraper
 
 **Géniescraper** is a Python-based tool that bridges Apple Music credits and Genius.com metadata entry. It uses stealth browser automation to extract songwriters, producers, roles, copyrights, and cover art, then provides a hotkey-driven GUI assistant to paste everything directly into Genius - 100% in accordance with the guidelines.
@@ -9,13 +11,13 @@
 
 ## Features
 
-- 🕵️ **Stealth Extraction**: Built on Playwright with stealth patches to reliably scrape Apple Music (albums and single tracks) without being blocked.
-- ⌨️ **Hotkey Assistant**: A floating, always-on-top window that guides you step-by-step through the Genius pasting workflow. Press `F8` to paste the next field, `F7` to go back. The Start Assistant button also shows your configured keybind so you can trigger it from the keyboard.
-- 🤖 **Auto-Tab**: Automatically presses Tab (and Enter where needed) between Genius fields so you rarely need to touch the keyboard between hotkey presses. Works across all field transitions.
-- ✅ **Auto-Confirm**: Presses Enter after each paste to select the autocomplete suggestion in Genius dropdowns.
-- 🖼️ **Consistent Cover Art**: Always fetches the 1000×1000 PNG version of the cover art from Apple Music, regardless of the source URL format.
-- ⚡ **Background Prefetch**: When working through an album queue, the next 1–2 tracks are scraped in the background while you paste the current one, so advancing to the next track is instant.
-- 🎛️ **Fully Configurable**: Options menu to rebind hotkeys, toggle which fields to include, enable Auto-Tab / Auto-Confirm / Compact Mode / Auto-Start, and set the auto-start countdown.
+- ⚡ **Fast**: about 5 seconds from link to credits per track, with the next tracks of an album scraped in the background while you paste.
+- 🕵️ **Accurate Extraction**: Playwright with stealth patches reads songwriters, producers, every additional role and the ℗ / © lines from Apple Music albums and songs.
+- 🖼️ **Exact Cover Art**: the 1000×1000 PNG of the exact release you opened, looked up by its Apple Music catalog ID.
+- ▶️ **Official YouTube Link**: the artist's official music video, or the official audio when there is no video.
+- ⌨️ **Hotkey Assistant**: press `F8` to paste each field into Genius and `F7` to go back; Back and Skip buttons and a clickable step list work with the mouse too.
+- 🤖 **Auto-Tab and Auto-Confirm**: moves between Genius fields and picks the autocomplete suggestion for you, so you rarely touch the keyboard. Both can be switched on or off while pasting.
+- ⚙️ **Settings Everywhere**: a Settings window over any screen; every change applies and saves immediately and is shared by every copy of the app.
 
 ## Installation
 

@@ -14,7 +14,7 @@ from assistant import flow
 from gui import theme
 from gui.logic import STEPS, friendly_error, queue_summary, url_hint
 from gui.settings_window import SettingsWindow
-from scraper import apple_music, pipeline
+from scraper import apple_music, deezer, pipeline
 from scraper.apple_music import AlbumTrackInfo
 from scraper.models import SongCredits
 from utils.config import settings
@@ -53,7 +53,7 @@ _NESTED_KINDS = frozenset({"artist", "phonographic_copyright", "copyright_notice
 class App(ctk.CTk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("Géniescraper v0.3")
+        self.title("Géniescraper v0.5")
         pos = f"+{settings.win_x}+{settings.win_y}" if settings.win_x >= 0 and settings.win_y >= 0 else ""
         self.geometry(f"620x700{pos}")
         self.resizable(False, True)
@@ -296,6 +296,9 @@ class App(ctk.CTk):
         ).pack(side="right", padx=(0, 5), pady=4)
         self._hint_lbl = ctk.CTkLabel(body, text="", font=_f(12), text_color=theme.MUTED, anchor="w", justify="left")
         self._hint_lbl.pack(anchor="w", fill="x")
+        # Artwork of the pasted album or song, shown as soon as the link is valid.
+        self._preview_lbl = ctk.CTkLabel(body, text="", width=72, height=72)
+        self._preview_url = ""
 
         actions = ctk.CTkFrame(body, fg_color="transparent")
         actions.pack(fill="x", pady=(14, 0))
@@ -369,7 +372,32 @@ class App(ctk.CTk):
             color = theme.MUTED if ok or empty else theme.WARN
             if self._hint_lbl.cget("text") != hint or self._hint_lbl.cget("text_color") != color:
                 self._hint_lbl.configure(text=hint, text_color=color)
+            url = self._url_entry.get().strip() if ok else ""
+            if url != self._preview_url:
+                self._preview_url = url
+                self._preview_lbl.pack_forget()
+                if url:
+                    threading.Thread(target=self._preview_thread, args=(url,), daemon=True).start()
         self.after(200, self._check_url_loop)
+
+    def _preview_thread(self, url: str) -> None:
+        try:
+            cover_url = asyncio.run_coroutine_threadsafe(deezer.fetch_itunes_lookup_cover_url(url), self._loop).result(
+                timeout=10
+            )
+        except Exception:
+            return
+        image = self._download_cover(cover_url)
+        if image is not None:
+            self.after(0, self._show_preview, url, image)
+
+    def _show_preview(self, url: str, image: PILImage.Image) -> None:
+        """Show the artwork only if the field still holds the link it belongs to."""
+        if url != self._preview_url or self._screen != "start" or not self._preview_lbl.winfo_exists():
+            return
+        self._preview_image = ctk.CTkImage(image, size=(72, 72))
+        self._preview_lbl.configure(image=self._preview_image)
+        self._preview_lbl.pack(anchor="w", pady=(8, 0), after=self._hint_lbl)
 
     def _set_busy(self, busy: bool, status: str = "") -> None:
         """Start-screen state while detecting: progress bar and Cancel instead of Scrape."""
