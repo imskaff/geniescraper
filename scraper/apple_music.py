@@ -273,6 +273,22 @@ class PageNotFoundError(Exception):
     pass
 
 
+# Apple Music has used both markers for its "Page Not Found" view.
+_NOT_FOUND_SELECTOR = '[data-testid="not-found-heading"], [data-testid="page-error-title"]'
+_NOT_FOUND_MESSAGE = "Page not found — check the URL and try again."
+
+
+async def _open(page: Page, url: str) -> None:
+    """Navigate to an Apple Music page and wait until it is usable.
+
+    Raises PageNotFoundError as soon as Apple answers 404 or renders its not-found view.
+    """
+    response = await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+    if response is not None and response.status == 404:
+        raise PageNotFoundError(_NOT_FOUND_MESSAGE)
+    await _wait_for_page(page)
+
+
 async def _wait_for_page(page: Page) -> None:
     """Race networkidle against the Apple Music 404 error element.
 
@@ -280,9 +296,7 @@ async def _wait_for_page(page: Page) -> None:
     before the page ever reaches networkidle.  Racing lets us bail out the
     moment the error appears instead of waiting the full 25 s timeout.
     """
-    error_task = asyncio.create_task(
-        page.wait_for_selector('[data-testid="page-error-title"]', state="visible", timeout=25_000)
-    )
+    error_task = asyncio.create_task(page.wait_for_selector(_NOT_FOUND_SELECTOR, state="visible", timeout=25_000))
     idle_task = asyncio.create_task(page.wait_for_load_state("networkidle", timeout=25_000))
     await asyncio.wait({error_task, idle_task}, return_when=asyncio.FIRST_COMPLETED)
     for t in (error_task, idle_task):
@@ -292,8 +306,8 @@ async def _wait_for_page(page: Page) -> None:
                 await t
             except (Exception, asyncio.CancelledError):
                 pass
-    if await page.locator('[data-testid="page-error-title"]').is_visible():
-        raise PageNotFoundError("Page not found — check the URL and try again.")
+    if await page.locator(_NOT_FOUND_SELECTOR).first.is_visible():
+        raise PageNotFoundError(_NOT_FOUND_MESSAGE)
 
 
 _global_playwright = None
@@ -439,8 +453,7 @@ async def detect_album(url: str) -> AlbumTrackInfo:
 
     context, page = await _new_stealth_page()
     try:
-        await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
-        await _wait_for_page(page)
+        await _open(page, url)
 
         try:
             title, artist = _extract_title_artist(await page.title())
@@ -505,8 +518,7 @@ async def scrape(url: str, *, track_index: int = 1, track_title: str = "", debug
 
     context, page = await _new_stealth_page()
     try:
-        await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
-        await _wait_for_page(page)
+        await _open(page, url)
 
         # Extract title/artist from page <title> or DOM before we navigate away.
         try:

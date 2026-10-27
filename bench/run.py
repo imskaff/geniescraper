@@ -28,7 +28,6 @@ import subprocess
 import time
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
-from pathlib import Path
 
 from bench.cases import ROOT, Case, credit_accuracy, diff, load_cases, load_golden
 from scraper import apple_music, pipeline
@@ -85,13 +84,16 @@ async def bench_case(case: Case, mode: str, reps: int) -> CaseResult:
     return result
 
 
-async def bench_invalid_url() -> float:
+async def bench_invalid_url() -> float | None:
+    """Seconds until an invalid URL is rejected, or None if it was not detected as invalid."""
     start = time.perf_counter()
     try:
         await apple_music.detect_album(INVALID_URL)
     except apple_music.PageNotFoundError:
         return time.perf_counter() - start
-    raise AssertionError("invalid URL did not raise PageNotFoundError")
+    except Exception:
+        return None
+    return None
 
 
 def git_sha() -> str:

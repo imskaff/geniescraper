@@ -36,13 +36,11 @@ def strip_scripts(html: str) -> str:
 async def capture_fixtures(case: Case) -> None:
     context, page = await apple_music._new_stealth_page()
     try:
-        await page.goto(case.url, wait_until="domcontentloaded", timeout=30_000)
-        await apple_music._wait_for_page(page)
+        await apple_music._open(page, case.url)
         page_html = strip_scripts(await page.content())
         title = await page.title()
-        if "/album/" in case.url:
-            if not await apple_music._click_view_credits(page, nth_index=case.track_index):
-                raise RuntimeError(f"{case.id}: could not open View Credits")
+        if "/album/" in case.url and not await apple_music._click_view_credits(page, nth_index=case.track_index):
+            raise RuntimeError(f"{case.id}: could not open View Credits")
         await page.wait_for_load_state("networkidle", timeout=15_000)
         await asyncio.sleep(1.5)
         credits_html = strip_scripts(await page.content())

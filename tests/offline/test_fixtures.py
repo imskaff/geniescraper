@@ -55,3 +55,15 @@ async def test_cover_from_page(case, load_fixture):
     page = await load_fixture(f"{case.id}.page.html")
     url = await am._extract_cover_url(page)
     assert artwork_key(url) == artwork_key(load_golden(case.id).cover_art_url)
+
+
+@pytest.mark.parametrize("testid", ["not-found-heading", "page-error-title"])
+async def test_not_found_view_raises(testid, browser):
+    context = await browser.new_context(offline=True)
+    try:
+        page = await context.new_page()
+        await page.set_content(f'<h1 data-testid="{testid}">Page Not Found</h1>')
+        with pytest.raises(am.PageNotFoundError):
+            await am._wait_for_page(page)
+    finally:
+        await context.close()

@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 import pytest
 
 from assistant.flow import autotab_steps, instruction_text
@@ -39,7 +41,7 @@ def test_autotab_first_key_waits_for_paste_to_settle():
 
 
 class TestInstructionText:
-    queue = [
+    queue: ClassVar[list[tuple[str, str]]] = [
         ("written_by", "W1"),
         ("written_by", "W2"),
         ("produced_by", "P"),
