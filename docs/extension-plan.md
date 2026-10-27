@@ -1,0 +1,210 @@
+# Géniescraper browser extension: requirements, architecture and plan
+
+Status: draft for review.
+Branch: `claude/advisor-opus-698934`.
+Reference implementation: the Python app at v0.5 (`scraper/`, `assistant/flow.py`).
+
+## 1. Goal
+
+Bring the Géniescraper workflow into the browser the user already has open.
+The user opens an Apple Music album or song, the extension reads its credits, and on the Genius song edit form it fills each field with one user key press.
+No Python, Playwright, or separate window is needed.
+
+Decisions already confirmed with the project owner:
+
+- **Standalone**: all TypeScript, no backend, no native messaging.
+  It must be installable from the Chrome Web Store as a normal extension.
+- **Genius side fills fields directly**, one field per user key press, and never clicks Save.
+- **Toolchain approved**: TypeScript, esbuild, Vitest, happy-dom, ESLint, `@types/chrome`, pinned by `package-lock.json` and installed with `npm ci`.
+  No UI framework.
+
+## 2. Requirements
+
+### 2.1 Functional
+
+| ID | Requirement |
+|----|-------------|
+| F1 | Detect an Apple Music album or song page and offer to read it. |
+| F2 | For an album, list the tracks and let the user choose which to process. |
+| F3 | Read songwriters, producers, all other roles, the ℗ and © lines, with the same normalisation as `scraper/apple_music.py` and `scraper/roles.py`. |
+| F4 | Build the paste queue exactly as `SongCredits.typed_queue()` does, including the toggles for core, additional, copyright, YouTube and cover art. |
+| F5 | Find the exact 1000x1000 PNG cover (iTunes lookup by catalog id, then iTunes and Deezer title search). |
+| F6 | Find the official YouTube video or official audio with the same scoring as `scraper/youtube.py`. |
+| F7 | On the Genius edit form, show the current step and fill the matching field when the user presses the Next key (default F8); Back (default F7) and Skip also work. |
+| F8 | Settings: hotkeys, auto-confirm, autocomplete wait, scrape toggles, persisted with `chrome.storage.sync`. |
+| F9 | Never click Save or submit on Genius; the user reviews and saves. |
+
+### 2.2 Non-functional
+
+| Area | Requirement |
+|------|-------------|
+| Security | No remote code, no `eval`, default MV3 CSP, scraped text inserted with `textContent` or `value` only, never `innerHTML`. |
+| Privacy | No analytics, no telemetry, no account, no data leaves the browser except the lookups to the hosts listed below. |
+| Permissions | Narrowest host permissions; optional ones requested at runtime. |
+| Performance | Tracks processed one at a time; credits for the next track prefetched while the user pastes; every wait has a bounded timeout. |
+| Reliability | Selectors prefer `aria-label`, `data-testid` and roles; text-walk fallback as in Python; clear error states instead of silent failure. |
+| Accessibility | ARIA live region for the current instruction, full keyboard navigation, visible focus, WCAG AA contrast, respects `prefers-reduced-motion`. |
+| Testability | Pure logic separated from DOM and `chrome.*`; parsers run against the existing saved HTML fixtures. |
+| Portability | Standard WebExtension APIs only, so Edge works unchanged and Safari via its converter (see section 6). |
+
+### 2.3 Compliance (Chrome Web Store)
+
+- Single purpose: "Copy Apple Music credits into the Genius song edit form."
+- Permissions justified one by one in the listing (section 5.3).
+- No remotely hosted code; all logic ships in the package.
+- Privacy policy hosted in the repo, with a "no user data collected" disclosure.
+- Limited Use: the only data handled is public page text the user is viewing and the user's own settings.
+- Listing assets: 16, 48 and 128 px icons, screenshots, `_locales/en`.
+- The extension does not impersonate Apple or Genius and uses no Apple or Genius logos.
+
+## 3. Technical constraints and risks
+
+| Constraint | Consequence |
+|------------|-------------|
+| `chrome.commands` does not accept a bare F8 (a modifier is required). | Hotkeys are a `keydown` listener in the Genius content script, where the user's focus already is. Optional `chrome.commands` can add Alt-based shortcuts later. |
+| MV3 service workers are ephemeral. | All state lives in `chrome.storage.session` or `.local`; no in-memory queue is trusted across events. |
+| `chrome.sidePanel` is Chrome and Edge only; Safari lacks it. | The UI is a single page that renders either as a side panel or a popup. Verify Safari support before relying on the side panel. |
+| Apple Music credits sit behind MORE then View Credits. | Per track, open an inactive background tab, drive the same click path through `chrome.scripting`, read the result, close the tab in `finally`. One tab at a time, mirroring `_prefetch_semaphore`. |
+| Apple's internal API and embedded token are undocumented. | Not used. Only the rendered DOM the user could see is read. |
+| Genius edit-form DOM is unknown to us and changes. | Captured as a script-stripped fixture (blocked on a signed-in session, see section 8). Selectors are isolated in one module. |
+| Genius Terms of Service and the project rule of 100% guideline compliance. | One field per user key press, no Save, no bulk automation. Keep the posture identical to the desktop app. |
+| YouTube has no API key here; the Python app parses search HTML. | Port the same scoring to TypeScript. Host is optional and requested only when the feature is on. Failures return an empty result, never break a scrape. |
+| CORS in extension contexts. | Fetches run in the service worker with `host_permissions`, which bypasses page CORS. |
+
+## 4. Architecture
+
+```
+extension/
+  manifest.json
+  src/
+    core/               pure TypeScript, no DOM, no chrome.*
+      models.ts         Credit, SongCredits, typedQueue()
+      copyright.ts      extractLabels(), splitCopyright()
+      roles.ts          normaliseRole(); data from generated roles.json
+      flow.ts           autotabSteps(), instructionText()
+      cover.ts          normaliseCoverUrl(), catalogRef(), coverFromLookup()
+      youtube.ts        scoring, ported from scraper/youtube.py
+      text.ts           words(), coreTitleWords()
+    apple/              DOM adapters, take a Document
+      credits.ts        creditsFromCards(), creditsFromText()
+      page.ts           title/artist, tracklist, copyright, header artwork
+      navigate.ts       MORE then View Credits driver (runs in the page)
+    genius/
+      selectors.ts      the only place that knows Genius markup
+      fill.ts           set a field value and fire the events Genius expects
+      content.ts        content script: keydown listener, step overlay
+    background/
+      worker.ts         message router, track prefetch queue, lookups
+      lookups.ts        iTunes, Deezer, YouTube fetches
+    ui/
+      panel.html, panel.ts, panel.css   side panel / popup
+      options.html, options.ts          settings
+    shared/
+      messages.ts       typed message contracts
+      settings.ts       typed defaults and storage access
+  _locales/en/messages.json
+  data/roles.json       generated from scraper/roles.py
+  test/                 Vitest
+  scripts/              build and fixture helpers
+```
+
+Principles:
+
+- Everything in `core/` is pure and unit tested; DOM adapters take a `Document` so happy-dom can run them on saved HTML.
+- `chrome.*` is touched only in `background/`, `genius/content.ts`, `ui/` and `shared/settings.ts`, behind small interfaces that tests fake.
+- Typed messages between contexts; every message handler validates its input at the boundary.
+
+### 4.1 Data flow
+
+1. The panel asks the active tab (Apple Music) for album info through a content script, or the worker reads it with `chrome.scripting`.
+2. The user picks tracks.
+3. The worker processes one track at a time: background tab, click path, parse, close tab; in parallel it runs the cover and YouTube lookups.
+4. The result is stored in `chrome.storage.session` as a `SongCredits` plus its `typedQueue()`.
+5. The Genius content script reads the queue, shows the step overlay, and on the Next key fills the field for the current step.
+
+### 4.2 Parity with the Python app
+
+The Python code is the reference.
+The TypeScript port must not drift, so parity is enforced by tests, not by discipline.
+
+- **Fixtures and golden files**: Vitest runs the TypeScript parsers against the existing `tests/fixtures/*.html` and compares with `tests/golden/*.json`.
+  These files are read, never modified, and never regenerated from extension output.
+- **Roles**: `tools/export_roles.py` writes `extension/data/roles.json` from `ROLE_MAP`; a Python test fails if the committed file is stale.
+- **Test vectors**: `tools/export_vectors.py` writes `extension/test/vectors.json` from the Python functions (`typed_queue`, `_extract_labels`, `split_copyright`, `autotab_steps`, `instruction_text`, `normalise_cover_url`, YouTube scoring); a Python test fails if stale, and Vitest consumes it.
+- **Known gaps** pinned as `xfail(strict=True)` in Python are mirrored as `it.fails` in Vitest.
+
+## 5. Security and store compliance
+
+### 5.1 Manifest
+
+- `manifest_version: 3`, no `content_security_policy` override (default is strict).
+- Content scripts declared statically for `https://music.apple.com/*` (read only) and `https://genius.com/*` (fill).
+- `web_accessible_resources`: none.
+- No `externally_connectable`, no `<all_urls>`, no `tabs` permission unless a concrete need is shown.
+
+### 5.2 Permissions
+
+| Permission | Why | Type |
+|------------|-----|------|
+| host `https://music.apple.com/*` | Read credits the user is viewing | required |
+| host `https://genius.com/*` | Fill the edit form | required |
+| host `https://itunes.apple.com/*` | Exact cover lookup | required |
+| host `https://api.deezer.com/*` | Cover fallback | optional |
+| host `https://www.youtube.com/*` | Official video lookup | optional |
+| `storage` | Settings and the current queue | required |
+| `scripting` | Drive the MORE then View Credits path | required |
+| `sidePanel` | Main UI in Chrome and Edge | required |
+
+### 5.3 Rules enforced in code review and lint
+
+- No `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval`, `new Function` (ESLint `no-restricted-syntax` and `no-restricted-properties`).
+- Scraped text is data: it never selects a URL, a path or a command.
+- Every fetch URL is built from a fixed host plus encoded parameters; every response is parsed defensively and typed.
+- Hosts match the existing allow-list in `CLAUDE.local.md` plus `genius.com`, which the owner approved for this extension only.
+- Dependencies pinned by lockfile, installed with `npm ci`, audited in CI.
+
+## 6. Cross-browser notes
+
+- Chrome and Edge: same package.
+- Safari: converted with `xcrun safari-web-extension-converter` on macOS; requires a macOS build step and an Apple developer account, so it is a separate later slice.
+- Code stays on the `chrome.*` namespace with MV3 promises, which Safari and Edge accept.
+
+## 7. Testing strategy
+
+| Layer | Tooling | What it proves |
+|-------|---------|----------------|
+| Unit | Vitest | `core/` logic and Python parity vectors |
+| Fixture | Vitest + happy-dom | Apple parsers against saved HTML and golden JSON; Genius fill against the captured form fixture |
+| Contract | Vitest | Message types, settings defaults, manifest invariants (no forbidden permissions, no remote URLs) |
+| Lint and types | ESLint, `tsc --noEmit` | Style, forbidden APIs, type safety |
+| End to end | Python Playwright loading the unpacked extension (existing dev dependency) | Real panel, real page, opt-in like the live tests |
+| Live | opt-in | Real Apple Music and YouTube, run on a schedule |
+
+CI adds an `extension` job on `ubuntu-latest` with SHA-pinned actions, `npm ci`, lint, typecheck, Vitest, build, and a manifest check.
+Python CI also runs the staleness tests for `roles.json` and `vectors.json`.
+
+## 8. Implementation plan: vertical slices
+
+Each slice ends working, tested and committable.
+
+| # | Slice | Acceptance check |
+|---|-------|------------------|
+| 0 | This plan | Reviewed by the owner |
+| 1 | Scaffold: `extension/` skeleton, manifest, build, lint, Vitest, CI job, roles export, vectors export | `npm ci && npm test && npm run build` green; Python staleness tests green |
+| 2 | Port `typedQueue`, copyright helpers, flow logic | All Python vectors pass in Vitest |
+| 3 | Apple Music credits parser | Every fixture in `tests/fixtures` matches `tests/golden` |
+| 4 | Album and track detection, background-tab credits driver | Unit tests with a fake `chrome.scripting`; manual run on a real album |
+| 5 | Panel UI showing the queue, settings, accessibility pass | Component tests plus axe-style checks; keyboard walkthrough |
+| 6 | Genius fill (blocked on the edit-form fixture) | Fill tests against the captured fixture; manual run on a real edit form |
+| 7 | iTunes cover lookup | Replays `tests/fixtures/lookups/covers` |
+| 8 | Deezer and YouTube lookups with optional permissions | Replays `tests/fixtures/lookups/youtube` and matches `tests/golden/youtube.json` |
+| 9 | Store readiness: icons, locales, privacy policy, listing text, permission justifications, packaging script | Zip validated; manifest contract tests green |
+| 10 | Edge check, Safari converter notes | Documented result |
+
+## 9. Open items
+
+- **Genius edit-form DOM**: needs a signed-in session to capture a script-stripped fixture; the owner signs in themselves.
+- **Auto-Tab**: with selector-targeted fields the tab counts in `autotab_steps` may be unnecessary; decide after the Genius DOM is captured.
+- **Safari**: confirm which APIs (`sidePanel`, `scripting`, session storage) are available before committing to the shared UI page.
+- **Genius ToS review**: confirm the per-press fill stays within the guidelines before the store listing.
+- **Versioning**: extension version follows the app version (`0.5.x`) until the first store release.
