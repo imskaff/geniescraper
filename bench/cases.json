@@ -1,0 +1,9 @@
+[
+  {"id": "sza-sos-t1", "url": "https://music.apple.com/us/album/sos/1658650093", "track_index": 1, "note": "large album, first track"},
+  {"id": "rodrigo-sour-t6", "url": "https://music.apple.com/us/album/sour/1560734944", "track_index": 6, "note": "mid-album track, exercises nth MORE button"},
+  {"id": "eilish-hmhas-t3", "url": "https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134", "track_index": 3, "note": "album, many engineers"},
+  {"id": "swift-ttpd-t1", "url": "https://music.apple.com/us/album/the-tortured-poets-department/1736268215", "track_index": 1, "note": "featured artist in title"},
+  {"id": "kendrick-nlu-single", "url": "https://music.apple.com/us/album/not-like-us-single/1781353928", "track_index": 1, "note": "single album"},
+  {"id": "kendrick-nlu-song", "url": "https://music.apple.com/us/song/not-like-us/1781353929", "track_index": 1, "note": "/song/ URL, no copyright data"},
+  {"id": "rosalia-con-altura", "url": "https://music.apple.com/us/album/con-altura-feat-el-guincho-single/1457085973", "track_index": 1, "note": "non-ASCII artist names"}
+]
