@@ -49,6 +49,10 @@ class TestScoring:
     def test_untrusted_channel_mv_ignored(self):
         assert yt._score_mv("Not Like Us (Official Video)", "Random Uploads", "Kendrick Lamar", "Not Like Us") == -1
 
+    def test_vevo_in_unrelated_channel_name_is_not_trusted(self):
+        title = "Luis Fonsi  Despacito ft  Justin Bieber Daddy Yankee (Official Video) -VEVO"
+        assert yt._score_mv(title, "YouTube VeVo", "Luis Fonsi", "Despacito (feat. Daddy Yankee)") == -1
+
     def test_artist_channel_plain_title_is_provisional(self):
         assert yt._score_mv("Not Like Us", "Kendrick Lamar", "Kendrick Lamar", "Not Like Us") == 1
 

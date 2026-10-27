@@ -173,7 +173,7 @@ def _score_mv(video_title: str, channel: str, artist: str, song_title: str) -> i
 
      Channel identity is the primary gate; title keywords are secondary.
 
-     3  — VEVO or artist channel + MV signal in title (confirmed)
+     3  — artist (or artist VEVO) channel + MV signal in title (confirmed)
      1  — artist channel + matching title, no MV title keywords (provisional; needs description check)
     -1  — skip (unrecognised channel, wrong title, or skip-keyword)
     """
@@ -189,9 +189,9 @@ def _score_mv(video_title: str, channel: str, artist: str, song_title: str) -> i
     artist_ch = _is_artist_ch(channel, artist)
     is_vevo = "vevo" in ch
 
-    # Require a trusted channel — random uploads with "Official Video" in the title
-    # are ignored entirely.
-    if not (artist_ch or is_vevo):
+    # Require the artist's own channel. "VEVO" in a channel name is not enough on its
+    # own: reupload channels such as "YouTube VeVo" use it too.
+    if not artist_ch:
         return -1
 
     has_mv_kw = any(kw.lower() in t for kw in _MV_KEYWORDS) or bool(re.search(r"\bm/?v\b", t))
@@ -201,9 +201,7 @@ def _score_mv(video_title: str, channel: str, artist: str, song_title: str) -> i
     if is_mv:
         return 3
     # Artist channel, plain title — provisional; description check will decide
-    if artist_ch:
-        return 1
-    return -1
+    return 1
 
 
 # ── YouTube page parsing ──────────────────────────────────────────────────────
