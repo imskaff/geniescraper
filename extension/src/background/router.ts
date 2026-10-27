@@ -63,6 +63,13 @@ export function createRouter(
         if (!result.ok) return result;
         const title = raw.trackTitle || result.data.title;
         const artist = result.data.artist;
+        // As in the desktop app, a track with no cover of its own is searched by its title, which finds a cover
+        // when the album's lookup missed and the song page showed none. It runs beside the YouTube search, not after.
+        const coverSearch = result.data.coverArtUrl
+          ? Promise.resolve(result.data.coverArtUrl)
+          : title && artist
+            ? covers.search(title, artist).catch(() => "")
+            : Promise.resolve("");
         let link = (await early) ?? NO_LINK;
         // The song page's own title and artist are the second try, only when they differ from the first: asking the
         // same question again would double the traffic for nothing.
@@ -70,10 +77,7 @@ export function createRouter(
         if (!link.url && title && artist && (early === null || differs)) {
           link = await youtube.find(title, artist).catch(() => NO_LINK);
         }
-        // As in the desktop app, a track with no cover of its own is searched by its title, which finds a cover
-        // when the album's lookup missed and the song page showed none.
-        const cover =
-          result.data.coverArtUrl || (title && artist ? await covers.search(title, artist).catch(() => "") : "");
+        const cover = await coverSearch;
         return {
           ok: true,
           data: { ...result.data, coverArtUrl: cover, youtubeUrl: link.url, youtubeIsMv: link.isMusicVideo },

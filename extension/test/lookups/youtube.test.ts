@@ -211,7 +211,7 @@ describe("reading YouTube's pages", () => {
                       { adSlotRenderer: {} },
                       {
                         videoRenderer: {
-                          videoId: "abc",
+                          videoId: "abcDEF_-123",
                           title: { runs: [{ text: "SZA - SOS" }] },
                           ownerText: { runs: [{ text: "SZA" }] },
                           ownerBadges: [{ metadataBadgeRenderer: { style: "BADGE_STYLE_TYPE_VERIFIED_ARTIST" } }],
@@ -221,7 +221,7 @@ describe("reading YouTube's pages", () => {
                         },
                       },
                       { videoRenderer: { videoId: "" } },
-                      { videoRenderer: { videoId: "def" } },
+                      { videoRenderer: { videoId: "defGHI_-456" } },
                     ],
                   },
                 },
@@ -233,15 +233,39 @@ describe("reading YouTube's pages", () => {
     };
     expect(listVideos(data)).toEqual([
       {
-        id: "abc",
+        id: "abcDEF_-123",
         title: "SZA - SOS",
         channel: "SZA",
         officialArtist: true,
         verified: false,
         snippet: "Provided to YouTube",
       },
-      { id: "def", title: "", channel: "", officialArtist: false, verified: false, snippet: "" },
+      { id: "defGHI_-456", title: "", channel: "", officialArtist: false, verified: false, snippet: "" },
     ]);
+  });
+
+  it.each([
+    "abc",
+    "abcDEF_-1234",
+    'abc"onload="x',
+    "../../etc/pas",
+    "abc def_-123",
+    "<script>alert",
+    "abcDEF_-12=",
+    12345678901,
+  ])("skips a video whose id is not a YouTube id: %j", (id) => {
+    const data = {
+      contents: {
+        twoColumnSearchResultsRenderer: {
+          primaryContents: {
+            sectionListRenderer: {
+              contents: [{ itemSectionRenderer: { contents: [{ videoRenderer: { videoId: id } }] } }],
+            },
+          },
+        },
+      },
+    };
+    expect(listVideos(data)).toEqual([]);
   });
 
   it.each([null, undefined, 5, "x", [], {}, { contents: 3 }, { contents: { twoColumnSearchResultsRenderer: {} } }])(

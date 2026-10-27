@@ -206,6 +206,36 @@ describe("the YouTube link of a scraped track", () => {
     expect(asked).toEqual([`${PAGE_SCRAPE.artist} / Fortnight`]);
   });
 
+  it("searches for the cover beside the YouTube search, not after it", async () => {
+    const order: string[] = [];
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const browser = fakeBrowser({
+      answer: () => Promise.resolve({ ok: true, data: { ...PAGE_SCRAPE, coverArtUrl: "" } }),
+    });
+    const covers: CoverService = {
+      exact: () => Promise.resolve(""),
+      search: () => {
+        order.push("cover-started");
+        return Promise.resolve("");
+      },
+    };
+    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), covers, {
+      find: async () => {
+        order.push("youtube-started");
+        await held;
+        return LINK;
+      },
+    });
+    const done = route({ type: "scrape-track", url: SONG_URL, trackTitle: "Fortnight", artist: PAGE_SCRAPE.artist });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(order).toEqual(["youtube-started", "cover-started"]);
+    release();
+    expect(await done).toMatchObject({ ok: true, data: { youtubeUrl: LINK.url } });
+  });
+
   it("is empty, and the read still succeeds, when the search throws", async () => {
     const run = setup(() => Promise.reject(new Error("offline")));
     expect(await run("Taylor Swift")).toMatchObject({ ok: true, data: { youtubeUrl: "", youtubeIsMv: false } });

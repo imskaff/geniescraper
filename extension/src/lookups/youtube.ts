@@ -257,6 +257,9 @@ export function extractVar(html: string, name: string): unknown {
   }
 }
 
+/** A YouTube video id. Anything else in a page is not used to build a link, however it got there. */
+const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
+
 interface Video {
   id: string;
   title: string;
@@ -291,7 +294,7 @@ export function listVideos(data: unknown): Video[] {
       isRecord(section) && isRecord(section["itemSectionRenderer"]) ? section["itemSectionRenderer"]["contents"] : [];
     for (const item of Array.isArray(items) ? (items as unknown[]) : []) {
       const vr = isRecord(item) ? item["videoRenderer"] : undefined;
-      if (!isRecord(vr) || typeof vr["videoId"] !== "string" || !vr["videoId"]) continue;
+      if (!isRecord(vr) || typeof vr["videoId"] !== "string" || !VIDEO_ID.test(vr["videoId"])) continue;
       const badges = Array.isArray(vr["ownerBadges"]) ? (vr["ownerBadges"] as unknown[]) : [];
       const styles = new Set(
         badges.map((b) => {
