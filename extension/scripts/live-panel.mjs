@@ -491,6 +491,11 @@ try {
   );
   const doneOverflow = await horizontalOverflow();
   check("the finished screen has no horizontal scrollbar", doneOverflow.scroll <= doneOverflow.client);
+  check(
+    "the main menu button counts down to the automatic return",
+    /^Back to main menu \(\d+s\)$/.test((await text('[data-key="pmenu"]')) ?? ""),
+    String(await text('[data-key="pmenu"]')),
+  );
   await shot("9g-done-screen");
   await panel.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "light" }] });
   await sleep(300);

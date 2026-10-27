@@ -1,13 +1,14 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PageScrape, Result } from "../../src/shared/messages";
-import { PanelController } from "../../src/ui/controller";
+import { DONE_SECONDS, PanelController } from "../../src/ui/controller";
 import { PanelView } from "../../src/ui/view";
 import { ALBUM, SINGLE, deferred, fakeEnv, scrapeFor } from "./fakes";
 
+/** Let pending promises settle. Microtasks only, so it also works while timers are faked. */
 const flush = async (): Promise<void> => {
-  for (let i = 0; i < 5; i++) await new Promise((resolve) => setTimeout(resolve, 0));
+  for (let i = 0; i < 50; i++) await Promise.resolve();
 };
 
 const $ = (root: ParentNode, selector: string): HTMLElement => {
@@ -365,5 +366,100 @@ describe("the YouTube link in the credits list", () => {
   it("is absent when no link was found", async () => {
     const { root } = await toReview();
     expect([...root.querySelectorAll("dl.credits dt")].some((d) => d.textContent.startsWith("YouTube"))).toBe(false);
+  });
+});
+
+describe("returning to the main menu after the last step", () => {
+  const tick = async (seconds: number): Promise<void> => {
+    for (let i = 0; i < seconds; i++) await vi.advanceTimersByTimeAsync(1000);
+  };
+  const timed = async (options: Parameters<typeof fakeEnv>[0] = {}) => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    return toDone(options);
+  };
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("starts a countdown on the finished screen and shows it on the main menu button", async () => {
+    const { root } = await timed();
+    expect(DONE_SECONDS).toBe(10);
+    expect(button(root, "Back to main menu").textContent).toBe("Back to main menu (10s)");
+    await tick(3);
+    expect(button(root, "Back to main menu").textContent).toBe("Back to main menu (7s)");
+  });
+
+  it("goes to the main menu with a clean slate when it reaches zero", async () => {
+    const { root, panel } = await timed();
+    await tick(10);
+    await flush();
+    expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
+    expect(panel.state.paste.active).toBe(false);
+    expect(panel.state.doneCountdown).toBeNull();
+  });
+
+  it("waits while the pointer is over the panel or a button is focused, and carries on after", async () => {
+    const { root, panel } = await timed();
+    root.dispatchEvent(new Event("mouseenter"));
+    await tick(15);
+    expect(panel.state.doneCountdown).toBe(10);
+    root.dispatchEvent(new Event("mouseleave"));
+    await tick(2);
+    expect(panel.state.doneCountdown).toBe(8);
+    button(root, "Back to the credits").focus();
+    await tick(15);
+    expect(panel.state.doneCountdown).toBe(8);
+    (document.activeElement as HTMLElement).blur();
+    await tick(8);
+    await flush();
+    expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
+  });
+
+  it("does not hold for the heading having focus, which is where focus lands on this screen", async () => {
+    const { root } = await timed();
+    expect(document.activeElement).toBe($(root, "h2"));
+    await tick(10);
+    await flush();
+    expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
+  });
+
+  it("stops when the user chooses a way out or goes back a step", async () => {
+    const first = await timed();
+    button(first.root, "Back to the credits").click();
+    await flush();
+    expect(first.panel.state.doneCountdown).toBeNull();
+    await tick(15);
+    expect($(first.root, "h2").textContent).toBe("Credits");
+
+    const second = await timed();
+    await second.panel.pasteBack();
+    await flush();
+    expect(second.panel.state.doneCountdown).toBeNull();
+    await tick(15);
+    expect($(second.root, "h2").textContent).toBe("Paste into Genius");
+  });
+
+  it("does not start when the setting is off, and stops if it is turned off meanwhile", async () => {
+    const off = await timed({ settings: { autoReturn: false } });
+    expect(off.panel.state.doneCountdown).toBeNull();
+    expect(button(off.root, "Back to main menu").textContent).toBe("Back to main menu");
+    vi.useRealTimers();
+    const on = await timed();
+    expect(on.panel.state.doneCountdown).toBe(10);
+    await on.panel.setSetting("autoReturn", false);
+    expect(on.panel.state.doneCountdown).toBeNull();
+    await tick(15);
+    expect($(on.root, "h2").textContent).toBe("All credits entered");
+  });
+
+  it("starts again for the next track, from ten", async () => {
+    const { root, panel } = await timed();
+    await tick(4);
+    button(root, "Paste next track").click();
+    await flush();
+    expect(panel.state.doneCountdown).toBeNull();
+    const state = panel.state.paste;
+    panel.setPaste({ ...state, position: state.queue.length });
+    expect(panel.state.doneCountdown).toBe(10);
   });
 });

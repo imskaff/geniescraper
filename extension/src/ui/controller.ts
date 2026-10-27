@@ -46,6 +46,8 @@ export interface PanelState {
   pasteIndex: number | null;
   /** Which optional hosts the user has granted, as Chrome reports it. */
   hosts: Record<OptionalHost, boolean>;
+  /** Seconds left before the finished screen returns to the main menu, or null when no countdown runs. */
+  doneCountdown: number | null;
   /** Counts every error shown, so the same message appearing again (a repeated attempt) can still be told apart. */
   errorSeq: number;
   /** What the panel is waiting for; the buttons that would start another job are disabled meanwhile. */
@@ -99,6 +101,12 @@ export function buildSong(album: AlbumInfo, result: Pick<TrackResult, "url">, sc
   };
 }
 
+/** Seconds the finished screen waits before returning to the main menu, as the desktop app does. */
+export const DONE_SECONDS = 10;
+
+const isFinished = (paste: PasteState): boolean =>
+  paste.active && paste.queue.length > 0 && paste.position >= paste.queue.length;
+
 type Listener = () => void;
 
 export class PanelController {
@@ -124,6 +132,7 @@ export class PanelController {
       paste,
       pasteIndex,
       hosts,
+      doneCountdown: null,
       errorSeq: 0,
       settingsOpen: false,
       busy: null,
@@ -394,6 +403,7 @@ export class PanelController {
     }
     const normalised = normaliseSettings(settings);
     this.update({ settings: normalised });
+    if (!normalised.autoReturn) this.cancelCountdown();
     try {
       await saveSettings(this.env.stores, normalised);
     } catch {
@@ -405,8 +415,15 @@ export class PanelController {
 
   /** The worker changed the paste session (a hotkey press on Genius, or one of our own commands). */
   setPaste(paste: PasteState): void {
+    const wasFinished = isFinished(this.current.paste);
+    this.applyPaste(paste);
+    if (!isFinished(paste)) this.cancelCountdown();
+    else if (!wasFinished && this.current.settings.autoReturn) this.startCountdown();
+  }
+
+  private applyPaste(paste: PasteState): void {
     // An attention message needs the user to act, so it is announced assertively; progress is announced politely.
-    if (paste.active && paste.queue.length > 0 && paste.position >= paste.queue.length) {
+    if (isFinished(paste)) {
       this.update({ paste, error: "", status: MESSAGES.allDone });
       return;
     }
@@ -447,6 +464,52 @@ export class PanelController {
     if (from === null) return null;
     const later = this.current.session.results.filter((r) => r.index > from && r.song !== null);
     return later.find((r) => this.queueFor(r.index).length > 0)?.index ?? null;
+  }
+
+  // ── the finished screen's countdown ─────────────────────────────────
+
+  private countdownTimer: ReturnType<typeof setTimeout> | undefined;
+  private countdownPaused = false;
+
+  private startCountdown(): void {
+    this.countdownPaused = false;
+    this.update({ doneCountdown: DONE_SECONDS });
+    this.scheduleTick();
+  }
+
+  private scheduleTick(): void {
+    clearTimeout(this.countdownTimer);
+    this.countdownTimer = setTimeout(() => {
+      this.tick();
+    }, 1000);
+  }
+
+  private tick(): void {
+    const left = this.current.doneCountdown;
+    if (left === null || !isFinished(this.current.paste)) return;
+    if (this.countdownPaused) {
+      this.scheduleTick();
+      return;
+    }
+    if (left <= 1) {
+      this.cancelCountdown();
+      void this.leavePasting("menu");
+      return;
+    }
+    this.update({ doneCountdown: left - 1 });
+    this.scheduleTick();
+  }
+
+  /** Stop the countdown for good (the user acted, left the screen, or turned the setting off). */
+  cancelCountdown(): void {
+    clearTimeout(this.countdownTimer);
+    this.countdownTimer = undefined;
+    if (this.current.doneCountdown !== null) this.update({ doneCountdown: null });
+  }
+
+  /** Hold the countdown while the user is using the panel (pointer over it, a button focused); it carries on after. */
+  pauseCountdown(paused: boolean): void {
+    this.countdownPaused = paused;
   }
 
   /** Leave the finished paste: end the session quietly and go where the user chose. */

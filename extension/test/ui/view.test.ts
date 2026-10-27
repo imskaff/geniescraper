@@ -340,6 +340,7 @@ describe("settings screen", () => {
       "YouTube link",
       "Cover art link",
       "Choose the exact match in Genius's suggestions for me",
+      "Go back to the main menu 10 seconds after the last step",
       "Search Deezer for a cover when Apple has none",
       "Find a YouTube link for each track",
     ]);

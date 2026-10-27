@@ -432,3 +432,12 @@ The desktop app uses the same pages with the same scoring and may be affected th
 Not tried: slower pacing was no better in one run (one request at a time, 700 ms apart), and the cause of the threshold is not known.
 If this matters, the options are a much lower request budget per track (for example the audio phase only, no watch pages), looking up only the track being pasted rather than the whole album, or dropping the YouTube lookup.
 Stop in the panel drops late answers there, but requests already in flight in the worker finish.
+
+## 19. Returning to the main menu after the last step
+
+Like the desktop app, the finished screen returns to the main menu after 10 seconds, with the seconds shown on the "Back to main menu" button.
+The countdown holds while the pointer is over the panel or one of its buttons has keyboard focus (the heading, where focus lands, does not hold it), so someone using the panel is never moved on; it carries on after they leave.
+It stops when the user chooses a way out, goes back a step, or starts the next track, and begins again from ten at the next finish.
+Because an automatic change of screen is a timing problem for some users (WCAG 2.2.1), Settings has "Go back to the main menu 10 seconds after the last step", on by default as in the desktop app; turning it off cancels a running countdown.
+The countdown is not announced each second; the screen's own message is.
+Not verified live: the redirect itself after ten real seconds (unit tests drive it with fake timers; the live check confirms the countdown label).

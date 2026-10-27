@@ -112,6 +112,28 @@ export class PanelView {
     this.root.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && this.panel.state.settingsOpen) this.panel.closeSettings();
     });
+    // The countdown to the main menu waits while the user is using the panel: the pointer over it, or a button focused.
+    let pointerInside = false;
+    let buttonFocused = false;
+    const hold = (): void => {
+      this.panel.pauseCountdown(pointerInside || buttonFocused);
+    };
+    this.root.addEventListener("mouseenter", () => {
+      pointerInside = true;
+      hold();
+    });
+    this.root.addEventListener("mouseleave", () => {
+      pointerInside = false;
+      hold();
+    });
+    this.root.addEventListener("focusin", (event) => {
+      buttonFocused = event.target instanceof HTMLButtonElement;
+      hold();
+    });
+    this.root.addEventListener("focusout", () => {
+      buttonFocused = false;
+      hold();
+    });
   }
 
   private region(id: string): HTMLElement {
@@ -622,7 +644,14 @@ export class PanelView {
               true,
             )
           : null,
-        this.button("Back to main menu", "nav", "pmenu", () => void this.panel.leavePasting("menu"), false, true),
+        this.button(
+          state.doneCountdown === null ? "Back to main menu" : `Back to main menu (${String(state.doneCountdown)}s)`,
+          "nav",
+          "pmenu",
+          () => void this.panel.leavePasting("menu"),
+          false,
+          true,
+        ),
       ),
     ];
   }
@@ -690,6 +719,16 @@ export class PanelView {
     });
     confirm.checked = settings.autoConfirm;
 
+    const autoReturn = el("input", {
+      attrs: { type: "checkbox", "data-key": "setting-autoReturn" },
+      on: {
+        change: (event) => {
+          void this.panel.setSetting("autoReturn", (event.target as HTMLInputElement).checked);
+        },
+      },
+    });
+    autoReturn.checked = settings.autoReturn;
+
     const wait = el("input", {
       class: "field",
       attrs: {
@@ -725,6 +764,12 @@ export class PanelView {
         class: "help",
         text: "When Genius has no exact match, the text stays typed and you choose. A close match is never picked for you.",
       }),
+      el(
+        "label",
+        { class: "check" },
+        autoReturn,
+        el("span", { text: "Go back to the main menu 10 seconds after the last step" }),
+      ),
       el(
         "div",
         { class: "stack" },

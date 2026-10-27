@@ -19,6 +19,8 @@ export interface Settings {
   autocompleteWaitSeconds: number;
   /** How many tracks are read at once; 0 reads every picked track at the same time. */
   parallelReads: number;
+  /** Go back to the main menu a few seconds after the last step, as the desktop app does. */
+  autoReturn: boolean;
 }
 
 /**
@@ -43,6 +45,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   autoConfirm: true,
   autocompleteWaitSeconds: 0.6,
   parallelReads: 3,
+  autoReturn: true,
 };
 
 export const SETTINGS_KEY = "settings";
@@ -94,6 +97,7 @@ export function normaliseSettings(raw: unknown): Settings {
     autoConfirm: flag("autoConfirm"),
     autocompleteWaitSeconds: waitSeconds,
     parallelReads,
+    autoReturn: flag("autoReturn"),
   };
 }
 
