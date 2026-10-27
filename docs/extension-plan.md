@@ -195,7 +195,7 @@ Each slice ends working, tested and committable.
 | 3 | Apple Music credits parser (done) | Every fixture in `tests/fixtures` matches `tests/golden` |
 | 4 | Album and track detection, background-tab credits reader (done; reads song pages, see section 11) | Unit tests with fake `chrome.*` ports; real hidden-tab run matches golden |
 | 5 | Side panel UI: link, track picker, credits and paste queue, settings; accessibility pass (done) | Unit tests with fake worker and storage; `npm run live:panel` drives the real panel, worker and live Apple Music |
-| 6 | Genius fill (blocked on the edit-form fixture) | Fill tests against the captured fixture; manual run on a real edit form |
+| 6 | Genius fill, one field per press (done; extension-level live check pending a signed-in profile) | Fake-select tests on the saved form; engine run on the live form; `npm run live:genius` drives the real extension |
 | 7 | iTunes cover lookup | Replays `tests/fixtures/lookups/covers` |
 | 8 | Deezer and YouTube lookups with optional permissions | Replays `tests/fixtures/lookups/youtube` and matches `tests/golden/youtube.json` |
 | 9 | Store readiness: icons, locales, privacy policy, listing text, permission justifications, packaging script | Zip validated; manifest contract tests green |
@@ -268,3 +268,40 @@ Playwright forces pages to report `visibilityState: "visible"` and focus, so it 
   The focus ring is clearly visible around the yellow primary button in a screenshot.
 - "New link" now clears the previous link instead of leaving it in the box.
 - Still open: a visible tab flash and history entry per scrape, the popup fallback for Safari, a CDP side panel width narrower than 320 px (not measured), and settings for the YouTube link and cover art, which have no data to act on until the lookups arrive (slices 7 and 8).
+
+## 13. Slice 6 decisions: the Genius fill
+
+Measured on the live Genius edit form (signed in, nothing saved):
+
+- Fields are found by their label text, because class names are hashed and react-select ids change on every open.
+  Written By is labelled **Writer**, Produced By **Producer**; additional credits are the rows `custom_performances-N-label` and `-artists`.
+- Synthetic events drive them: a value set through the prototype's setter plus an `input` event shows suggestions within about 400 ms; ArrowDown moves `aria-activedescendant`; Enter chooses the focused option.
+  The input itself carries `role="combobox"`, so the container is its parent's closest combobox.
+- Every selection, including a credit row's single role, is a `multiValue` chip, so "is this field filled" is one rule.
+- **A fuzzy first suggestion is real.** For a made-up name the first suggestion was "99 Neighbors", and for "Billie Eilish" the second was a different entity, "Billie Eilish, FINNEAS, Tim Anderson, Aron Forbes".
+  The Python app's auto-confirm would pick those.
+  Decision (the owner chose it): choose only an exact match, ignoring case, accents and symbols; otherwise leave the typed text and the open suggestions for the user and say so.
+  `Create "..."` is never chosen.
+- Genius's copyright roles are named "Phonographic Copyright ℗" and "Copyright ©", so matching ignores symbols.
+- Three Apple roles have no Genius role at all ("Vocal Recording Engineer", "Programming", "Editing Engineer"); those steps are left for the user, who can Skip them.
+  Waiting for suggestions that never come costs about 4 seconds.
+- Fields are targeted directly, so the desktop app's Auto-Tab tab counts are not needed; the plain URL inputs get a value and input/change events and never a key press.
+- Rows: a role goes into the last row if its role is still empty, otherwise "Add additional credits" is clicked; artists and copyright labels go into the last row.
+- The panel's wording is its own: the desktop app's instruction text tells the user to click fields and calls Writer "Written By".
+  `assistant/flow.py` stays ported for parity but is not shown.
+
+Architecture:
+
+- The worker is the only writer of the paste state (`chrome.storage.session`, trusted contexts only, so the Apple Music content script and web pages never see credits).
+  Panel buttons are requests from an extension page; the Genius content script may only ask `paste-begin`, `paste-report`, `paste-back` and `paste-status`, and only from a frame on `https://genius.com`.
+- A press: the page asks the worker for the step, fills it, and reports the outcome; the worker then moves the position.
+  A press while a fill is running is ignored, a report for a stale step is ignored, and a fill that never reports is abandoned after 20 seconds.
+- The content script is declared statically for `https://genius.com/*` and is idle until the worker says a session is running; only then are the hotkeys handled, and only then is the key suppressed.
+- Hotkeys default to F8 (fill next) and F7 (back), as in the desktop app, and can be changed to F2, F4, F7, F8 or F9.
+  Chrome uses F7 for caret browsing; the page handler suppresses the key while pasting, but that interaction has not been seen in a real browser.
+- The extension never presses Save or Cancel and never submits the form; tests spy on both.
+
+Verification state:
+
+- Run for real on the live form with the real engine (signed-in pane, main world): Writer, Producer, additional roles, artists, both copyright roles with their labels, and the two URL fields all filled; a made-up name and the role "Programming" were correctly left for the user; nothing was saved and the form was discarded by reloading.
+- Not yet run: the whole path through the extension (content script in its isolated world, worker, panel, a real F8) because it needs a Chromium profile signed in to Genius; `npm run live:genius` is written for it.

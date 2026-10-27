@@ -8,9 +8,12 @@ import { join } from "node:path";
 
 export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Launch Chromium with the unpacked extension and a throwaway profile. */
-export function launchChromium({ chromePath, dist, port }) {
-  const profile = mkdtempSync(join(tmpdir(), "geniescraper-live-"));
+/**
+ * Launch Chromium with the unpacked extension. By default the profile is a throwaway; pass `profileDir` to reuse
+ * one (for example a scratch profile the user signed in to by hand), which is left in place afterwards.
+ */
+export function launchChromium({ chromePath, dist, port, profileDir }) {
+  const profile = profileDir ?? mkdtempSync(join(tmpdir(), "geniescraper-live-"));
   const chrome = spawn(
     chromePath,
     [
@@ -43,7 +46,7 @@ export function launchChromium({ chromePath, dist, port }) {
     async stop() {
       chrome.kill();
       await sleep(500);
-      rmSync(profile, { recursive: true, force: true });
+      if (!profileDir) rmSync(profile, { recursive: true, force: true });
     },
   };
 }

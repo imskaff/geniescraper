@@ -182,11 +182,15 @@ A Python test fails when either file is stale, so run both after changing `scrap
 
 To try the extension, run `npm run build`, open `chrome://extensions`, switch on Developer mode, choose Load unpacked and pick `extension/dist`.
 The toolbar button opens the side panel: paste an Apple Music album or song link (or open one and the panel offers it), choose tracks, and review the credits and the paste queue.
-Pasting into Genius is not part of the extension yet.
+Review the credits, click **Start pasting**, open the song's **Edit Metadata** form on Genius, and press **F8** once per field (**F7** goes back).
+The extension finds each field itself and fills one per press; it never clicks Save, so you check the form and save it yourself.
+When Genius has no exact match for a name or role the text stays typed and nothing is chosen for you: pick a suggestion yourself, or press Skip in the panel.
+Keys, auto-confirm and the suggestion wait are in the panel's Settings.
 
 `npm run live:panel -- --chrome <path to Chromium> --screenshots <folder>` drives the real panel with real key presses against the real service worker and live Apple Music (a whole 10-track album), checks the result against the golden file, and saves screenshots in both color schemes and at 320 px.
 `npm run live:sidepanel -- --chrome <path to Chromium>` checks the way the extension is really used: a genuine side panel next to a visible album tab, reading that tab in place.
 
+`npm run live:genius -- --chrome <path to Chromium> --profile <folder>` drives the real extension through a whole paste into a live Genius edit form of a song you created, with a Chromium profile you signed in to by hand; it never presses Save.
 `npm run live:hidden-tab -- --chrome <path to Chromium>` is an opt-in live check against Apple Music that the extension can read song pages in a genuinely hidden tab; run `npm run build` first, and find a Chromium with `uv run python -c "from playwright.sync_api import sync_playwright as s; p = s().start(); print(p.chromium.executable_path); p.stop()"`.
 
 ## License
