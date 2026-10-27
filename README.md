@@ -171,7 +171,7 @@ It needs Node 20 or newer and is installed from the lockfile:
 cd extension && npm ci && npm run check
 ```
 
-`npm run check` runs ESLint, `tsc`, Vitest and the build; `dist/` is the unpacked extension.
+`npm run check` runs Prettier (`npm run format` fixes), ESLint, `tsc`, Vitest and the build; `dist/` is the unpacked extension.
 `extension/data/roles.json` and `extension/test/vectors.json` are generated from the Python code and must never be edited by hand:
 
 ```bash
