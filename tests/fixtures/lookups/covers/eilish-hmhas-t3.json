@@ -1,0 +1,232 @@
+{
+ "title": "CHIHIRO",
+ "artist": "Billie Eilish",
+ "url": "https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134",
+ "deezer": {
+  "Billie Eilish CHIHIRO": {
+   "data": [
+    {
+     "title": "CHIHIRO",
+     "artist": {
+      "name": "Billie Eilish"
+     },
+     "album": {
+      "title": "HIT ME HARD AND SOFT",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Billie Eilish - Chihiro (Lofi Version)",
+     "artist": {
+      "name": "Late Arc"
+     },
+     "album": {
+      "title": "Billie Eilish - Chihiro (Lofi Version)",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca47241efd6e29631f857e98560a2d46/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Chihiro",
+     "artist": {
+      "name": "Gravagerz"
+     },
+     "album": {
+      "title": "Chihiro",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/3da4f09a18a5c79e23df5483b62dbef4/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "CHIHIRO (Piano rendition of Billie Eilish)",
+     "artist": {
+      "name": "The Lullabeats"
+     },
+     "album": {
+      "title": "2020's Pop Lullabies for Babies",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d3b97d84c6e909cfccd7f9624190e636/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Ocean Eyes (Blackbear Remix)",
+     "artist": {
+      "name": "Billie Eilish"
+     },
+     "album": {
+      "title": "Ocean Eyes (The Remixes)",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e95f479e5a878def4c1f82bb9a3fc8d6/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "CHIHIRO",
+     "artist": {
+      "name": "Midnite String Quartet"
+     },
+     "album": {
+      "title": "MSQ Performs Billie Eilish, Vol. 2",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b8c0ad62c032a6a550b6579824b7a11e/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "CHIHIRO",
+     "artist": {
+      "name": "Acoustic Heartstrings"
+     },
+     "album": {
+      "title": "Acoustic Guitar Renditions of Billie Eilish, Vol. 2",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d40e54224f857ae4646b998d6bff4402/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "CHIHIRO",
+     "artist": {
+      "name": "Vitamin String Quartet"
+     },
+     "album": {
+      "title": "VSQ Performs Billie Eilish",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/1071382811d905c207269452ed6ed3e8/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "CHIHIRO (8-Bit Billie Eilish Emulation)",
+     "artist": {
+      "name": "8-Bit Arcade"
+     },
+     "album": {
+      "title": "By Request, Vol. 260",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/12fa9a13f267d9163c0dee4e46665074/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "CHIHIRO",
+     "artist": {
+      "name": "Amor Acústico"
+     },
+     "album": {
+      "title": "Billie Eilish in Spanish",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/049acb8a88c416cf5adcd3dad40aea99/1000x1000-000000-80-0-0.jpg"
+     }
+    }
+   ]
+  }
+ },
+ "itunes_search": {
+  "Billie Eilish CHIHIRO": {
+   "resultCount": 10,
+   "results": [
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Billie Eilish",
+     "collectionName": "HIT ME HARD AND SOFT",
+     "trackName": "CHIHIRO",
+     "collectionId": 1739659134,
+     "trackId": 1739659141,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/92/9f/69/929f69f1-9977-3a44-d674-11f70c852d1b/24UMGIM36186.rgb.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "MadMe",
+     "collectionName": "Chihiro - Remix - Single",
+     "trackName": "Chihiro - Remix",
+     "collectionId": 1807782225,
+     "trackId": 1807782227,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/f0/8c/e3/f08ce3be-a13f-5f85-5bbd-fd3023644405/198669962774.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Vitamin String Quartet",
+     "collectionName": "VSQ Performs Billie Eilish",
+     "trackName": "CHIHIRO",
+     "collectionId": 1821509265,
+     "trackId": 1821509273,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/29/c4/9c/29c49c27-f2f6-0643-50e4-c071cdbf3671/1821.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Billie Eilish",
+     "collectionName": "HIT ME HARD AND SOFT",
+     "trackName": "THE GREATEST",
+     "collectionId": 1739659134,
+     "trackId": 1739659145,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/92/9f/69/929f69f1-9977-3a44-d674-11f70c852d1b/24UMGIM36186.rgb.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Billie Eilish",
+     "collectionName": "dont smile at me",
+     "trackName": "bellyache",
+     "collectionId": 1440898929,
+     "trackId": 1440899447,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/02/1d/30/021d3036-5503-3ed3-df00-882f2833a6ae/17UM1IM17026.rgb.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Billie Eilish",
+     "collectionName": "WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?",
+     "trackName": "bury a friend",
+     "collectionId": 1450695723,
+     "trackId": 1450695881,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/1a/37/d1/1a37d1b1-8508-54f2-f541-bf4e437dda76/19UMGIM05028.rgb.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Billie Eilish",
+     "collectionName": "WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?",
+     "trackName": "you should see me in a crown",
+     "collectionId": 1450695723,
+     "trackId": 1450695745,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/1a/37/d1/1a37d1b1-8508-54f2-f541-bf4e437dda76/19UMGIM05028.rgb.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Armani White",
+     "collectionName": "BILLIE EILISH. - Single",
+     "trackName": "BILLIE EILISH.",
+     "collectionId": 1628837269,
+     "trackId": 1628837538,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/89/db/38/89db38db-1dfc-3fd7-cb0d-fcb95b8bdb37/22UMGIM62666.rgb.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Late Arc",
+     "collectionName": "Billie Eilish - Chihiro (Lofi Version) - Single",
+     "trackName": "Billie Eilish - Chihiro (Lofi Version)",
+     "collectionId": 1834265550,
+     "trackId": 1834265551,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/f6/4f/79/f64f79a7-1789-cec1-288c-daa04ad76bb8/artwork.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Gravagerz",
+     "collectionName": "Chihiro - Single",
+     "trackName": "Chihiro",
+     "collectionId": 1761703499,
+     "trackId": 1761703506,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/de/7c/9b/de7c9b2e-af9f-687e-f67e-a6c1396eb084/68.jpg/100x100bb.jpg"
+    }
+   ]
+  }
+ },
+ "itunes_lookup": {
+  "1739659134": {
+   "resultCount": 1,
+   "results": [
+    {
+     "wrapperType": "collection",
+     "artistName": "Billie Eilish",
+     "collectionName": "HIT ME HARD AND SOFT",
+     "collectionId": 1739659134,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/92/9f/69/929f69f1-9977-3a44-d674-11f70c852d1b/24UMGIM36186.rgb.jpg/100x100bb.jpg"
+    }
+   ]
+  }
+ }
+}

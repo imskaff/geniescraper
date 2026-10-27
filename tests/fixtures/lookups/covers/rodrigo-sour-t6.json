@@ -1,0 +1,232 @@
+{
+ "title": "good 4 u",
+ "artist": "Olivia Rodrigo",
+ "url": "https://music.apple.com/us/album/sour/1560734944",
+ "deezer": {
+  "Olivia Rodrigo good 4 u": {
+   "data": [
+    {
+     "title": "good 4 u",
+     "artist": {
+      "name": "Olivia Rodrigo"
+     },
+     "album": {
+      "title": "SOUR",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e68da86fd7976135c2d2d1715afaef7c/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Good 4 U",
+     "artist": {
+      "name": "Olivia Eldredge"
+     },
+     "album": {
+      "title": "Good 4 U",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ac7b33b30627aeda2f25bf0c1d3b565c/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Good 4 U",
+     "artist": {
+      "name": "Olivia Eldredge"
+     },
+     "album": {
+      "title": "Good 4 U",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/cf18e5b01032992871aba0342c696569/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Good 4 U",
+     "artist": {
+      "name": "Music Lab Collective"
+     },
+     "album": {
+      "title": "Olivia Rodrigo: The Collection",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/51c7aeb17168a1381a7c15b7ab1e6a9a/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Good 4 U (8-Bit Olivia Rodrigo Emulation)",
+     "artist": {
+      "name": "8-Bit Arcade"
+     },
+     "album": {
+      "title": "By Request, Vol. 132",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/3b8646a689f28882b50b0e6d6ccd13a0/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Olivia Rodrigo Medley: deja vu / drivers license / good 4 u",
+     "artist": {
+      "name": "BYU Noteworthy"
+     },
+     "album": {
+      "title": "Olivia Rodrigo Medley: deja vu / drivers license / good 4 u",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/945b16a70bdf03554b0f2745c4c22d49/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Mud 4 U (Parody of Good 4 U of Olivia Rodrigo)",
+     "artist": {
+      "name": "Mat Ryxx"
+     },
+     "album": {
+      "title": "The Songs I'd Like to Hear on Radio",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0bbca783bbe2197dcfa8d6db01f76103/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Good 4 U",
+     "artist": {
+      "name": "Sweet Little Band"
+     },
+     "album": {
+      "title": "Babies Go Olivia Rodrigo",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/4f3fab2e4f3818783f7bc1cc9d4be4ce/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "good 4 u",
+     "artist": {
+      "name": "Roma Symphony Orchestra"
+     },
+     "album": {
+      "title": "RSO Performs Olivia Rodrigo",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/1c315bf22c896253f6e7080492bbe430/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "good 4 u",
+     "artist": {
+      "name": "Midnite String Quartet"
+     },
+     "album": {
+      "title": "MSQ Performs Olivia Rodrigo",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/4e221fb4ced06a564c4a68745169117c/1000x1000-000000-80-0-0.jpg"
+     }
+    }
+   ]
+  }
+ },
+ "itunes_search": {
+  "Olivia Rodrigo good 4 u": {
+   "resultCount": 10,
+   "results": [
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Olivia Rodrigo",
+     "collectionName": "SOUR (Video Version)",
+     "trackName": "good 4 u",
+     "collectionId": 1582277315,
+     "trackId": 1582277652,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/76/46/48/76464884-0e9c-1951-a3f6-ce02f74c2b19/21UMGIM26093.rgb.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "KIDZ BOP Kids",
+     "collectionName": "KIDZ BOP 2022",
+     "trackName": "Good 4 U",
+     "collectionId": 1585072918,
+     "trackId": 1585073287,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/48/1e/c4/481ec4ab-5e42-8f6c-ad8f-086314e47eee/21CRGIM29092.rgb.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Olivia Rodrigo",
+     "collectionName": "SOUR",
+     "trackName": "good 4 u",
+     "collectionId": 1560734944,
+     "trackId": 1560735856,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/02/ed/8c/02ed8cab-c089-2fdd-7ce6-ab334a9a4e19/21UMGIM26093.rgb.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Sparrow Sleeps",
+     "collectionName": "goodnight 4 u: Lullaby renditions of Olivia Rodrigo songs",
+     "trackName": "Good 4 U",
+     "collectionId": 1574405654,
+     "trackId": 1574405662,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/5c/fd/22/5cfd221b-2f9c-0f75-bb29-8f10ca1b25cf/5059805702867_cover.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Piano Dreamers",
+     "collectionName": "Piano Dreamers Cover Olivia Rodrigo (Instrumental)",
+     "trackName": "Good 4 U (Instrumental)",
+     "collectionId": 1572749818,
+     "trackId": 1572749819,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/c3/c4/f3/c3c4f377-deb1-4b79-d37f-031a19ee69e7/789577227194.png/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Piano Tribute Players",
+     "collectionName": "Piano Renditions of Olivia Rodrigo (Instrumental)",
+     "trackName": "Good 4 U (Instrumental)",
+     "collectionId": 1713978207,
+     "trackId": 1713978218,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/af/e7/21/afe72146-74c0-db9e-719e-5f84a92b0db3/789577247192.png/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Lullaby Rock!",
+     "collectionName": "Lullaby Versions of Olivia Rodrigo Songs",
+     "trackName": "Good 4 U",
+     "collectionId": 1595138267,
+     "trackId": 1595138274,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/83/c1/99/83c199b3-8473-6335-3838-0a2c2947901a/5060781950708.png/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Twinkle Twinkle Little Rock Star",
+     "collectionName": "Lullaby Versions of Olivia Rodrigo",
+     "trackName": "good 4 u",
+     "collectionId": 1714345996,
+     "trackId": 1714346363,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/5c/b6/c3/5cb6c375-f765-9350-96c7-8a460c2d0ff6/196922701849_Cover.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Midnite String Quartet",
+     "collectionName": "MSQ Performs Olivia Rodrigo",
+     "trackName": "good 4 u",
+     "collectionId": 1710835174,
+     "trackId": 1710835431,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/d2/c6/7e/d2c67e0d-f46e-cafc-91d2-678b95b7648c/196922668555_Cover.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Sweet Little Band",
+     "collectionName": "Babies Go Olivia Rodrigo",
+     "trackName": "Good 4 U",
+     "collectionId": 1577989435,
+     "trackId": 1577990186,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/c8/5d/2a/c85d2abb-de59-9d46-779a-24336a100073/196292144413.jpg/100x100bb.jpg"
+    }
+   ]
+  }
+ },
+ "itunes_lookup": {
+  "1560734944": {
+   "resultCount": 1,
+   "results": [
+    {
+     "wrapperType": "collection",
+     "artistName": "Olivia Rodrigo",
+     "collectionName": "SOUR",
+     "collectionId": 1560734944,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/02/ed/8c/02ed8cab-c089-2fdd-7ce6-ab334a9a4e19/21UMGIM26093.rgb.jpg/100x100bb.jpg"
+    }
+   ]
+  }
+ }
+}

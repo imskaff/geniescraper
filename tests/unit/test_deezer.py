@@ -50,3 +50,18 @@ async def test_itunes_skips_other_artists_and_requests_png(mock_http):
         },
     )
     assert await deezer.fetch_itunes_cover_url("SOS", "SZA") == "https://x/real/1000x1000bb.png"
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("https://music.apple.com/us/album/sos/1658650093", ("us", "1658650093")),
+        ("https://music.apple.com/us/song/not-like-us/1781353929", ("us", "1781353929")),
+        ("https://music.apple.com/gb/album/sour/1560734944?i=1560735414", ("gb", "1560735414")),
+        ("https://music.apple.com/us/album/1560734944", ("us", "1560734944")),
+        ("https://example.com/us/album/sour/1560734944", None),
+        ("", None),
+    ],
+)
+def test_catalog_ref(url, expected):
+    assert deezer.catalog_ref(url) == expected

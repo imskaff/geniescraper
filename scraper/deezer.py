@@ -2,6 +2,22 @@ import re
 
 import httpx
 
+_CATALOG_URL = re.compile(r"music\.apple\.com/([a-z]{2})/(?:album|song)/(?:[^/?#]+/)?(\d+)")
+_TRACK_PARAM = re.compile(r"[?&]i=(\d+)")
+
+
+def catalog_ref(url: str) -> tuple[str, str] | None:
+    """(storefront, catalog id) of an Apple Music album or song URL, or None.
+
+    Album URLs carrying ``?i=<track id>`` resolve to the track, so the artwork
+    is that track's edition rather than a guess from a title search.
+    """
+    m = _CATALOG_URL.search(url)
+    if not m:
+        return None
+    track = _TRACK_PARAM.search(url)
+    return m.group(1), track.group(1) if track else m.group(2)
+
 
 async def fetch_cover_url(title: str, artist: str) -> str:
     """Search Deezer and return a 1000×1000 PNG cover URL, or '' on failure."""

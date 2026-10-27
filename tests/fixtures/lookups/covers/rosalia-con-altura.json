@@ -1,0 +1,142 @@
+{
+ "title": "Con Altura (feat. El Guincho)",
+ "artist": "ROSALÍA & J Balvin",
+ "url": "https://music.apple.com/us/album/con-altura-feat-el-guincho-single/1457085973",
+ "deezer": {
+  "ROSALÍA & J Balvin Con Altura (feat. El Guincho)": {
+   "data": [
+    {
+     "title": "Con Altura (feat. El Guincho)",
+     "artist": {
+      "name": "ROSALÍA"
+     },
+     "album": {
+      "title": "Con Altura (feat. El Guincho)",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0a6b457530fcf0bfa2eff233cb584e29/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Con altura (8-Bit Rosalía, J Balvin & El Guincho Emulation)",
+     "artist": {
+      "name": "8-Bit Arcade"
+     },
+     "album": {
+      "title": "By Request, Vol. 24",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/780a693bb960d5cc6ed9bff3448a2fe0/1000x1000-000000-80-0-0.jpg"
+     }
+    }
+   ]
+  }
+ },
+ "itunes_search": {
+  "ROSALÍA & J Balvin Con Altura (feat. El Guincho)": {
+   "resultCount": 9,
+   "results": [
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "ROSALÍA & J Balvin",
+     "collectionName": "Con Altura (feat. El Guincho) - Single",
+     "trackName": "Con Altura (feat. El Guincho)",
+     "collectionId": 1457085973,
+     "trackId": 1457085979,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/82/72/d5/8272d5ad-49b7-f80a-59ec-0160215d2b86/886447616925.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "8-Bit Arcade",
+     "collectionName": "By Request, Vol. 24",
+     "trackName": "Con altura (8-Bit Rosalía, J Balvin & El Guincho Emulation)",
+     "collectionId": 1459477416,
+     "trackId": 1459477420,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/76/82/74/768274d0-e1af-4e70-410f-41444cbe38dc/8BIT0205.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Chiptune Punks",
+     "collectionName": "Bitpop Hits, Vol. 2",
+     "trackName": "Con Altura (8-Bit Computer Game Cover Version of Rosalía, J Balvin & El Guincho)",
+     "collectionId": 1515666441,
+     "trackId": 1515666662,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/3a/73/dc/3a73dca1-81fe-2cd1-b421-7ab0c9ced14d/8BIT0370.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Backing Business",
+     "collectionName": "Pristine Karaoke, Vol. 2",
+     "trackName": "Con Altura (Originally Performed by Rosalía, J Balvin & El Guincho) [Instrumental Versions]",
+     "collectionId": 1459471746,
+     "trackId": 1459471751,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/de/19/94/de19946a-c9e6-b9ba-a58d-e68c362fc675/MM19006.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Orquesta Akokán",
+     "collectionName": "Con Altura / TKN - Single",
+     "trackName": "Con Altura",
+     "collectionId": 1732754322,
+     "trackId": 1732754520,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/2d/b2/6f/2db26fb9-6eba-15f8-8d2e-eaa933fa235c/101981.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Jasmine",
+     "collectionName": "Con Altura - Single",
+     "trackName": "Con Altura",
+     "collectionId": 1482050644,
+     "trackId": 1482050648,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/15/d5/ab/15d5ab9e-319e-e835-bdf3-23fdb70b3555/193872648217_cover.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Las Culisueltas & Mozthaza",
+     "collectionName": "Con Altura - Single",
+     "trackName": "Con Altura",
+     "collectionId": 1472620328,
+     "trackId": 1472620344,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/0c/22/91/0c22919e-049f-67e8-25cf-44c817a6a1f1/194491085230.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Marco Mares",
+     "collectionName": "Con Altura (Recoversión) - Single",
+     "trackName": "Con Altura",
+     "collectionId": 1504284431,
+     "trackId": 1504284437,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/97/19/f8/9719f83a-59b4-e4d3-d78d-a8a81c51fdf3/190295237387.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Ginebras",
+     "collectionName": "Dame 10:36 Minutos - EP",
+     "trackName": "Con Altura",
+     "collectionId": 6787529212,
+     "trackId": 6787529215,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/87/2f/a6/872fa662-cbe2-ce88-2a73-fa7a8f1dbca6/0.jpg/100x100bb.jpg"
+    }
+   ]
+  }
+ },
+ "itunes_lookup": {
+  "1457085973": {
+   "resultCount": 1,
+   "results": [
+    {
+     "wrapperType": "collection",
+     "artistName": "ROSALÍA & J Balvin",
+     "collectionName": "Con Altura (feat. El Guincho) - Single",
+     "collectionId": 1457085973,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/82/72/d5/8272d5ad-49b7-f80a-59ec-0160215d2b86/886447616925.jpg/100x100bb.jpg"
+    }
+   ]
+  }
+ }
+}

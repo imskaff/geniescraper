@@ -263,6 +263,23 @@ def _iter_videos(data: dict):
             yield vr["videoId"], title, channel
 
 
+def _audio_queries(title: str, artist: str) -> tuple[str, ...]:
+    """Phase 1 search queries, most targeted first."""
+    return (
+        f'"{title}" "{artist} - Topic"',  # targeted Topic-channel lookup
+        f'"{artist}" "{title}"',
+        f"{artist} {title}",
+    )
+
+
+def _mv_queries(title: str, artist: str) -> tuple[str, ...]:
+    """Phase 2 search queries, most targeted first."""
+    return (
+        f'"{artist}" "{title}" official music video',
+        f"{artist} {title} official music video",
+    )
+
+
 # ── public API ────────────────────────────────────────────────────────────────
 
 
@@ -293,11 +310,7 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
 
     async with httpx.AsyncClient(timeout=12.0, headers=_HEADERS, follow_redirects=True) as client:
         # ── Phase 1: canonical audio / Topic channel ───────────────────
-        for query in (
-            f'"{title}" "{artist} - Topic"',  # targeted Topic-channel lookup
-            f'"{artist}" "{title}"',
-            f"{artist} {title}",
-        ):
+        for query in _audio_queries(title, artist):
             try:
                 r = await client.get(
                     "https://www.youtube.com/results",
@@ -326,10 +339,7 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
         # ── Phase 2: music video ───────────────────────────────────────
         # Uses its own seen-set so Phase 1 rejects (MV-keyword videos that
         # scored -1 in _score_audio) can still be evaluated here.
-        for query in (
-            f'"{artist}" "{title}" official music video',
-            f"{artist} {title} official music video",
-        ):
+        for query in _mv_queries(title, artist):
             try:
                 r = await client.get(
                     "https://www.youtube.com/results",

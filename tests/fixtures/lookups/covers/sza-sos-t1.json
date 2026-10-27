@@ -1,0 +1,222 @@
+{
+ "title": "SOS",
+ "artist": "SZA",
+ "url": "https://music.apple.com/us/album/sos/1658650093",
+ "deezer": {
+  "SZA SOS": {
+   "data": [
+    {
+     "title": "SOS",
+     "artist": {
+      "name": "SZA"
+     },
+     "album": {
+      "title": "SOS",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/328d68300e654b21831b261e413780e0/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Shadow of the Day",
+     "artist": {
+      "name": "Linkin Park"
+     },
+     "album": {
+      "title": "Minutes to Midnight",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2dd699adcd68089f49f3ab558a2bd296/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Saison",
+     "artist": {
+      "name": "Hmz"
+     },
+     "album": {
+      "title": "Dans la tempête",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/fdb115b6c1a12672552ca2e8e6c39ba4/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Snooze",
+     "artist": {
+      "name": "SZA"
+     },
+     "album": {
+      "title": "SOS",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/328d68300e654b21831b261e413780e0/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Stamp On The Ground",
+     "artist": {
+      "name": "ItaloBrothers"
+     },
+     "album": {
+      "title": "Stamp!",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0d1b3e55bdf32f696b3003c3f12bdc61/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Saturn",
+     "artist": {
+      "name": "SZA"
+     },
+     "album": {
+      "title": "Saturn",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/24965bc58fb4d1524b5615f9295c802c/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Snooze (Acoustic) (feat. Justin Bieber)",
+     "artist": {
+      "name": "SZA"
+     },
+     "album": {
+      "title": "Snooze (Acoustic) (feat. Justin Bieber)",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b66c70f121aa142ef26a28bf71c76016/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Low",
+     "artist": {
+      "name": "SZA"
+     },
+     "album": {
+      "title": "SOS",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/328d68300e654b21831b261e413780e0/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Sac à dos",
+     "artist": {
+      "name": "Naza"
+     },
+     "album": {
+      "title": "Sac à dos",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/789c52fd72982e8965445c03b4e503e1/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Seasons",
+     "artist": {
+      "name": "Thirty Seconds To Mars"
+     },
+     "album": {
+      "title": "Seasons",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/076922f296286fff341be7c2df5a1617/1000x1000-000000-80-0-0.jpg"
+     }
+    }
+   ]
+  }
+ },
+ "itunes_search": {
+  "SZA SOS": {
+   "resultCount": 9,
+   "results": [
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "SZA",
+     "collectionName": "SOS",
+     "trackName": "Kill Bill",
+     "collectionId": 1657869377,
+     "trackId": 1657869393,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/bd/3b/a9/bd3ba9fb-9609-144f-bcfe-ead67b5f6ab3/196589564931.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "SZA",
+     "collectionName": "SOS Deluxe: LANA",
+     "trackName": "Saturn",
+     "collectionId": 1786643044,
+     "trackId": 1786643241,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/97/bd/88/97bd8804-7d3e-e6c8-0532-ff22877b931c/196871766890.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "SZA",
+     "collectionName": "SOS Deluxe: LANA",
+     "trackName": "SOS",
+     "collectionId": 1796270264,
+     "trackId": 1796270562,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/50/fa/17/50fa1760-8a36-5cef-93bf-aab5b5257b18/196871766913.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "SZA",
+     "collectionName": "SOS",
+     "trackName": "Too Late",
+     "collectionId": 1657869377,
+     "trackId": 1657869535,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/bd/3b/a9/bd3ba9fb-9609-144f-bcfe-ead67b5f6ab3/196589564931.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "SZA",
+     "collectionName": "SOS",
+     "trackName": "SOS",
+     "collectionId": 1658650093,
+     "trackId": 1658650487,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/62/93/13/6293132e-20ff-67ab-3d1f-96bb6797a6ba/196589564955.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "SZA",
+     "collectionName": "SOS",
+     "trackName": "Open Arms (feat. Travis Scott)",
+     "collectionId": 1657869377,
+     "trackId": 1657869546,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/bd/3b/a9/bd3ba9fb-9609-144f-bcfe-ead67b5f6ab3/196589564931.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Rihanna",
+     "collectionName": "A Girl Like Me (Bonus Track Version)",
+     "trackName": "SOS",
+     "collectionId": 1440866306,
+     "trackId": 1440866685,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/35/c6/58/35c65858-52cd-94f5-2f8f-fbaa811a49da/16UMGIM58854.rgb.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "SZA",
+     "collectionName": "SOS",
+     "trackName": "Used (feat. Don Toliver)",
+     "collectionId": 1657869377,
+     "trackId": 1657869488,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/bd/3b/a9/bd3ba9fb-9609-144f-bcfe-ead67b5f6ab3/196589564931.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Avicii",
+     "collectionName": "TIM",
+     "trackName": "SOS (feat. Aloe Blacc)",
+     "collectionId": 1462628887,
+     "trackId": 1462628897,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/29/9e/8f/299e8f03-3a49-6a5c-9bec-32c0964c2832/19UMGIM41833.rgb.jpg/100x100bb.jpg"
+    }
+   ]
+  }
+ },
+ "itunes_lookup": {
+  "1658650093": {
+   "resultCount": 1,
+   "results": [
+    {
+     "wrapperType": "collection",
+     "artistName": "SZA",
+     "collectionName": "SOS",
+     "collectionId": 1658650093,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/62/93/13/6293132e-20ff-67ab-3d1f-96bb6797a6ba/196589564955.jpg/100x100bb.jpg"
+    }
+   ]
+  }
+ }
+}
