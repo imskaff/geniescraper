@@ -203,8 +203,22 @@ Each slice ends working, tested and committable.
 
 ## 9. Open items
 
-- **Genius edit-form DOM**: needs a signed-in session to capture a script-stripped fixture; the owner signs in themselves.
-- **Auto-Tab**: with selector-targeted fields the tab counts in `autotab_steps` may be unnecessary; decide after the Genius DOM is captured.
+- **Genius edit-form DOM**: captured on 2026-10-27 as `tests/fixtures/genius-edit-form.html` (see section 10).
+- **Auto-Tab**: Genius fields can be targeted directly by label, so the tab counts in `autotab_steps` are probably unnecessary; confirm during slice 6.
+
+## 10. Findings from the captured Genius edit form
+
+- The form is `form[aria-label="Edit Song Metadata Form"]` inside a `role="dialog"` modal (`#edit-metadata-body`).
+- Class names are hashed styled-components names and `react-select-N-input` ids change on every open, so neither is used as a selector.
+- Written By is labelled **Writer**, and Produced By is labelled **Producer**.
+  Both are multi-value react-select comboboxes.
+  They are found by the text of their `Field-shared__FieldLabel` span, with the label text kept in `genius/selectors.ts`.
+- Stable anchors: `input[name="youtube_url"]`, `input[name="custom_song_art_image_url"]`, `[data-testid="custom-performances-expander"]`, `#custom_performances-N-label` (role) and `#custom_performances-N-artists` (artists), and the `focus-id` attribute on the artists input.
+- Additional credits: the "Add additional credits" button appends a row holding an **Additional role** combobox and an **Artists in this role** combobox.
+- Setting a combobox needs real typing events (React controlled input), then confirming the suggestion with Enter, which matches the Auto-Confirm setting.
+- Save and Cancel are `button[aria-label="Save"]` and `button[aria-label="Cancel"]`; the extension never touches them.
+- Genius shows a cookie consent dialog that can intercept clicks; the extension must not interact with it.
+- The fixture omits the Tags, Albums and Song Relationships sections, which the extension never touches.
 - **Safari**: confirm which APIs (`sidePanel`, `scripting`, session storage) are available before committing to the shared UI page.
 - **Genius ToS review**: confirm the per-press fill stays within the guidelines before the store listing.
 - **Versioning**: extension version follows the app version (`0.5.x`) until the first store release.
