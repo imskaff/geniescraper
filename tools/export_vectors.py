@@ -134,6 +134,14 @@ SONGS: dict[str, SongCredits] = {
         cover_art_url="https://example.com/cover.png",
         youtube_url="https://www.youtube.com/watch?v=abc",
     ),
+    # A padded role merges with its trimmed twin but then misses the Written By set; the port must keep that quirk.
+    "padded_roles": _song(
+        credits=[
+            Credit(role=" Songwriter ", artists=["W1"]),
+            Credit(role="songwriter", artists=["W2"]),
+            Credit(role="Producer", artists=["P1"]),
+        ]
+    ),
     "phono_only": _song(
         credits=[Credit(role="Songwriter", artists=["W1"])],
         phonographic_copyright="℗ 2021 Label A",

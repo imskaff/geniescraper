@@ -96,6 +96,36 @@
    "youtube_url": "https://www.youtube.com/watch?v=abc",
    "youtube_is_mv": false
   },
+  "padded_roles": {
+   "title": "T",
+   "artist": "A",
+   "apple_music_url": "u",
+   "credits": [
+    {
+     "role": " Songwriter ",
+     "artists": [
+      "W1"
+     ]
+    },
+    {
+     "role": "songwriter",
+     "artists": [
+      "W2"
+     ]
+    },
+    {
+     "role": "Producer",
+     "artists": [
+      "P1"
+     ]
+    }
+   ],
+   "phonographic_copyright": "",
+   "copyright_notice": "",
+   "cover_art_url": "",
+   "youtube_url": "",
+   "youtube_is_mv": false
+  },
   "phono_only": {
    "title": "T",
    "artist": "A",
@@ -2757,6 +2787,638 @@
   },
   {
    "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "padded_roles",
    "flags": {
     "include_core": false,
     "include_additional": false,
