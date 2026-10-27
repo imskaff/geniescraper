@@ -25,7 +25,7 @@ ctk.set_default_color_theme("blue")
 _FONT_FILE = Path(__file__).parent.parent / "Programme-Regular.ttf"
 if _FONT_FILE.exists():
     ctypes.windll.gdi32.AddFontResourceExW(str(_FONT_FILE), 0x10, 0)
-_FF = "Programme"
+_FF = "Programme Regular"  # the family name inside Programme-Regular.ttf
 
 
 def _f(size: int = 13, weight: str = "normal") -> ctk.CTkFont:
