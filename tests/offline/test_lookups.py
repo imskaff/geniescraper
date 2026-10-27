@@ -14,9 +14,7 @@ from scraper import pipeline, youtube
 from tests import lookup_fixtures as lf
 
 YOUTUBE_ENTRIES = load_youtube_golden()
-KNOWN_YOUTUBE_BUGS: dict[str, str] = {
-    "extra-bts-dynamite": "the official video is on the label channel HYBE LABELS, which is never trusted",
-}
+KNOWN_YOUTUBE_BUGS: dict[str, str] = {}
 _WRONG_EDITION = "Deezer field search finds nothing; iTunes title search returns another edition's artwork"
 KNOWN_COVER_BUGS: dict[str, str] = {
     "sza-sos-t1": _WRONG_EDITION,

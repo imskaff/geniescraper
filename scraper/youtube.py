@@ -206,12 +206,13 @@ def _score_audio(
     return -1
 
 
-def _score_mv(video_title: str, channel: str, artist: str, song_title: str) -> int:
+def _score_mv(video_title: str, channel: str, artist: str, song_title: str, *, verified: bool = False) -> int:
     """Phase 2 — find the official music video.
 
      Channel identity is the primary gate; title keywords are secondary.
 
      3  — artist (or artist VEVO) channel + MV signal in title (confirmed)
+     2  — verified non-artist channel (label) + MV keyword + artist in title (provisional; needs crew credits)
      1  — artist channel + matching title, no MV title keywords (provisional; needs description check)
     -1  — skip (unrecognised channel, wrong title, or skip-keyword)
     """
@@ -226,13 +227,15 @@ def _score_mv(video_title: str, channel: str, artist: str, song_title: str) -> i
 
     artist_ch = _is_artist_ch(channel, artist)
     is_vevo = "vevo" in ch
+    has_mv_kw = any(kw.lower() in t for kw in _MV_KEYWORDS) or bool(re.search(r"\bm/?v\b", t))
 
     # Require the artist's own channel. "VEVO" in a channel name is not enough on its
     # own: reupload channels such as "YouTube VeVo" use it too.
     if not artist_ch:
-        return -1
+        # Some official videos live on a verified label channel (BTS on HYBE LABELS).
+        # Provisional: only a crew credit in the description makes it count.
+        return 2 if verified and has_mv_kw and _names_artist(video_title, artist) else -1
 
-    has_mv_kw = any(kw.lower() in t for kw in _MV_KEYWORDS) or bool(re.search(r"\bm/?v\b", t))
     is_official = "official" in t and not any(kw in t for kw in _AUDIO_INDICATORS)
     is_mv = has_mv_kw or is_vevo or is_official
 
@@ -361,6 +364,7 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
     audio_candidates: list[tuple[int, int, str]] = []
     mv_candidates: list[tuple[int, int, str]] = []
     provisional_mv: list[tuple[int, int, str]] = []  # artist ch, plain title; needs description
+    label_mv: list[tuple[int, int, str]] = []  # verified label channel; needs crew credits
     p1_seen: set[str] = set()
     p2_seen: set[str] = set()
 
@@ -420,10 +424,12 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
                 if video.id in p2_seen:
                     continue
                 p2_seen.add(video.id)
-                score = _score_mv(video.title, video.channel, artist, title)
+                score = _score_mv(video.title, video.channel, artist, title, verified=video.verified)
                 url = f"https://www.youtube.com/watch?v={video.id}"
                 if score == 3:
                     mv_candidates.append((score, rank, url))
+                elif score == 2:
+                    label_mv.append((score, rank, url))
                 elif score == 1:
                     provisional_mv.append((score, rank, url))
 
@@ -460,6 +466,13 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
                 mv_candidates.append((score + 2, rank, url))
             elif any(kw in desc for kw in _MV_DESC_INDICATORS):
                 mv_candidates.append((score + 1, rank, url))
+
+        # ── Label-channel videos ──────────────────────────────────────
+        # Kept at score 2, so any confirmed artist-channel video still wins.
+        for score, rank, url in label_mv[:2]:
+            desc = (await _fetch_description(client, url.split("=")[-1])).lower()
+            if any(kw in desc for kw in _MV_CREW_KEYWORDS):
+                mv_candidates.append((score, rank, url))
 
         # ── Audio-to-MV promotion (Phase 1 plain-title hits) ──────────
         # Artist-channel (score=1) audio hits may not appear in Phase 2

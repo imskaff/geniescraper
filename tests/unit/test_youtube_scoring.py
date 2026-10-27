@@ -92,6 +92,15 @@ class TestScoring:
         title = "Luis Fonsi  Despacito ft  Justin Bieber Daddy Yankee (Official Video) -VEVO"
         assert yt._score_mv(title, "YouTube VeVo", "Luis Fonsi", "Despacito (feat. Daddy Yankee)") == -1
 
+    def test_verified_label_channel_mv_is_provisional(self):
+        title = "BTS (방탄소년단) 'Dynamite' Official MV"
+        assert yt._score_mv(title, "HYBE LABELS", "BTS", "Dynamite") == -1
+        assert yt._score_mv(title, "HYBE LABELS", "BTS", "Dynamite", verified=True) == 2
+
+    def test_verified_channel_needs_mv_keyword_and_artist(self):
+        assert yt._score_mv("BTS - Dynamite", "Some Label", "BTS", "Dynamite", verified=True) == -1
+        assert yt._score_mv("Dynamite (Official MV)", "Some Label", "BTS", "Dynamite", verified=True) == -1
+
     def test_artist_channel_plain_title_is_provisional(self):
         assert yt._score_mv("Not Like Us", "Kendrick Lamar", "Kendrick Lamar", "Not Like Us") == 1
 
