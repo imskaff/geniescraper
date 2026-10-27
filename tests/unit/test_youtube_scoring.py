@@ -14,6 +14,25 @@ class TestTitleMatching:
     def test_rejects_other_song(self):
         assert not yt._title_matches_song("Euphoria", "Not Like Us", "Kendrick Lamar")
 
+    @pytest.mark.parametrize(
+        ("video_title", "song", "artist"),
+        [
+            ("Taylor Swift - Fortnight", "Fortnight (feat. Post Malone)", "Taylor Swift"),
+            ("Luis Fonsi - Despacito ft. Daddy Yankee", "Despacito (feat. Daddy Yankee)", "Luis Fonsi"),
+            ("BAD BUNNY x JHAY CORTEZ - DÁKITI", "DÁKITI", "Bad Bunny & Jhay Cortez"),
+            ("Frank Ocean - Pink + White", "Pink + White", "Frank Ocean"),
+        ],
+    )
+    def test_matches_feat_and_accent_variants(self, video_title, song, artist):
+        assert yt._title_matches_song(video_title, song, artist)
+
+    @pytest.mark.parametrize(
+        ("video_title", "song"),
+        [("SZA - SOS Where The Hell Have You Been ?", "SOS"), ("Pink Matter", "Pink + White")],
+    )
+    def test_rejects_extra_words(self, video_title, song):
+        assert not yt._title_matches_song(video_title, song, "SZA")
+
     def test_short_special_char_title(self):
         assert yt._sig_present("Travis Scott - FE!N ft. Playboi Carti", "FE!N")
 
@@ -55,6 +74,10 @@ class TestScoring:
 
     def test_artist_channel_plain_title_is_provisional(self):
         assert yt._score_mv("Not Like Us", "Kendrick Lamar", "Kendrick Lamar", "Not Like Us") == 1
+
+    def test_promo_film_on_artist_channel_is_not_provisional_mv(self):
+        assert yt._score_mv("SZA - SOS Where The Hell Have You Been ?", "SZA", "SZA", "SOS") == -1
+        assert yt._score_audio("SZA - SOS Where The Hell Have You Been ?", "SZA", "SZA", "SOS") == -1
 
     def test_extract_data(self):
         assert yt._extract_data('xx var ytInitialData = {"a": 1}; more') == {"a": 1}

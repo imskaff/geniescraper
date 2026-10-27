@@ -15,7 +15,6 @@ from tests import lookup_fixtures as lf
 
 YOUTUBE_ENTRIES = load_youtube_golden()
 KNOWN_YOUTUBE_BUGS: dict[str, str] = {
-    "sza-sos-t1": "picks the short film 'SOS Where The Hell Have You Been ?': plain-title match ignores extra words",
     "extra-frankocean-pink-white": "official channel is named 'Blonded', so no channel matches the artist name",
     "extra-bts-dynamite": "the official video is on the label channel HYBE LABELS, which is never trusted",
 }

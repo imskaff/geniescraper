@@ -1,5 +1,6 @@
 import json
 import re
+import unicodedata
 
 import httpx
 
@@ -68,9 +69,10 @@ _MV_DESC_INDICATORS = (
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 
-def _clean(text: str) -> str:
-    """Lowercase, strip non-alphanumeric (keep spaces), collapse whitespace."""
-    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s]", "", text.lower())).strip()
+def _words(text: str) -> list[str]:
+    """Lowercase, accent-folded words: "BAD BUNNY x DÁKITI (Audio)" -> ["bad", "bunny", "x", "dakiti", "audio"]."""
+    folded = "".join(c for c in unicodedata.normalize("NFKD", text.lower()) if not unicodedata.combining(c))
+    return re.findall(r"[^\W_]+", folded)
 
 
 def _sig_present(video_title: str, song_title: str) -> bool:
@@ -87,26 +89,28 @@ def _sig_present(video_title: str, song_title: str) -> bool:
     return bool(ct) and ct in cv
 
 
+# Words a plain upload may add around "Artist - Song" without making it a different video.
+_PLAIN_TITLE_FILLER = frozenset(
+    {"official", "audio", "video", "music", "visualizer", "visualiser", "explicit", "clean", "hd", "hq", "4k"}
+    | {"feat", "ft", "featuring", "with", "x", "and", "vevo", "topic"}
+)
+_FEAT_SPLIT = re.compile(r"[(\[]\s*(?:feat|ft|featuring|with)\b|\b(?:feat|ft|featuring)\b\.?", re.IGNORECASE)
+
+
 def _title_matches_song(video_title: str, song_title: str, artist: str) -> bool:
-    """True when the video title looks like a plain song upload.
+    """True when the video title is just this song, as a plain upload titles it.
 
-    Accepts:
-      "Song Title"
-      "Artist - Song Title"
-      "Artist Song Title ..."       (after punctuation is stripped)
-      any of the above with "(Official Audio)" or feat. suffix appended
+    Accepts "Song", "Artist - Song", "Song - Artist" and either with tags such as
+    "(Official Audio)" or the featured artists, with or without the feat. part.
+    Rejects any extra words: "SZA - SOS Where The Hell Have You Been ?" is a
+    short film, not the song "SOS", even on the artist's channel.
     """
-    vt = _clean(video_title)
-    st = _clean(song_title)
-    ar = _clean(artist)
-
-    if vt == st or vt.startswith(st + " "):
-        return True
-    if vt.startswith(f"{ar} {st}") or vt.startswith(f"{st} {ar}"):
-        return True
-    # All significant words from the song title present (handles feat. variants)
-    sig = [w for w in st.split() if len(w) >= 3]
-    return bool(sig) and all(w in vt for w in sig)
+    core = _words(_FEAT_SPLIT.split(song_title, maxsplit=1)[0])
+    if not core:
+        return False
+    title = _words(video_title)
+    allowed = set(_words(song_title)) | set(_words(artist)) | _PLAIN_TITLE_FILLER
+    return set(core) <= set(title) and all(w in allowed for w in title)
 
 
 _COLLAB_SEP = re.compile(r"\s*[&,]\s*|\s+(?:ft\.?|feat\.?|and|x)\s+", re.IGNORECASE)
@@ -200,8 +204,9 @@ def _score_mv(video_title: str, channel: str, artist: str, song_title: str) -> i
 
     if is_mv:
         return 3
-    # Artist channel, plain title — provisional; description check will decide
-    return 1
+    # Artist channel, plain title — provisional; description check will decide.
+    # Only the song itself qualifies: other promo clips also carry crew credits.
+    return 1 if _title_matches_song(video_title, song_title, artist) else -1
 
 
 # ── YouTube page parsing ──────────────────────────────────────────────────────
