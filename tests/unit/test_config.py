@@ -1,10 +1,18 @@
 from utils import config
 
 
+def _settings(env_file: str | None) -> config.Settings:
+    """Load Settings from `env_file` (None: defaults only, never the real .env).
+
+    `_env_file` is a pydantic-settings init kwarg that its dataclass_transform signature does not declare.
+    """
+    return config.Settings(_env_file=env_file)  # pyright: ignore[reportCallIssue]
+
+
 def test_save_round_trips_every_field(tmp_path, monkeypatch):
     env = tmp_path / ".env"
     monkeypatch.setattr(config, "_ENV_PATH", env)
-    original = config.Settings(_env_file=None)
+    original = _settings(None)
     changed = original.model_copy(
         update={
             "hotkey": "f9",
@@ -19,7 +27,7 @@ def test_save_round_trips_every_field(tmp_path, monkeypatch):
         }
     )
     changed.save()
-    reloaded = config.Settings(_env_file=str(env))
+    reloaded = _settings(str(env))
     assert reloaded.model_dump() == changed.model_dump()
 
 
@@ -27,6 +35,6 @@ def test_save_covers_all_fields(tmp_path, monkeypatch):
     """A new Settings field must also be written by save(), or it silently resets."""
     env = tmp_path / ".env"
     monkeypatch.setattr(config, "_ENV_PATH", env)
-    config.Settings(_env_file=None).save()
+    _settings(None).save()
     written = {line.split("=", 1)[0].lower() for line in env.read_text(encoding="utf-8").splitlines() if "=" in line}
     assert written == set(config.Settings.model_fields)
