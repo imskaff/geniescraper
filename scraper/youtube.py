@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 from collections.abc import Iterator
@@ -333,6 +334,110 @@ def _mv_queries(title: str, artist: str) -> tuple[str, ...]:
     )
 
 
+# Watch pages fetched at once for description checks. They start after the searches,
+# which run at most two at a time (one per phase), so YouTube never sees more than three.
+_MAX_PARALLEL_DESCRIPTIONS = 3
+
+_Candidate = tuple[int, int, str]  # (score, rank, url)
+
+
+def _watch_url(video_id: str) -> str:
+    return f"https://www.youtube.com/watch?v={video_id}"
+
+
+def _video_id(url: str) -> str:
+    return url.split("=")[-1]
+
+
+async def _search(client: httpx.AsyncClient, query: str) -> list[_Video]:
+    """Top 10 videos of a YouTube search, or [] on failure."""
+    try:
+        r = await client.get("https://www.youtube.com/results", params={"search_query": query})
+        r.raise_for_status()
+    except Exception:
+        return []
+    data = _extract_data(r.text)
+    return list(_iter_videos(data))[:10] if data else []
+
+
+async def _audio_phase(client: httpx.AsyncClient, title: str, artist: str) -> list[_Candidate]:
+    """Phase 1: canonical audio / Topic channel."""
+    candidates: list[_Candidate] = []
+    seen: set[str] = set()
+    for query in _audio_queries(title, artist):
+        for rank, video in enumerate(await _search(client, query)):
+            if video.id in seen:
+                continue
+            seen.add(video.id)
+            score = _score_audio(
+                video.title,
+                video.channel,
+                artist,
+                title,
+                official_artist=video.official_artist,
+                snippet=video.snippet,
+            )
+            if score > 0:
+                candidates.append((score, rank, _watch_url(video.id)))
+
+        # Topic-channel hit (score 2) is definitive — skip remaining queries
+        if any(s >= 2 for s, _, _ in candidates):
+            break
+    return candidates
+
+
+async def _mv_phase(
+    client: httpx.AsyncClient, title: str, artist: str
+) -> tuple[list[_Candidate], list[_Candidate], list[_Candidate]]:
+    """Phase 2: music video. Returns (confirmed, provisional, label-channel) candidates.
+
+    Uses its own seen-set so Phase 1 rejects (MV-keyword videos that scored -1
+    in _score_audio) can still be evaluated here.
+    """
+    confirmed: list[_Candidate] = []
+    provisional: list[_Candidate] = []  # artist ch, plain title; needs description
+    label: list[_Candidate] = []  # verified label channel; needs crew credits
+    seen: set[str] = set()
+    for query in _mv_queries(title, artist):
+        for rank, video in enumerate(await _search(client, query)):
+            if video.id in seen:
+                continue
+            seen.add(video.id)
+            score = _score_mv(video.title, video.channel, artist, title, verified=video.verified)
+            if score == 3:
+                confirmed.append((score, rank, _watch_url(video.id)))
+            elif score == 2:
+                label.append((score, rank, _watch_url(video.id)))
+            elif score == 1:
+                provisional.append((score, rank, _watch_url(video.id)))
+
+        # High-confidence MV found — stop
+        if confirmed:
+            break
+    return confirmed, provisional, label
+
+
+async def _fetch_descriptions(client: httpx.AsyncClient, video_ids: list[str]) -> dict[str, str]:
+    """Lowercased descriptions by video id, fetched concurrently ('' on failure)."""
+    limit = asyncio.Semaphore(_MAX_PARALLEL_DESCRIPTIONS)
+
+    async def one(video_id: str) -> str:
+        async with limit:
+            return (await _fetch_description(client, video_id)).lower()
+
+    descriptions = await asyncio.gather(*(one(v) for v in video_ids))
+    return dict(zip(video_ids, descriptions, strict=True))
+
+
+def _description_bonus(desc: str) -> int:
+    """Crew keywords (+2) outweigh generic MV indicator words (+1); 0 when neither appears."""
+    if any(kw in desc for kw in _MV_CREW_KEYWORDS):
+        return 2
+    if any(kw in desc for kw in _MV_DESC_INDICATORS):
+        return 1
+    return 0
+
+
 # ── public API ────────────────────────────────────────────────────────────────
 
 
@@ -348,6 +453,9 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
       Searches specifically for the MV.  VEVO and artist-channel uploads with MV
       signals (keywords, "official" without audio tag) score highest.
 
+    The two phases search concurrently, then the descriptions of the candidates
+    that need confirming are fetched together.
+
     Returns the MV URL (is_music_video=True) when Phase 2 succeeds, otherwise
     the audio URL (is_music_video=False).  Returns ("", False) if neither phase
     finds a reliable match.
@@ -355,137 +463,53 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
     if not title or not artist:
         return "", False
 
-    audio_candidates: list[tuple[int, int, str]] = []
-    mv_candidates: list[tuple[int, int, str]] = []
-    provisional_mv: list[tuple[int, int, str]] = []  # artist ch, plain title; needs description
-    label_mv: list[tuple[int, int, str]] = []  # verified label channel; needs crew credits
-    p1_seen: set[str] = set()
-    p2_seen: set[str] = set()
-
     async with httpx.AsyncClient(timeout=12.0, headers=_HEADERS, follow_redirects=True) as client:
-        # ── Phase 1: canonical audio / Topic channel ───────────────────
-        for query in _audio_queries(title, artist):
-            try:
-                r = await client.get(
-                    "https://www.youtube.com/results",
-                    params={"search_query": query},
-                )
-                r.raise_for_status()
-            except Exception:
-                continue
+        audio_candidates, (mv_candidates, provisional_mv, label_mv) = await asyncio.gather(
+            _audio_phase(client, title, artist), _mv_phase(client, title, artist)
+        )
 
-            data = _extract_data(r.text)
-            if not data:
-                continue
+        # Every description the checks below may read, each fetched once.
+        mv_ids = {_video_id(u) for _, _, u in mv_candidates}
+        wanted = [_video_id(u) for _, _, u in mv_candidates[:3]]
+        wanted += [_video_id(u) for _, _, u in provisional_mv[:3] if _video_id(u) not in mv_ids]
+        wanted += [_video_id(u) for _, _, u in label_mv[:2]]
+        wanted += [_video_id(u) for s, _, u in audio_candidates[:5] if s == 1 and _video_id(u) not in mv_ids]
+        descriptions = await _fetch_descriptions(client, list(dict.fromkeys(wanted)))
 
-            for rank, video in enumerate(list(_iter_videos(data))[:10]):
-                if video.id in p1_seen:
-                    continue
-                p1_seen.add(video.id)
-                score = _score_audio(
-                    video.title,
-                    video.channel,
-                    artist,
-                    title,
-                    official_artist=video.official_artist,
-                    snippet=video.snippet,
-                )
-                if score > 0:
-                    audio_candidates.append((score, rank, f"https://www.youtube.com/watch?v={video.id}"))
+    # ── Description boost for MV candidates ───────────────────────
+    # Up to 3 top candidates get a bonus when the description confirms
+    # this is a real music video.
+    for i, (score, rank, url) in enumerate(mv_candidates[:3]):
+        mv_candidates[i] = (score + _description_bonus(descriptions[_video_id(url)]), rank, url)
 
-            # Topic-channel hit (score 2) is definitive — skip remaining queries
-            if any(s >= 2 for s, _, _ in audio_candidates):
-                break
+    # ── Provisional promotion (Phase 2 plain-title hits) ──────────
+    # Artist-channel videos found in Phase 2 with plain titles: only
+    # add to mv_candidates when the description confirms MV.
+    for score, rank, url in provisional_mv[:3]:
+        if _video_id(url) in mv_ids:
+            continue
+        bonus = _description_bonus(descriptions[_video_id(url)])
+        if bonus:
+            mv_candidates.append((score + bonus, rank, url))
 
-        # ── Phase 2: music video ───────────────────────────────────────
-        # Uses its own seen-set so Phase 1 rejects (MV-keyword videos that
-        # scored -1 in _score_audio) can still be evaluated here.
-        for query in _mv_queries(title, artist):
-            try:
-                r = await client.get(
-                    "https://www.youtube.com/results",
-                    params={"search_query": query},
-                )
-                r.raise_for_status()
-            except Exception:
-                continue
+    # ── Label-channel videos ──────────────────────────────────────
+    # Kept at score 2, so any confirmed artist-channel video still wins.
+    for score, rank, url in label_mv[:2]:
+        if any(kw in descriptions[_video_id(url)] for kw in _MV_CREW_KEYWORDS):
+            mv_candidates.append((score, rank, url))
 
-            data = _extract_data(r.text)
-            if not data:
-                continue
-
-            for rank, video in enumerate(list(_iter_videos(data))[:10]):
-                if video.id in p2_seen:
-                    continue
-                p2_seen.add(video.id)
-                score = _score_mv(video.title, video.channel, artist, title, verified=video.verified)
-                url = f"https://www.youtube.com/watch?v={video.id}"
-                if score == 3:
-                    mv_candidates.append((score, rank, url))
-                elif score == 2:
-                    label_mv.append((score, rank, url))
-                elif score == 1:
-                    provisional_mv.append((score, rank, url))
-
-            # High-confidence MV found — stop
-            if any(s >= 3 for s, _, _ in mv_candidates):
-                break
-
-        # ── Description boost for MV candidates ───────────────────────
-        # Fetch descriptions for up to 3 top candidates and apply a score
-        # bonus when the description confirms this is a real music video.
-        # Crew keywords (+2) outweigh generic MV indicator words (+1).
-        for i, (score, rank, url) in enumerate(mv_candidates[:3]):
-            vid_id = url.split("=")[-1]
-            desc = (await _fetch_description(client, vid_id)).lower()
-            if not desc:
-                continue
-            if any(kw in desc for kw in _MV_CREW_KEYWORDS):
-                mv_candidates[i] = (score + 2, rank, url)
-            elif any(kw in desc for kw in _MV_DESC_INDICATORS):
-                mv_candidates[i] = (score + 1, rank, url)
-
-        # ── Provisional promotion (Phase 2 plain-title hits) ──────────
-        # Artist-channel videos found in Phase 2 with plain titles: only
-        # add to mv_candidates when the description confirms MV.
-        confirmed_ids = {u.split("=")[-1] for _, _, u in mv_candidates}
-        for score, rank, url in provisional_mv[:3]:
-            vid_id = url.split("=")[-1]
-            if vid_id in confirmed_ids:
-                continue
-            desc = (await _fetch_description(client, vid_id)).lower()
-            if not desc:
-                continue
-            if any(kw in desc for kw in _MV_CREW_KEYWORDS):
-                mv_candidates.append((score + 2, rank, url))
-            elif any(kw in desc for kw in _MV_DESC_INDICATORS):
-                mv_candidates.append((score + 1, rank, url))
-
-        # ── Label-channel videos ──────────────────────────────────────
-        # Kept at score 2, so any confirmed artist-channel video still wins.
-        for score, rank, url in label_mv[:2]:
-            desc = (await _fetch_description(client, url.split("=")[-1])).lower()
-            if any(kw in desc for kw in _MV_CREW_KEYWORDS):
-                mv_candidates.append((score, rank, url))
-
-        # ── Audio-to-MV promotion (Phase 1 plain-title hits) ──────────
-        # Artist-channel (score=1) audio hits may not appear in Phase 2
-        # search results at all; check their descriptions here and
-        # reclassify as MV if confirmed.
-        mv_ids = {u.split("=")[-1] for _, _, u in mv_candidates}
-        for score, rank, url in audio_candidates[:5]:
-            if score != 1:  # Topic-channel (score=2) is canonical audio; skip
-                continue
-            vid_id = url.split("=")[-1]
-            if vid_id in mv_ids:
-                continue
-            desc = (await _fetch_description(client, vid_id)).lower()
-            if not desc:
-                continue
-            if any(kw in desc for kw in _MV_CREW_KEYWORDS):
-                mv_candidates.append((score + 2, rank, url))
-            elif any(kw in desc for kw in _MV_DESC_INDICATORS):
-                mv_candidates.append((score + 1, rank, url))
+    # ── Audio-to-MV promotion (Phase 1 plain-title hits) ──────────
+    # Artist-channel (score=1) audio hits may not appear in Phase 2
+    # search results at all; check their descriptions here and
+    # reclassify as MV if confirmed.
+    mv_ids = {_video_id(u) for _, _, u in mv_candidates}
+    for score, rank, url in audio_candidates[:5]:
+        # Topic-channel (score=2) is canonical audio; skip
+        if score != 1 or _video_id(url) in mv_ids or _video_id(url) not in descriptions:
+            continue
+        bonus = _description_bonus(descriptions[_video_id(url)])
+        if bonus:
+            mv_candidates.append((score + bonus, rank, url))
 
     # MV takes priority; audio is the fallback
     if mv_candidates:

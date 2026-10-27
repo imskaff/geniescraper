@@ -6,6 +6,8 @@ artwork in the credit golden files).
 Refresh the captures with `uv run python -m bench.capture_lookups`.
 """
 
+import asyncio
+
 import pytest
 
 from bench.cases import load_cases, load_golden
@@ -14,6 +16,7 @@ from scraper import pipeline, youtube
 from tests import lookup_fixtures as lf
 
 YOUTUBE_ENTRIES = load_youtube_golden()
+YOUTUBE_BY_ID = {e["id"]: e for e in YOUTUBE_ENTRIES}
 KNOWN_YOUTUBE_BUGS: dict[str, str] = {}
 KNOWN_COVER_BUGS: dict[str, str] = {}
 
@@ -30,6 +33,28 @@ async def test_youtube_pick_matches_truth(monkeypatch, entry):
     url, is_mv = await youtube.fetch_youtube_url(entry["title"], entry["artist"])
 
     assert (video_id(url), is_mv) in {(v, entry["is_music_video"]) for v in entry["accept"]}
+
+
+@pytest.mark.parametrize("case_id", ["kendrick-nlu-single", "extra-frankocean-pink-white"])
+async def test_youtube_requests_overlap_but_stay_polite(monkeypatch, case_id):
+    """Audio and MV searches run side by side, but never more than 3 requests at once."""
+    sync_handler = lf.youtube_handler(lf.load(lf.YOUTUBE_DIR, case_id))
+    in_flight = peak = 0
+
+    async def handler(request):
+        nonlocal in_flight, peak
+        in_flight += 1
+        peak = max(peak, in_flight)
+        await asyncio.sleep(0.01)
+        in_flight -= 1
+        return sync_handler(request)
+
+    lf.route_clients(monkeypatch, youtube, handler)
+
+    entry = YOUTUBE_BY_ID[case_id]
+    await youtube.fetch_youtube_url(entry["title"], entry["artist"])
+
+    assert 2 <= peak <= 3
 
 
 @pytest.mark.parametrize("case", [_param(c, c.id, KNOWN_COVER_BUGS) for c in load_cases()])
