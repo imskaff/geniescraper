@@ -452,9 +452,21 @@ async def _new_stealth_page():
         geolocation={"latitude": 40.7128, "longitude": -74.0060},
         permissions=["geolocation"],
     )
+    await context.route("**/*", _block_heavy_resources)
     page = await context.new_page()
     await Stealth().apply_stealth_async(page)
     return context, page
+
+
+# Scraping reads text and image URLs only; the bytes of images, audio/video and fonts are never used.
+_BLOCKED_RESOURCE_TYPES = frozenset({"image", "media", "font"})
+
+
+async def _block_heavy_resources(route) -> None:
+    if route.request.resource_type in _BLOCKED_RESOURCE_TYPES:
+        await route.abort()
+    else:
+        await route.continue_()
 
 
 _TYPE_LABELS = frozenset({"single", "ep", "album", "soundtrack", "deluxe edition", "live"})
