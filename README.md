@@ -162,6 +162,24 @@ uv run python -m bench.run
 - `uv run python -m bench.lookups` measures the YouTube and cover art lookups alone: accuracy against the hand-verified videos in `tests/golden/youtube.json` and the golden cover artwork, plus latency.
 - `uv run python -m bench.capture_lookups` refreshes the saved YouTube, Deezer and iTunes responses in `tests/fixtures/lookups/` that the offline lookup tests replay.
 
+### Browser extension
+
+The Chrome extension lives in `extension/` (TypeScript, built with esbuild, tested with Vitest); see [docs/extension-plan.md](docs/extension-plan.md) for the design and slices.
+It needs Node 20 or newer and is installed from the lockfile:
+
+```bash
+cd extension && npm ci && npm run check
+```
+
+`npm run check` runs ESLint, `tsc`, Vitest and the build; `dist/` is the unpacked extension.
+`extension/data/roles.json` and `extension/test/vectors.json` are generated from the Python code and must never be edited by hand:
+
+```bash
+uv run python -m tools.export_roles && uv run python -m tools.export_vectors
+```
+
+A Python test fails when either file is stale, so run both after changing `scraper/roles.py`, `scraper/models.py`, `scraper/apple_music.py` or `assistant/flow.py`.
+
 ## License
 
 MIT - see [LICENSE](LICENSE).

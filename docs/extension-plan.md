@@ -189,8 +189,8 @@ Each slice ends working, tested and committable.
 
 | # | Slice | Acceptance check |
 |---|-------|------------------|
-| 0 | This plan | Reviewed by the owner |
-| 1 | Scaffold: `extension/` skeleton, manifest, build, lint, Vitest, CI job, roles export, vectors export | `npm ci && npm test && npm run build` green; Python staleness tests green |
+| 0 | This plan | Reviewed by the owner (done) |
+| 1 | Scaffold: `extension/` skeleton, manifest, build, lint, Vitest, CI job, roles export, vectors export (done) | `npm run check` green; Python staleness tests green |
 | 2 | Port `typedQueue`, copyright helpers, flow logic | All Python vectors pass in Vitest |
 | 3 | Apple Music credits parser | Every fixture in `tests/fixtures` matches `tests/golden` |
 | 4 | Album and track detection, background-tab credits driver | Unit tests with a fake `chrome.scripting`; manual run on a real album |
