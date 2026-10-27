@@ -180,6 +180,8 @@ uv run python -m tools.export_roles && uv run python -m tools.export_vectors
 
 A Python test fails when either file is stale, so run both after changing `scraper/roles.py`, `scraper/models.py`, `scraper/apple_music.py`, `scraper/deezer.py`, `scraper/text.py` or `assistant/flow.py`.
 
+`npm run live:hidden-tab -- --chrome <path to Chromium>` is an opt-in live check against Apple Music that the extension can read song pages in a genuinely hidden tab; run `npm run build` first, and find a Chromium with `uv run python -c "from playwright.sync_api import sync_playwright as s; p = s().start(); print(p.chromium.executable_path); p.stop()"`.
+
 ## License
 
 MIT - see [LICENSE](LICENSE).

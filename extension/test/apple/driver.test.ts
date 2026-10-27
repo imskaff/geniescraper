@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AppleError } from "../../src/apple/errors";
 import { detectAlbum, scrapeTrack, waitForCredits, waitForPage, type Timing } from "../../src/apple/driver";
 import { handleRequest } from "../../src/apple/handler";
+import { TRACK_ROW_SELECTOR } from "../../src/apple/page";
 import { waitFor } from "../../src/apple/wait";
 import { CASES, creditMap, loadFixture, loadGolden } from "./fixtures";
 
@@ -39,6 +40,23 @@ describe("detectAlbum on the saved album pages", () => {
     const info = await detectAlbum(loadFixture(id, "page"), url, FAST);
     const link = info.trackUrls[track_index - 1] ?? "";
     expect(link).toMatch(SONG_PAGE);
+  });
+
+  it.each(ALBUMS)("$id gives every track the title and the link of the same row", async ({ id, url }) => {
+    // The panel sends trackUrls[i] with trackTitles[i], and the sent title wins over the page's own,
+    // so a shifted list would silently mislabel a track.
+    const doc = loadFixture(id, "page");
+    const info = await detectAlbum(doc, url, FAST);
+    const rows = [...doc.querySelectorAll(TRACK_ROW_SELECTOR)];
+    expect(rows.length).toBeGreaterThanOrEqual(info.trackCount);
+
+    info.trackUrls.forEach((link, index) => {
+      const row = rows[index];
+      expect(info.trackTitles[index], `row ${String(index + 1)} title`).toBe(
+        row?.querySelector('[data-testid="track-title"]')?.textContent.trim(),
+      );
+      if (link) expect(row?.querySelector('a[href*="/song/"]')?.getAttribute("href")).toBe(link);
+    });
   });
 
   it("marks a track without a song page as unavailable instead of dropping it, so indexes stay aligned", async () => {
@@ -184,6 +202,17 @@ describe("handleRequest", () => {
     const doc = html('<h1 data-testid="not-found-heading">Page Not Found</h1>');
     const result = await handleRequest({ type: "apple/detect", url: SONG }, doc, FAST);
     expect(result).toMatchObject({ ok: false, error: { code: "not-found" } });
+  });
+
+  it("reports an unexpected failure as internal, not as a timeout", async () => {
+    const broken = html('<div class="song-header-page"></div>');
+    Object.defineProperty(broken, "title", {
+      get() {
+        throw new Error("parser crashed");
+      },
+    });
+    const result = await handleRequest({ type: "apple/detect", url: SONG }, broken, FAST);
+    expect(result).toEqual({ ok: false, error: { code: "internal", message: "parser crashed" } });
   });
 
   it("answers a scrape request with the credits of the page", async () => {

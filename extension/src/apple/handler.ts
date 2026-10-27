@@ -20,7 +20,7 @@ export async function handleRequest(raw: unknown, doc: Document, timing: Timing)
     if (error instanceof AppleError) return { ok: false, error: error.toJSON() };
     return {
       ok: false,
-      error: { code: "timeout", message: error instanceof Error ? error.message : "Unexpected error." },
+      error: { code: "internal", message: error instanceof Error ? error.message : "Unexpected error." },
     };
   }
 }

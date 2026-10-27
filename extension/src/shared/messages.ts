@@ -27,7 +27,7 @@ export interface PageScrape {
   warnings: string[];
 }
 
-export type ErrorCode = "bad-request" | "invalid-url" | "not-found" | "timeout" | "tab-failed";
+export type ErrorCode = "bad-request" | "invalid-url" | "not-found" | "timeout" | "tab-failed" | "internal";
 
 export interface AppError {
   code: ErrorCode;
