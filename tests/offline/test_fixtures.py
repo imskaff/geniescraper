@@ -18,16 +18,6 @@ ALBUM_CASES = [c for c in CASES if "/album/" in c.url]
 SONG_CASES = [c for c in CASES if "/song/" in c.url]
 
 
-@pytest.fixture(autouse=True)
-def no_settle_sleep(monkeypatch):
-    """_parse_credits_page sleeps for live rendering; fixtures are already rendered."""
-
-    async def instant(_):
-        return None
-
-    monkeypatch.setattr(am.asyncio, "sleep", instant)
-
-
 @pytest.mark.parametrize("case", CASES, ids=lambda c: c.id)
 async def test_credits_parse_matches_golden(case, load_fixture):
     page = await load_fixture(f"{case.id}.credits.html")
@@ -77,6 +67,26 @@ async def test_cover_from_page(case, load_fixture):
     else:
         assert url.endswith("/1000x1000bb.png")
         assert artwork_key(url) == artwork_key(load_golden(case.id).cover_art_url)
+
+
+@pytest.mark.parametrize("case", CASES, ids=lambda c: c.id)
+async def test_page_ready_marker_present(case, load_fixture):
+    """_wait_for_page waits for this marker instead of networkidle; it must exist on real pages."""
+    page = await load_fixture(f"{case.id}.page.html")
+    assert await page.locator(am._READY_SELECTOR).count() > 0
+    await am._wait_for_page(page)
+
+
+async def test_credits_wait_is_bounded(browser, monkeypatch):
+    """A page without credit cards (track with no credits) must not hang the scrape."""
+    monkeypatch.setattr(am, "_CREDITS_TIMEOUT_MS", 300)
+    context = await browser.new_context(offline=True)
+    try:
+        page = await context.new_page()
+        await page.set_content("<p>no credits here</p>")
+        assert await am._parse_credits_page(page, strategy_0_only=True) == []
+    finally:
+        await context.close()
 
 
 @pytest.mark.parametrize("testid", ["not-found-heading", "page-error-title"])

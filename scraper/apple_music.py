@@ -84,6 +84,31 @@ def _is_noise(line: str) -> bool:
     return len(line) > 80
 
 
+_CREDITS_TIMEOUT_MS = 10_000
+_CREDITS_SETTLE_S = 0.15
+
+
+async def _wait_for_credits(page: Page) -> None:
+    """Wait until the credit cards have rendered, bounded by _CREDITS_TIMEOUT_MS.
+
+    Apple Music renders all cards in one batch, so one short recheck that the card
+    count is unchanged guards against reading a half-rendered list.  Returns quietly
+    on timeout (a track without credits) so the text fallback can still run.
+    """
+    cards = page.locator(".artist-name")
+    try:
+        await cards.first.wait_for(state="attached", timeout=_CREDITS_TIMEOUT_MS)
+    except PWTimeout:
+        return
+    count = await cards.count()
+    for _ in range(10):
+        await asyncio.sleep(_CREDITS_SETTLE_S)
+        new_count = await cards.count()
+        if new_count == count:
+            return
+        count = new_count
+
+
 async def _parse_credits_page(page: Page, *, strategy_0_only: bool = False) -> list[Credit]:
     """
     Parses credits from an Apple Music page.
@@ -98,7 +123,7 @@ async def _parse_credits_page(page: Page, *, strategy_0_only: bool = False) -> l
     Pass strategy_0_only=True for /song/ pages: the page body contains lyrics
     and navigation that Strategy 1 would misparse as credit data.
     """
-    await asyncio.sleep(1.5)
+    await _wait_for_credits(page)
 
     # Strategy 0 — CSS selector pairs
     names = await page.locator(".artist-name").all_text_contents()
@@ -280,6 +305,9 @@ def normalise_cover_url(url: str) -> str:
 # ---------------------------------------------------------------------------
 
 
+_VIEW_CREDITS_RE = re.compile(r"view credits", re.IGNORECASE)
+
+
 async def _click_view_credits(page: Page, nth_index: int = 1) -> bool:
     """
     Finds the nth MORE button (aria-label="MORE") and clicks "View Credits".
@@ -309,16 +337,19 @@ async def _click_view_credits(page: Page, nth_index: int = 1) -> bool:
             if attempt == 1:
                 return False
 
-    # Wait for the context menu and click "View Credits".
+    # Wait for the context menu and click "View Credits".  The menu entries are plain
+    # buttons inside <amp-contextual-menu-item>; older markup used role="menuitem".
     try:
-        view_credits = page.get_by_role("menuitem", name=re.compile(r"view credits", re.IGNORECASE))
+        view_credits = (
+            page.locator('amp-contextual-menu-item button, [role="menuitem"]').filter(has_text=_VIEW_CREDITS_RE).first
+        )
         await view_credits.wait_for(state="visible", timeout=5_000)
         await view_credits.click()
         return True
     except PWTimeout:
         # Fallback: look for any element with "Credits" text in the menu.
         try:
-            await page.get_by_text(re.compile(r"view credits", re.IGNORECASE)).first.click(timeout=3_000)
+            await page.get_by_text(_VIEW_CREDITS_RE).first.click(timeout=3_000)
             return True
         except PWTimeout:
             return False
@@ -351,23 +382,32 @@ async def _open(page: Page, url: str) -> None:
     await _wait_for_page(page)
 
 
-async def _wait_for_page(page: Page) -> None:
-    """Race networkidle against the Apple Music 404 error element.
+# The page is usable once the hydrated tracklist (album) or the song header (song) is there.
+# Before the tracklist hydrates, the page holds fewer MORE buttons, so nth() would pick
+# the wrong track's button.
+_READY_SELECTOR = '[data-testid="track-list-item"], .song-header-page'
+_READY_TIMEOUT_MS = 15_000
 
-    For invalid URLs the error element is rendered by JS within ~1-2 s, long
-    before the page ever reaches networkidle.  Racing lets us bail out the
-    moment the error appears instead of waiting the full 25 s timeout.
+
+async def _wait_for_page(page: Page) -> None:
+    """Race the page-ready marker against the Apple Music 404 error element.
+
+    For invalid URLs the error element is rendered by JS within ~1-2 s; racing
+    lets us bail out the moment it appears.  If neither shows up within the
+    bounded timeout the scrape carries on with whatever has rendered.
     """
-    error_task = asyncio.create_task(page.wait_for_selector(_NOT_FOUND_SELECTOR, state="visible", timeout=25_000))
-    idle_task = asyncio.create_task(page.wait_for_load_state("networkidle", timeout=25_000))
-    await asyncio.wait({error_task, idle_task}, return_when=asyncio.FIRST_COMPLETED)
-    for t in (error_task, idle_task):
+    error_task = asyncio.create_task(
+        page.wait_for_selector(_NOT_FOUND_SELECTOR, state="visible", timeout=_READY_TIMEOUT_MS)
+    )
+    ready_task = asyncio.create_task(page.wait_for_selector(_READY_SELECTOR, timeout=_READY_TIMEOUT_MS))
+    await asyncio.wait({error_task, ready_task}, return_when=asyncio.FIRST_COMPLETED)
+    for t in (error_task, ready_task):
         if not t.done():
             t.cancel()
-            try:
-                await t
-            except (Exception, asyncio.CancelledError):
-                pass
+        try:
+            await t
+        except (Exception, asyncio.CancelledError):
+            pass
     if await page.locator(_NOT_FOUND_SELECTOR).first.is_visible():
         raise PageNotFoundError(_NOT_FOUND_MESSAGE)
 
@@ -628,9 +668,6 @@ async def scrape(url: str, *, track_index: int = 1, track_title: str = "", debug
             if not navigated:
                 print("[warn] Could not find/click 'View Credits'. Saving debug files.")
                 debug = True
-
-        # Wait for the new page/modal to settle.
-        await page.wait_for_load_state("networkidle", timeout=15_000)
 
         # For /song/ pages only use the CSS-selector strategy — the page body
         # contains lyrics and navigation that Strategy 1 would misparse as credits.
