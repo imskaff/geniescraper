@@ -5,7 +5,7 @@ import { createRouter } from "../../src/background/router";
 import type { GetJson } from "../../src/lookups/itunes";
 import type { AlbumInfo } from "../../src/shared/messages";
 import { memoryStore } from "../ui/fakes";
-import { ALBUM_INFO, ALBUM_URL, FAST_CLIENT, fakeBrowser } from "./fakePorts";
+import { ALBUM_INFO, ALBUM_URL, FAST_CLIENT, PAGE_SCRAPE, SONG_URL, fakeBrowser } from "./fakePorts";
 
 const GOOD = "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/100x100bb.jpg";
 const GOOD_PNG = "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/1000x1000bb.png";
@@ -90,7 +90,7 @@ describe("the album cover on detect", () => {
     expect(order).toEqual(["lookup-started", "page-read"]);
   });
 
-  it("does not look anything up when the page read fails", async () => {
+  it("does not search for a cover when the page read fails", async () => {
     const browser = fakeBrowser({
       answer: () => Promise.resolve({ ok: false, error: { code: "not-found", message: "x" } }),
     });
@@ -101,6 +101,48 @@ describe("the album cover on detect", () => {
       search: (t) => (searches.push(t), Promise.resolve("")),
     });
     expect(await route({ type: "detect", url: ALBUM_URL })).toMatchObject({ ok: false, error: { code: "not-found" } });
+    expect(searches).toEqual([]);
+  });
+
+  it("returns a failed read at once, without waiting for the lookup", async () => {
+    const browser = fakeBrowser({
+      answer: () => Promise.resolve({ ok: false, error: { code: "not-found", message: "x" } }),
+    });
+    const paste = new PasteService(browser.ports, { settings: memoryStore(), session: memoryStore() });
+    const route = createRouter(browser.ports, FAST_CLIENT, paste, {
+      exact: () => new Promise<string>(() => undefined),
+      search: () => Promise.resolve(""),
+    });
+    await expect(route({ type: "detect", url: ALBUM_URL })).resolves.toMatchObject({ ok: false });
+  });
+});
+
+describe("the cover of a scraped track", () => {
+  const track = (pageCover: string) => {
+    const browser = fakeBrowser({
+      answer: () => Promise.resolve({ ok: true, data: { ...PAGE_SCRAPE, coverArtUrl: pageCover } }),
+    });
+    const paste = new PasteService(browser.ports, { settings: memoryStore(), session: memoryStore() });
+    const searches: string[] = [];
+    const route = createRouter(browser.ports, FAST_CLIENT, paste, {
+      exact: () => Promise.resolve(""),
+      search: (title, artist) => (
+        searches.push(`${artist} / ${title}`),
+        Promise.resolve("https://searched/1000x1000bb.png")
+      ),
+    });
+    return { searches, run: () => route({ type: "scrape-track", url: SONG_URL, trackTitle: "Fortnight" }) };
+  };
+
+  it("is searched by the track's title when the song page showed no cover", async () => {
+    const { searches, run } = track("");
+    expect(await run()).toMatchObject({ ok: true, data: { coverArtUrl: "https://searched/1000x1000bb.png" } });
+    expect(searches).toEqual(["Taylor Swift / Fortnight"]);
+  });
+
+  it("keeps the song page's cover and searches nothing when there is one", async () => {
+    const { searches, run } = track("https://page/c.png");
+    expect(await run()).toMatchObject({ ok: true, data: { coverArtUrl: "https://page/c.png" } });
     expect(searches).toEqual([]);
   });
 });

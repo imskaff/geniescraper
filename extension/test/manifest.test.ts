@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { LOOKUP_HOSTS } from "../src/lookups/http";
 
 const ROOT = join(import.meta.dirname, "..");
 
@@ -78,6 +79,11 @@ describe("manifest", () => {
     for (const pattern of patterns) {
       expect(pattern).toMatch(/^https:\/\/[a-z.]+\/\*$/);
     }
+  });
+
+  it("grants every host a lookup may contact, required or optional", () => {
+    const granted = [...(manifest.host_permissions ?? []), ...(manifest.optional_host_permissions ?? [])];
+    for (const host of LOOKUP_HOSTS) expect(granted, host).toContain(`https://${host}/*`);
   });
 
   it("does not request the tabs permission", () => {

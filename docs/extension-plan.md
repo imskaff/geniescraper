@@ -267,7 +267,7 @@ Playwright forces pages to report `visibilityState: "visible"` and focus, so it 
 - Looking at the light scheme found that checked boxes were yellow on white; they now use the darker link color.
   The focus ring is clearly visible around the yellow primary button in a screenshot.
 - "New link" now clears the previous link instead of leaving it in the box.
-- Still open: a visible tab flash and history entry per scrape, the popup fallback for Safari, a CDP side panel width narrower than 320 px (not measured), and settings for the YouTube link and cover art, which have no data to act on until the lookups arrive (slices 7 and 8).
+- Still open: a visible tab flash and history entry per scrape, the popup fallback for Safari, a CDP side panel width narrower than 320 px (not measured), and the YouTube link setting, which has no data to act on until the lookup arrives (slice 8).
 
 ## 13. Slice 6 decisions: the Genius fill
 

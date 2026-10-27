@@ -41,10 +41,17 @@ export function createRouter(
           // The lookup runs while the page is read, as in the desktop app, so it adds no waiting.
           const exact = covers.exact(raw.url).catch(() => "");
           const result = await detectAlbum(ports, raw.url, raw.tabId, timing);
-          const found = await exact;
-          return result.ok ? { ok: true, data: await withCover(result.data, found, covers) } : result;
+          // A failed read must not wait on the lookup: it would hold the queue for as long as iTunes takes.
+          if (!result.ok) return result;
+          return { ok: true, data: await withCover(result.data, await exact, covers) };
         }
-        return await scrapeTrack(ports, raw.url, raw.trackTitle, timing);
+        const result = await scrapeTrack(ports, raw.url, raw.trackTitle, timing);
+        if (!result.ok || result.data.coverArtUrl) return result;
+        // As in the desktop app, a track with no cover of its own is searched by its title, which finds a cover
+        // when the album's lookup missed and the song page showed none.
+        const title = raw.trackTitle || result.data.title;
+        const found = title && result.data.artist ? await covers.search(title, result.data.artist).catch(() => "") : "";
+        return { ok: true, data: { ...result.data, coverArtUrl: found } };
       } finally {
         stopKeepAlive();
       }
