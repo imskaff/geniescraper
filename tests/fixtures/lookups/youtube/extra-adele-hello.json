@@ -1,0 +1,1999 @@
+{
+ "title": "Hello",
+ "artist": "Adele",
+ "searches": {
+  "\"Hello\" \"Adele - Topic\"": {
+   "contents": {
+    "twoColumnSearchResultsRenderer": {
+     "primaryContents": {
+      "sectionListRenderer": {
+       "contents": [
+        {
+         "itemSectionRenderer": {
+          "contents": [
+           {
+            "videoRenderer": {
+             "videoId": "T1tl66trXTQ",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele - Topic"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "4:56"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "2015 XL Recordings Ltd Released on: 2015-11-20 #Adele #Adele25."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "YQHsXMglC9A",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Official Music Video)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "6:07"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Listen to \"Easy On Me\" here: http://Adele.lnk.to/EOM Pre-order Adele's new album \"30\" before its release on November 19: ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "8fIUkINS1uo",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Lyrics)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Rare Vibes"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:50"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Adele - Hello (Lyrics) Turn on notifications to stay updated with new uploads! Adele https://myspace.com/adelelondon​​ ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "-yL7VP4-kP4",
+             "title": {
+              "runs": [
+               {
+                "text": "Jimmy Fallon, Adele & The Roots Sing \"Hello\" (w/Classroom Instruments)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "The Tonight Show Starring Jimmy Fallon and Jimmy Fallon"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "3:20"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Adele joins Jimmy and The Roots in the Tonight Show Music Room to perform \"Hello\" with classroom instruments. Instrument list ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "60gOJYc93J8",
+             "title": {
+              "runs": [
+               {
+                "text": "Hello"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Beyoncé"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:17"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Provided to YouTube by Music World Music/Columbia Hello · Beyoncé I AM...SASHA FIERCE ℗ 2008 Sony Music Entertainment ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "tQw1_sX9ipc",
+             "title": {
+              "runs": [
+               {
+                "text": "Don't You Remember"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:04"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Provided to YouTube by Beggars Group Digital Ltd. Don't You Remember · Adele 21 ℗ 2010 XL Recordings Ltd Released on: ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "dJg4_rL9h7Q",
+             "title": {
+              "runs": [
+               {
+                "text": "One And Only"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "5:49"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Provided to YouTube by Beggars Group Digital Ltd. One And Only · Adele 21 ℗ 2011 XL Recordings Ltd Released on: ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "DfG6VKnjrVw",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Live at the NRJ Awards)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "5:08"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Listen to \"Easy On Me\" here: http://Adele.lnk.to/EOM Pre-order Adele's new album \"30\" before its release on November 19: ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "doWWkG2gPPE",
+             "title": {
+              "runs": [
+               {
+                "text": "Hello - Adele (Karaoke Songs With Lyrics - Original Key)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Musisi Karaoke"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:54"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Hello Adele Karaoke Songs With Lyrics in Original Key Karaoke Version Hello Karaoke Instrumental Hello Adele has been ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "TvijgPEe9YU",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (HQ FLAC)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Music Flac"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "4:56"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Download link in the comment What is the difference between Mp3 and Flac format : Mp3 -The advantages of MP3 1."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           }
+          ]
+         }
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  "\"Adele\" \"Hello\"": {
+   "contents": {
+    "twoColumnSearchResultsRenderer": {
+     "primaryContents": {
+      "sectionListRenderer": {
+       "contents": [
+        {
+         "itemSectionRenderer": {
+          "contents": [
+           {
+            "videoRenderer": {
+             "videoId": "YQHsXMglC9A",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Official Music Video)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "6:07"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Listen to \"Easy On Me\" here: http://Adele.lnk.to/EOM Pre-order Adele's new album \"30\" before its release on November 19: ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "8fIUkINS1uo",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Lyrics)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Rare Vibes"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:50"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Adele - Hello (Lyrics) Turn on notifications to stay updated with new uploads! Adele https://myspace.com/adelelondon​​ ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "T1tl66trXTQ",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele - Topic"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "4:56"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "2015 XL Recordings Ltd Released on: 2015-11-20 #Adele #Adele25."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "DfG6VKnjrVw",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Live at the NRJ Awards)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "5:08"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Listen to \"Easy On Me\" here: http://Adele.lnk.to/EOM Pre-order Adele's new album \"30\" before its release on November 19: ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "rI1ZAIFHD20",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - hello (live - in munich) (simulated DVD)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele fasbrasil"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "6:28"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "This is a simulated DVD of Adele performing “Hello” in Munich. Please note that the audio after the chorus has been enhanced ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "doWWkG2gPPE",
+             "title": {
+              "runs": [
+               {
+                "text": "Hello - Adele (Karaoke Songs With Lyrics - Original Key)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Musisi Karaoke"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:54"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Hello Adele Karaoke Songs With Lyrics in Original Key Karaoke Version Hello Karaoke Instrumental Hello Adele has been ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "-yL7VP4-kP4",
+             "title": {
+              "runs": [
+               {
+                "text": "Jimmy Fallon, Adele & The Roots Sing \"Hello\" (w/Classroom Instruments)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "The Tonight Show Starring Jimmy Fallon and Jimmy Fallon"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "3:20"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Adele joins Jimmy and The Roots in the Tonight Show Music Room to perform \"Hello\" with classroom instruments. Instrument list ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "zfEV8Z3tnkw",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Live - Munich Messe)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele in Munich"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "2:18"
+             }
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "xFMbKIGp6Lg",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello & Hans Zimmer - Time (Original and Cyberdesign Remix) 3rd version [An EdgE Mashup]"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "TheEdgEmiX"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "9:09"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "So...My mashup of Zimmer and Adele is by far, the most popular of all my mashups. I get so many positive comments from all over ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "os223N4rU80",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Tradução/Legendado) (Live An Audience With Adele)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "M.T.V Traduções"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "4:57"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "MINHAS OUTRAS CONTAS: • INSTAGRAM: @musicas.top.vib • TIKTOK: musicas.top.vib • ENTRE NO CANAL PRA CURTIR ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           }
+          ]
+         }
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  "Adele Hello": {
+   "contents": {
+    "twoColumnSearchResultsRenderer": {
+     "primaryContents": {
+      "sectionListRenderer": {
+       "contents": [
+        {
+         "itemSectionRenderer": {
+          "contents": [
+           {
+            "videoRenderer": {
+             "videoId": "YQHsXMglC9A",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Official Music Video)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "6:07"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Listen to \"Easy On Me\" here: http://Adele.lnk.to/EOM Pre-order Adele's new album \"30\" before its release on November 19: ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "8fIUkINS1uo",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Lyrics)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Rare Vibes"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:50"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Adele - Hello (Lyrics) Turn on notifications to stay updated with new uploads! Adele https://myspace.com/adelelondon​​ ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "T1tl66trXTQ",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele - Topic"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "4:56"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "2015 XL Recordings Ltd Released on: 2015-11-20 #Adele #Adele25."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "DfG6VKnjrVw",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Live at the NRJ Awards)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "5:08"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Listen to \"Easy On Me\" here: http://Adele.lnk.to/EOM Pre-order Adele's new album \"30\" before its release on November 19: ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "rI1ZAIFHD20",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - hello (live - in munich) (simulated DVD)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele fasbrasil"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "6:28"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "This is a simulated DVD of Adele performing “Hello” in Munich. Please note that the audio after the chorus has been enhanced ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "xFMbKIGp6Lg",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello & Hans Zimmer - Time (Original and Cyberdesign Remix) 3rd version [An EdgE Mashup]"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "TheEdgEmiX"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "9:09"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "So...My mashup of Zimmer and Adele is by far, the most popular of all my mashups. I get so many positive comments from all over ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "zfEV8Z3tnkw",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Live - Munich Messe)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele in Munich"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "2:18"
+             }
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "-yL7VP4-kP4",
+             "title": {
+              "runs": [
+               {
+                "text": "Jimmy Fallon, Adele & The Roots Sing \"Hello\" (w/Classroom Instruments)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "The Tonight Show Starring Jimmy Fallon and Jimmy Fallon"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "3:20"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Adele joins Jimmy and The Roots in the Tonight Show Music Room to perform \"Hello\" with classroom instruments. Instrument list ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "doWWkG2gPPE",
+             "title": {
+              "runs": [
+               {
+                "text": "Hello - Adele (Karaoke Songs With Lyrics - Original Key)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Musisi Karaoke"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:54"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Hello Adele Karaoke Songs With Lyrics in Original Key Karaoke Version Hello Karaoke Instrumental Hello Adele has been ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "UWPf7buYKnA",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Lyrics) \"hello from the other side\""
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Luxury Music - Official"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:55"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Hello by Adele (Lyrics) Follow Adele: Facebook - https://www.facebook.com/Adele​ Twitter - https://twitter.com/Adele​ ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           }
+          ]
+         }
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  "\"Adele\" \"Hello\" official music video": {
+   "contents": {
+    "twoColumnSearchResultsRenderer": {
+     "primaryContents": {
+      "sectionListRenderer": {
+       "contents": [
+        {
+         "itemSectionRenderer": {
+          "contents": [
+           {
+            "videoRenderer": {
+             "videoId": "YQHsXMglC9A",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Official Music Video)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "6:07"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Listen to \"Easy On Me\" here: http://Adele.lnk.to/EOM Pre-order Adele's new album \"30\" before its release on November 19: ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "8fIUkINS1uo",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Lyrics)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Rare Vibes"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:50"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Adele - Hello (Lyrics) Turn on notifications to stay updated with new uploads! Adele https://myspace.com/adelelondon​​ ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "DfG6VKnjrVw",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Live at the NRJ Awards)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "5:08"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Listen to \"Easy On Me\" here: http://Adele.lnk.to/EOM Pre-order Adele's new album \"30\" before its release on November 19: ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "t071Wm45qWM",
+             "title": {
+              "runs": [
+               {
+                "text": "Conkarah & Rosie Delmah - Hello (Reggae Cover) [Official Video]"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Ultra Records"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:23"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Conkarah & Rosie Delmah - Hello (Reggae Cover) Available Now! https://smarturl.it/ConkarahRosieHello Listen to more songs ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "hLQl3WQQoQ0",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Someone Like You (Official Music Video)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:45"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Listen to \"Easy On Me\" here: http://Adele.lnk.to/EOM Pre-order Adele's new album \"30\" before its release on November 19: ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "T1tl66trXTQ",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele - Topic"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "4:56"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "2015 XL Recordings Ltd Released on: 2015-11-20 #Adele #Adele25."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "rI1ZAIFHD20",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - hello (live - in munich) (simulated DVD)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele fasbrasil"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "6:28"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "This is a simulated DVD of Adele performing “Hello” in Munich. Please note that the audio after the chorus has been enhanced ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "-yL7VP4-kP4",
+             "title": {
+              "runs": [
+               {
+                "text": "Jimmy Fallon, Adele & The Roots Sing \"Hello\" (w/Classroom Instruments)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "The Tonight Show Starring Jimmy Fallon and Jimmy Fallon"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "3:20"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Adele joins Jimmy and The Roots in the Tonight Show Music Room to perform \"Hello\" with classroom instruments. Instrument list ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "zfEV8Z3tnkw",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Live - Munich Messe)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele in Munich"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "2:18"
+             }
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "-n9pTdz8HQQ",
+             "title": {
+              "runs": [
+               {
+                "text": "Rosie Delmah & Conkarah - Hello (Official Music Video)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Rosie Delmah"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:14"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Official Music Video by Rosie Delmah & Conkarah performing Hello (Cover) by Adele Enjoy more from Rosie Delmah ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           }
+          ]
+         }
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  "Adele Hello official music video": {
+   "contents": {
+    "twoColumnSearchResultsRenderer": {
+     "primaryContents": {
+      "sectionListRenderer": {
+       "contents": [
+        {
+         "itemSectionRenderer": {
+          "contents": [
+           {
+            "videoRenderer": {
+             "videoId": "YQHsXMglC9A",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Official Music Video)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "6:07"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Listen to \"Easy On Me\" here: http://Adele.lnk.to/EOM Pre-order Adele's new album \"30\" before its release on November 19: ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "8fIUkINS1uo",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Lyrics)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Rare Vibes"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:50"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Adele - Hello (Lyrics) Turn on notifications to stay updated with new uploads! Adele https://myspace.com/adelelondon​​ ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "DfG6VKnjrVw",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Live at the NRJ Awards)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "5:08"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Listen to \"Easy On Me\" here: http://Adele.lnk.to/EOM Pre-order Adele's new album \"30\" before its release on November 19: ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "t071Wm45qWM",
+             "title": {
+              "runs": [
+               {
+                "text": "Conkarah & Rosie Delmah - Hello (Reggae Cover) [Official Video]"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Ultra Records"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:23"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Conkarah & Rosie Delmah - Hello (Reggae Cover) Available Now! https://smarturl.it/ConkarahRosieHello Listen to more songs ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "T1tl66trXTQ",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele - Topic"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "4:56"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "2015 XL Recordings Ltd Released on: 2015-11-20 #Adele #Adele25."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "rI1ZAIFHD20",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - hello (live - in munich) (simulated DVD)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele fasbrasil"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "6:28"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "This is a simulated DVD of Adele performing “Hello” in Munich. Please note that the audio after the chorus has been enhanced ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "-yL7VP4-kP4",
+             "title": {
+              "runs": [
+               {
+                "text": "Jimmy Fallon, Adele & The Roots Sing \"Hello\" (w/Classroom Instruments)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "The Tonight Show Starring Jimmy Fallon and Jimmy Fallon"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "3:20"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Adele joins Jimmy and The Roots in the Tonight Show Music Room to perform \"Hello\" with classroom instruments. Instrument list ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "UWPf7buYKnA",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Lyrics) \"hello from the other side\""
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Luxury Music - Official"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:55"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Hello by Adele (Lyrics) Follow Adele: Facebook - https://www.facebook.com/Adele​ Twitter - https://twitter.com/Adele​ ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "hLQl3WQQoQ0",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Someone Like You (Official Music Video)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele"
+               }
+              ]
+             },
+             "ownerBadges": [
+              {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"
+               }
+              }
+             ],
+             "lengthText": {
+              "simpleText": "4:45"
+             },
+             "detailedMetadataSnippets": [
+              {
+               "snippetText": {
+                "runs": [
+                 {
+                  "text": "Listen to \"Easy On Me\" here: http://Adele.lnk.to/EOM Pre-order Adele's new album \"30\" before its release on November 19: ..."
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           {
+            "videoRenderer": {
+             "videoId": "zfEV8Z3tnkw",
+             "title": {
+              "runs": [
+               {
+                "text": "Adele - Hello (Live - Munich Messe)"
+               }
+              ]
+             },
+             "ownerText": {
+              "runs": [
+               {
+                "text": "Adele in Munich"
+               }
+              ]
+             },
+             "lengthText": {
+              "simpleText": "2:18"
+             }
+            }
+           }
+          ]
+         }
+        }
+       ]
+      }
+     }
+    }
+   }
+  }
+ },
+ "watch": {
+  "T1tl66trXTQ": {
+   "videoDetails": {
+    "videoId": "T1tl66trXTQ",
+    "title": "Adele - Hello",
+    "author": "Adele - Topic",
+    "lengthSeconds": "296",
+    "shortDescription": "℗ 2015 XL Recordings Ltd\n\nReleased on: 2015-11-20\n\n#Adele #Adele25"
+   }
+  },
+  "YQHsXMglC9A": {
+   "videoDetails": {
+    "videoId": "YQHsXMglC9A",
+    "title": "Adele - Hello (Official Music Video)",
+    "author": "Adele",
+    "lengthSeconds": "367",
+    "shortDescription": "Listen to \"Easy On Me\" here: http://Adele.lnk.to/EOM\nPre-order Adele's new album \"30\" before its release on November 19:  https://www.adele.com\nShop the \"Adele\" collection here: http://shop.adele.com\n\n‘Hello' is taken from the new album, 25, out November 20. http://adele.com\nAvailable now from iTunes http://smarturl.it/itunes25 \nAvailable now from Amazon http://smarturl.it/25amazon \nAvailable now from Google Play http://smarturl.it/25gplay\nAvailable now at Target (US Only): http://smarturl.it/target25\n\nDirected by Xavier Dolan, @XDolan\n\nFollow Adele on:\n\nFacebook - https://www.facebook.com/Adele\nTwitter - https://twitter.com/Adele \nInstagram - http://instagram.com/Adele\n\nhttp://vevo.ly/jzAuJ1\n\nCommissioner: Phil Lee\nProduction Company: Believe Media/Sons of Manual/Metafilms\nDirector: Xavier Dolan\nExecutive Producer: Jannie McInnes\nProducer: Nancy Grant/Xavier Dolan\nCinematographer:  André Turpin\nProduction design : Colombe Raby\nEditor: Xavier Dolan\nAdele's lover : Tristan Wilds"
+   }
+  },
+  "8fIUkINS1uo": {
+   "videoDetails": {
+    "videoId": "8fIUkINS1uo",
+    "title": "Adele - Hello (Lyrics)",
+    "author": "Rare Vibes",
+    "lengthSeconds": "290",
+    "shortDescription": "🎵 Adele - Hello (Lyrics) \n🔔 Turn on notifications to stay updated with new uploads!\n\n\n👉 Adele\nhttps://myspace.com/adelelondon​​\nhttps://www.facebook.com/adele​​\nhttps://www.instagram.com/adele/​​\nhttps://twitter.com/Adele​​\nhttps://www.youtube.com/user/adelelon...​\nhttp://adele.com/home/​ \n\n\n🌎 Rare Vibes :\nInstagram: https://www.instagram.com/rare_vibes20/​\nTwitter: https://mobile.twitter.com/LyricsWild\n\n\n.........\n🎤 Lyrics:  - Adele - Hello\n\n\nHello, it's me\nI was wondering if after all these years you'd like to meet\nTo go over everything\nThey say that time's supposed to heal ya\nBut I ain't done much healing\nHello, can you hear me?\nI'm in California dreaming about who we used to be\nWhen we were younger and free\nI've forgotten how it felt\nBefore the world fell at our feet\n\nThere's such a difference between us\nAnd a million miles\n\nHello from the other side\nI must have called a thousand times\nTo tell you I'm sorry for everything that I've done\nBut when I call you never seem to be home\nHello from the outside\nAt least I can say that I've tried\nTo tell you I'm sorry for breaking your heart\nBut it don't matter, it clearly doesn't tear you apart\nAnymore\n\nHello, how are you?\nIt's so typical of me to talk about myself, I'm sorry\nI hope that you're well\nDid you ever make it out of that town\nWhere nothing ever happened?\n\nIt's no secret that the both of us\nAre running out of time\n\nSo hello from the other side (other side)\nI must have called a thousand times (thousand times)\nTo tell you I'm sorry for everything that I've done\nBut when I call you never seem to be home\nHello from the outside (outside)\nAt least I can say that I've tried (I've tried)\nTo tell you I'm sorry for breaking your heart\nBut it don't matter, it clearly doesn't tear you apart\nAnymore\n\n(Highs, highs, highs, highs, lows, lows, lows, lows)\nAnymore\n(Highs, highs, highs, highs, lows, lows, lows, lows)\nAnymore\n(Highs, highs, highs, highs, lows, lows, lows, lows)\nAnymore\n(Highs, highs, highs, highs, lows, lows, lows, lows)\nAnymore\n\nHello from the other side (other side)\nI must have called a thousand times (thousand times)\nTo tell you I'm sorry for everything that I've done\nBut when I call you never seem to be home\nHello from the outside (outside)\nAt least I can say that I've tried (I've tried)\nTo tell you I'm sorry for breaking your heart\nBut it don't matter, it clearly doesn't tear you apart\nAnymore\n\n\n...........\n📷 Wallpaper:  https://unsplash.com/​ \n.........\n💌 Contact / Music Submissions:  Rarevibesofficial@gmail.com \n.........\n\nI do not own these songs. I'm only remaking it to Lyrics version. \n\nhttps://youtu.be/YQHsXMglC9A\n\nDisclaimer: I don't want to earn on songs that I don't own copyright or it's not copyright-free. Owners of songs earns on their own songs on this channel. And all credits going to them.\n\n#Adele #Hello #Lyrics #RareVibes #AdeleHelloLyrics #HelloLyrics #LyricVideo\n\nTAGS :\n\nAdele , Hello Lyrics, Adele Hello, Hello Adele , Adele lyrics, lyrics Adele, Hello lyrics, lyrics Hello, Hello lyric, Hello lyric video, Hello karaoke, Adele lyrics Hello, Hello lyrics Adele, lyrics Hello Adele, Hello Adele lyrics, Adele Hello, Adele Hello lyrics, Adele Hello, Adele , pop music, Adele - Hello, Adele - Hello lyrics, pop, music"
+   }
+  },
+  "60gOJYc93J8": {
+   "videoDetails": {
+    "videoId": "60gOJYc93J8",
+    "title": "Hello",
+    "author": "Beyoncé - Topic",
+    "lengthSeconds": "257",
+    "shortDescription": "Provided to YouTube by Music World Music/Columbia\n\nHello · Beyoncé\n\nI AM...SASHA FIERCE\n\n℗ 2008 Sony Music Entertainment\n\nReleased on: 2008-11-17\n\nAssociated Performer: Beyoncé\nComposer, Lyricist: Beyoncé Knowles\nLyricist, Composer: Ramon Owen\nComposer, Lyricist: David Quinones\nComposer, Lyricist: Evan Kidd Bogart\nProducer: REO for the Soundkillers\nExecutive Producer, Producer: Beyoncé Knowles for Music World Music, LLC\nRecording Engineer: David \"DQ\" Quinones\nRecording Engineer: Jim Caruana\nMixing Engineer: Mark 'Spike' Stent\nAssistant Engineer: Matt Green\nMastering Engineer: Tom Coyne\nExecutive Producer: Mathew Knowles for Music World Music, LLC\n\nAuto-generated by YouTube."
+   }
+  },
+  "DfG6VKnjrVw": {
+   "videoDetails": {
+    "videoId": "DfG6VKnjrVw",
+    "title": "Adele - Hello (Live at the NRJ Awards)",
+    "author": "Adele",
+    "lengthSeconds": "308",
+    "shortDescription": "Listen to \"Easy On Me\" here: http://Adele.lnk.to/EOM\nPre-order Adele's new album \"30\" before its release on November 19:  https://www.adele.com\nShop the \"Adele\" collection here: http://shop.adele.com\n\n‘Hello' is taken from the new album, 25, out November 20. http://adele.com\nAvailable now from iTunes http://smarturl.it/itunes25 \nAvailable now from Amazon http://smarturl.it/25amazon \nAvailable now from Google Play http://smarturl.it/25gplay\nAvailable now at Target (US Only): http://smarturl.it/target25\n\nFollow Adele on:\n\nFacebook - https://www.facebook.com/Adele\nTwitter - https://twitter.com/Adele \nInstagram - http://instagram.com/Adele\n\nCopyright: TF1 Production\nDirector: Tristan Carné\n\nhttp://vevo.ly/sA14tV"
+   }
+  },
+  "doWWkG2gPPE": {
+   "videoDetails": {
+    "videoId": "doWWkG2gPPE",
+    "title": "Hello - Adele (Karaoke Songs With Lyrics - Original Key)",
+    "author": "Musisi Karaoke",
+    "lengthSeconds": "293",
+    "shortDescription": "Hello Adele Karaoke Songs With Lyrics in Original Key Karaoke Version\n\nHello Karaoke Instrumental\n\nHello Adele has been included in the trending list on several platforms in the world, including trending YouTube. and this is Hello karaoke version song with lyrics. sorry if it's not that great. I hope to be better in the future in making other karaoke songs. happy singing :)\n\n✔ Subscribe (Turn on Notifications🔔)\nhttps://www.youtube.com/c/MusisiKaraoke\n\n◾Connect with us\nInstagram : https://www.instagram.com/musisikaraoke\n\n🎤 Watch more Musisi Karaoke Playlist 🎉\n\n◾BEST 10 Karaoke Song's Playlist: https://youtube.com/playlist?list=PLRxQryWW8Yw1hcJrE_Aip8wJCPeSh2Ahe\n◾Newest Karaoke Playlist: https://youtube.com/playlist?list=PLRxQryWW8Yw0m5iXxA3lwWutNgHOHv9pi\n◾2000's Karaoke Playlist: https://youtube.com/playlist?list=PLRxQryWW8Yw31N9eCQ188E5KCjYgeteC-\n◾Acoustic Piano Playlist: https://youtube.com/playlist?list=PLRxQryWW8Yw2zultyabYSKLwcnHAB_Gho\n◾Lower Key Playlist: https://youtube.com/playlist?list=PLRxQryWW8Yw2gpfxaJ_-e3vTjN_5rqpDN\n◾Higher Key Playlist: https://youtube.com/playlist?list=PLRxQryWW8Yw3hZQEBRhe1-MtFrETDkjgj\n◾Popular Viewers Playlist: https://youtube.com/playlist?list=PLRxQryWW8Yw1IvHUYh-wfUcQ_TZ-xIIaC\n\nHigher Karaoke Version : https://youtu.be/r7E0a85JexA\nLower Karaoke Version :\nhttps://youtu.be/DVOlxSph_lg\n\nHello Lyrics :\n\nHello, it's me\nI was wondering if after all these years you'd like to meet\nTo go over everything\nThey say that time's supposed to heal ya\nBut I ain't done much healing\nHello, can you hear me?\nI'm in California dreaming about who we used to be\nWhen we were younger and free\nI've forgotten how it felt before the world fell at our feet\nThere's such a difference between us\nAnd a million miles\nHello from the other side\nI must've called a thousand times\nTo tell you I'm sorry for everything that I've done\nBut when I call, you never seem to be home\nHello from the outside\nAt least I can say that I've tried\nTo tell you I'm sorry for breaking your heart\nBut it don't matter, it clearly doesn't tear you apart anymore\nHello, how are you?\nIt's so typical of me to talk about myself, I'm sorry\nI hope that you're well\nDid you ever make it out of that town where nothing ever happened?\nIt's no secret that the both of us are running out of time\nSo hello from the other side (Other side)\nI must've called a thousand times (Thousand times)\nTo tell you I'm sorry for everything that I've done\nBut when I call, you never seem to be home\nHello from the outside (Outside)\nAt least I can say that I've tried (I've tried)\nTo tell you I'm sorry for breaking your heart\nBut it don't matter, it clearly doesn't tear you apart anymore\nOoh-ooh, anymore\nOoh-ooh-ooh, anymore\nOoh-ooh, anymore\nAnymore\nHello from the other side (Other side)\nI must've called a thousand times (Thousand times)\nTo tell you I'm sorry for everything that I've done\nBut when I call, you never seem to be home\nHello from the outside (Outside)\nAt least I can say that I've tried (I've tried)\nTo tell you I'm sorry for breaking your heart\nBut it don't matter, it clearly doesn't tear you apart anymore\n\n#KaraokeSongsWithLyrics\n#KaraokeLyricsSongs\n#Hello\n#Adele\n#MusisiKaraoke"
+   }
+  },
+  "rI1ZAIFHD20": {
+   "videoDetails": {
+    "videoId": "rI1ZAIFHD20",
+    "title": "Adele - hello (live - in munich) (simulated DVD)",
+    "author": "Adele fasbrasil",
+    "lengthSeconds": "388",
+    "shortDescription": "This is a simulated DVD of Adele performing “Hello” in Munich. Please note that the audio after the chorus has been enhanced using AI. I hope you enjoy watching this Adele spectacle.\n\n\nEste é um DVD simulado de Adele interpretando a música Hello em Munique. Vale lembrar que o áudio após o refrão foi aprimorado com o uso de inteligência artificial. Espero que todos se divirtam assistindo a esse espetáculo.\n\n\nSocial media:\nTikTok: @Adele.fasbrasil\nInstagram: @Adele.fasbrasil"
+   }
+  },
+  "zfEV8Z3tnkw": {
+   "videoDetails": {
+    "videoId": "zfEV8Z3tnkw",
+    "title": "Adele - Hello (Live - Munich Messe)",
+    "author": "Adele in Munich",
+    "lengthSeconds": "138",
+    "shortDescription": ""
+   }
+  },
+  "UWPf7buYKnA": {
+   "videoDetails": {
+    "videoId": "UWPf7buYKnA",
+    "title": "Adele - Hello (Lyrics) \"hello from the other side\"",
+    "author": "Luxury Music - Official",
+    "lengthSeconds": "294",
+    "shortDescription": "Hello by Adele (Lyrics)\n\n😇 Follow Adele:\nFacebook - https://www.facebook.com/Adele​\nTwitter - https://twitter.com/Adele​ \nInstagram - http://instagram.com/Adele​\n\n🎵Please Let us know if the video is to be removed. it'll be removed within 8 hours.\nEmail : Luxurymusichari@gmail.com\n\nCopyright Inquiry: luxurymusichari@gmail.com\n\n😀 Luxury Music:\nSubscribe Us:http://www.youtube.com/c/LuxuryMusicOfficial\nFollow On Spotify: https://open.spotify.com/user/31l73hsxg5nw4zqkjaj7iypsbxdy?si=ExvQZVPoSEWlpmpLyFCEog\nHelp Us Reach 75K subscribers! :)\n\n🎵 Adele - Hello (Lyrics) :\n[Verse 1]\nHello, it's me\nI was wondering if after all these years you'd like to meet\nTo go over everything\nThey say that time's supposed to heal ya, but I ain't done much healing\nHello, can you hear me?\nI'm in California dreaming about who we used to be\nWhen we were younger and free\nI've forgotten how it felt before the world fell at our feet\n\n[Pre-Chorus]\nThere's such a difference between us\nAnd a million miles\n\n[Chorus]\nHello from the other side\nI must've called a thousand times\nTo tell you I'm sorry for everything that I've done\nBut when I call, you never seem to be home\nHello from the outside\nAt least, I can say that I've tried\nTo tell you I'm sorry for breaking your heart\nBut it don't matter, it clearly doesn't tear you apart anymore\n\n[Verse 2]\nHello, how are you?\nIt's so typical of me to talk about myself, I'm sorry\nI hope that you're well\nDid you ever make it out of that town where nothing ever happened?\n\n[Pre-Chorus]\nIt's no secret that the both of us\nAre running out of time\n\n[Chorus]\nSo hello from the other side (Other side)\nI must've called a thousand times (Thousand times)\nTo tell you I'm sorry for everything that I've done\nBut when I call, you never seem to be home\nHello from the outside (outside)\nAt least, I can say that I've tried (I've tried)\nTo tell you I'm sorry for breaking your heart\nBut it don't matter, it clearly doesn't tear you apart anymore\n\n[Bridge]\n(Highs, highs, highs, highs, lows, lows, lows, lows)\nOoh, anymore\n(Highs, highs, highs, highs, lows, lows, lows, lows)\nOoh, anymore\n(Highs, highs, highs, highs, lows, lows, lows, lows)\nOoh, anymore\n(Highs, highs, highs, highs, lows, lows, lows, lows)\nAnymore\n\n#Adele #Hello #Lyrics"
+   }
+  },
+  "t071Wm45qWM": {
+   "videoDetails": {
+    "videoId": "t071Wm45qWM",
+    "title": "Conkarah & Rosie Delmah - Hello (Reggae Cover) [Official Video]",
+    "author": "Ultra Records",
+    "lengthSeconds": "262",
+    "shortDescription": "Conkarah & Rosie Delmah - Hello (Reggae Cover) Available Now!\nhttps://smarturl.it/ConkarahRosieHello\nListen to more songs like this on our \"Dance All Day\" Spotify playlist! https://smarturl.it/DanceAllDay\n\nSubscribe to Ultra Music  - https://www.youtube.com/subscription_center?add_user=ultrarecords\n\nFollow Us:\nhttps://www.ultramusic.com\nhttps://www.twitter.com/ultrarecords\nhttps://www.facebook.com/ultramusic\nhttps://www.youtube.com/ultratv\nhttps://merch.ultramusic.com\nhttps://instagram.com/ultrarecords\nhttps://soundcloud.com/ultrarecords\nhttps://open.spotify.com/user/ultramusicofficial\n\nUltra Music is an American independent electronic music record label based in New York City. Ultra's current roster includes Benny Benassi, Steve Aoki, Kygo, OMI, Deorro, The Bloody Beetroots, Lil Jon, Above & Beyond, Hot Since 82, Paul van Dyk, Faul, Chris Lake, Klingande, Bakermat, Carnage, Mr Probz, Flosstradamus, Hardwell, Henry Krinkle, Chris Malinchak, Storm Queen, Congorock, Adrian Lux, Axwell, and others. Ultra has featured releases from the aforementioned artists and many others including Tiësto, Avicii, Paul Oakenfold, The Crystal Method, Sasha & John Digweed, and others."
+   }
+  },
+  "-n9pTdz8HQQ": {
+   "videoDetails": {
+    "videoId": "-n9pTdz8HQQ",
+    "title": "Rosie Delmah & Conkarah - Hello (Official Music Video)",
+    "author": "Rosie Delmah",
+    "lengthSeconds": "253",
+    "shortDescription": "Official Music Video by Rosie Delmah & Conkarah performing Hello (Cover) by Adele\n\n🌴 Enjoy more from Rosie Delmah  🎵https://youtube.com/playlist?list=PL4qZaHivBIIQ5daaAYD6CKgyjzLrS825a&feature=shared\n\n🛎 Subscribe for the latest:https://www.youtube.com/@RosieDelmahMusic\n\n📲 Connect and follow Rosie Delmah  ⬇️\nhttps://www.instagram.com/rosiedelmah/\nhttps://www.facebook.com/rosie.delmah/\nhttps://soundcloud.com/rosiedelmah-music\nhttps://music.apple.com/nz/artist/rosie-delmah/1077968895\nhttps://twitter.com/RosieDelmah\n\nFilmed by Torn Parachute \nhttps://www.facebook.com/tornparachute\n\nProduced by Baka Solomon\nhttps://www.youtube.com/channel/UCtKgOrkJiP-gjMoSXNRFJtg\nhttps://www.facebook.com/bakasolomonmusik\n\n#rosiedelmah #solomonislandsreggae #solomonislandsmusic #conkarah"
+   }
+  }
+ }
+}

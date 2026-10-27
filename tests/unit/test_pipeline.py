@@ -31,6 +31,9 @@ def lookups(monkeypatch):
     async def itunes_cover(title, artist):
         return state["itunes"]
 
+    async def itunes_lookup_cover(url):
+        return ""
+
     async def youtube_url(title, artist):
         return "https://www.youtube.com/watch?v=x", False
 
@@ -38,6 +41,7 @@ def lookups(monkeypatch):
     monkeypatch.setattr(pipeline.apple_music, "scrape", scrape)
     monkeypatch.setattr(pipeline.deezer, "fetch_cover_url", deezer_cover)
     monkeypatch.setattr(pipeline.deezer, "fetch_itunes_cover_url", itunes_cover)
+    monkeypatch.setattr(pipeline.deezer, "fetch_itunes_lookup_cover_url", itunes_lookup_cover)
     monkeypatch.setattr(pipeline.youtube, "fetch_youtube_url", youtube_url)
     return state
 
@@ -48,8 +52,11 @@ async def test_fetch_track_prefers_exact_apple_cover_over_title_search(lookups):
     assert song.cover_art_url == APPLE
 
 
-async def test_fetch_track_falls_back_to_search_without_apple_cover(lookups):
+async def test_fetch_track_falls_back_to_itunes_then_deezer_without_apple_cover(lookups):
     lookups["apple"] = ""
+    song = await pipeline.fetch_track(URL, 6, "good 4 u", "Olivia Rodrigo")
+    assert song.cover_art_url == WRONG_EDITION  # iTunes is the same catalog as Apple Music, so it goes first
+    lookups["itunes"] = ""
     song = await pipeline.fetch_track(URL, 6, "good 4 u", "Olivia Rodrigo")
     assert song.cover_art_url == DEEZER
 
@@ -59,7 +66,10 @@ async def test_detect_prefers_exact_apple_cover(lookups):
     assert info.cover_art_url == APPLE
 
 
-async def test_detect_falls_back_to_search_without_apple_cover(lookups):
+async def test_detect_falls_back_to_itunes_then_deezer_without_apple_cover(lookups):
     lookups["apple"] = ""
+    info = await pipeline.detect(URL)
+    assert info.cover_art_url == WRONG_EDITION
+    lookups["itunes"] = ""
     info = await pipeline.detect(URL)
     assert info.cover_art_url == DEEZER

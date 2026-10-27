@@ -1,0 +1,182 @@
+{
+ "title": "Fortnight (feat. Post Malone)",
+ "artist": "Taylor Swift",
+ "url": "https://music.apple.com/us/album/the-tortured-poets-department/1736268215",
+ "deezer": {
+  "Taylor Swift Fortnight (feat. Post Malone)": {
+   "data": [
+    {
+     "title": "Fortnight",
+     "artist": {
+      "name": "Taylor Swift"
+     },
+     "album": {
+      "title": "THE TORTURED POETS DEPARTMENT",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/73bee9f48378d4c95139e693fd997569/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Fortnight (Acoustic Version)",
+     "artist": {
+      "name": "Taylor Swift"
+     },
+     "album": {
+      "title": "Fortnight (Acoustic Version)",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6ad6f3b6426e62f847e12124a3455ce9/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Fortnight (BLOND:ISH Remix)",
+     "artist": {
+      "name": "Taylor Swift"
+     },
+     "album": {
+      "title": "Fortnight (BLOND:ISH Remix)",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/af340e86057eac503c24c740ef574154/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Fortnight (Piano rendition of Taylor Swift, Post Malone)",
+     "artist": {
+      "name": "The Lullabeats"
+     },
+     "album": {
+      "title": "2020's Pop Lullabies for Babies",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d3b97d84c6e909cfccd7f9624190e636/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Fortnight (Cults Remix)",
+     "artist": {
+      "name": "Taylor Swift"
+     },
+     "album": {
+      "title": "Fortnight (Acoustic Version)",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6ad6f3b6426e62f847e12124a3455ce9/1000x1000-000000-80-0-0.jpg"
+     }
+    },
+    {
+     "title": "Fortnight (Feat. Post Malone) (By Taylor Swift) (Melody Karaoke Version)",
+     "artist": {
+      "name": "ZZang KARAOKE"
+     },
+     "album": {
+      "title": "ZZang KARAOKE 2024 POP Vol.134",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ba43f86fa4b3694e1152463ea6f9aff1/1000x1000-000000-80-0-0.jpg"
+     }
+    }
+   ]
+  }
+ },
+ "itunes_search": {
+  "Taylor Swift Fortnight (feat. Post Malone)": {
+   "resultCount": 9,
+   "results": [
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Taylor Swift",
+     "collectionName": "THE TORTURED POETS DEPARTMENT",
+     "trackName": "Fortnight (feat. Post Malone)",
+     "collectionId": 1736268193,
+     "trackId": 1736268194,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/a8/45/fd/a845fd82-d5c1-bffe-806a-ed0700b1c589/24UMGIM29563.rgb.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Taylor Swift",
+     "collectionName": "THE TORTURED POETS DEPARTMENT: THE ANTHOLOGY",
+     "trackName": "Fortnight (feat. Post Malone)",
+     "collectionId": 1742073690,
+     "trackId": 1742074018,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/a3/8a/8d/a38a8de5-ae11-154c-dca5-221e6549caee/24UMGIM44778.rgb.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Taylor Swift",
+     "collectionName": "THE TORTURED POETS DEPARTMENT",
+     "trackName": "Fortnight (feat. Post Malone)",
+     "collectionId": 1736268215,
+     "trackId": 1736268216,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/7d/61/6b7d61e4-e6f1-83bc-d645-463aa06b33c4/24UMGIM29563.rgb.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Taylor Swift",
+     "collectionName": "THE TORTURED POETS DEPARTMENT: THE ANTHOLOGY",
+     "trackName": "Fortnight (feat. Post Malone)",
+     "collectionId": 1742057774,
+     "trackId": 1742057775,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/a4/86/59/a486593a-53c9-1c2a-5122-8f25339f7359/24UMGIM44778.rgb.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Vitamin String Quartet",
+     "collectionName": "VSQ Performs the Hits Of 2024",
+     "trackName": "Fortnight",
+     "collectionId": 1757890025,
+     "trackId": 1757890034,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/c5/63/57/c5635747-b6c7-0411-e458-660ef71e3a5a/1789.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Taylor Swift",
+     "collectionName": "Lover",
+     "trackName": "Cornelia Street",
+     "collectionId": 1468058165,
+     "trackId": 1468058184,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/49/3d/ab/493dab54-f920-9043-6181-80993b8116c9/19UMGIM53909.rgb.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Rockabye Baby!",
+     "collectionName": "Lullaby Renditions of Taylor Swift, Vol. 2",
+     "trackName": "Fortnight",
+     "collectionId": 1758816202,
+     "trackId": 1758816208,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/c0/2c/f1/c02cf13d-b01f-0db0-4907-52471371ba5e/1790.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "Polo G",
+     "collectionName": "Hall of Fame 2.0",
+     "trackName": "Fortnight",
+     "collectionId": 1598405380,
+     "trackId": 1598405940,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/88/34/6d/88346d4a-5eb9-4f9b-e0e4-d1b838873bc2/886449781454.jpg/100x100bb.jpg"
+    },
+    {
+     "wrapperType": "track",
+     "kind": "song",
+     "artistName": "KIDZ BOP Kids",
+     "collectionName": "KIDZ BOP 50",
+     "trackName": "Fortnight",
+     "collectionId": 1781750032,
+     "trackId": 1781751089,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/68/9b/84/689b8467-4e57-c592-9005-a5b0974f62af/24CRGIM43107.rgb.jpg/100x100bb.jpg"
+    }
+   ]
+  }
+ },
+ "itunes_lookup": {
+  "1736268215": {
+   "resultCount": 1,
+   "results": [
+    {
+     "wrapperType": "collection",
+     "artistName": "Taylor Swift",
+     "collectionName": "THE TORTURED POETS DEPARTMENT",
+     "collectionId": 1736268215,
+     "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/7d/61/6b7d61e4-e6f1-83bc-d645-463aa06b33c4/24UMGIM29563.rgb.jpg/100x100bb.jpg"
+    }
+   ]
+  }
+ }
+}

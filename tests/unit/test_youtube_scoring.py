@@ -14,6 +14,25 @@ class TestTitleMatching:
     def test_rejects_other_song(self):
         assert not yt._title_matches_song("Euphoria", "Not Like Us", "Kendrick Lamar")
 
+    @pytest.mark.parametrize(
+        ("video_title", "song", "artist"),
+        [
+            ("Taylor Swift - Fortnight", "Fortnight (feat. Post Malone)", "Taylor Swift"),
+            ("Luis Fonsi - Despacito ft. Daddy Yankee", "Despacito (feat. Daddy Yankee)", "Luis Fonsi"),
+            ("BAD BUNNY x JHAY CORTEZ - DÁKITI", "DÁKITI", "Bad Bunny & Jhay Cortez"),
+            ("Frank Ocean - Pink + White", "Pink + White", "Frank Ocean"),
+        ],
+    )
+    def test_matches_feat_and_accent_variants(self, video_title, song, artist):
+        assert yt._title_matches_song(video_title, song, artist)
+
+    @pytest.mark.parametrize(
+        ("video_title", "song"),
+        [("SZA - SOS Where The Hell Have You Been ?", "SOS"), ("Pink Matter", "Pink + White")],
+    )
+    def test_rejects_extra_words(self, video_title, song):
+        assert not yt._title_matches_song(video_title, song, "SZA")
+
     def test_short_special_char_title(self):
         assert yt._sig_present("Travis Scott - FE!N ft. Playboi Carti", "FE!N")
 
@@ -39,6 +58,26 @@ class TestScoring:
     def test_topic_channel_audio_is_best(self):
         assert yt._score_audio("Not Like Us", "Kendrick Lamar - Topic", "Kendrick Lamar", "Not Like Us") == 2
 
+    def test_topic_upload_shown_under_artist_name_is_best(self):
+        # Search results now label Topic uploads with the artist's channel name.
+        snippet = "Provided to YouTube by Top Dawg Entertainment/RCA Records SOS · SZA SOS ℗ 2022 Top Dawg"
+        assert yt._score_audio("SOS", "SZA", "SZA", "SOS", official_artist=True, snippet=snippet) == 2
+
+    def test_copied_topic_description_on_untrusted_channel_is_ignored(self):
+        snippet = "Provided to YouTube by Top Dawg Entertainment/RCA Records SOS · SZA"
+        assert yt._score_audio("SOS", "Free Music Uploads", "SZA", "SOS", snippet=snippet) == -1
+
+    def test_official_artist_channel_under_another_name(self):
+        args = ("Frank Ocean - Pink + White", "Blonded", "Frank Ocean", "Pink + White")
+        assert yt._score_audio(*args) == -1
+        assert yt._score_audio(*args, official_artist=True) == 1
+
+    def test_official_artist_badge_needs_artist_in_title(self):
+        assert (
+            yt._score_audio("Pink + White", "Some Other Artist", "Frank Ocean", "Pink + White", official_artist=True)
+            == -1
+        )
+
     def test_lyric_video_skipped(self):
         assert yt._score_audio("Not Like Us (Lyrics)", "Lyrics Hub", "Kendrick Lamar", "Not Like Us") == -1
 
@@ -49,8 +88,46 @@ class TestScoring:
     def test_untrusted_channel_mv_ignored(self):
         assert yt._score_mv("Not Like Us (Official Video)", "Random Uploads", "Kendrick Lamar", "Not Like Us") == -1
 
+    def test_vevo_in_unrelated_channel_name_is_not_trusted(self):
+        title = "Luis Fonsi  Despacito ft  Justin Bieber Daddy Yankee (Official Video) -VEVO"
+        assert yt._score_mv(title, "YouTube VeVo", "Luis Fonsi", "Despacito (feat. Daddy Yankee)") == -1
+
+    def test_verified_label_channel_mv_is_provisional(self):
+        title = "BTS (방탄소년단) 'Dynamite' Official MV"
+        assert yt._score_mv(title, "HYBE LABELS", "BTS", "Dynamite") == -1
+        assert yt._score_mv(title, "HYBE LABELS", "BTS", "Dynamite", verified=True) == 2
+
+    def test_verified_channel_needs_mv_keyword_and_artist(self):
+        assert yt._score_mv("BTS - Dynamite", "Some Label", "BTS", "Dynamite", verified=True) == -1
+        assert yt._score_mv("Dynamite (Official MV)", "Some Label", "BTS", "Dynamite", verified=True) == -1
+
     def test_artist_channel_plain_title_is_provisional(self):
         assert yt._score_mv("Not Like Us", "Kendrick Lamar", "Kendrick Lamar", "Not Like Us") == 1
+
+    def test_promo_film_on_artist_channel_is_not_provisional_mv(self):
+        assert yt._score_mv("SZA - SOS Where The Hell Have You Been ?", "SZA", "SZA", "SOS") == -1
+        assert yt._score_audio("SZA - SOS Where The Hell Have You Been ?", "SZA", "SZA", "SOS") == -1
+
+    def test_iter_videos_reads_badges_and_snippet(self):
+        vr = {
+            "videoId": "abc",
+            "title": {"runs": [{"text": "SOS"}]},
+            "ownerText": {"runs": [{"text": "SZA"}]},
+            "ownerBadges": [{"metadataBadgeRenderer": {"style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST"}}],
+            "detailedMetadataSnippets": [{"snippetText": {"runs": [{"text": "Provided to "}, {"text": "YouTube"}]}}],
+        }
+        data = {
+            "contents": {
+                "twoColumnSearchResultsRenderer": {
+                    "primaryContents": {
+                        "sectionListRenderer": {
+                            "contents": [{"itemSectionRenderer": {"contents": [{"videoRenderer": vr}]}}]
+                        }
+                    }
+                }
+            }
+        }
+        assert list(yt._iter_videos(data)) == [yt._Video("abc", "SOS", "SZA", True, False, "Provided to YouTube")]
 
     def test_extract_data(self):
         assert yt._extract_data('xx var ytInitialData = {"a": 1}; more') == {"a": 1}
