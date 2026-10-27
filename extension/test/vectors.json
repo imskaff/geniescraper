@@ -9611,6 +9611,99 @@
    ]
   }
  ],
+ "extract_title_artist": [
+  {
+   "input": "Shabang – Single – Drake – Apple Music",
+   "output": [
+    "Shabang",
+    "Drake"
+   ]
+  },
+  {
+   "input": "‎UTOPIA - Album by Travis Scott - Apple Music",
+   "output": [
+    "UTOPIA",
+    "Travis Scott"
+   ]
+  },
+  {
+   "input": "Slime You Out (feat. SZA) - Single by Drake on Apple Music",
+   "output": [
+    "Slime You Out (feat. SZA)",
+    "Drake"
+   ]
+  },
+  {
+   "input": "SOS - Album by SZA - Apple Music",
+   "output": [
+    "SOS",
+    "SZA"
+   ]
+  },
+  {
+   "input": "Not Like Us - Single by Kendrick Lamar - Apple Music",
+   "output": [
+    "Not Like Us",
+    "Kendrick Lamar"
+   ]
+  },
+  {
+   "input": "Not Like Us - Song by Kendrick Lamar - Apple Music",
+   "output": [
+    "Not Like Us",
+    "Kendrick Lamar"
+   ]
+  },
+  {
+   "input": "Not Like Us – Song with Lyrics by Kendrick Lamar – Apple Music",
+   "output": [
+    "Not Like Us",
+    "Kendrick Lamar"
+   ]
+  },
+  {
+   "input": "Good 4 U – Olivia Rodrigo – Apple Music",
+   "output": [
+    "Good 4 U",
+    "Olivia Rodrigo"
+   ]
+  },
+  {
+   "input": "Fortnight - Remix - Taylor Swift – Apple Music",
+   "output": [
+    "Fortnight",
+    "Remix"
+   ]
+  },
+  {
+   "input": "Heat Wave - Deluxe – Artist – Apple Music",
+   "output": [
+    "Heat Wave",
+    "Artist"
+   ]
+  },
+  {
+   "input": "Title by Someone",
+   "output": [
+    "Title",
+    "Someone"
+   ]
+  },
+  {
+   "input": "No separators here",
+   "output": [
+    "",
+    ""
+   ]
+  },
+  {
+   "input": "",
+   "output": [
+    "",
+    ""
+   ]
+  }
+ ],
  "words": [
   {
    "input": "Fortnight (feat. Post Malone)",

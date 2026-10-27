@@ -13,6 +13,10 @@ export function normaliseRole(raw: string): string {
   return ROLE_MAP[key] ?? raw.trim().replace(/:+$/, "").trim();
 }
 
+export function roleMap(): Readonly<Record<string, string>> {
+  return ROLE_MAP;
+}
+
 export function roleKeys(): string[] {
   return Object.keys(ROLE_MAP);
 }

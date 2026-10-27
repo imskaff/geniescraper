@@ -192,7 +192,7 @@ Each slice ends working, tested and committable.
 | 0 | This plan | Reviewed by the owner (done) |
 | 1 | Scaffold: `extension/` skeleton, manifest, build, lint, Vitest, CI job, roles export, vectors export (done) | `npm run check` green; Python staleness tests green |
 | 2 | Port `typedQueue`, copyright helpers, flow logic (done) | All Python vectors pass in Vitest |
-| 3 | Apple Music credits parser | Every fixture in `tests/fixtures` matches `tests/golden` |
+| 3 | Apple Music credits parser (done) | Every fixture in `tests/fixtures` matches `tests/golden` |
 | 4 | Album and track detection, background-tab credits driver | Unit tests with a fake `chrome.scripting`; manual run on a real album |
 | 5 | Panel UI showing the queue, settings, accessibility pass | Component tests plus axe-style checks; keyboard walkthrough |
 | 6 | Genius fill (blocked on the edit-form fixture) | Fill tests against the captured fixture; manual run on a real edit form |

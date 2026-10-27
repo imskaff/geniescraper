@@ -1,4 +1,5 @@
 // Ports of scraper.models._extract_labels and scraper.apple_music.split_copyright / track_count_from_footer.
+import { splitLines } from "./text";
 
 const COPYRIGHT_CONNECTORS = new RegExp(
   ",?\\s+(?:" +
@@ -26,15 +27,8 @@ export function extractLabels(text: string): string[] {
   return clean.split(COPYRIGHT_CONNECTORS).map(trimCommas).filter(Boolean);
 }
 
-// Line boundaries of Python's str.splitlines() as code points: LF, VT, FF, CR, FS, GS, RS, NEL, LS, PS.
-const LINE_BREAKS: ReadonlySet<number> = new Set([0x0a, 0x0b, 0x0c, 0x0d, 0x1c, 0x1d, 0x1e, 0x85, 0x2028, 0x2029]);
-
 function firstLine(text: string): string {
-  // Every line break is a single UTF-16 unit, so scanning by index is exact.
-  for (let i = 0; i < text.length; i++) {
-    if (LINE_BREAKS.has(text.charCodeAt(i))) return text.slice(0, i).trim();
-  }
-  return text.trim();
+  return (splitLines(text)[0] ?? "").trim();
 }
 
 /** First ℗ line and first © line of a tracklist footer description; "" when absent. */

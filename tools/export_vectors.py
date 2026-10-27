@@ -16,6 +16,7 @@ from typing import Any
 
 from assistant.flow import autotab_steps, instruction_text
 from scraper.apple_music import (
+    _extract_title_artist,  # pyright: ignore[reportPrivateUsage]
     _normalise_role,  # pyright: ignore[reportPrivateUsage]
     catalog_id,
     credits_from_cards,
@@ -101,6 +102,22 @@ TEXT_CASES = [
     "",
     "Songwriter\nTaylor Swift, Jack Antonoff\nProducer\nJack Antonoff\n© 2024 Label\n",
     "Composition, Lyrics\nSongwriter:\nA & B\nMore by A\nPerformer\nC\nDrums\nD • E\n",
+]
+
+PAGE_TITLES = [
+    "Shabang – Single – Drake – Apple Music",
+    "‎UTOPIA - Album by Travis Scott - Apple Music",
+    "Slime You Out (feat. SZA) - Single by Drake on Apple Music",
+    "SOS - Album by SZA - Apple Music",
+    "Not Like Us - Single by Kendrick Lamar - Apple Music",
+    "Not Like Us - Song by Kendrick Lamar - Apple Music",
+    "Not Like Us – Song with Lyrics by Kendrick Lamar – Apple Music",
+    "Good 4 U – Olivia Rodrigo – Apple Music",
+    "Fortnight - Remix - Taylor Swift – Apple Music",
+    "Heat Wave - Deluxe – Artist – Apple Music",
+    "Title by Someone",
+    "No separators here",
+    "",
 ]
 
 TITLES = ["Fortnight (feat. Post Malone)", "BAD BUNNY x DÁKITI (Audio)", "SOS", "FE!N", "Water ft. Someone [Remix]", ""]
@@ -209,6 +226,7 @@ def build_vectors() -> dict[str, Any]:
         "credits_from_text": [
             {"input": t, "output": [c.model_dump() for c in credits_from_text(t)]} for t in TEXT_CASES
         ],
+        "extract_title_artist": [{"input": t, "output": list(_extract_title_artist(t))} for t in PAGE_TITLES],
         "words": [{"input": t, "output": words(t)} for t in TITLES],
         "core_title_words": [{"input": t, "output": core_title_words(t)} for t in TITLES],
     }
