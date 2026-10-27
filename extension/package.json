@@ -16,6 +16,7 @@
     "live:panel": "node scripts/live-panel.mjs",
     "live:sidepanel": "node scripts/live-sidepanel.mjs",
     "live:genius": "node scripts/live-genius.mjs",
+    "live:parallel": "node scripts/live-parallel.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"

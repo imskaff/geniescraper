@@ -265,6 +265,120 @@ describe("getting credits", () => {
   });
 });
 
+describe("reading tracks in parallel", () => {
+  /** Count how many reads are waiting at once, answering each when `release` is called. */
+  function gated() {
+    const waiting: { resolve: () => void; title: string }[] = [];
+    let peak = 0;
+    const scrapeTrack = (_url: string, title: string): Promise<Result<PageScrape>> =>
+      new Promise((resolve) => {
+        waiting.push({
+          title,
+          resolve: () => {
+            resolve({ ok: true, data: scrapeFor(title) });
+          },
+        });
+        peak = Math.max(peak, waiting.length);
+      });
+    return {
+      scrapeTrack,
+      peak: () => peak,
+      waiting: () => waiting.length,
+      release: () => {
+        waiting.splice(0).forEach((w) => {
+          w.resolve();
+        });
+      },
+    };
+  }
+  const tick = async (): Promise<void> => {
+    for (let i = 0; i < 5; i++) await new Promise((resolve) => setTimeout(resolve, 0));
+  };
+
+  it("reads one track at a time by default", async () => {
+    const gate = gated();
+    const { panel } = await open({ api: { scrapeTrack: gate.scrapeTrack } });
+    await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
+    const run = panel.getCredits();
+    await tick();
+    expect(gate.waiting()).toBe(1);
+    gate.release();
+    await tick();
+    expect(gate.waiting()).toBe(1);
+    gate.release();
+    await run;
+    expect(gate.peak()).toBe(1);
+  });
+
+  it.each([
+    [2, 2],
+    [0, 2],
+  ])("with %i at once it has %i reads waiting together, and ends with every track done", async (setting, expected) => {
+    const gate = gated();
+    const { panel } = await open({ api: { scrapeTrack: gate.scrapeTrack } });
+    await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
+    await panel.setSetting("parallelReads", setting);
+    const run = panel.getCredits();
+    await tick();
+    expect(gate.waiting()).toBe(expected);
+    expect(panel.state.session.results.map((r) => r.status)).toEqual(["loading", "loading"]);
+    gate.release();
+    await run;
+    expect(panel.state.session.results.map((r) => r.status)).toEqual(["done", "done"]);
+    expect(panel.state.busy).toBeNull();
+    expect(panel.state.status).toBe("Got credits for 2 tracks.");
+  });
+
+  it("never reads a track twice", async () => {
+    const gate = gated();
+    const { env, panel } = await open({ api: { scrapeTrack: gate.scrapeTrack } });
+    await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
+    await panel.setSetting("parallelReads", 0);
+    const run = panel.getCredits();
+    await tick();
+    gate.release();
+    await run;
+    expect(env.api.calls.filter((c) => c.startsWith("scrape"))).toHaveLength(2);
+  });
+
+  it("keeps the other tracks when one read fails, and says how many failed", async () => {
+    const { panel } = await open({
+      api: {
+        scrapeTrack: (_url, title) =>
+          Promise.resolve(
+            title === "One"
+              ? { ok: false, error: { code: "timeout", message: "slow" } }
+              : { ok: true, data: scrapeFor(title) },
+          ),
+      },
+    });
+    await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
+    await panel.setSetting("parallelReads", 0);
+    await panel.getCredits();
+    expect(panel.state.session.results.map((r) => r.status)).toEqual(["error", "done"]);
+    expect(panel.state.status).toBe("Got credits for 1 of 2 tracks; 1 failed.");
+  });
+
+  it("drops every late answer when stopped", async () => {
+    const gate = gated();
+    const { panel } = await open({ api: { scrapeTrack: gate.scrapeTrack } });
+    await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
+    await panel.setSetting("parallelReads", 0);
+    const run = panel.getCredits();
+    await tick();
+    await panel.stop();
+    gate.release();
+    await run;
+    expect(panel.state.session.results.map((r) => r.status)).toEqual(["pending", "pending"]);
+    expect(panel.state.busy).toBeNull();
+  });
+});
+
 describe("navigation", () => {
   it("goes back to the track list and starts over with a new link", async () => {
     const { panel } = await open();

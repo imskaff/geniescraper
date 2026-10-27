@@ -1,11 +1,15 @@
 // Maps the extension pages' requests onto the Apple Music client and the paste session.
-// Reads of Apple Music run one at a time; paste changes are serialised by the paste service itself.
+// Album detection runs one at a time. Track reads run as many at once as the panel asks for, never more than
+// MAX_OPEN_TABS, so a long album cannot open a tab per track. Paste changes are serialised by the paste service.
 import { isPasteCommand, isWorkerRequest, type AlbumInfo, type Result } from "../shared/messages";
 import { detectAlbum, scrapeTrack, type ClientTiming } from "./appleClient";
 import type { CoverService } from "./covers";
 import type { PasteService } from "./paste";
 import type { BrowserPorts } from "./ports";
-import { Serial } from "./serial";
+import { Limiter, Serial } from "./serial";
+
+/** Hidden tabs open at once, whatever the panel asks for. */
+export const MAX_OPEN_TABS = 24;
 
 export type Router = (raw: unknown) => Promise<Result<unknown>>;
 
@@ -26,6 +30,7 @@ export function createRouter(
   covers: CoverService,
 ): Router {
   const serial = new Serial();
+  const reads = new Limiter(MAX_OPEN_TABS);
 
   return (raw) => {
     if (!isWorkerRequest(raw)) {
@@ -34,7 +39,8 @@ export function createRouter(
     // Pasting must stay responsive while an album is being read, so it does not wait in the reads' queue.
     if (isPasteCommand(raw)) return paste.command(raw);
 
-    return serial.run(async () => {
+    const queue = raw.type === "detect" ? serial : reads;
+    return queue.run(async () => {
       const stopKeepAlive = ports.keepAlive();
       try {
         if (raw.type === "detect") {

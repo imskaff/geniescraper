@@ -17,6 +17,8 @@ export interface Settings {
   autoConfirm: boolean;
   /** How long Genius's suggestions must hold still before they are trusted, in seconds. */
   autocompleteWaitSeconds: number;
+  /** How many tracks are read at once; 0 reads every picked track at the same time. */
+  parallelReads: number;
 }
 
 /**
@@ -24,6 +26,9 @@ export interface Settings {
  * use of it (F7 is caret browsing in Chrome) is suppressed by the page handler for those presses.
  */
 export const HOTKEY_CHOICES = ["F2", "F4", "F7", "F8", "F9"] as const;
+
+/** Choices for reading tracks at once; 0 stands for all of them. One is the polite default. */
+export const PARALLEL_CHOICES = [1, 2, 3, 5, 0] as const;
 
 export const WAIT_RANGE = { min: 0.2, max: 3 } as const;
 
@@ -37,6 +42,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   backHotkey: "F7",
   autoConfirm: true,
   autocompleteWaitSeconds: 0.6,
+  parallelReads: 1,
 };
 
 export const SETTINGS_KEY = "settings";
@@ -64,6 +70,12 @@ export function normaliseSettings(raw: unknown): Settings {
       ? Math.min(WAIT_RANGE.max, Math.max(WAIT_RANGE.min, wait))
       : DEFAULT_SETTINGS.autocompleteWaitSeconds;
 
+  const reads = source["parallelReads"];
+  const parallelReads =
+    typeof reads === "number" && (PARALLEL_CHOICES as readonly number[]).includes(reads)
+      ? reads
+      : DEFAULT_SETTINGS.parallelReads;
+
   let nextHotkey = hotkey("nextHotkey");
   let backHotkey = hotkey("backHotkey");
   // One key cannot do two things: fall back to the defaults rather than guess which was meant.
@@ -81,6 +93,7 @@ export function normaliseSettings(raw: unknown): Settings {
     backHotkey,
     autoConfirm: flag("autoConfirm"),
     autocompleteWaitSeconds: waitSeconds,
+    parallelReads,
   };
 }
 

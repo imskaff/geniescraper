@@ -346,6 +346,7 @@ describe("settings screen", () => {
       "Key that fills the next step",
       "Key that goes back one step",
       "Wait for suggestions to settle (seconds)",
+      "Tracks read at the same time",
     ]);
 
     root.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));

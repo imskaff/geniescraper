@@ -15,6 +15,7 @@
   --link: #f3c003;
   --nav: #6cb6ff;
   --danger: #ff6f5e;
+  --danger-ink: #1a0a08;
   --focus: #f4f3ee;
 }
 
@@ -32,6 +33,7 @@
     --link: #6b4f00;
     --nav: #0b5cad;
     --danger: #b3261e;
+    --danger-ink: #ffffff;
     --focus: #1a1916;
   }
 }
@@ -172,6 +174,25 @@ h2 + .help {
 .status,
 .alert {
   margin: 0 0 8px;
+}
+
+/* On the paste screen the error shows under the key buttons; the top region stays for screen readers only. */
+.alert.quiet-visual {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.paste-error {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  color: var(--danger-ink);
+  background: var(--danger);
+  border-radius: 6px;
+  font-weight: 600;
 }
 
 .status {

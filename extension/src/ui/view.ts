@@ -5,7 +5,7 @@ import type { QueueKind } from "../core/models";
 import type { AlbumInfo } from "../shared/messages";
 import type { TrackResult, TrackStatus } from "../shared/session";
 import { STEP_LABELS, instruction } from "../core/paste";
-import { HOTKEY_CHOICES, WAIT_RANGE } from "../shared/settings";
+import { HOTKEY_CHOICES, PARALLEL_CHOICES, WAIT_RANGE } from "../shared/settings";
 import { el } from "./dom";
 import type { PanelController, PanelState } from "./controller";
 
@@ -128,6 +128,7 @@ export class PanelView {
     const headingHadFocus = document.activeElement?.tagName === "H2";
 
     this.region("alert").textContent = state.error;
+    this.region("alert").classList.toggle("quiet-visual", state.paste.active && !state.settingsOpen);
     this.region("status").textContent = state.status;
     const toggle = this.region("settings-toggle");
     toggle.textContent = state.settingsOpen ? "Back" : "Settings";
@@ -532,6 +533,7 @@ export class PanelView {
         // Leaving a paste in progress looks like the other ways out, so it is easy to tell from the step buttons.
         this.button("Back to credits", "nav", "pstop", () => void this.panel.stopPaste(), false),
       ),
+      state.error ? el("p", { class: "paste-error", text: state.error, attrs: { "aria-hidden": "true" } }) : null,
       el("p", {
         class: "help",
         text: "Keep the song's Edit Metadata form open on Genius. Nothing is saved for you: check the form, then save it there.",
@@ -622,6 +624,7 @@ export class PanelView {
         el("p", { class: "help", text: "Changes apply to the paste queue at once and are saved to your browser." }),
       ),
       this.pastingSettings(state),
+      this.readingSettings(state),
     ];
   }
 
@@ -700,6 +703,46 @@ export class PanelView {
         class: "help",
         text: "Raise this if Genius is slow to show suggestions.",
         attrs: { id: "setting-wait-help" },
+      }),
+    );
+  }
+
+  private readingSettings(state: PanelState): HTMLElement {
+    const { settings } = state;
+    const reads = el(
+      "select",
+      {
+        class: "field",
+        attrs: {
+          id: "setting-parallelReads",
+          "data-key": "setting-parallelReads",
+          "aria-describedby": "setting-parallelReads-help",
+        },
+        on: {
+          change: (event) => {
+            void this.panel.setSetting("parallelReads", Number((event.target as HTMLSelectElement).value));
+          },
+        },
+      },
+      ...PARALLEL_CHOICES.map((n) =>
+        el("option", {
+          text: n === 0 ? "All at once" : n === 1 ? "1 (one by one)" : String(n),
+          attrs: { value: String(n) },
+        }),
+      ),
+    );
+    reads.value = String(settings.parallelReads);
+
+    return el(
+      "fieldset",
+      { class: "stack" },
+      el("legend", { text: "Reading credits" }),
+      el("label", { text: "Tracks read at the same time", attrs: { for: "setting-parallelReads" } }),
+      reads,
+      el("p", {
+        class: "help",
+        text: "More at once is faster for an album, but opens that many hidden tabs on Apple Music together. One by one is the gentlest.",
+        attrs: { id: "setting-parallelReads-help" },
       }),
     );
   }

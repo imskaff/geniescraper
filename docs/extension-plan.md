@@ -365,3 +365,20 @@ From the owner's first try of the extension:
 - **Steps done list.** A finished step moves into a "Steps done (n)" list, closed by default and above "Steps left (n)", which stays open.
   Going back moves the step out again, and the done list disappears when empty.
   "All steps" became "Steps left" because it no longer holds the done ones.
+
+## 16. Reading tracks in parallel
+
+Reading an album used to be strictly one hidden tab at a time (a `Serial` queue in the worker, one request at a time from the panel), like the desktop app's single prefetch.
+There is now a setting, **Tracks read at the same time** (Settings, "Reading credits"): 1 (default), 2, 3, 5 or All at once.
+The panel runs that many readers over the pending tracks; the worker runs track reads through a `Limiter` capped at 24 hidden tabs whatever the panel asks, and still detects albums one at a time.
+Results are matched by track index, so order does not change; a failed read does not stop the others; Stop drops every late answer.
+
+Measured live on the 11-track album (10 readable tracks), `node scripts/live-parallel.mjs --reps 3`, one run per mode in turn:
+
+| Mode | Median | Peak tabs | Failures | Credits equal to one-by-one |
+|------|--------|-----------|----------|-----------------------------|
+| 1 at a time | 10.0 s | 1 | 0 | yes |
+| 3 at a time | 4.0 s | 3 | 0 | yes |
+| all at once | 2.0 s | 10 | 0 | yes |
+
+The default stays at 1 until the owner chooses: more at once means that many Apple Music tabs opened together, which is more traffic than one normal run.

@@ -217,7 +217,7 @@ export class PanelController {
     await this.updateSession({ selected: on ? available : [] });
   }
 
-  /** Read the credits of every picked track, one after another, showing each as it arrives. */
+  /** Read the credits of every picked track, as many at once as the settings allow, showing each as it arrives. */
   async getCredits(): Promise<void> {
     const { album, selected } = this.current.session;
     if (!album || this.current.busy) return;
@@ -243,19 +243,26 @@ export class PanelController {
   private async scrapePending(): Promise<void> {
     const myRun = ++this.run;
     this.update({ busy: "scrape", error: "" });
-    for (;;) {
-      const next = this.current.session.results.find((result) => result.status === "pending");
-      if (!next || myRun !== this.run) break;
-      await this.setResult(next.index, { status: "loading", error: "" });
-      const answer = await this.env.api.scrapeTrack(next.url, next.title);
-      if (myRun !== this.run) return; // stopped or replaced while waiting: drop the late answer
-      const album = this.current.session.album;
-      if (answer.ok && album) {
-        await this.setResult(next.index, { status: "done", song: buildSong(album, next, answer.data), error: "" });
-      } else if (!answer.ok) {
-        await this.setResult(next.index, { status: "error", error: describeError(answer.error) });
+    const readers = this.current.settings.parallelReads || Number.POSITIVE_INFINITY;
+    const count = Math.min(readers, this.current.session.results.length);
+    // Each reader claims the next pending track before it first waits, so no track is read twice.
+    const reader = async (): Promise<void> => {
+      for (;;) {
+        const next = this.current.session.results.find((result) => result.status === "pending");
+        if (!next || myRun !== this.run) return;
+        const claimed = this.setResult(next.index, { status: "loading", error: "" });
+        const answer = await this.env.api.scrapeTrack(next.url, next.title);
+        await claimed;
+        if (myRun !== this.run) return; // stopped or replaced while waiting: drop the late answer
+        const album = this.current.session.album;
+        if (answer.ok && album) {
+          await this.setResult(next.index, { status: "done", song: buildSong(album, next, answer.data), error: "" });
+        } else if (!answer.ok) {
+          await this.setResult(next.index, { status: "error", error: describeError(answer.error) });
+        }
       }
-    }
+    };
+    await Promise.all(Array.from({ length: Math.max(1, count) }, reader));
     if (myRun !== this.run) return;
     const { results } = this.current.session;
     const done = results.filter((r) => r.status === "done").length;

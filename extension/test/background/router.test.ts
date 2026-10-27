@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { CoverService } from "../../src/background/covers";
 import { PasteService } from "../../src/background/paste";
-import { createRouter } from "../../src/background/router";
-import { Serial } from "../../src/background/serial";
+import { MAX_OPEN_TABS, createRouter } from "../../src/background/router";
+import { Limiter, Serial } from "../../src/background/serial";
 import { memoryStore } from "../ui/fakes";
 import { ALBUM_INFO, ALBUM_URL, FAST_CLIENT, PAGE_SCRAPE, SONG_URL, fakeBrowser } from "./fakePorts";
 
@@ -40,15 +40,25 @@ describe("router", () => {
     });
   });
 
-  it("runs requests one at a time: at most one tab is ever open", async () => {
+  it("reads tracks at the same time, but never more than MAX_OPEN_TABS tabs", async () => {
     const browser = fakeBrowser({ loadingPolls: 3 });
     const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS);
+    const count = MAX_OPEN_TABS + 6;
     const results = await Promise.all(
-      [1, 2, 3, 4].map(() => route({ type: "scrape-track", url: SONG_URL, trackTitle: "" })),
+      Array.from({ length: count }, () => route({ type: "scrape-track", url: SONG_URL, trackTitle: "" })),
     );
     expect(results.every((r) => r.ok)).toBe(true);
+    expect(browser.maxOpenTabs()).toBeGreaterThan(1);
+    expect(browser.maxOpenTabs()).toBeLessThanOrEqual(MAX_OPEN_TABS);
+    expect(browser.log.filter((entry) => entry.startsWith("create:"))).toHaveLength(count);
+  });
+
+  it("still detects albums one at a time", async () => {
+    const browser = fakeBrowser({ loadingPolls: 3 });
+    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS);
+    const results = await Promise.all([1, 2, 3].map(() => route({ type: "detect", url: ALBUM_URL })));
+    expect(results.every((r) => r.ok)).toBe(true);
     expect(browser.maxOpenTabs()).toBe(1);
-    expect(browser.log.filter((entry) => entry.startsWith("create:"))).toHaveLength(4);
   });
 
   it("keeps the worker alive while a request runs and stops afterwards, even on failure", async () => {
@@ -90,5 +100,31 @@ describe("Serial", () => {
     const next = serial.run(() => Promise.resolve("ok"));
     await expect(failing).rejects.toThrow("boom");
     await expect(next).resolves.toBe("ok");
+  });
+});
+
+describe("Limiter", () => {
+  it("runs at most `limit` jobs at once and starts the rest in order as places free up", async () => {
+    const limiter = new Limiter(2);
+    let active = 0;
+    let peak = 0;
+    const started: string[] = [];
+    const job = (name: string) => async () => {
+      started.push(name);
+      peak = Math.max(peak, ++active);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      active--;
+      return name;
+    };
+    const results = await Promise.all(["a", "b", "c", "d", "e"].map((n) => limiter.run(job(n))));
+    expect(results).toEqual(["a", "b", "c", "d", "e"]);
+    expect(started).toEqual(["a", "b", "c", "d", "e"]);
+    expect(peak).toBe(2);
+  });
+
+  it("frees its place when a job throws", async () => {
+    const limiter = new Limiter(1);
+    await expect(limiter.run(() => Promise.reject(new Error("boom")))).rejects.toThrow("boom");
+    expect(await limiter.run(() => Promise.resolve("ok"))).toBe("ok");
   });
 });

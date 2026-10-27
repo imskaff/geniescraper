@@ -103,3 +103,13 @@ describe("normaliseSession", () => {
     expect(await loadSession({ settings: env.settingsStore, session: env.sessionStore })).toEqual(session);
   });
 });
+
+describe("parallelReads setting", () => {
+  it.each([1, 2, 3, 5, 0])("accepts %i", (value) => {
+    expect(normaliseSettings({ parallelReads: value }).parallelReads).toBe(value);
+  });
+
+  it.each([4, -1, 100, 1.5, "3", null, undefined, Number.NaN])("falls back to one at a time for %j", (value) => {
+    expect(normaliseSettings({ parallelReads: value }).parallelReads).toBe(1);
+  });
+});
