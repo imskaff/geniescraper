@@ -1,0 +1,264 @@
+import { describe, expect, it } from "vitest";
+import { typedQueue, type QueueItem } from "../../src/core/models";
+import { fillStep, type FillContext, type StepOutcome } from "../../src/genius/fill";
+import { songFromVector } from "../parity/helpers";
+import { chipsIn, loadFakeGenius, rowChips, type FakeGenius, type FakeOptions } from "./fakeGenius";
+
+const TIMING = { suggestionMs: 400, settleMs: 60, selectMs: 300, pollMs: 5 };
+
+function setup(options: FakeOptions = {}, autoConfirm = true) {
+  const fake = loadFakeGenius(options);
+  const ctx: FillContext = { doc: fake.doc, timing: TIMING, autoConfirm };
+  const run = (item: QueueItem): Promise<StepOutcome> => fillStep(item, ctx);
+  return { fake, ctx, run };
+}
+
+const writerBox = (fake: FakeGenius): Element | null =>
+  [...fake.form.querySelectorAll("label")]
+    .find((l) => l.querySelector("span")?.textContent.startsWith("Writer"))
+    ?.querySelector('[role="combobox"]') ?? null;
+const producerBox = (fake: FakeGenius): Element | null =>
+  [...fake.form.querySelectorAll("label")]
+    .find((l) => l.querySelector("span")?.textContent.startsWith("Producer"))
+    ?.querySelector('[role="combobox"]') ?? null;
+
+/** What must never happen, on every run. */
+function expectSafe(fake: FakeGenius): void {
+  expect(fake.saveClicks, "Save was clicked").toBe(0);
+  expect(fake.cancelClicks, "Cancel was clicked").toBe(0);
+  expect(fake.submits, "the form was submitted").toBe(0);
+  expect(fake.strayEnters, "Enter reached a plain input").toEqual([]);
+  expect(
+    fake.enters.filter((e) => !e.open),
+    "Enter reached a combobox with no open menu",
+  ).toEqual([]);
+}
+
+describe("combobox fields (Writer, Producer)", () => {
+  it("chooses the exact match and reports it", async () => {
+    const { fake, run } = setup();
+    const outcome = await run(["written_by", "Billie Eilish"]);
+    expect(outcome).toEqual({ status: "filled", message: "Added Billie Eilish." });
+    expect(chipsIn(writerBox(fake))).toEqual(["Billie Eilish"]);
+    expect(fake.chosen).toEqual(["Writer: Billie Eilish"]);
+    expectSafe(fake);
+  });
+
+  it("puts a producer in the Producer field, not the Writer field", async () => {
+    const { fake, run } = setup();
+    await run(["produced_by", "FINNEAS"]);
+    expect(chipsIn(producerBox(fake))).toEqual(["FINNEAS"]);
+    expect(chipsIn(writerBox(fake))).toEqual([]);
+  });
+
+  it("chooses the exact match even when it is not the first suggestion", async () => {
+    const { fake, run } = setup({ artists: ["Billie Eilish, FINNEAS, Tim Anderson, Aron Forbes", "Billie Eilish"] });
+    expect(await run(["written_by", "Billie Eilish"])).toMatchObject({ status: "filled" });
+    expect(chipsIn(writerBox(fake))).toEqual(["Billie Eilish"]);
+    expectSafe(fake);
+  });
+
+  it("matches ignoring case and accents", async () => {
+    const { fake, run } = setup({ artists: ["Beyoncé", "Beyonce Giselle"] });
+    expect(await run(["written_by", "BEYONCE"])).toMatchObject({ status: "filled" });
+    expect(chipsIn(writerBox(fake))).toEqual(["Beyoncé"]);
+  });
+
+  it("never picks a different entity that merely contains the name", async () => {
+    const { fake, run } = setup({
+      artists: ["Billie Eilish, FINNEAS, Tim Anderson, Aron Forbes", "Balarke a.k.a Billie Eilish from BTS"],
+    });
+    const outcome = await run(["written_by", "Billie Eilish"]);
+    expect(outcome.status).toBe("needs-choice");
+    expect(chipsIn(writerBox(fake))).toEqual([]);
+    expectSafe(fake);
+  });
+
+  it("leaves a made-up name for the user instead of taking the fuzzy first suggestion", async () => {
+    const { fake, run } = setup();
+    const outcome = await run(["written_by", "zzqxv nobody 99"]);
+    expect(outcome).toMatchObject({ status: "needs-choice" });
+    expect(outcome.message).toContain("no exact match");
+    // Genius did offer "99 Neighbors" first, and a Create option last; neither was chosen.
+    expect(chipsIn(writerBox(fake))).toEqual([]);
+    expect(fake.chosen).toEqual([]);
+    expect(fake.enters).toEqual([]);
+    const input = writerBox(fake)?.querySelector("input");
+    expect(input?.value).toBe("zzqxv nobody 99");
+    expect(input?.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("says so when Genius has nothing at all", async () => {
+    const { fake, run } = setup({ artists: ["Taylor Swift"] });
+    const outcome = await run(["written_by", "Qqqq"]);
+    expect(outcome.status).toBe("needs-choice");
+    expect(outcome.message).toContain("nothing");
+    expectSafe(fake);
+  });
+
+  it("is idempotent: a value already chosen is not typed again", async () => {
+    const { fake, run } = setup();
+    await run(["written_by", "Billie Eilish"]);
+    const again = await run(["written_by", "Billie Eilish"]);
+    expect(again).toEqual({ status: "filled", message: "Billie Eilish was already there." });
+    expect(fake.chosen).toEqual(["Writer: Billie Eilish"]);
+  });
+
+  it("adds a second writer next to the first", async () => {
+    const { fake, run } = setup();
+    await run(["written_by", "Billie Eilish"]);
+    await run(["written_by", "FINNEAS"]);
+    expect(chipsIn(writerBox(fake))).toEqual(["FINNEAS", "Billie Eilish"]);
+  });
+
+  it("only types and waits when auto-confirm is off", async () => {
+    const { fake, run } = setup({}, false);
+    const outcome = await run(["written_by", "Billie Eilish"]);
+    expect(outcome).toMatchObject({ status: "needs-choice" });
+    expect(chipsIn(writerBox(fake))).toEqual([]);
+    expect(fake.enters).toEqual([]);
+    expect(writerBox(fake)?.querySelector("input")?.value).toBe("Billie Eilish");
+  });
+
+  it("waits for suggestions that arrive in two batches before trusting the list", async () => {
+    const { fake, run } = setup({ suggestionDelayMs: 10, secondBatchAfterMs: 30 });
+    expect(await run(["written_by", "Billie Eilish"])).toMatchObject({ status: "filled" });
+    expect(chipsIn(writerBox(fake))).toEqual(["Billie Eilish"]);
+    expectSafe(fake);
+  });
+});
+
+describe("additional credits", () => {
+  it("uses the existing empty row for the first role, then puts artists in that row", async () => {
+    const { fake, run } = setup();
+    expect(rowChips(fake.form)).toHaveLength(1);
+    expect(await run(["role", "Mixing Engineer"])).toMatchObject({ status: "filled" });
+    expect(await run(["artist", "FINNEAS"])).toMatchObject({ status: "filled" });
+    expect(await run(["artist", "Billie Eilish"])).toMatchObject({ status: "filled" });
+    expect(rowChips(fake.form)).toEqual([{ role: ["Mixing Engineer"], artists: ["Billie Eilish", "FINNEAS"] }]);
+    expectSafe(fake);
+  });
+
+  it("adds a new row only when the last row's role is already filled", async () => {
+    const { fake, run } = setup();
+    await run(["role", "Mixing Engineer"]);
+    await run(["artist", "FINNEAS"]);
+    await run(["role", "Mastering Engineer"]);
+    expect(rowChips(fake.form)).toHaveLength(2);
+    await run(["artist", "Taylor Swift"]);
+    expect(rowChips(fake.form)).toEqual([
+      { role: ["Mixing Engineer"], artists: ["FINNEAS"] },
+      { role: ["Mastering Engineer"], artists: ["Taylor Swift"] },
+    ]);
+    expectSafe(fake);
+  });
+
+  it("does not add a row for a role when the last one is still empty", async () => {
+    const { fake, run } = setup();
+    await run(["role", "Mixing Engineer"]);
+    expect(rowChips(fake.form)).toHaveLength(1);
+  });
+
+  it("creates the first row when the form has none", async () => {
+    const { fake, run } = setup({ noRows: true });
+    expect(rowChips(fake.form)).toHaveLength(0);
+    expect(await run(["role", "Lead Vocals"])).toMatchObject({ status: "filled" });
+    expect(rowChips(fake.form)).toEqual([{ role: ["Lead Vocals"], artists: [] }]);
+  });
+
+  it("matches the copyright roles despite the symbols Genius adds to their names", async () => {
+    const { fake, run } = setup();
+    expect(await run(["copyright_role", "Phonographic Copyright"])).toMatchObject({ status: "filled" });
+    await run(["phonographic_copyright", "Taylor Swift"]);
+    expect(await run(["copyright_role", "Copyright"])).toMatchObject({ status: "filled" });
+    await run(["copyright_notice", "FINNEAS"]);
+    expect(rowChips(fake.form)).toEqual([
+      { role: ["Phonographic Copyright ℗"], artists: ["Taylor Swift"] },
+      { role: ["Copyright ©"], artists: ["FINNEAS"] },
+    ]);
+    expectSafe(fake);
+  });
+
+  it("leaves a role Genius does not have for the user, and keeps the row for them", async () => {
+    const { fake, run } = setup();
+    const outcome = await run(["role", "Programming"]);
+    expect(outcome.status).toBe("needs-choice");
+    expect(rowChips(fake.form)).toEqual([{ role: [], artists: [] }]);
+    expect(fake.chosen).toEqual([]);
+    expectSafe(fake);
+  });
+
+  it("will not put an artist anywhere when there is no role row yet", async () => {
+    const { fake, run } = setup({ noRows: true });
+    expect(await run(["artist", "FINNEAS"])).toMatchObject({ status: "unavailable" });
+    expect(fake.chosen).toEqual([]);
+  });
+
+  it("says so when the form has no Add additional credits button and no row", async () => {
+    const { run } = setup({ noRows: true, noAddButton: true });
+    const outcome = await run(["role", "Lead Vocals"]);
+    expect(outcome.status).toBe("unavailable");
+    expect(outcome.message).toContain("Add additional credits");
+  });
+});
+
+describe("plain inputs", () => {
+  it.each([
+    ["youtube_url", "https://www.youtube.com/watch?v=abc123", "youtube_url"],
+    ["cover_art", "https://example.com/cover.png", "custom_song_art_image_url"],
+  ] as const)("sets %s with input and change events and no key presses", async (kind, value, name) => {
+    const { fake, run } = setup();
+    expect(await run([kind, value])).toMatchObject({ status: "filled" });
+    expect(fake.form.querySelector<HTMLInputElement>(`input[name="${name}"]`)?.value).toBe(value);
+    expect(fake.plainEvents).toEqual([`${name}:input`, `${name}:change`]);
+    expect(fake.plainKeys).toEqual([]);
+    expectSafe(fake);
+  });
+});
+
+describe("without the form", () => {
+  it.each([
+    { item: ["written_by", "A"] as QueueItem },
+    { item: ["role", "Mixing Engineer"] as QueueItem },
+    { item: ["youtube_url", "https://x"] as QueueItem },
+  ])("reports that the Edit Metadata form is not open for $item", async ({ item }) => {
+    const { fake, run } = setup();
+    fake.form.remove();
+    const outcome = await run(item);
+    expect(outcome).toMatchObject({ status: "unavailable" });
+    expect(outcome.message).toContain("Edit Metadata");
+  });
+});
+
+describe("a whole song", () => {
+  it("fills every step of a real queue and touches nothing it must not", async () => {
+    const song = {
+      ...songFromVector("full"),
+      youtubeUrl: "https://www.youtube.com/watch?v=abc",
+      coverArtUrl: "https://example.com/c.png",
+    };
+    const queue = typedQueue(song);
+    const { fake, run } = setup({
+      artists: ["W1", "W2", "W3", "P1", "P2", "P3", "M1", "M2", "V1", "V2", "Top Dawg Entertainment", "RCA Records"],
+      roles: ["Mixing Engineer", "Background Vocals", "Phonographic Copyright ℗", "Copyright ©"],
+    });
+
+    const outcomes: string[] = [];
+    for (const item of queue) outcomes.push(`${item[0]}:${(await run(item)).status}`);
+
+    expect(outcomes.filter((o) => !o.endsWith(":filled"))).toEqual([]);
+    expect(chipsIn(writerBox(fake)).sort()).toEqual(["W1", "W2", "W3"]);
+    expect(chipsIn(producerBox(fake)).sort()).toEqual(["P1", "P2", "P3"]);
+    expect(rowChips(fake.form).map((r) => [r.role[0], [...r.artists].sort()])).toEqual([
+      ["Mixing Engineer", ["M1", "M2"]],
+      ["Background Vocals", ["V1", "V2"]],
+      ["Phonographic Copyright ℗", ["RCA Records", "Top Dawg Entertainment"]],
+      ["Copyright ©", ["Top Dawg Entertainment"]],
+    ]);
+    expect(fake.form.querySelector<HTMLInputElement>('input[name="youtube_url"]')?.value).toBe(song.youtubeUrl);
+    expect(fake.form.querySelector<HTMLInputElement>('input[name="custom_song_art_image_url"]')?.value).toBe(
+      song.coverArtUrl,
+    );
+    expectSafe(fake);
+  });
+});

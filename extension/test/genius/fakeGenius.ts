@@ -1,0 +1,278 @@
+// A stand-in for Genius's react-select behaviour, laid over the saved edit-form fixture. It reproduces what was
+// measured on the live form, and nothing more:
+//   - typing (an `input` event) shows suggestions after a short delay, in more than one batch if asked;
+//   - suggestions are fuzzy: a made-up name still gets hits, and `Create "..."` comes last;
+//   - `aria-activedescendant` names the focused option and starts on the first;
+//   - ArrowDown/ArrowUp move it; Enter chooses it, clears the input and shows a chip;
+//   - a role row takes one value, after which its input is read-only;
+//   - "Add additional credits" appends a row with the next `custom_performances-N-*` ids and focuses its role.
+// It also records everything that must never happen: Enter outside an open menu, form submits, Save or Cancel.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { words } from "../../src/core/text";
+import { boxOf } from "../../src/genius/selectors";
+
+const FIXTURE = join(import.meta.dirname, "..", "..", "..", "tests", "fixtures", "genius-edit-form.html");
+
+export const ARTISTS = [
+  "Billie Eilish",
+  "Billie Eilish, FINNEAS, Tim Anderson, Aron Forbes",
+  "Balarke a.k.a Billie Eilish from BTS",
+  "FINNEAS",
+  "Finneas Herman",
+  "Taylor Swift",
+  "99 Neighbors",
+  "99 Percent",
+  "Nobody Likes You Pat",
+];
+
+export const ROLES = [
+  "Mixing Engineer",
+  "Mastering Engineer",
+  "Lead Vocals",
+  "Synthesizer",
+  "Synthesizer Arranger",
+  "Phonographic Copyright ℗",
+  "Copyright ©",
+];
+
+export interface FakeOptions {
+  /** Delay before suggestions appear. */
+  suggestionDelayMs?: number;
+  /** When set, the exact suggestions arrive this long after a first batch of fuzzy ones. */
+  secondBatchAfterMs?: number;
+  /** Order of the artist directory; lets a test put the exact match behind another suggestion. */
+  artists?: string[];
+  roles?: string[];
+  /** Start with no additional-credit rows, as on a form that has none yet. */
+  noRows?: boolean;
+  /** Leave out the Add additional credits button. */
+  noAddButton?: boolean;
+}
+
+export interface FakeGenius {
+  doc: Document;
+  form: HTMLFormElement;
+  /** What was chosen, in order, as `field: value`. */
+  chosen: string[];
+  /** Every Enter that reached a combobox, with whether its menu was open. */
+  enters: { open: boolean; field: string }[];
+  /** Enter presses on inputs that are not comboboxes. */
+  strayEnters: string[];
+  submits: number;
+  saveClicks: number;
+  cancelClicks: number;
+  /** Key events that reached each plain input. */
+  plainKeys: string[];
+  /** Fired `input` and `change` events on plain inputs. */
+  plainEvents: string[];
+}
+
+const SUGGESTION_LIMIT = 10;
+
+function fuzzyHits(directory: string[], typed: string): string[] {
+  const typedWords = words(typed);
+  return directory.filter((name) => {
+    const nameWords = words(name);
+    return typedWords.some((t) => nameWords.some((n) => n.startsWith(t)));
+  });
+}
+
+function element(doc: Document, tag: string, attrs: Record<string, string> = {}, text = ""): HTMLElement {
+  const node = doc.createElement(tag);
+  for (const [name, value] of Object.entries(attrs)) node.setAttribute(name, value);
+  if (text) node.textContent = text;
+  return node;
+}
+
+export function loadFakeGenius(options: FakeOptions = {}): FakeGenius {
+  const html = readFileSync(FIXTURE, "utf-8");
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const form = doc.querySelector<HTMLFormElement>('form[aria-label="Edit Song Metadata Form"]');
+  if (!form) throw new Error("fixture has no edit form");
+
+  const fake: FakeGenius = {
+    doc,
+    form,
+    chosen: [],
+    enters: [],
+    strayEnters: [],
+    submits: 0,
+    saveClicks: 0,
+    cancelClicks: 0,
+    plainKeys: [],
+    plainEvents: [],
+  };
+  const artists = options.artists ?? ARTISTS;
+  const roles = options.roles ?? ROLES;
+  const delay = options.suggestionDelayMs ?? 15;
+
+  form.addEventListener("submit", () => fake.submits++);
+  doc.querySelector('button[aria-label="Save"]')?.addEventListener("click", () => fake.saveClicks++);
+  doc.querySelector('button[aria-label="Cancel"]')?.addEventListener("click", () => fake.cancelClicks++);
+
+  const fieldName = (input: HTMLInputElement): string => {
+    const label = input
+      .closest("label")
+      ?.querySelector("span")
+      ?.textContent.replace(/\s+/g, " ")
+      .replace(/\*$/, "")
+      .trim();
+    return label ?? input.closest("[id]")?.id ?? input.id;
+  };
+  const isRoleBox = (box: HTMLElement): boolean => /^custom_performances-\d+-label$/.test(box.id);
+
+  function closeMenu(input: HTMLInputElement): void {
+    doc.getElementById(input.getAttribute("aria-controls") ?? "")?.remove();
+    input.setAttribute("aria-expanded", "false");
+    input.setAttribute("aria-activedescendant", "");
+  }
+
+  function showMenu(input: HTMLInputElement, names: string[], typed: string): void {
+    closeMenu(input);
+    const base = input.id.replace(/-input$/, "");
+    const listbox = element(doc, "div", { id: `${base}-listbox`, role: "listbox", "aria-multiselectable": "true" });
+    const shown = names.slice(0, SUGGESTION_LIMIT);
+    shown.forEach((name, i) => {
+      const option = element(doc, "div", {
+        id: `${base}-option-${String(i)}`,
+        role: "option",
+        "aria-selected": "false",
+        tabindex: "-1",
+      });
+      option.textContent = name;
+      listbox.append(option);
+    });
+    const create = element(doc, "div", {
+      id: `${base}-option-${String(shown.length)}`,
+      role: "option",
+      "aria-selected": "false",
+    });
+    create.textContent = `Create "${typed}"`;
+    listbox.append(create);
+    boxOf(input).querySelector(".css-b62m3t-container")?.append(listbox);
+    input.setAttribute("aria-controls", listbox.id);
+    input.setAttribute("aria-expanded", "true");
+    input.setAttribute("aria-activedescendant", `${base}-option-0`);
+  }
+
+  function addChip(input: HTMLInputElement, label: string): void {
+    const box = boxOf(input);
+    box.querySelector('[id$="-placeholder"]')?.remove();
+    const chip = element(doc, "div", { class: "css-a69xu0-multiValue" });
+    chip.append(
+      element(doc, "div", { class: "label" }, `${label} `),
+      element(doc, "div", { role: "button", "aria-label": `Remove ${label}`, "aria-hidden": "true" }),
+    );
+    const holder = box.querySelector(".css-1ygnsa4, .css-bxz0mv") ?? box;
+    holder.insertBefore(chip, holder.firstChild);
+    input.value = "";
+    if (isRoleBox(box)) input.setAttribute("aria-readonly", "true");
+  }
+
+  function wire(input: HTMLInputElement): void {
+    input.addEventListener("input", () => {
+      const box = boxOf(input);
+      if (isRoleBox(box) && input.getAttribute("aria-readonly") === "true") return;
+      const typed = input.value;
+      if (!typed) {
+        closeMenu(input);
+        return;
+      }
+      const directory = isRoleBox(box) ? roles : artists;
+      const hits = fuzzyHits(directory, typed);
+      const exact = hits.filter((name) => words(name).join(" ") === words(typed).join(" ") || name === typed);
+      const show = (names: string[]): void => {
+        // Typing again replaces the menu; a stale batch for older text must not appear.
+        if (input.value !== typed) return;
+        showMenu(input, names, typed);
+      };
+      setTimeout(() => {
+        if (options.secondBatchAfterMs && exact.length > 0) {
+          show(hits.filter((name) => !exact.includes(name)));
+          setTimeout(() => {
+            show(hits);
+          }, options.secondBatchAfterMs);
+        } else {
+          show(hits);
+        }
+      }, delay);
+    });
+
+    input.addEventListener("keydown", (event) => {
+      const open = input.getAttribute("aria-expanded") === "true";
+      if (event.key === "Enter") {
+        fake.enters.push({ open, field: fieldName(input) });
+        if (!open) return;
+        const active = doc.getElementById(input.getAttribute("aria-activedescendant") ?? "");
+        const text = active?.textContent.trim() ?? "";
+        if (!active || text.startsWith('Create "')) return; // the fake only models choosing an existing entry
+        addChip(input, text);
+        fake.chosen.push(`${fieldName(input)}: ${text}`);
+        closeMenu(input);
+        return;
+      }
+      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+      const listbox = doc.getElementById(input.getAttribute("aria-controls") ?? "");
+      const ids = [...(listbox?.querySelectorAll('[role="option"]') ?? [])].map((o) => o.id);
+      const at = ids.indexOf(input.getAttribute("aria-activedescendant") ?? "");
+      const next = Math.min(ids.length - 1, Math.max(0, at + (event.key === "ArrowDown" ? 1 : -1)));
+      if (ids[next]) input.setAttribute("aria-activedescendant", ids[next]);
+    });
+  }
+
+  for (const input of form.querySelectorAll<HTMLInputElement>('input[role="combobox"]')) wire(input);
+
+  for (const input of form.querySelectorAll<HTMLInputElement>(
+    'input[name="youtube_url"], input[name="custom_song_art_image_url"]',
+  )) {
+    input.addEventListener("keydown", (event) => {
+      fake.plainKeys.push(`${input.name}:${event.key}`);
+      if (event.key === "Enter") fake.strayEnters.push(input.name);
+    });
+    for (const type of ["input", "change"])
+      input.addEventListener(type, () => fake.plainEvents.push(`${input.name}:${type}`));
+  }
+
+  // Additional credits: the fixture holds one empty row to copy from.
+  const rows = form.querySelector<HTMLElement>('[class*="RepeatableInputPair__Rows"]');
+  const template = rows?.firstElementChild?.cloneNode(true) as HTMLElement | undefined;
+  if (options.noRows) rows?.replaceChildren();
+  const add = [...form.querySelectorAll("button")].find((b) => b.textContent.trim() === "Add additional credits");
+  if (options.noAddButton) add?.remove();
+  add?.addEventListener("click", () => {
+    if (!rows || !template) return;
+    const index = rows.children.length;
+    const row = template.cloneNode(true) as HTMLElement;
+    for (const node of [row, ...row.querySelectorAll<HTMLElement>("*")]) {
+      for (const attr of [...node.attributes]) {
+        const value = attr.value
+          .replace("custom_performances-0-", `custom_performances-${String(index)}-`)
+          .replace(/react-select-18/g, `react-select-${String(200 + index * 2)}`)
+          .replace(/react-select-19/g, `react-select-${String(201 + index * 2)}`);
+        if (value !== attr.value) node.setAttribute(attr.name, value);
+      }
+    }
+    rows.append(row);
+    for (const input of row.querySelectorAll<HTMLInputElement>('input[role="combobox"]')) wire(input);
+    row.querySelector<HTMLInputElement>('[id$="-label"] input')?.focus();
+  });
+
+  return fake;
+}
+
+/** Chips shown in a field, as their label text. */
+export function chipsIn(box: Element | null): string[] {
+  return [...(box?.querySelectorAll('[class*="multiValue"]') ?? [])].map((chip) => chip.textContent.trim());
+}
+
+export function rowChips(form: HTMLFormElement): { role: string[]; artists: string[] }[] {
+  const out: { role: string[]; artists: string[] }[] = [];
+  for (let i = 0; form.querySelector(`#custom_performances-${String(i)}-label`); i++) {
+    out.push({
+      role: chipsIn(form.querySelector(`#custom_performances-${String(i)}-label`)),
+      artists: chipsIn(form.querySelector(`#custom_performances-${String(i)}-artists`)),
+    });
+  }
+  return out;
+}

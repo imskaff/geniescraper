@@ -36,3 +36,12 @@ export function trimColon(text: string): string {
 export function codePointLength(text: string): number {
   return Array.from(text).length;
 }
+
+/**
+ * Lowercase, accent-folded words, as scraper.text.words: "BAD BUNNY x DÁKITI (Audio)" gives
+ * ["bad", "bunny", "x", "dakiti", "audio"]. Symbols such as the ℗ and © signs are not words.
+ */
+export function words(text: string): string[] {
+  const folded = text.toLowerCase().normalize("NFKD").replace(/\p{M}/gu, "");
+  return folded.match(/[\p{L}\p{N}]+/gu) ?? [];
+}
