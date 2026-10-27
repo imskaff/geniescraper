@@ -1,6 +1,8 @@
 import json
 import re
 import unicodedata
+from collections.abc import Iterator
+from typing import NamedTuple
 
 import httpx
 
@@ -139,15 +141,46 @@ def _is_artist_ch(channel: str, artist: str) -> bool:
     return False
 
 
+def _names_artist(text: str, artist: str) -> bool:
+    """True if the full artist credit, or one collaborator (>=3 chars), appears as whole words in text."""
+    haystack = f" {' '.join(_words(text))} "
+    names = [artist, *_COLLAB_SEP.split(artist)]
+    return any(len(name) >= 3 and f" {name} " in haystack for name in (" ".join(_words(n)) for n in names if n.strip()))
+
+
+def _is_topic_upload(channel: str, snippet: str, artist: str, trusted_channel: bool) -> bool:
+    """True for the auto-generated "Artist - Topic" upload of a track.
+
+    Search results now show Topic uploads under the artist's channel name, so the
+    "Provided to YouTube by <label> / Song · Artist" description is the reliable
+    marker. Reuploads copy that text, so it only counts on a trusted channel.
+    """
+    if "- topic" in channel.lower():
+        return True
+    return trusted_channel and snippet.lower().startswith("provided to youtube by") and _names_artist(snippet, artist)
+
+
 # ── per-phase scorers ─────────────────────────────────────────────────────────
 
 
-def _score_audio(video_title: str, channel: str, artist: str, song_title: str) -> int:
+def _score_audio(
+    video_title: str,
+    channel: str,
+    artist: str,
+    song_title: str,
+    *,
+    official_artist: bool = False,
+    snippet: str = "",
+) -> int:
     """Phase 1 — find the canonical song upload (Topic channel or artist's own channel).
 
-     2  — "Artist - Topic" auto-generated channel (title must match song)
+     2  — Topic upload: "Artist - Topic" channel or "Provided to YouTube by" (title must match song)
      1  — artist's official channel with a matching plain title
     -1  — skip (is an MV, wrong title, unrelated channel, or skip-keyword hit)
+
+    `official_artist` is YouTube's Official Artist Channel badge. It identifies the
+    artist's channel when its name differs from the credit (Frank Ocean posts as
+    "Blonded"), provided the video title names the artist.
     """
     t = video_title.lower()
     ch = channel.lower()
@@ -162,11 +195,12 @@ def _score_audio(video_title: str, channel: str, artist: str, song_title: str) -
     if not _sig_present(video_title, song_title):
         return -1
 
-    if "- topic" in ch:
+    artist_ch = _is_artist_ch(channel, artist)
+    if _is_topic_upload(ch, snippet, artist, artist_ch or official_artist):
         # Topic-channel titles are exactly the song name — require a close match
         return 2 if _title_matches_song(video_title, song_title, artist) else -1
 
-    if _is_artist_ch(channel, artist):
+    if artist_ch or (official_artist and _names_artist(video_title, artist)):
         return 1 if _title_matches_song(video_title, song_title, artist) else -1
 
     return -1
@@ -240,8 +274,17 @@ async def _fetch_description(client: httpx.AsyncClient, video_id: str) -> str:
         return ""
 
 
-def _iter_videos(data: dict):
-    """Yield (video_id, title, channel) tuples from a YouTube search-results page."""
+class _Video(NamedTuple):
+    id: str
+    title: str
+    channel: str
+    official_artist: bool  # Official Artist Channel badge
+    verified: bool  # plain verified checkmark (labels, media companies)
+    snippet: str  # description excerpt shown under the result
+
+
+def _iter_videos(data: dict) -> Iterator[_Video]:
+    """Yield the videos of a YouTube search-results page in result order."""
     try:
         sections = data["contents"]["twoColumnSearchResultsRenderer"]["primaryContents"]["sectionListRenderer"][
             "contents"
@@ -263,7 +306,17 @@ def _iter_videos(data: dict):
                 channel = vr["ownerText"]["runs"][0]["text"]
             except (KeyError, IndexError):
                 pass
-            yield vr["videoId"], title, channel
+            styles = {b.get("metadataBadgeRenderer", {}).get("style", "") for b in vr.get("ownerBadges", [])}
+            snippets = vr.get("detailedMetadataSnippets") or [{}]
+            snippet = "".join(r.get("text", "") for r in snippets[0].get("snippetText", {}).get("runs", []))
+            yield _Video(
+                vr["videoId"],
+                title,
+                channel,
+                official_artist="BADGE_STYLE_TYPE_VERIFIED_ARTIST" in styles,
+                verified="BADGE_STYLE_TYPE_VERIFIED" in styles,
+                snippet=snippet,
+            )
 
 
 def _audio_queries(title: str, artist: str) -> tuple[str, ...]:
@@ -327,13 +380,20 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
             if not data:
                 continue
 
-            for rank, (vid_id, vtitle, channel) in enumerate(list(_iter_videos(data))[:10]):
-                if vid_id in p1_seen:
+            for rank, video in enumerate(list(_iter_videos(data))[:10]):
+                if video.id in p1_seen:
                     continue
-                p1_seen.add(vid_id)
-                score = _score_audio(vtitle, channel, artist, title)
+                p1_seen.add(video.id)
+                score = _score_audio(
+                    video.title,
+                    video.channel,
+                    artist,
+                    title,
+                    official_artist=video.official_artist,
+                    snippet=video.snippet,
+                )
                 if score > 0:
-                    audio_candidates.append((score, rank, f"https://www.youtube.com/watch?v={vid_id}"))
+                    audio_candidates.append((score, rank, f"https://www.youtube.com/watch?v={video.id}"))
 
             # Topic-channel hit (score 2) is definitive — skip remaining queries
             if any(s >= 2 for s, _, _ in audio_candidates):
@@ -356,12 +416,12 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
             if not data:
                 continue
 
-            for rank, (vid_id, vtitle, channel) in enumerate(list(_iter_videos(data))[:10]):
-                if vid_id in p2_seen:
+            for rank, video in enumerate(list(_iter_videos(data))[:10]):
+                if video.id in p2_seen:
                     continue
-                p2_seen.add(vid_id)
-                score = _score_mv(vtitle, channel, artist, title)
-                url = f"https://www.youtube.com/watch?v={vid_id}"
+                p2_seen.add(video.id)
+                score = _score_mv(video.title, video.channel, artist, title)
+                url = f"https://www.youtube.com/watch?v={video.id}"
                 if score == 3:
                     mv_candidates.append((score, rank, url))
                 elif score == 1:
