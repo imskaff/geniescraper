@@ -97,6 +97,7 @@ Open **⚙ Options** from the main menu:
 | Auto-confirm | On | Press Enter after paste to confirm autocomplete |
 | Auto-tab | Off | Automatically Tab between Genius fields |
 | Compact mode | Off | Hide queue list and shrink the window |
+| Always on top | On | Keep the window above the browser |
 | Auto-start assistant | Off | Start automatically after a countdown |
 | Auto-start delay | 15 s | Seconds before auto-start fires |
 | Scrape core credits | On | Songwriters and producers |
@@ -105,7 +106,8 @@ Open **⚙ Options** from the main menu:
 | Scrape YouTube | On | YouTube video/MV link |
 | Scrape cover art | On | Album cover at 1000×1000 PNG |
 
-Settings are saved to `.env` in the project root.
+Settings are saved per user in `%APPDATA%\Geniescraper\settings.env`, so every copy of the app shares them.
+A `.env` in the project root from older versions is still read until the first save.
 
 ## Development
 

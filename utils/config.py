@@ -1,12 +1,23 @@
+import os
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-_ENV_PATH = Path(__file__).parent.parent / ".env"
+
+def settings_path(appdata: str | None = None) -> Path:
+    """Per-user settings file, shared by every copy of the app (checkout, worktree, release)."""
+    base = appdata or os.environ.get("APPDATA") or str(Path.home())
+    return Path(base) / "Geniescraper" / "settings.env"
+
+
+# Before v0.5 settings lived in a .env next to the code, so each checkout had its own.
+# It is still read (the per-user file wins) so existing settings carry over until the first save.
+_LEGACY_ENV_PATH = Path(__file__).parent.parent / ".env"
+_ENV_PATH = settings_path()
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=str(_ENV_PATH), env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file=(str(_LEGACY_ENV_PATH), str(_ENV_PATH)), env_file_encoding="utf-8")
 
     hotkey: str = "f8"
     back_hotkey: str = "f7"
@@ -26,13 +37,14 @@ class Settings(BaseSettings):
     auto_start_assistant: bool = False  # Auto-start assistant after countdown on credits screen
     auto_start_delay: int = 15  # Seconds before auto-starting assistant
     auto_tab: bool = False  # Auto-press Tab after role/artist to navigate Genius fields
+    always_on_top: bool = True  # Keep the window above the browser while pasting
 
     # Window position (-1 = not yet saved, use default centering)
     win_x: int = -1
     win_y: int = -1
 
     def save(self) -> None:
-        """Persist current settings back to .env file."""
+        """Persist current settings to the per-user settings file."""
         lines = [
             "# Hotkey to trigger next paste (default: f8)",
             f"HOTKEY={self.hotkey}",
@@ -60,11 +72,13 @@ class Settings(BaseSettings):
             f"AUTO_START_ASSISTANT={str(self.auto_start_assistant).lower()}",
             f"AUTO_START_DELAY={self.auto_start_delay}",
             f"AUTO_TAB={str(self.auto_tab).lower()}",
+            f"ALWAYS_ON_TOP={str(self.always_on_top).lower()}",
             "",
             "# Last window position (set automatically on close)",
             f"WIN_X={self.win_x}",
             f"WIN_Y={self.win_y}",
         ]
+        _ENV_PATH.parent.mkdir(parents=True, exist_ok=True)
         _ENV_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
