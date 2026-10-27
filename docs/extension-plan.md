@@ -195,7 +195,7 @@ Each slice ends working, tested and committable.
 | 3 | Apple Music credits parser (done) | Every fixture in `tests/fixtures` matches `tests/golden` |
 | 4 | Album and track detection, background-tab credits reader (done; reads song pages, see section 11) | Unit tests with fake `chrome.*` ports; real hidden-tab run matches golden |
 | 5 | Side panel UI: link, track picker, credits and paste queue, settings; accessibility pass (done) | Unit tests with fake worker and storage; `npm run live:panel` drives the real panel, worker and live Apple Music |
-| 6 | Genius fill, one field per press (done; extension-level live check pending a signed-in profile) | Fake-select tests on the saved form; engine run on the live form; `npm run live:genius` drives the real extension |
+| 6 | Genius fill, one field per press (done) | Fake-select tests on the saved form; engine and whole extension run live on Genius (`npm run live:genius`) |
 | 7 | iTunes cover lookup | Replays `tests/fixtures/lookups/covers` |
 | 8 | Deezer and YouTube lookups with optional permissions | Replays `tests/fixtures/lookups/youtube` and matches `tests/golden/youtube.json` |
 | 9 | Store readiness: icons, locales, privacy policy, listing text, permission justifications, packaging script | Zip validated; manifest contract tests green |
@@ -311,6 +311,7 @@ Verification state:
 
 - Run for real on the live form with the real engine (signed-in pane, main world): Writer, Producer, additional roles, artists, both copyright roles with their labels, and the two URL fields all filled; a made-up name and the role "Programming" were correctly left for the user; nothing was saved and the form was discarded by reloading.
 - The panel's paste screen and the new settings were run live (keyboard order, no overflow at 400 and 320 px, dark and light screenshots reviewed); opening them needs no Genius sign-in.
-- Not yet run: the whole path through the extension (content script in its isolated world, worker, panel, a real F8) because it needs a Chromium profile signed in to Genius; `npm run live:genius` is written for it.
+- Run for real through the whole extension (`npm run live:genius`, signed-in scratch profile, real panel, worker, content script in its isolated world and real F8/F7 key events) on the CHIHIRO queue of 47 steps: 38 steps filled and 5 were left for the user (the roles Programming, Editing Engineer and Vocal Recording Engineer, which Genius lacks, and the label Darkroom/Interscope Records, which Genius has no exact entry for) and skipped from the panel; every role and artist pair on the form was a pair from the credits, no artist sat in a row without a role, the writers and the producer matched, and nothing that could be a save was sent.
+- Still unobserved: whether Chrome's F7 caret-browsing prompt is really suppressed by the page handler (CDP key events bypass browser shortcuts).
 - Known rough edges: a skipped step leaves its typed text in the Genius field, and waiting for suggestions that never come (a role Genius lacks) takes about 4 seconds.
-- The scratch Chromium profile used for the Genius sign-in holds that session's cookies; delete it when the live check is done.
+- The scratch Chromium profile used for the Genius sign-in holds that session's cookies and lives in the session's scratch folder; delete it when no more live checks are needed.
