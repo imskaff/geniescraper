@@ -11,14 +11,26 @@ import { EMPTY_SESSION, type Session, type TrackResult } from "../shared/session
 import { normaliseSettings, queueOptions, type Settings } from "../shared/settings";
 import { loadPaste, loadSession, loadSettings, saveSession, saveSettings, type Stores } from "../shared/storage";
 import type { WorkerApi } from "./api";
+import type { OptionalHost } from "../lookups/http";
 
 export interface ActiveTab {
   tabId: number;
   url: string;
 }
 
+/** The optional hosts' permissions, as Chrome has them: the permission is the setting, so nothing is stored twice. */
+export interface HostPermissions {
+  granted(): Promise<Record<OptionalHost, boolean>>;
+  /** Ask Chrome. Must be called straight from the user's click: Chrome refuses it after any wait. */
+  request(host: OptionalHost): Promise<boolean>;
+  remove(host: OptionalHost): Promise<boolean>;
+  /** Called whenever any permission is added or removed, including from chrome://extensions. */
+  subscribe(listener: () => void): void;
+}
+
 export interface Env {
   api: WorkerApi;
+  hosts: HostPermissions;
   stores: Stores;
   /** The tab the user is looking at, or null when there is none to read. */
   activeTab(): Promise<ActiveTab | null>;
@@ -32,6 +44,8 @@ export interface PanelState {
   paste: PasteState;
   /** Which track is being pasted (null when unknown, for example after a restart with no match). */
   pasteIndex: number | null;
+  /** Which optional hosts the user has granted, as Chrome reports it. */
+  hosts: Record<OptionalHost, boolean>;
   /** Counts every error shown, so the same message appearing again (a repeated attempt) can still be told apart. */
   errorSeq: number;
   /** What the panel is waiting for; the buttons that would start another job are disabled meanwhile. */
@@ -99,6 +113,7 @@ export class PanelController {
     session: Session,
     pageUrl: string,
     paste: PasteState = { ...IDLE_PASTE },
+    hosts: Record<OptionalHost, boolean> = { deezer: false, youtube: false },
   ) {
     const pasteIndex = paste.active
       ? (session.results.find((r) => (r.song?.title || r.title) === paste.title)?.index ?? null)
@@ -108,6 +123,7 @@ export class PanelController {
       settings,
       paste,
       pasteIndex,
+      hosts,
       errorSeq: 0,
       settingsOpen: false,
       busy: null,
@@ -119,14 +135,17 @@ export class PanelController {
 
   /** Load settings, the stored session and the active tab, and build the controller from them. */
   static async create(env: Env): Promise<PanelController> {
-    const [settings, session, paste, tab] = await Promise.all([
+    const [settings, session, paste, tab, hosts] = await Promise.all([
       loadSettings(env.stores),
       loadSession(env.stores),
       loadPaste(env.stores),
       env.activeTab().catch(() => null),
+      env.hosts.granted().catch(() => ({ deezer: false, youtube: false })),
     ]);
     const pageUrl = tab && parseAppleMusicUrl(tab.url) ? tab.url : "";
-    const controller = new PanelController(env, settings, session, pageUrl, paste);
+    const controller = new PanelController(env, settings, session, pageUrl, paste, hosts);
+    // A permission taken back in chrome://extensions, or granted elsewhere, changes the Settings box at once.
+    env.hosts.subscribe(() => void controller.refreshHosts());
     // Tracks that were mid-read when the panel closed were restored as pending: carry on with them.
     if (session.screen === "review" && session.results.some((r) => r.status === "pending")) {
       void controller.scrapePending();
@@ -159,6 +178,29 @@ export class PanelController {
     } catch {
       // A full or unavailable store must not break the panel; the session simply is not kept.
     }
+  }
+
+  /** Read the permissions again from Chrome, the only place that knows them. */
+  async refreshHosts(): Promise<void> {
+    const hosts = await this.env.hosts.granted().catch(() => this.current.hosts);
+    if (hosts.deezer !== this.current.hosts.deezer || hosts.youtube !== this.current.hosts.youtube) {
+      this.update({ hosts });
+    }
+  }
+
+  /**
+   * Turn an optional host on or off. The request to Chrome is the first thing done, before any wait, because Chrome
+   * only shows its prompt for a call made straight from the user's click. A refusal leaves the host off.
+   */
+  async setHost(host: OptionalHost, on: boolean): Promise<void> {
+    const asked = on ? this.env.hosts.request(host) : this.env.hosts.remove(host);
+    const ok = await asked.catch(() => false);
+    await this.refreshHosts();
+    // Redraw even when nothing changed, so a box the user ticked and Chrome refused goes back to unticked.
+    this.update({
+      hosts: { ...this.current.hosts },
+      status: ok ? "" : on ? "Chrome did not grant access, so that look-up stays off." : "",
+    });
   }
 
   /** Re-read which Apple Music page the user is on, after they switch tabs or navigate. */

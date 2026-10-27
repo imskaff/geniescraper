@@ -176,7 +176,7 @@ h2 + .help {
   margin: 0 0 8px;
 }
 
-/* On the paste screen the error shows under the key buttons; the top region stays for screen readers only. */
+/* On the paste screen the error shows above the step counter; the top region stays for screen readers only. */
 .alert.quiet-visual {
   position: absolute;
   width: 1px;
@@ -190,7 +190,7 @@ h2 + .help {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  margin: 10px 0 0;
+  margin: 0 0 12px;
   padding: 10px 12px;
   color: var(--danger-ink);
   background: var(--danger);

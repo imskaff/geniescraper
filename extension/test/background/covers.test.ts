@@ -157,6 +157,40 @@ describe("realCovers", () => {
     const covers = realCovers(getJson);
     expect(await covers.exact("https://music.apple.com/us/album/sos/1658650093")).toBe(GOOD_PNG);
     expect(await covers.search("SOS", "SZA")).toBe(GOOD_PNG);
-    expect(seen).toEqual(["/lookup", "/search"]);
+    expect(seen).toEqual(["/lookup", "/search", "/search"]);
+  });
+
+  const only =
+    (host: string, body: unknown): GetJson =>
+    (url) =>
+      Promise.resolve(new URL(url).hostname === host ? body : null);
+  const DEEZER = {
+    data: [
+      {
+        title: "SOS",
+        artist: { name: "SZA" },
+        album: { cover_xl: "https://cdn-images.dzcdn.net/images/cover/abc/1000x1000-000000-80-0-0.jpg" },
+      },
+    ],
+  };
+
+  it("falls back to Deezer when Apple's search finds nothing", async () => {
+    expect(await realCovers(only("api.deezer.com", DEEZER)).search("SOS", "SZA")).toBe(
+      "https://cdn-images.dzcdn.net/images/cover/abc/1000x1000-000000-80-0-0.png",
+    );
+  });
+
+  it("prefers Apple's search over Deezer when both have a cover", async () => {
+    const getJson: GetJson = (url) =>
+      Promise.resolve(
+        new URL(url).hostname === "api.deezer.com"
+          ? DEEZER
+          : { results: [{ artworkUrl100: GOOD, trackName: "SOS", artistName: "SZA" }] },
+      );
+    expect(await realCovers(getJson).search("SOS", "SZA")).toBe(GOOD_PNG);
+  });
+
+  it("gives nothing when no host answers, which is what the fetcher does for a host that is not granted", async () => {
+    expect(await realCovers(() => Promise.resolve(null)).search("SOS", "SZA")).toBe("");
   });
 });

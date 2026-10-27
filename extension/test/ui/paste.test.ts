@@ -262,7 +262,7 @@ describe("the paste error box", () => {
     message,
   });
 
-  it("shows under the key buttons and plays its animation once per attempt, not on every redraw", async () => {
+  it("shows above the step counter and plays its animation once per attempt, not on every redraw", async () => {
     const { root, env, panel } = await onPaste();
     expect(root.querySelector(".paste-error")).toBeNull();
     panel.setPaste(attention(env, "Genius has no field named Writer."));
@@ -270,7 +270,7 @@ describe("the paste error box", () => {
     const box = $(root, ".paste-error");
     expect(box.textContent).toContain("Genius has no field named Writer.");
     expect(box.classList.contains("fresh")).toBe(true);
-    expect(box.previousElementSibling?.classList.contains("row")).toBe(true);
+    expect(box.nextElementSibling?.classList.contains("progress")).toBe(true);
     panel.openSettings();
     panel.closeSettings();
     await flush();

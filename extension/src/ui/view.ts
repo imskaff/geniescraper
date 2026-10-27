@@ -503,6 +503,7 @@ export class PanelView {
     return [
       this.heading("Paste into Genius"),
       el("p", { class: "help", text: paste.title }),
+      this.pasteError(state),
       el("p", { class: "progress", text: progress }),
       current
         ? el(
@@ -534,7 +535,6 @@ export class PanelView {
         // Leaving a paste in progress looks like the other ways out, so it is easy to tell from the step buttons.
         this.button("Back to credits", "nav", "pstop", () => void this.panel.stopPaste(), false),
       ),
-      this.pasteError(state),
       el("p", {
         class: "help",
         text: "Keep the song's Edit Metadata form open on Genius. Nothing is saved for you: check the form, then save it there.",
@@ -545,7 +545,7 @@ export class PanelView {
     ].filter((node): node is HTMLElement => node !== null);
   }
 
-  /** The error under the key buttons. A new error, or the same one on a new attempt, plays the attention animation once. */
+  /** The error above the step counter. A new error, or the same one on a new attempt, plays the attention animation once. */
   private pasteError(state: PanelState): HTMLElement | null {
     if (!state.error) return null;
     const fresh = state.errorSeq !== this.shownErrorSeq;
@@ -639,6 +639,7 @@ export class PanelView {
       ),
       this.pastingSettings(state),
       this.readingSettings(state),
+      this.lookupSettings(state),
     ];
   }
 
@@ -757,6 +758,30 @@ export class PanelView {
         class: "help",
         text: "More at once is faster for an album, but opens that many hidden tabs on Apple Music together. One by one is the gentlest; three is the default.",
         attrs: { id: "setting-parallelReads-help" },
+      }),
+    );
+  }
+
+  private lookupSettings(state: PanelState): HTMLElement {
+    const deezer = el("input", {
+      attrs: { type: "checkbox", "data-key": "host-deezer", "aria-describedby": "host-deezer-help" },
+      on: {
+        change: (event) => {
+          // Straight from the click: Chrome shows its permission prompt only for a call made in the gesture.
+          void this.panel.setHost("deezer", (event.target as HTMLInputElement).checked);
+        },
+      },
+    });
+    deezer.checked = state.hosts.deezer;
+    return el(
+      "fieldset",
+      { class: "stack" },
+      el("legend", { text: "Look-ups on other sites" }),
+      el("label", { class: "check" }, deezer, el("span", { text: "Search Deezer for a cover when Apple has none" })),
+      el("p", {
+        class: "help",
+        text: "Chrome asks before this contacts api.deezer.com, and you can take the permission back here or in chrome://extensions.",
+        attrs: { id: "host-deezer-help" },
       }),
     );
   }

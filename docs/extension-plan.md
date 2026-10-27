@@ -267,7 +267,7 @@ Playwright forces pages to report `visibilityState: "visible"` and focus, so it 
 - Looking at the light scheme found that checked boxes were yellow on white; they now use the darker link color.
   The focus ring is clearly visible around the yellow primary button in a screenshot.
 - "New link" now clears the previous link instead of leaving it in the box.
-- Still open: a visible tab flash and history entry per scrape, the popup fallback for Safari, a CDP side panel width narrower than 320 px (not measured), and the YouTube link setting, which has no data to act on until the lookup arrives (slice 8).
+- Still open: a visible tab flash and history entry per scrape, the popup fallback for Safari, a CDP side panel width narrower than 320 px (not measured), and the YouTube link setting, which has no data to act on until the lookup arrives (slice 8b).
 
 ## 13. Slice 6 decisions: the Genius fill
 
@@ -325,7 +325,7 @@ Verification state:
 - Responses are untrusted: an artwork URL is used only if it is https on `mzstatic.com`, so a hostile or broken response cannot put another host into the paste queue or the panel.
 - `src/lookups/http.ts` is the only place that fetches third-party data: https only, an explicit host allow-list (`itunes.apple.com` for now), no cookies, no referrer, a 10 second timeout, and null on every failure.
 - Live: the golden track's cover through the real worker matches the golden artwork, and SOUR (no usable page header cover) gets its cover from the lookup.
-- Deezer (optional host) and YouTube arrive in slice 8; the Deezer cover fallback is not in this slice, so a track iTunes cannot find gets no cover from the extension.
+- Deezer (optional host) arrived in slice 8a; YouTube follows in 8b.
 
 ## 15. Changes after the first hands-on review
 
@@ -382,3 +382,19 @@ Measured live on the 11-track album (10 readable tracks), `node scripts/live-par
 | all at once | 2.0 s | 10 | 0 | yes |
 
 The default is 3 at a time (chosen by the owner after these numbers); one by one is the gentlest and stays available in Settings.
+
+## 17. Slice 8a: optional hosts and the Deezer cover fallback
+
+- **Optional hosts.** `api.deezer.com` and `www.youtube.com` are `optional_host_permissions`; `itunes.apple.com` stays required.
+  Settings has a "Look-ups on other sites" box per optional host.
+  The Chrome permission is the setting: the box shows what `chrome.permissions.contains` says, is re-read when the panel opens, and follows `permissions.onAdded` and `onRemoved`, so taking the permission back in chrome://extensions unticks it live.
+  Nothing is stored twice, so the box can never disagree with what the worker may do.
+- **Gesture rule.** `chrome.permissions.request` is the first call in the change handler, before any wait; a test fails if anything is awaited first.
+  A refusal puts the box back and says so.
+  Unticking calls `permissions.remove`.
+- **Fetcher.** `createFetchJson` checks the grant at every request for an optional host (a revoked permission stops the next lookup), and refuses redirects (`redirect: "error"`), so a response cannot come from a host that was not checked.
+- **Deezer.** `lookups/deezer.ts` ports `fetch_cover_url`: it matches with the same `sameTrack` and accepts a cover only over https from `*.dzcdn.net`, with the extension swapped to `.png`.
+  Order as in `scraper/pipeline.py`: Apple's exact lookup, then the iTunes title search, then Deezer (the two searches run together; Deezer answers "" without a request unless granted).
+  No parity vector: the Python function is network-bound and its only pure parts (`sameTrack`, the `.png` rewrite) are already covered by the existing vectors and the new unit tests.
+- **Verified.** Unit tests for all of the above; the Deezer lookup was run against the live API (CHIHIRO, SOS and FE!N each gave a 1000x1000 PNG on cdn-images.dzcdn.net that answered 200 image/png, a made-up song gave nothing).
+  Chrome's permission prompt cannot be driven over CDP, so the prompt-and-grant step is **not** verified end to end here and needs one manual click.

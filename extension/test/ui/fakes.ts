@@ -2,7 +2,8 @@ import { IDLE_PASTE, back, skip, startPaste, stop, type PasteState } from "../..
 import type { AlbumInfo, PageScrape, PasteCommand, Result } from "../../src/shared/messages";
 import type { KeyValueStore, Stores } from "../../src/shared/storage";
 import type { WorkerApi } from "../../src/ui/api";
-import type { ActiveTab, Env } from "../../src/ui/controller";
+import type { OptionalHost } from "../../src/lookups/http";
+import type { ActiveTab, Env, HostPermissions } from "../../src/ui/controller";
 
 export function memoryStore(initial: Record<string, unknown> = {}): KeyValueStore & { data: Map<string, unknown> } {
   const data = new Map<string, unknown>(Object.entries(initial));
@@ -107,20 +108,73 @@ export function fakeApi(script: ApiScript = {}): FakeApi {
   return api;
 }
 
+export interface FakeHosts extends HostPermissions {
+  state: Record<OptionalHost, boolean>;
+  log: string[];
+  /** What Chrome's prompt will answer; a refusal leaves the host off. */
+  allow: boolean;
+  /** Change a permission from outside, as chrome://extensions does, and tell the listeners. */
+  changeElsewhere(host: OptionalHost, on: boolean): void;
+}
+
+export function fakeHosts(initial: Partial<Record<OptionalHost, boolean>> = {}): FakeHosts {
+  const listeners: (() => void)[] = [];
+  const hosts: FakeHosts = {
+    state: { deezer: false, youtube: false, ...initial },
+    log: [],
+    allow: true,
+    granted: () => Promise.resolve({ ...hosts.state }),
+    request(host) {
+      hosts.log.push(`request:${host}`);
+      if (hosts.allow) hosts.state[host] = true;
+      return Promise.resolve(hosts.allow);
+    },
+    remove(host) {
+      hosts.log.push(`remove:${host}`);
+      hosts.state[host] = false;
+      return Promise.resolve(true);
+    },
+    subscribe: (listener) => {
+      listeners.push(listener);
+    },
+    changeElsewhere(host, on) {
+      hosts.state[host] = on;
+      listeners.forEach((listener) => {
+        listener();
+      });
+    },
+  };
+  return hosts;
+}
+
 export interface FakeEnv extends Env {
   api: FakeApi;
+  hosts: FakeHosts;
   settingsStore: ReturnType<typeof memoryStore>;
   sessionStore: ReturnType<typeof memoryStore>;
 }
 
 export function fakeEnv(
-  options: { api?: ApiScript; tab?: ActiveTab | null; settings?: unknown; session?: unknown } = {},
+  options: {
+    api?: ApiScript;
+    tab?: ActiveTab | null;
+    settings?: unknown;
+    session?: unknown;
+    hosts?: Partial<Record<OptionalHost, boolean>>;
+  } = {},
 ): FakeEnv {
   const settingsStore = memoryStore(options.settings === undefined ? {} : { settings: options.settings });
   const sessionStore = memoryStore(options.session === undefined ? {} : { session: options.session });
   const stores: Stores = { settings: settingsStore, session: sessionStore };
   const tab = options.tab ?? null;
-  return { api: fakeApi(options.api), stores, activeTab: () => Promise.resolve(tab), settingsStore, sessionStore };
+  return {
+    api: fakeApi(options.api),
+    hosts: fakeHosts(options.hosts),
+    stores,
+    activeTab: () => Promise.resolve(tab),
+    settingsStore,
+    sessionStore,
+  };
 }
 
 /** A promise settled from outside, to hold a worker request open while the test acts. */

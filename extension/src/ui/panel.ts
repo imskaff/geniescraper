@@ -1,12 +1,31 @@
 // Panel entry point: wire the real worker, storage and tabs into the controller and mount the view.
 import { createWorkerApi, chromeSend } from "./api";
-import { PanelController, type Env } from "./controller";
+import { PanelController, type Env, type HostPermissions } from "./controller";
+import { OPTIONAL_LOOKUP_HOSTS, hostOrigin, type OptionalHost } from "../lookups/http";
 import { PanelView } from "./view";
 import { PASTE_KEY, normalisePaste } from "../core/paste";
 import { chromeStores } from "../shared/storage";
 
+const HOSTS = Object.keys(OPTIONAL_LOOKUP_HOSTS) as OptionalHost[];
+
+const hosts: HostPermissions = {
+  async granted() {
+    const entries = await Promise.all(
+      HOSTS.map(async (host) => [host, await chrome.permissions.contains({ origins: [hostOrigin(host)] })] as const),
+    );
+    return Object.fromEntries(entries) as Record<OptionalHost, boolean>;
+  },
+  request: (host) => chrome.permissions.request({ origins: [hostOrigin(host)] }),
+  remove: (host) => chrome.permissions.remove({ origins: [hostOrigin(host)] }),
+  subscribe(listener) {
+    chrome.permissions.onAdded.addListener(listener);
+    chrome.permissions.onRemoved.addListener(listener);
+  },
+};
+
 const env: Env = {
   api: createWorkerApi(chromeSend),
+  hosts,
   stores: chromeStores(),
   async activeTab() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });

@@ -187,7 +187,8 @@ The cover is Apple's exact 1000x1000 PNG for the album you opened, looked up by 
 Review the credits, click **Start pasting**, open the song's **Edit Metadata** form on Genius, and press **F8** once per field (**F7** goes back).
 The extension finds each field itself and fills one per press; it never clicks Save, so you check the form and save it yourself.
 When Genius has no exact match for a name or role the text stays typed and nothing is chosen for you: pick a suggestion yourself, or press Skip in the panel.
-Keys, auto-confirm and the suggestion wait are in the panel's Settings.
+Keys, auto-confirm, the suggestion wait and how many tracks are read at once (3 by default) are in the panel's Settings.
+A Deezer cover fallback is off until you tick it in Settings; Chrome then asks for permission to contact api.deezer.com, and you can take it back there or in chrome://extensions.
 
 `npm run live:panel -- --chrome <path to Chromium> --screenshots <folder>` drives the real panel with real key presses against the real service worker and live Apple Music (a whole 10-track album), checks the result against the golden file, and saves screenshots in both color schemes and at 320 px.
 `npm run live:sidepanel -- --chrome <path to Chromium>` checks the way the extension is really used: a genuine side panel next to a visible album tab, reading that tab in place.

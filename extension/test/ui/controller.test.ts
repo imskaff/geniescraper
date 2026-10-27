@@ -484,3 +484,53 @@ describe("describeError", () => {
     },
   );
 });
+
+describe("optional hosts", () => {
+  it("starts from what Chrome reports, not from anything saved", async () => {
+    const { panel } = await open({ hosts: { deezer: true } });
+    expect(panel.state.hosts).toEqual({ deezer: true, youtube: false });
+  });
+
+  it("asks Chrome before it waits for anything, because the prompt needs the click", async () => {
+    const { env, panel } = await open();
+    void panel.setHost("deezer", true);
+    expect(env.hosts.log).toEqual(["request:deezer"]);
+  });
+
+  it("turns the host on when Chrome grants it", async () => {
+    const { env, panel } = await open();
+    await panel.setHost("deezer", true);
+    expect(panel.state.hosts.deezer).toBe(true);
+    expect(env.hosts.state.deezer).toBe(true);
+    expect(panel.state.status).toBe("");
+  });
+
+  it("leaves it off, and says so, when the user declines the prompt", async () => {
+    const { env, panel } = await open();
+    env.hosts.allow = false;
+    await panel.setHost("deezer", true);
+    expect(panel.state.hosts.deezer).toBe(false);
+    expect(panel.state.status).toBe("Chrome did not grant access, so that look-up stays off.");
+  });
+
+  it("takes the permission back when it is turned off", async () => {
+    const { env, panel } = await open({ hosts: { deezer: true } });
+    await panel.setHost("deezer", false);
+    expect(env.hosts.log).toEqual(["remove:deezer"]);
+    expect(panel.state.hosts.deezer).toBe(false);
+  });
+
+  it("follows a permission changed elsewhere, such as taken back in chrome://extensions", async () => {
+    const { env, panel } = await open({ hosts: { deezer: true } });
+    env.hosts.changeElsewhere("deezer", false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(panel.state.hosts.deezer).toBe(false);
+  });
+
+  it("copes with Chrome failing to answer", async () => {
+    const { env, panel } = await open();
+    env.hosts.request = () => Promise.reject(new Error("boom"));
+    await panel.setHost("deezer", true);
+    expect(panel.state.hosts.deezer).toBe(false);
+  });
+});
