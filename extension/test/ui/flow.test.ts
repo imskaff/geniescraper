@@ -336,3 +336,34 @@ describe("the finished screen", () => {
     expect($(root, "h2").textContent).toBe("Paste into Genius");
   });
 });
+
+describe("the YouTube link in the credits list", () => {
+  const LINK = "https://www.youtube.com/watch?v=abcDEF_-123";
+  const withLink = (isMv: boolean) => ({
+    api: {
+      scrapeTrack: (_url: string, title: string) =>
+        Promise.resolve({
+          ok: true as const,
+          data: { ...scrapeFor(title), youtubeUrl: LINK, youtubeIsMv: isMv },
+        }),
+    },
+  });
+
+  it("is listed with the credits, as a safe link, saying whether it is the music video", async () => {
+    const { root } = await toReview(withLink(true));
+    const dt = [...root.querySelectorAll("dl.credits dt")].find((d) => d.textContent === "YouTube (music video)");
+    const link = dt?.nextElementSibling?.querySelector("a");
+    expect(link?.getAttribute("href")).toBe(LINK);
+    expect(link?.getAttribute("rel")).toBe("noopener noreferrer");
+  });
+
+  it("says audio when it is not a music video", async () => {
+    const { root } = await toReview(withLink(false));
+    expect([...root.querySelectorAll("dl.credits dt")].some((d) => d.textContent === "YouTube (audio)")).toBe(true);
+  });
+
+  it("is absent when no link was found", async () => {
+    const { root } = await toReview();
+    expect([...root.querySelectorAll("dl.credits dt")].some((d) => d.textContent.startsWith("YouTube"))).toBe(false);
+  });
+});

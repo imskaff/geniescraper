@@ -448,6 +448,22 @@ export class PanelView {
       );
     }
 
+    if (song.youtubeUrl) {
+      groups.append(
+        el("dt", { text: song.youtubeIsMv ? "YouTube (music video)" : "YouTube (audio)" }),
+        el(
+          "dd",
+          {},
+          isHttps(song.youtubeUrl)
+            ? el("a", {
+                text: song.youtubeUrl,
+                attrs: { href: song.youtubeUrl, target: "_blank", rel: "noopener noreferrer" },
+              })
+            : song.youtubeUrl,
+        ),
+      );
+    }
+
     const queue = this.panel.queueFor(result.index);
     section.append(
       song.credits.length === 0 ? el("p", { class: "problem", text: "No credits were found for this track." }) : groups,
