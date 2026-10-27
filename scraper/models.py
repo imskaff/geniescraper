@@ -109,8 +109,8 @@ class SongCredits(BaseModel):
         Returns a typed queue consumed by the hotkey assistant.
 
         Ordering matches the Genius metadata form layout:
-          1. ("written_by",  <artist>) — Songwriter/Lyricist → Written By field
-          2. ("produced_by", <artist>) — Producer → Produced By field
+          1. ("written_by",  <artist>) - Songwriter/Lyricist → Written By field
+          2. ("produced_by", <artist>) - Producer → Produced By field
           3. ("role",   <role_name>)   \\
              ("artist", <artist>)       > everything else via Add additional credits
              ...

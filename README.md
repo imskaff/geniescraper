@@ -14,7 +14,7 @@
 - 🤖 **Auto-Tab**: Automatically presses Tab (and Enter where needed) between Genius fields so you rarely need to touch the keyboard between hotkey presses. Works across all field transitions.
 - ✅ **Auto-Confirm**: Presses Enter after each paste to select the autocomplete suggestion in Genius dropdowns.
 - 🖼️ **Consistent Cover Art**: Always fetches the 1000×1000 PNG version of the cover art from Apple Music, regardless of the source URL format.
-- ⚡ **Background Prefetch**: When working through an album queue, the next 1–2 tracks are scraped in the background while you paste the current one — advancing to the next track is instant.
+- ⚡ **Background Prefetch**: When working through an album queue, the next 1–2 tracks are scraped in the background while you paste the current one, so advancing to the next track is instant.
 - 🎛️ **Fully Configurable**: Options menu to rebind hotkeys, toggle which fields to include, enable Auto-Tab / Auto-Confirm / Compact Mode / Auto-Start, and set the auto-start countdown.
 
 ## Installation
@@ -162,4 +162,4 @@ uv run python -m bench.run
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE).

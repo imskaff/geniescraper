@@ -33,7 +33,7 @@ def test_url_hint_guides_each_case():
 @pytest.mark.parametrize(
     ("raw", "starts"),
     [
-        ("Page not found — check the URL and try again.", "Apple Music has no page"),
+        ("Page not found. Check the URL and try again.", "Apple Music has no page"),
         ("Timeout 30000ms exceeded.", "Apple Music took too long"),
         ("net::ERR_INTERNET_DISCONNECTED", "Could not reach Apple Music"),
         ("something odd", "Scraping failed: something odd"),

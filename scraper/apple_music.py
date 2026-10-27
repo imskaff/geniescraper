@@ -45,7 +45,7 @@ def _parse_artists(raw: str) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# Credits page parser — used after "View Credits" navigation
+# Credits page parser - used after "View Credits" navigation
 # ---------------------------------------------------------------------------
 
 _NOISE_PREFIXES = ("more by", "© ", "℗ ", "all rights", "℗©", "apple music")
@@ -125,14 +125,14 @@ async def _parse_credits_page(page: Page, *, strategy_0_only: bool = False) -> l
     """
     await _wait_for_credits(page)
 
-    # Strategy 0 — CSS selector pairs
+    # Strategy 0 - CSS selector pairs
     names = await page.locator(".artist-name").all_text_contents()
     roles_texts = await page.locator(".artist-roles").all_text_contents()
     credits = credits_from_cards(names, roles_texts)
     if credits or strategy_0_only:
         return credits
 
-    # Strategy 1 — innerText line-by-line walk (fallback)
+    # Strategy 1 - innerText line-by-line walk (fallback)
     body_text: str = await page.evaluate("() => document.body.innerText")
     return credits_from_text(body_text)
 
@@ -186,7 +186,7 @@ def credits_from_text(body_text: str) -> list[Credit]:
 async def _extract_copyright(page: Page) -> tuple[str, str]:
     """Extract ℗ and © from the album tracklist footer description.
     Only meaningful on /album/ pages before navigating to credits view.
-    Returns (phonographic, copyright_notice) — copyright_notice may be empty."""
+    Returns (phonographic, copyright_notice) - copyright_notice may be empty."""
     raw = ""
     try:
         raw = await page.locator('[data-testid="tracklist-footer-description"]').first.inner_text(timeout=3_000)
@@ -321,7 +321,7 @@ async def _click_view_credits(page: Page, nth_index: int = 1) -> bool:
         try:
             if attempt == 1:
                 # Hover the target song row (0-based) to reveal its MORE button.
-                # nth_index=0 means the song page's own button — no track row to hover.
+                # nth_index=0 means the song page's own button - no track row to hover.
                 try:
                     if nth_index > 0:
                         await page.locator(".songs-list-row, .track-list__item").nth(nth_index - 1).hover(timeout=3_000)
@@ -368,7 +368,7 @@ class PageNotFoundError(Exception):
 
 # Apple Music has used both markers for its "Page Not Found" view.
 _NOT_FOUND_SELECTOR = '[data-testid="not-found-heading"], [data-testid="page-error-title"]'
-_NOT_FOUND_MESSAGE = "Page not found — check the URL and try again."
+_NOT_FOUND_MESSAGE = "Page not found. Check the URL and try again."
 
 
 async def _open(page: Page, url: str) -> None:
@@ -667,7 +667,7 @@ async def scrape(url: str, *, track_index: int = 1, track_title: str = "", debug
         elif "/album/" in url:
             title = await _extract_track_title(page, track_index) or title
 
-        # Header artwork + copyright both live on the album/song page — extract before navigating away.
+        # Header artwork + copyright both live on the album/song page - extract before navigating away.
         page_cover_url = await _extract_cover_url(page)
         phonographic_copyright, copyright_notice = "", ""
         if "/album/" in url:
@@ -681,7 +681,7 @@ async def scrape(url: str, *, track_index: int = 1, track_title: str = "", debug
                 print("[warn] Could not find/click 'View Credits'. Saving debug files.")
                 debug = True
 
-        # For /song/ pages only use the CSS-selector strategy — the page body
+        # For /song/ pages only use the CSS-selector strategy - the page body
         # contains lyrics and navigation that Strategy 1 would misparse as credits.
         credits = await _parse_credits_page(page, strategy_0_only="/song/" in url)
 

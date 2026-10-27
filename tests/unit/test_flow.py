@@ -58,14 +58,14 @@ class TestInstructionText:
         ("pos", "expected"),
         [
             (0, "Click the Written By field, then press F8"),
-            (1, "Field is ready — press F8 to add the next songwriter"),
+            (1, "Field is ready. Press F8 to add the next songwriter"),
             (2, "Click the Produced By field, then press F8"),
             (4, "Tab to Artists in this role, then press F8"),
-            (5, "Field is ready — press F8 to add the next artist"),
-            (7, "Field is ready — press F8 to add the label"),
+            (5, "Field is ready. Press F8 to add the next artist"),
+            (7, "Field is ready. Press F8 to add the label"),
             (8, "Press F8 to copy the YouTube video URL to clipboard"),
             (9, "Press F8 to copy the 1000×1000 PNG cover art URL to clipboard"),
-            (10, "All done — save the page."),
+            (10, "All done. Save the page on Genius."),
         ],
     )
     def test_messages(self, pos, expected):

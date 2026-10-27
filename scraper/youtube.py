@@ -38,7 +38,7 @@ _SKIP_KEYWORDS = (
 )
 _AUDIO_INDICATORS = ("official audio", "(audio)", "audio only", "audio stream")
 
-# Description-based MV signals — two separate arrays so they can be weighted differently
+# Description-based MV signals - two separate arrays so they can be weighted differently
 _MV_CREW_KEYWORDS = (
     "directed by",
     "director:",
@@ -167,11 +167,11 @@ def _score_audio(
     official_artist: bool = False,
     snippet: str = "",
 ) -> int:
-    """Phase 1 — find the canonical song upload (Topic channel or artist's own channel).
+    """Phase 1 - find the canonical song upload (Topic channel or artist's own channel).
 
-     2  — Topic upload: "Artist - Topic" channel or "Provided to YouTube by" (title must match song)
-     1  — artist's official channel with a matching plain title
-    -1  — skip (is an MV, wrong title, unrelated channel, or skip-keyword hit)
+     2  - Topic upload: "Artist - Topic" channel or "Provided to YouTube by" (title must match song)
+     1  - artist's official channel with a matching plain title
+    -1  - skip (is an MV, wrong title, unrelated channel, or skip-keyword hit)
 
     `official_artist` is YouTube's Official Artist Channel badge. It identifies the
     artist's channel when its name differs from the credit (Frank Ocean posts as
@@ -192,7 +192,7 @@ def _score_audio(
 
     artist_ch = _is_artist_ch(channel, artist)
     if _is_topic_upload(ch, snippet, artist, artist_ch or official_artist):
-        # Topic-channel titles are exactly the song name — require a close match
+        # Topic-channel titles are exactly the song name - require a close match
         return 2 if _title_matches_song(video_title, song_title, artist) else -1
 
     if artist_ch or (official_artist and _names_artist(video_title, artist)):
@@ -202,14 +202,14 @@ def _score_audio(
 
 
 def _score_mv(video_title: str, channel: str, artist: str, song_title: str, *, verified: bool = False) -> int:
-    """Phase 2 — find the official music video.
+    """Phase 2 - find the official music video.
 
      Channel identity is the primary gate; title keywords are secondary.
 
-     3  — artist (or artist VEVO) channel + MV signal in title (confirmed)
-     2  — verified non-artist channel (label) + MV keyword + artist in title (provisional; needs crew credits)
-     1  — artist channel + matching title, no MV title keywords (provisional; needs description check)
-    -1  — skip (unrecognised channel, wrong title, or skip-keyword)
+     3  - artist (or artist VEVO) channel + MV signal in title (confirmed)
+     2  - verified non-artist channel (label) + MV keyword + artist in title (provisional; needs crew credits)
+     1  - artist channel + matching title, no MV title keywords (provisional; needs description check)
+    -1  - skip (unrecognised channel, wrong title, or skip-keyword)
     """
     t = video_title.lower()
     ch = channel.lower()
@@ -236,7 +236,7 @@ def _score_mv(video_title: str, channel: str, artist: str, song_title: str, *, v
 
     if is_mv:
         return 3
-    # Artist channel, plain title — provisional; description check will decide.
+    # Artist channel, plain title - provisional; description check will decide.
     # Only the song itself qualifies: other promo clips also carry crew credits.
     return 1 if _title_matches_song(video_title, song_title, artist) else -1
 
@@ -380,7 +380,7 @@ async def _audio_phase(client: httpx.AsyncClient, title: str, artist: str) -> li
             if score > 0:
                 candidates.append((score, rank, _watch_url(video.id)))
 
-        # Topic-channel hit (score 2) is definitive — skip remaining queries
+        # Topic-channel hit (score 2) is definitive - skip remaining queries
         if any(s >= 2 for s, _, _ in candidates):
             break
     return candidates
@@ -411,7 +411,7 @@ async def _mv_phase(
             elif score == 1:
                 provisional.append((score, rank, _watch_url(video.id)))
 
-        # High-confidence MV found — stop
+        # High-confidence MV found - stop
         if confirmed:
             break
     return confirmed, provisional, label
@@ -444,12 +444,12 @@ def _description_bonus(desc: str) -> int:
 async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
     """Search YouTube for a song. Returns (url, is_music_video).
 
-    Phase 1 — canonical audio:
+    Phase 1 - canonical audio:
       Searches for the plain song, prioritising the "Artist - Topic" auto-channel
       (title = exactly the song name) then the artist's own channel with a clean
       title ("Song" or "Artist - Song").  Explicit MV results are excluded here.
 
-    Phase 2 — official music video:
+    Phase 2 - official music video:
       Searches specifically for the MV.  VEVO and artist-channel uploads with MV
       signals (keywords, "official" without audio tag) score highest.
 

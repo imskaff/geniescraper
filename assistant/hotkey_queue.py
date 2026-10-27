@@ -8,7 +8,7 @@ Genius UI contract
 ------------------
   - Each role is added ONCE via "Add additional credits".
   - Multiple artists for the same role are added sequentially in the
-    "Artists in this role" field (tag/chip input — select one, field clears,
+    "Artists in this role" field (tag/chip input - select one, field clears,
     type the next).
 
 Flow per F8 press
@@ -94,7 +94,7 @@ class HotkeyQueueAssistant:
     def _next_instruction(self) -> str:
         """Returns the instruction shown to the user before they press F8."""
         if self._pos >= len(self._queue):
-            return "All done — save the page."
+            return "All done. Save the page on Genius."
 
         kind, _ = self._queue[self._pos]
         hotkey = f"[bold cyan]{settings.hotkey.upper()}[/bold cyan]"
@@ -103,12 +103,12 @@ class HotkeyQueueAssistant:
         if kind == "written_by":
             if prev_kind != "written_by":
                 return f"Click the [bold]Written By[/bold] field, then press {hotkey}"
-            return f"Field is ready — press {hotkey} to add the next songwriter"
+            return f"Field is ready. Press {hotkey} to add the next songwriter"
 
         if kind == "produced_by":
             if prev_kind != "produced_by":
                 return f"Click the [bold]Produced By[/bold] field, then press {hotkey}"
-            return f"Field is ready — press {hotkey} to add the next producer"
+            return f"Field is ready. Press {hotkey} to add the next producer"
 
         if kind == "role":
             return (
@@ -120,14 +120,14 @@ class HotkeyQueueAssistant:
         # kind == "artist"
         if prev_kind == "role":
             return f"Tab to [bold]Artists in this role[/bold], then press {hotkey}"
-        return f"Field is ready — press {hotkey} to add the next artist"
+        return f"Field is ready. Press {hotkey} to add the next artist"
 
     def _render(self) -> None:
         console.clear()
 
         console.print(
             Panel(
-                f"[bold]{self._song.title}[/bold]  —  {self._song.artist}",
+                f"[bold]{self._song.title}[/bold]  ·  {self._song.artist}",
                 title="[cyan]A Music to Genius[/cyan]",
                 border_style="cyan",
             )

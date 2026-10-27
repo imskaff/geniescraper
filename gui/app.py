@@ -846,7 +846,7 @@ class App(ctk.CTk):
                 command=lambda v=value: self._select_all(v),
             ).pack(side="right")
 
-        # Bottom buttons — packed before the scrollable frame so they're always visible
+        # Bottom buttons - packed before the scrollable frame so they're always visible
         btn_row = ctk.CTkFrame(self, fg_color="transparent")
         btn_row.pack(side="bottom", fill="x", padx=40, pady=(8, 14))
         self._button(btn_row, "Back", self._go_to_main_from_album, width=90).pack(side="left")
@@ -1117,7 +1117,7 @@ class App(ctk.CTk):
                 time.sleep(pause)
                 keyboard.press_and_release(key)
 
-        # Re-read pos — F7 may have decremented it during the paste window
+        # Re-read pos - F7 may have decremented it during the paste window
         with self._lock:
             new_pos = self._pos
             queue_len = len(self._queue)
@@ -1149,7 +1149,7 @@ class App(ctk.CTk):
                 fraction = max(0.0, (pos - 2) / max(1, total))
                 self._queue_sf._parent_canvas.yview_moveto(fraction)
 
-        # Full row sweep — avoids a race where scheduled renders see a stale _prev_pos
+        # Full row sweep - avoids a race where scheduled renders see a stale _prev_pos
         for i, (row_frame, m, t, v, _kind) in enumerate(self._row_widgets):
             if i < pos:
                 row_frame.configure(fg_color="transparent")
@@ -1262,7 +1262,7 @@ class App(ctk.CTk):
         self._album_queue_total = 0
         with self._prefetch_cache_lock:
             self._prefetch_cache.clear()
-        # _album_info intentionally kept — no re-fetch needed
+        # _album_info intentionally kept - no re-fetch needed
         self._show_track_select_screen()
 
     def _go_to_main_from_album(self) -> None:
@@ -1342,7 +1342,7 @@ class App(ctk.CTk):
         ).pack(side="left")
 
     def _dismiss_esc_confirm(self) -> None:
-        """User chose to resume — remove overlay and re-register hotkeys."""
+        """User chose to resume - remove overlay and re-register hotkeys."""
         if hasattr(self, "_esc_overlay") and self._esc_overlay.winfo_exists():
             self._esc_overlay.destroy()
         # Re-register assistant hotkeys
@@ -1350,7 +1350,7 @@ class App(ctk.CTk):
         threading.Thread(target=self._wait_esc, daemon=True).start()
 
     def _confirm_esc_quit(self) -> None:
-        """User confirmed quit — clean up and go to main menu."""
+        """User confirmed quit - clean up and go to main menu."""
         self._clear_kb_hooks()
         if hasattr(self, "_esc_overlay") and self._esc_overlay.winfo_exists():
             self._esc_overlay.destroy()

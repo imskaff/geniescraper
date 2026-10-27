@@ -1,5 +1,5 @@
 """
-Géniescraper — CLI entry point
+Géniescraper - CLI entry point
 
 
 Usage:
@@ -35,7 +35,7 @@ def main(
     console.print(
         Panel(
             f"[cyan]Scraping[/cyan] {apple_url}",
-            title="[bold]Step 1 — Apple Music[/bold]",
+            title="[bold]Step 1 - Apple Music[/bold]",
             border_style="cyan",
         )
     )
@@ -44,7 +44,7 @@ def main(
 
     if not song.credits:
         console.print(
-            "[bold red]No credits found.[/bold red] The page structure may have changed — check the URL and try again."
+            "[bold red]No credits found.[/bold red] The page structure may have changed. Check the URL and try again."
         )
         raise typer.Exit(1)
 
@@ -68,7 +68,7 @@ def main(
             f"                  press [bold cyan]{settings.hotkey.upper()}[/bold cyan] for each artist.\n\n"
             f"The terminal will tell you exactly what to do before each press.\n"
             f"Press [bold red]ESC[/bold red] to quit the assistant at any time.",
-            title="[bold]Step 2 — Hotkey Assistant[/bold]",
+            title="[bold]Step 2 - Hotkey Assistant[/bold]",
             border_style="green",
         )
     )

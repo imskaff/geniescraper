@@ -97,7 +97,7 @@ def _walk(on_screen: Callable[[Any, str], None]) -> None:
         screen("01-start")
         app._url_entry.insert(0, album.url)
         screen("02-start-url")
-        app._scrape_error("Page not found — check the URL and try again.")
+        app._scrape_error("Page not found. Check the URL and try again.")
         screen("03-start-error")
 
         app._open_settings()
