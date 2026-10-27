@@ -437,7 +437,7 @@ legend {
 }
 
 /* The finished screen */
-.done {
+.finished {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -446,12 +446,12 @@ legend {
   text-align: center;
 }
 
-.done h2 {
+.finished h2 {
   margin: 0;
   font-size: 1.5rem;
 }
 
-.done p {
+.finished p {
   margin: 0;
 }
 

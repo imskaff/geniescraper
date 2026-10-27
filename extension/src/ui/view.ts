@@ -474,20 +474,28 @@ export class PanelView {
     const current = paste.queue[paste.position];
     const progress = finished ? "All steps done" : `Step ${String(paste.position + 1)} of ${String(total)}`;
 
+    // A finished step moves into the closed "Steps done" list; going back moves it out again.
+    const item = ([kind, value]: readonly [QueueKind, string], index: number): HTMLElement => {
+      const done = index < paste.position;
+      const here = index === paste.position;
+      const mark = done ? "Done" : here ? (paste.awaiting ? "Waiting for you" : "Next") : "";
+      return el(
+        "li",
+        { class: done ? "done" : here ? "here" : "", attrs: here ? { "aria-current": "step" } : {} },
+        el("span", { class: "tag", text: mark ? `${STEP_LABELS[kind]}: ${mark}` : STEP_LABELS[kind] }),
+        el("span", { text: value }),
+      );
+    };
+    const doneCount = Math.min(paste.position, total);
+    const doneSteps = el(
+      "ol",
+      { class: "queue steps", attrs: { "aria-label": "Steps done" } },
+      ...paste.queue.slice(0, doneCount).map(item),
+    );
     const steps = el(
       "ol",
-      { class: "queue steps", attrs: { "aria-label": "All steps" } },
-      ...paste.queue.map(([kind, value], index) => {
-        const done = index < paste.position;
-        const here = index === paste.position;
-        const mark = done ? "Done" : here ? (paste.awaiting ? "Waiting for you" : "Next") : "";
-        return el(
-          "li",
-          { class: done ? "done" : here ? "here" : "", attrs: here ? { "aria-current": "step" } : {} },
-          el("span", { class: "tag", text: mark ? `${STEP_LABELS[kind]}: ${mark}` : STEP_LABELS[kind] }),
-          el("span", { text: value }),
-        );
-      }),
+      { class: "queue steps", attrs: { "aria-label": "Steps left" } },
+      ...paste.queue.slice(doneCount).map((entry, offset) => item(entry, doneCount + offset)),
     );
 
     return [
@@ -522,14 +530,15 @@ export class PanelView {
         ),
         this.button("Skip", "quiet", "pskip", () => void this.panel.pasteSkip(), finished),
         // Leaving a paste in progress looks like the other ways out, so it is easy to tell from the step buttons.
-        this.button("Stop pasting", "nav", "pstop", () => void this.panel.stopPaste(), false),
+        this.button("Back to credits", "nav", "pstop", () => void this.panel.stopPaste(), false),
       ),
       el("p", {
         class: "help",
         text: "Keep the song's Edit Metadata form open on Genius. Nothing is saved for you: check the form, then save it there.",
       }),
       // While pasting the steps are the map of what is left, so they start open.
-      this.disclosure("steps", `All steps (${String(total)})`, steps, true),
+      doneCount > 0 ? this.disclosure("stepsdone", `Steps done (${String(doneCount)})`, doneSteps) : null,
+      total - doneCount > 0 ? this.disclosure("steps", `Steps left (${String(total - doneCount)})`, steps, true) : null,
     ].filter((node): node is HTMLElement => node !== null);
   }
 
@@ -543,7 +552,7 @@ export class PanelView {
     return [
       el(
         "div",
-        { class: "done" },
+        { class: "finished" },
         el("div", { class: "done-mark", text: "✓", attrs: { "aria-hidden": "true" } }),
         this.heading("All credits entered"),
         el("p", { class: "help", text: state.paste.title }),

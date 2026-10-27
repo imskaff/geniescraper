@@ -360,7 +360,7 @@ try {
     String(await style("ol.steps li.here", "backgroundColor")),
   );
   check(
-    "Stop pasting has the style of Back to main menu, not the quiet buttons",
+    "Back to credits has the style of Back to main menu, not the quiet buttons",
     (await style('[data-key="pstop"]', "color")) !== (await style('[data-key="pskip"]', "color")) &&
       (await style('[data-key="pstop"]', "borderColor")) !== (await style('[data-key="pskip"]', "borderColor")),
   );
@@ -377,14 +377,14 @@ try {
   );
   await shot("9-paste-screen-dark");
 
-  // Keyboard: Tab from the heading reaches Fill next, then Skip (Back is disabled), then Stop pasting.
+  // Keyboard: Tab from the heading reaches Fill next, then Skip (Back is disabled), then Back to credits.
   const tabOrder = [];
   for (let i = 0; i < 3; i++) {
     await press("Tab");
     tabOrder.push(await focused());
   }
   check(
-    "Tab visits Fill next, Skip, Stop pasting (the disabled Back is skipped)",
+    "Tab visits Fill next, Skip, Back to credits (the disabled Back is skipped)",
     tabOrder.join(",") === "fill,pskip,pstop",
     tabOrder.join(","),
   );
@@ -402,6 +402,17 @@ try {
     await clickButton("Skip");
     await sleep(120);
   }
+  check(
+    "finished steps sit in a closed Steps done list above the open Steps left list",
+    await panel.evaluate(
+      "(() => { const [done, left] = [...document.querySelectorAll('details.disclosure')].slice(-2); return done.querySelector('summary').textContent.startsWith('Steps done (') && !done.open && left.open && left.querySelector('summary').textContent.startsWith('Steps left (') && done.querySelectorAll('li.done').length > 0 && left.querySelectorAll('li.done').length === 0; })()",
+    ),
+  );
+  const doneRow = await panel.evaluate(
+    "(() => { document.querySelector('details.disclosure:not([open])')?.setAttribute('open', ''); const li = document.querySelector('ol.steps li.done'); return li ? li.getBoundingClientRect().height : 0; })()",
+  );
+  check("a done step is a compact row, not a tall centred box", doneRow > 0 && doneRow < 70, String(doneRow));
+  await shot("9i-steps-done-open");
   const lastValue = (await text(".step .value")) ?? "";
   check("the last step is the long song art URL", lastValue.startsWith("https://"), lastValue.slice(0, 40));
   const pasteOverflow = await horizontalOverflow();
@@ -450,7 +461,7 @@ try {
   check(
     "it shows a check mark and tells the user to save on Genius",
     (await text(".done-mark")) === "\u2713" &&
-      ((await text(".done")) ?? "").includes("Check the Genius page, then press Save there."),
+      ((await text(".finished")) ?? "").includes("Check the Genius page, then press Save there."),
   );
   check("focus moved to its heading", (await focused()) === "H2");
   check(
@@ -489,10 +500,10 @@ try {
     await press("Tab");
     onStop = (await focused()) === "pstop";
   }
-  check("Tab reaches Stop pasting", onStop);
+  check("Tab reaches Back to credits", onStop);
   await press("Enter");
   await until("document.querySelector('h2')?.textContent === 'Credits'", "the credits after stopping");
-  check("Enter on Stop pasting returns to the credits", (await text("h2")) === "Credits");
+  check("Enter on Back to credits returns to the credits", (await text("h2")) === "Credits");
   check("stopping is announced", (await text("#status")) === "Stopped pasting.", String(await text("#status")));
 
   // ── the narrowest a side panel can be ──

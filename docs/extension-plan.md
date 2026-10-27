@@ -356,3 +356,12 @@ From the owner's first try of the extension:
 - **Finished screen.** When the last step is done a success screen replaces the paste screen, as in the desktop app: a check mark, "All credits entered", the song, "Check the Genius page, then press Save there.", and the ways on: Paste next track (when a later track has credits), Back to the credits, Back to the track list (albums only), Back to main menu.
   Leaving it ends the paste session quietly.
   Focus moves to its heading and the message is announced.
+
+### Third round of hands-on feedback
+
+- **Back to credits.** The paste screen's way out is labelled "Back to credits" (it was "Stop pasting").
+- **Broken done steps.** Finished steps were rendered as tall centred boxes because the finished screen's `.done` styles also matched the step rows (`li.done`).
+  The finished screen now uses `.finished`, and a test fails if a bare `.done` rule comes back.
+- **Steps done list.** A finished step moves into a "Steps done (n)" list, closed by default and above "Steps left (n)", which stays open.
+  Going back moves the step out again, and the done list disappears when empty.
+  "All steps" became "Steps left" because it no longer holds the done ones.

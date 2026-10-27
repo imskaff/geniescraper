@@ -141,38 +141,38 @@ describe("the paste screen", () => {
     const { root, panel } = await toReview();
     await panel.startPaste(0);
     await flush();
-    const steps = details(root, "All steps");
+    const steps = details(root, "Steps left");
     expect(steps.open).toBe(true);
-    expect(steps.querySelector("summary")?.textContent).toMatch(/^All steps \(\d+\)$/);
+    expect(steps.querySelector("summary")?.textContent).toMatch(/^Steps left \(\d+\)$/);
   });
 
   it("keeps the steps as the user leaves them when they close them", async () => {
     const { root, panel } = await toReview();
     await panel.startPaste(0);
     await flush();
-    const steps = details(root, "All steps");
+    const steps = details(root, "Steps left");
     steps.open = false;
     steps.dispatchEvent(new Event("toggle"));
     await panel.pasteSkip();
     await flush();
-    expect(details(root, "All steps").open).toBe(false);
+    expect(details(root, "Steps left").open).toBe(false);
   });
 
   it("does not share its open state with the paste queue", async () => {
     const { root, panel } = await toReview();
     await panel.startPaste(0);
     await flush();
-    expect(details(root, "All steps").open).toBe(true);
+    expect(details(root, "Steps left").open).toBe(true);
     await panel.stopPaste();
     await flush();
     expect(details(root, "Paste queue").open).toBe(false);
   });
 
-  it("styles Stop pasting like Back to main menu", async () => {
+  it("styles Back to credits like Back to main menu", async () => {
     const { root, panel } = await toReview();
     await panel.startPaste(0);
     await flush();
-    const stop = button(root, "Stop pasting");
+    const stop = button(root, "Back to credits");
     expect(stop.classList.contains("nav")).toBe(true);
     expect(stop.classList.contains("quiet")).toBe(false);
   });
@@ -185,6 +185,63 @@ describe("the paste screen", () => {
     expect(here).toHaveLength(1);
     expect(here[0]?.getAttribute("aria-current")).toBe("step");
     expect(root.querySelectorAll("ol.steps li.done")).toHaveLength(0);
+  });
+
+  it("shows no Steps done list until a step is finished", async () => {
+    const { root, panel } = await toReview();
+    await panel.startPaste(0);
+    await flush();
+    expect(() => details(root, "Steps done")).toThrow();
+  });
+
+  it("moves a finished step into a closed Steps done list above the steps left", async () => {
+    const { root, panel } = await toReview();
+    await panel.startPaste(0);
+    await flush();
+    const total = root.querySelectorAll("ol.steps li").length;
+    await panel.pasteSkip();
+    await flush();
+    const done = details(root, "Steps done");
+    expect(done.open).toBe(false);
+    expect(done.querySelector("summary")?.textContent).toBe("Steps done (1)");
+    expect(done.querySelectorAll("li.done")).toHaveLength(1);
+    const left = details(root, "Steps left");
+    expect(left.querySelector("summary")?.textContent).toBe(`Steps left (${String(total - 1)})`);
+    expect(left.querySelectorAll("li.done")).toHaveLength(0);
+    expect(done.compareDocumentPosition(left) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(left.querySelector("li.here")).not.toBeNull();
+  });
+
+  it("keeps the Steps done list as the user leaves it", async () => {
+    const { root, panel } = await toReview();
+    await panel.startPaste(0);
+    await panel.pasteSkip();
+    await flush();
+    const done = details(root, "Steps done");
+    done.open = true;
+    done.dispatchEvent(new Event("toggle"));
+    await panel.pasteSkip();
+    await flush();
+    expect(details(root, "Steps done").open).toBe(true);
+    expect(details(root, "Steps done").querySelectorAll("li")).toHaveLength(2);
+  });
+
+  it("puts a step back into the steps left when the user goes back, and drops the empty list", async () => {
+    const { root, panel } = await toReview();
+    await panel.startPaste(0);
+    await panel.pasteSkip();
+    await flush();
+    const total = root.querySelectorAll("ol.steps li").length;
+    await panel.pasteBack();
+    await flush();
+    expect(() => details(root, "Steps done")).toThrow();
+    expect(details(root, "Steps left").querySelectorAll("li")).toHaveLength(total);
+  });
+
+  it("does not let the finished-screen styles break the done steps", () => {
+    const css = readFileSync(join(import.meta.dirname, "..", "..", "src", "ui", "panel.css"), "utf-8");
+    expect(css).not.toMatch(/^\.done[\s{,.]/m);
+    expect(css).toMatch(/^\.finished \{/m);
   });
 
   it("fills the current step yellow with dark ink, not only an outline", () => {
@@ -215,7 +272,7 @@ describe("the finished screen", () => {
 
   it("names the song that was pasted", async () => {
     const { root } = await toDone();
-    expect($(root, ".done .help").textContent).toBe("One");
+    expect($(root, ".finished .help").textContent).toBe("One");
   });
 
   it("offers the next track with credits, as the main action", async () => {

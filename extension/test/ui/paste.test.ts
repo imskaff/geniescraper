@@ -98,7 +98,7 @@ describe("the paste screen", () => {
     expect([...root.querySelectorAll("h1, h2, h3")].map((h) => h.tagName)).toEqual(["H1", "H2"]);
     expect(root.querySelectorAll('[aria-current="step"]')).toHaveLength(1);
     expect($(root, '[aria-current="step"]').textContent).toContain("Next");
-    expect($(root, "ol.steps").getAttribute("aria-label")).toBe("All steps");
+    expect($(root, "ol.steps").getAttribute("aria-label")).toBe("Steps left");
   });
 
   it("names the keys on the buttons from the settings", async () => {
@@ -156,9 +156,9 @@ describe("the paste screen", () => {
     expect($(root, '[aria-current="step"]').textContent).toContain("Waiting for you");
   });
 
-  it("stops and returns to the credits", async () => {
+  it("goes back to the credits", async () => {
     const { root, panel } = await onPaste();
-    button(root, "Stop pasting").click();
+    button(root, "Back to credits").click();
     await flush();
     expect(panel.state.paste.active).toBe(false);
     expect($(root, "h2").textContent).toBe("Credits");
