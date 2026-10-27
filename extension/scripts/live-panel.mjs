@@ -220,6 +220,102 @@ try {
   );
   check("turning off songwriters and producers removes them from the queue", !queueAfter.includes("Written By"));
 
+  // ── the paste screen (opening it needs no Genius sign-in) ──
+  await clickButton("Start pasting");
+  await until("document.querySelector('h2')?.textContent === 'Paste into Genius'", "the paste screen");
+  check("Start pasting opens the paste screen", (await text("h2")) === "Paste into Genius");
+  check("focus moved to the paste heading", (await focused()) === "H2");
+  const progress = (await text(".progress")) ?? "";
+  const stepCount = Number(progress.match(/of (\d+)/)?.[1] ?? 0);
+  check("the progress starts at step 1", /^Step 1 of \d+$/.test(progress), progress);
+  check("the first step is named and shown", Boolean(await text(".step .tag")) && Boolean(await text(".step .value")));
+  check(
+    "the instruction names the Next key and never asks the user to click",
+    /Press F8/.test((await text(".step + p")) ?? "") && !/click/i.test((await text(".step + p")) ?? ""),
+  );
+  check(
+    "Back is disabled at the first step",
+    await panel.evaluate(
+      "[...document.querySelectorAll('button')].find((b) => b.textContent.startsWith('Back')).disabled",
+    ),
+  );
+  await shot("9-paste-screen-dark");
+
+  // Keyboard: Tab from the heading reaches Fill next, then Skip (Back is disabled), then Stop pasting.
+  const tabOrder = [];
+  for (let i = 0; i < 3; i++) {
+    await press("Tab");
+    tabOrder.push(await focused());
+  }
+  check(
+    "Tab visits Fill next, Skip, Stop pasting (the disabled Back is skipped)",
+    tabOrder.join(",") === "fill,pskip,pstop",
+    tabOrder.join(","),
+  );
+  await shot("9b-paste-screen-focus");
+
+  await panel.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "light" }] });
+  await sleep(300);
+  await shot("9c-paste-screen-light");
+  await panel.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "dark" }] });
+
+  // Skip to the last step, which is the long song art URL, and check nothing overflows at 400 and 320 px.
+  for (let i = 0; i < stepCount + 2; i++) {
+    const text_ = (await text(".progress")) ?? "";
+    if (text_ === `Step ${String(stepCount)} of ${String(stepCount)}` || text_ === "All steps done") break;
+    await clickButton("Skip");
+    await sleep(120);
+  }
+  const lastValue = (await text(".step .value")) ?? "";
+  check("the last step is the long song art URL", lastValue.startsWith("https://"), lastValue.slice(0, 40));
+  const pasteOverflow = await horizontalOverflow();
+  check(
+    "the paste screen has no horizontal scrollbar at 400 px",
+    pasteOverflow.scroll <= pasteOverflow.client,
+    `scroll ${String(pasteOverflow.scroll)} vs client ${String(pasteOverflow.client)}; ${pasteOverflow.wide.join("; ")}`,
+  );
+  await setWidth(320);
+  await sleep(300);
+  const pasteNarrow = await horizontalOverflow();
+  check(
+    "the paste screen has no horizontal scrollbar at 320 px",
+    pasteNarrow.scroll <= pasteNarrow.client,
+    `scroll ${String(pasteNarrow.scroll)} vs client ${String(pasteNarrow.client)}; ${pasteNarrow.wide.join("; ")}`,
+  );
+  await shot("9d-paste-screen-last-step-320px");
+  await setWidth(400);
+
+  // Settings, with the new Pasting on Genius fieldset, in both schemes.
+  await clickButton("Settings");
+  await until("document.querySelector('h2')?.textContent === 'Settings'", "settings over the paste screen");
+  check(
+    "the pasting settings are there and labelled",
+    (await panel.evaluate(
+      "[...document.querySelectorAll('select, input[type=number]')].every((c) => document.querySelector('label[for=\"' + c.id + '\"]'))",
+    )) === true,
+  );
+  await shot("9e-settings-pasting-dark");
+  await panel.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "light" }] });
+  await sleep(300);
+  await shot("9f-settings-pasting-light");
+  await panel.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "dark" }] });
+  const settingsOverflow = await horizontalOverflow();
+  check("the settings screen has no horizontal scrollbar", settingsOverflow.scroll <= settingsOverflow.client);
+  await clickButton("Back");
+  await until("document.querySelector('h2')?.textContent === 'Paste into Genius'", "the paste screen again");
+
+  // Stop with the keyboard and land back on the credits.
+  let onStop = false;
+  for (let i = 0; i < 8 && !onStop; i++) {
+    await press("Tab");
+    onStop = (await focused()) === "pstop";
+  }
+  check("Tab reaches Stop pasting", onStop);
+  await press("Enter");
+  await until("document.querySelector('h2')?.textContent === 'Credits'", "the credits after stopping");
+  check("Enter on Stop pasting returns to the credits", (await text("h2")) === "Credits");
+  check("stopping is announced", (await text("#status")) === "Stopped pasting.", String(await text("#status")));
+
   // ── the narrowest a side panel can be ──
   await setWidth(320);
   await sleep(300);

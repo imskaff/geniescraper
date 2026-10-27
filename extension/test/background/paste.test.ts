@@ -189,6 +189,7 @@ describe("a command from the panel", () => {
     await start();
     const commands: PasteCommand[] = [{ type: "paste-skip" }, { type: "paste-skip" }, { type: "paste-back" }];
     await Promise.all([...commands.map((c) => service.command(c)), service.fromGenius({ type: "paste-status" })]);
-    expect(stored().position).toBe(1);
+    // Queue: writer, role, artist. Skip the writer (1), skip the role and with it its artist (3), go back (2).
+    expect(stored().position).toBe(2);
   });
 });

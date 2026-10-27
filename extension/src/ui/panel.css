@@ -322,3 +322,15 @@ a {
 select.field {
   min-height: 36px;
 }
+
+h3.section {
+  margin-top: 16px;
+}
+
+fieldset + fieldset {
+  margin-top: 20px;
+}
+
+legend {
+  margin-bottom: 6px;
+}

@@ -212,17 +212,48 @@ try {
     };
   })()`);
 
-  const queueValues = new Set(golden.credits.flatMap((c) => [c.role, ...c.artists]).map(words));
-  const everyChip = [...state.writer, ...state.producer, ...state.rows.flatMap((r) => [...r.role, ...r.artists])];
-  const stray = everyChip.filter((chip) => {
-    const w = words(chip);
-    return ![...queueValues].some((v) => v === w) && !/phonographic copyright|^copyright$|interscope|darkroom/.test(w);
-  });
-  check(
-    "no wrong entry was chosen: every chip is a name or role from the credits",
-    stray.length === 0,
-    stray.join(", "),
+  // What the credits say, as (role, artist) pairs. Genius's copyright roles carry a symbol; the label is the album's.
+  const pair = (role, artist) => `${words(role)}|${words(artist)}`;
+  const wanted = new Set();
+  const writers = new Set();
+  const producers = new Set();
+  for (const { role, artists } of golden.credits) {
+    for (const artist of artists) {
+      wanted.add(pair(role, artist));
+      if (["songwriter", "lyricist", "lyrics", "co-writer", "writer"].includes(role.toLowerCase()))
+        writers.add(words(artist));
+      if (["producer", "co-producer"].includes(role.toLowerCase())) producers.add(words(artist));
+    }
+  }
+  const labels = [golden.phonographic_copyright, golden.copyright_notice || golden.phonographic_copyright]
+    .map((line) => line.replace(/^[\u2117\u00a9]\s*\d{4}\s*/, ""))
+    .flatMap((line) =>
+      line.split(/,?\s+(?:under\s+(?:exclusive\s+)?licen[sc]e\s+(?:to|from)|a\s+division\s+of|distributed\s+by)\s+/i),
+    );
+  for (const label of labels) {
+    wanted.add(pair("Phonographic Copyright", label));
+    wanted.add(pair("Copyright", label));
+  }
+
+  // Every pair on the form must be a pair from the credits: an artist filed under the wrong role, or a fuzzy
+  // pick, would show up here, which a check on names alone would miss.
+  const wrongPairs = state.rows.flatMap((row) =>
+    row.artists
+      .filter((artist) => !wanted.has(pair(row.role[0] ?? "", artist)))
+      .map((artist) => `${row.role[0] ?? "(no role)"} / ${artist}`),
   );
+  check(
+    "every role and artist pair on the form is one from the credits",
+    wrongPairs.length === 0,
+    wrongPairs.join("; "),
+  );
+  const rowsWithoutRole = state.rows.filter((row) => row.artists.length > 0 && row.role.length === 0);
+  check("no artist sits in a row without a role", rowsWithoutRole.length === 0, String(rowsWithoutRole.length));
+  const wrongPeople = [
+    ...state.writer.filter((name) => !writers.has(words(name))),
+    ...state.producer.filter((name) => !producers.has(words(name))),
+  ];
+  check("writers and producers are only people credited as such", wrongPeople.length === 0, wrongPeople.join(", "));
   check(
     "the writers Genius knows exactly were added",
     ["Billie Eilish", "FINNEAS"].every((w) => state.writer.some((c) => words(c) === words(w))),

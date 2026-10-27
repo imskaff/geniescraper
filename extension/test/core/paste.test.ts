@@ -138,6 +138,43 @@ describe("back, skip and stop", () => {
     expect(skip({ ...started(), position: 3 }).position).toBe(3);
   });
 
+  it("skipping a role also skips the artists that belong to it, up to the next role", () => {
+    const queue: QueueItem[] = [
+      ["role", "Programming"],
+      ["artist", "A"],
+      ["artist", "B"],
+      ["role", "Lead Vocals"],
+      ["artist", "C"],
+    ];
+    const state = { ...startPaste("S", queue), position: 0 };
+    expect(skip(state).position).toBe(3);
+    expect(skip({ ...state, position: 3 }).position).toBe(5);
+  });
+
+  it("skipping a copyright role skips its labels, and skipping an artist skips only that artist", () => {
+    const queue: QueueItem[] = [
+      ["copyright_role", "Phonographic Copyright"],
+      ["phonographic_copyright", "Label A"],
+      ["phonographic_copyright", "Label B"],
+      ["copyright_role", "Copyright"],
+      ["copyright_notice", "Label A"],
+      ["youtube_url", "https://y"],
+    ];
+    const state = startPaste("S", queue);
+    expect(skip(state).position).toBe(3);
+    expect(skip({ ...state, position: 1 }).position).toBe(2);
+    expect(skip({ ...state, position: 3 }).position).toBe(5);
+  });
+
+  it("skipping a role never skips past the next kind of step", () => {
+    const queue: QueueItem[] = [
+      ["role", "Programming"],
+      ["artist", "A"],
+      ["youtube_url", "https://y"],
+    ];
+    expect(skip(startPaste("S", queue)).position).toBe(2);
+  });
+
   it("skip works on a step waiting for a choice", () => {
     const waiting = press(started(), { status: "needs-choice", message: "m" });
     expect(skip(waiting)).toMatchObject({ position: 1, awaiting: false });

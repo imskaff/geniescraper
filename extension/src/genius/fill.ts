@@ -134,8 +134,17 @@ export async function fillStep(item: QueueItem, ctx: FillContext): Promise<StepO
     case "phonographic_copyright":
     case "copyright_notice": {
       const row = lastRow(form);
-      if (!row)
+      if (!row) {
         return { status: "unavailable", message: "Add the role first: there is no additional credit to put this in." };
+      }
+      // An artist goes under the row's role. If that role was skipped or never confirmed, filing the artist here would
+      // put them under whichever role is chosen for this row next.
+      if (chipTexts(row.roleBox).length === 0) {
+        return {
+          status: "unavailable",
+          message: `The role for ${value} is not set. Choose the role on Genius, or press Skip.`,
+        };
+      }
       return fillCombobox(row.artists, row.artistsBox, value, ctx);
     }
     case "youtube_url":

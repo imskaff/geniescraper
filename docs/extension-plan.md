@@ -301,7 +301,16 @@ Architecture:
   Chrome uses F7 for caret browsing; the page handler suppresses the key while pasting, but that interaction has not been seen in a real browser.
 - The extension never presses Save or Cancel and never submits the form; tests spy on both.
 
+A bug found in review, fixed with tests first:
+
+- When a role step was skipped (for example "Programming", which Genius lacks), the next artist step went into that empty row, and the next role then reused the row, so the artist ended up under the wrong role.
+  Now an artist step refuses a row whose role has no chip, and skipping a role also skips the artists that belong to it, up to the next role.
+  The live Genius script compares (role, artist) pairs against the credits, so this class of mistake is checked, not just names.
+
 Verification state:
 
 - Run for real on the live form with the real engine (signed-in pane, main world): Writer, Producer, additional roles, artists, both copyright roles with their labels, and the two URL fields all filled; a made-up name and the role "Programming" were correctly left for the user; nothing was saved and the form was discarded by reloading.
+- The panel's paste screen and the new settings were run live (keyboard order, no overflow at 400 and 320 px, dark and light screenshots reviewed); opening them needs no Genius sign-in.
 - Not yet run: the whole path through the extension (content script in its isolated world, worker, panel, a real F8) because it needs a Chromium profile signed in to Genius; `npm run live:genius` is written for it.
+- Known rough edges: a skipped step leaves its typed text in the Genius field, and waiting for suggestions that never come (a role Genius lacks) takes about 4 seconds.
+- The scratch Chromium profile used for the Genius sign-in holds that session's cookies; delete it when the live check is done.

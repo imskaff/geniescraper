@@ -104,10 +104,20 @@ export function back(state: PasteState): PasteState {
   };
 }
 
-/** Skip a step that is already filled on Genius, or that cannot be filled. */
+const ARTIST_KINDS: ReadonlySet<QueueKind> = new Set(["artist", "phonographic_copyright", "copyright_notice"]);
+
+/**
+ * Skip a step that is already filled on Genius, or that cannot be filled. Skipping a role also skips the artists
+ * that belong to it (up to the next role), which would otherwise have nowhere to go.
+ */
 export function skip(state: PasteState): PasteState {
   if (!state.active || state.position >= state.queue.length) return state;
-  return { ...state, busy: false, awaiting: false, position: state.position + 1, message: "", tone: "info" };
+  const skipped = state.queue[state.position]?.[0];
+  let position = state.position + 1;
+  if (skipped === "role" || skipped === "copyright_role") {
+    while (position < state.queue.length && ARTIST_KINDS.has(state.queue[position]?.[0] ?? "youtube_url")) position++;
+  }
+  return { ...state, busy: false, awaiting: false, position, message: "", tone: "info" };
 }
 
 export function stop(state: PasteState): PasteState {

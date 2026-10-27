@@ -188,6 +188,33 @@ describe("additional credits", () => {
     expectSafe(fake);
   });
 
+  it("never files an artist under a role that was skipped: the next role gets only its own artists", async () => {
+    // Queue: role Programming (Genius has none), artist FINNEAS, role Lead Vocals, artist Billie Eilish.
+    const { fake, run } = setup();
+    expect((await run(["role", "Programming"])).status).toBe("needs-choice");
+    // The user skipped the role, but the artist step still comes up.
+    const orphan = await run(["artist", "FINNEAS"]);
+    expect(orphan.status).toBe("unavailable");
+    expect(orphan.message).toContain("role");
+    expect(rowChips(fake.form).flatMap((row) => row.artists)).toEqual([]);
+
+    await run(["role", "Lead Vocals"]);
+    await run(["artist", "Billie Eilish"]);
+    expect(rowChips(fake.form)).toEqual([{ role: ["Lead Vocals"], artists: ["Billie Eilish"] }]);
+    expectSafe(fake);
+  });
+
+  it.each(["artist", "phonographic_copyright", "copyright_notice"] as const)(
+    "refuses a %s step while the row's role is empty",
+    async (kind) => {
+      const { fake, run } = setup();
+      const outcome = await run([kind, "FINNEAS"]);
+      expect(outcome.status).toBe("unavailable");
+      expect(fake.chosen).toEqual([]);
+      expect(fake.enters).toEqual([]);
+    },
+  );
+
   it("will not put an artist anywhere when there is no role row yet", async () => {
     const { fake, run } = setup({ noRows: true });
     expect(await run(["artist", "FINNEAS"])).toMatchObject({ status: "unavailable" });

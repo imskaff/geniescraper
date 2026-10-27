@@ -471,7 +471,7 @@ export class PanelView {
         class: "help",
         text: "Keep the song's Edit Metadata form open on Genius. Nothing is saved for you: check the form, then save it there.",
       }),
-      el("h3", { text: "All steps" }),
+      el("h3", { class: "section", text: "All steps" }),
       steps,
     ].filter((node): node is HTMLElement => node !== null);
   }
