@@ -20,24 +20,10 @@ from scraper.apple_music import AlbumTrackInfo
 from scraper.models import SongCredits
 from utils.config import settings
 
-ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("blue")
+theme.apply()
 
-_FF = theme.FONT_FAMILY
 _f = theme.font
 
-
-_TYPE_COLORS = {
-    "written_by": "#4ade80",
-    "produced_by": "#60a5fa",
-    "role": "#c084fc",
-    "artist": "#67e8f9",
-    "copyright_role": "#fb923c",
-    "phonographic_copyright": "#fb923c",
-    "copyright_notice": "#fb923c",
-    "cover_art": "#f472b6",
-    "youtube_url": "#ef4444",
-}
 
 _FIELD_LABELS = {
     "written_by": "Written By",
@@ -210,6 +196,14 @@ class App(ctk.CTk):
         elif self.winfo_height() <= 320:
             self.geometry(f"620x{self._normal_height}")
 
+    @staticmethod
+    def _set_enabled(btn: ctk.CTkButton, enabled: bool) -> None:
+        """Disabled primary buttons drop the yellow, so they never look clickable."""
+        if enabled:
+            btn.configure(state="normal", fg_color=theme.ACCENT, text_color=theme.ACCENT_INK)
+        else:
+            btn.configure(state="disabled", fg_color=theme.SURFACE_HI, text_color_disabled=theme.FAINT)
+
     def _button(self, master, text: str, command, *, primary: bool = False, width: int = 140, **kw) -> ctk.CTkButton:
         """Primary actions are filled; everything else is outlined, so the main step is obvious."""
         style = (
@@ -259,7 +253,7 @@ class App(ctk.CTk):
         body = ctk.CTkFrame(self, fg_color="transparent")
         body.pack(fill="both", expand=True, padx=40)
 
-        ctk.CTkLabel(body, text="Géniescraper", font=_f(26, "bold"), text_color=theme.TEXT).pack(
+        ctk.CTkLabel(body, text="Géniescraper", font=theme.display(34), text_color=theme.TEXT).pack(
             anchor="w", pady=(18, 2)
         )
         ctk.CTkLabel(
@@ -304,7 +298,7 @@ class App(ctk.CTk):
         actions = ctk.CTkFrame(body, fg_color="transparent")
         actions.pack(fill="x", pady=(14, 0))
         self._scrape_btn = self._button(actions, "Scrape", self._start_scrape, primary=True, width=150)
-        self._scrape_btn.configure(state="disabled")
+        self._set_enabled(self._scrape_btn, False)
         self._scrape_btn.pack(side="left")
         self._cancel_btn = self._button(actions, "Cancel", self._cancel_scrape, width=100)
 
@@ -368,7 +362,8 @@ class App(ctk.CTk):
         if not self._busy:
             ok, hint = url_hint(self._url_entry.get())
             empty = not self._url_entry.get().strip()
-            self._scrape_btn.configure(state="normal" if ok else "disabled")
+            if (self._scrape_btn.cget("state") == "normal") != ok:
+                self._set_enabled(self._scrape_btn, ok)
             color = theme.MUTED if ok or empty else theme.WARN
             if self._hint_lbl.cget("text") != hint or self._hint_lbl.cget("text_color") != color:
                 self._hint_lbl.configure(text=hint, text_color=color)
@@ -380,7 +375,7 @@ class App(ctk.CTk):
         if not self._scrape_btn.winfo_exists():
             return
         if busy:
-            self._scrape_btn.configure(state="disabled")
+            self._set_enabled(self._scrape_btn, False)
             self._url_entry.configure(state="disabled")
             self._cancel_btn.pack(side="left", padx=(8, 0))
             self._progress.pack(fill="x", pady=(14, 0), before=self._status_lbl)
@@ -441,7 +436,7 @@ class App(ctk.CTk):
         self._start_assistant_btn.pack(side="right")
         self._update_start_label()
         if not queue:
-            self._start_assistant_btn.configure(state="disabled")
+            self._set_enabled(self._start_assistant_btn, False)
         else:
 
             def _on_credits_hotkey(e):
@@ -480,7 +475,7 @@ class App(ctk.CTk):
                 row=row, column=0, sticky="nw", padx=10, pady=3
             )
             color = theme.FAINT if missing else (theme.ACCENT if link else theme.TEXT)
-            font = ctk.CTkFont(family=_FF, size=13, underline=bool(link)) if link else _f(13)
+            font = ctk.CTkFont(family=theme.UI_FAMILY, size=13, underline=True) if link else _f(13)
             val = ctk.CTkLabel(sf, text=value, font=font, text_color=color, anchor="w", justify="left", wraplength=330)
             val.grid(row=row, column=1, sticky="w", padx=(0, 10), pady=3)
             if link:
@@ -565,6 +560,7 @@ class App(ctk.CTk):
                 font=_f(13),
                 fg_color=theme.SURFACE,
                 hover_color=theme.SURFACE_HI,
+                text_color=theme.TEXT,
                 command=self._open_settings,
             ).pack(side="right")
         else:
@@ -583,19 +579,19 @@ class App(ctk.CTk):
 
         # ── Hero card: the value the next hotkey press pastes ───────────
         self._hero_card = ctk.CTkFrame(
-            self, corner_radius=12, fg_color="#1a1a2e", border_width=1, border_color="#2d2d4a"
+            self, corner_radius=12, fg_color=theme.SURFACE, border_width=1, border_color=theme.ACCENT
         )
         self._hero_card.pack(fill="x", padx=20, pady=(0, 6))
         badge_row = ctk.CTkFrame(self._hero_card, fg_color="transparent")
         badge_row.pack(fill="x", padx=16, pady=(14, 0))
         self._hero_badge = ctk.CTkLabel(
-            badge_row, text="", font=_f(12, "bold"), text_color="#1a1a2e", fg_color=theme.ACCENT, corner_radius=4
+            badge_row, text="", font=_f(12, "bold"), text_color=theme.ACCENT_INK, fg_color=theme.ACCENT, corner_radius=4
         )
         self._hero_badge.pack(side="left", padx=(0, 8), ipadx=8, ipady=2)
         self._hero_step_lbl = ctk.CTkLabel(badge_row, text="", font=_f(11), text_color=theme.FAINT)
         self._hero_step_lbl.pack(side="left")
         self._hero_value_lbl = ctk.CTkLabel(
-            self._hero_card, text="", font=_f(26, "bold"), text_color="white", anchor="w", wraplength=540
+            self._hero_card, text="", font=theme.display(32), text_color=theme.TEXT, anchor="w", wraplength=540
         )
         self._hero_value_lbl.pack(anchor="w", padx=16, pady=(6, 4))
         self._card_instr_lbl = ctk.CTkLabel(
@@ -881,8 +877,6 @@ class App(ctk.CTk):
                 height=24,
                 checkbox_width=18,
                 checkbox_height=18,
-                fg_color="#166534",
-                hover_color="#15803d",
                 command=self._update_selection_btn,
             )
             cb.pack(side="left", padx=(8, 4))
@@ -919,7 +913,7 @@ class App(ctk.CTk):
         info = ctk.CTkFrame(top, fg_color="transparent")
         info.pack(side="left", fill="both", expand=True)
         ctk.CTkLabel(
-            info, text=title, font=_f(20, "bold"), text_color=theme.TEXT, anchor="w", justify="left", wraplength=400
+            info, text=title, font=theme.display(24), text_color=theme.TEXT, anchor="w", justify="left", wraplength=400
         ).pack(anchor="w")
         ctk.CTkLabel(info, text=artist, font=_f(14), text_color=theme.MUTED, anchor="w").pack(anchor="w")
         if extra:
@@ -943,9 +937,11 @@ class App(ctk.CTk):
             return
         count = sum(1 for v in self._track_vars if v.get())
         if count == 0:
-            btn.configure(state="disabled", text="Start with selected")
+            btn.configure(text="Start with selected")
+            self._set_enabled(btn, False)
         else:
-            btn.configure(state="normal", text=f"Start with {count} selected")
+            btn.configure(text=f"Start with {count} selected")
+            self._set_enabled(btn, True)
 
     def _start_selected_queue(self) -> None:
         info = self._album_info
@@ -1005,7 +1001,7 @@ class App(ctk.CTk):
                 font=_f(12),
                 text_color=theme.FAINT,
             ).pack()
-        ctk.CTkLabel(box, text=track_title, font=_f(20, "bold"), text_color=theme.TEXT, wraplength=480).pack(
+        ctk.CTkLabel(box, text=track_title, font=theme.display(26), text_color=theme.TEXT, wraplength=480).pack(
             pady=(2, 14)
         )
         bar = ctk.CTkProgressBar(box, mode="indeterminate", width=320, height=4, progress_color=theme.ACCENT)
@@ -1137,17 +1133,15 @@ class App(ctk.CTk):
 
         if pos < total:
             kind, value = self._queue[pos]
-            color = _TYPE_COLORS.get(kind, "#9ca3af")
             field_label = _FIELD_LABELS.get(kind, kind)
 
             self._prog_lbl.configure(text=f"{pos + 1} / {total}")
             self._progress_bar.set((pos + 1) / total if total else 0)
 
             # Hero card updates
-            self._hero_badge.configure(text=field_label, fg_color=color)
+            self._hero_badge.configure(text=field_label)
             self._hero_step_lbl.configure(text=f"Step {pos + 1} of {total}")
             self._hero_value_lbl.configure(text=value)
-            self._hero_card.configure(border_color=color)
             self._card_instr_lbl.configure(text=self._instruction_text())
 
             # Auto-scroll the queue list to keep the current item visible
@@ -1156,7 +1150,7 @@ class App(ctk.CTk):
                 self._queue_sf._parent_canvas.yview_moveto(fraction)
 
         # Full row sweep — avoids a race where scheduled renders see a stale _prev_pos
-        for i, (row_frame, m, t, v, kind) in enumerate(self._row_widgets):
+        for i, (row_frame, m, t, v, _kind) in enumerate(self._row_widgets):
             if i < pos:
                 row_frame.configure(fg_color="transparent")
                 m.configure(text="✓", text_color=theme.DONE)
@@ -1165,12 +1159,12 @@ class App(ctk.CTk):
             elif i == pos:
                 row_frame.configure(fg_color=theme.FOCUS)
                 m.configure(text="▶", text_color=theme.ACCENT)
-                t.configure(text_color=_TYPE_COLORS.get(kind, theme.TEXT), font=_f(11, "bold"))
-                v.configure(text_color=theme.WARN, font=_f(12, "bold"))
+                t.configure(text_color=theme.ACCENT, font=_f(11, "bold"))
+                v.configure(text_color=theme.TEXT, font=_f(12, "bold"))
             else:
                 row_frame.configure(fg_color="transparent")
                 m.configure(text="")
-                t.configure(text_color=_TYPE_COLORS.get(kind, theme.MUTED), font=_f(11))
+                t.configure(text_color=theme.FAINT, font=_f(11))
                 v.configure(text_color=theme.MUTED, font=_f(12))
 
     def _instruction_text(self) -> str:
@@ -1187,8 +1181,8 @@ class App(ctk.CTk):
 
         box = ctk.CTkFrame(self, fg_color="transparent")
         box.pack(expand=True)
-        ctk.CTkLabel(box, text="✓", font=_f(52, "bold"), text_color=theme.ACCENT).pack()
-        ctk.CTkLabel(box, text="All credits entered", font=_f(22, "bold"), text_color=theme.TEXT).pack()
+        ctk.CTkLabel(box, text="✓", font=theme.font(48, "bold"), text_color=theme.ACCENT).pack()
+        ctk.CTkLabel(box, text="All credits entered", font=theme.display(30), text_color=theme.TEXT).pack()
         ctk.CTkLabel(
             box,
             text="Check the Genius page, then press Save there.",
@@ -1305,14 +1299,16 @@ class App(ctk.CTk):
         self._clear_kb_hooks()
 
         # Dark overlay frame on top of everything
-        self._esc_overlay = ctk.CTkFrame(self, fg_color="#0d0d0d", corner_radius=12)
+        self._esc_overlay = ctk.CTkFrame(
+            self, fg_color=theme.SURFACE, corner_radius=12, border_width=1, border_color=theme.BORDER
+        )
         self._esc_overlay.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.85)
 
         ctk.CTkLabel(
             self._esc_overlay,
             text="End pasting for this song?",
-            font=_f(18, "bold"),
-            text_color="#f87171",
+            font=theme.display(22),
+            text_color=theme.TEXT,
         ).pack(pady=(28, 20))
 
         btn_row = ctk.CTkFrame(self._esc_overlay, fg_color="transparent")
@@ -1325,9 +1321,9 @@ class App(ctk.CTk):
             height=38,
             fg_color="transparent",
             border_width=1,
-            border_color="#4ade80",
-            text_color="#4ade80",
-            hover_color="#1a2d1a",
+            border_color=theme.BORDER,
+            text_color=theme.TEXT,
+            hover_color=theme.SURFACE_HI,
             command=self._dismiss_esc_confirm,
             font=_f(13, "bold"),
         ).pack(side="left", padx=(0, 12))
@@ -1336,9 +1332,11 @@ class App(ctk.CTk):
             text="End and start over",
             width=160,
             height=38,
-            fg_color="#7f1d1d",
-            hover_color="#991b1b",
-            text_color="white",
+            fg_color=theme.DANGER_DIM,
+            hover_color=theme.DANGER_HOVER,
+            text_color=theme.DANGER,
+            border_width=1,
+            border_color=theme.DANGER,
             command=self._confirm_esc_quit,
             font=_f(13, "bold"),
         ).pack(side="left")

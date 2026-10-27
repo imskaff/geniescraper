@@ -164,6 +164,7 @@ class SettingsWindow(ctk.CTkToplevel):
                 font=theme.font(13, "bold"),
                 fg_color=theme.SURFACE_HI,
                 hover_color=theme.BORDER,
+                text_color=theme.TEXT,
                 border_width=1,
                 border_color=theme.BORDER,
                 command=lambda k=key: self._capture(k),
