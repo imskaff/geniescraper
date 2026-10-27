@@ -109,6 +109,16 @@ Settings are saved to `.env` in the project root.
 
 ## Development
 
+Install the git hooks once per clone (all worktrees of a clone share them):
+
+```bash
+uv run pre-commit install
+```
+
+Every commit then runs ruff check, ruff format --check, basedpyright and the offline `pytest` suite, the same checks CI runs on each push and pull request.
+The offline suite includes the fixture parsers, so run `uv run playwright install chromium` first.
+Never skip the hooks with `--no-verify`; fix the failure instead.
+
 ```bash
 uv run ruff check . && uv run ruff format --check .
 ```

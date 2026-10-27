@@ -1,0 +1,30 @@
+# One-time setup: uv run pre-commit install
+# Local hooks call the locked tools through uv, so hook versions always match uv.lock and CI.
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check
+        language: system
+        types_or: [python, pyi]
+        pass_filenames: false
+      - id: ruff-format
+        name: ruff format --check
+        entry: uv run ruff format --check
+        language: system
+        types_or: [python, pyi]
+        pass_filenames: false
+      - id: basedpyright
+        name: basedpyright
+        entry: uv run basedpyright
+        language: system
+        files: \.pyi?$|^pyproject\.toml$|^uv\.lock$|^\.basedpyright/
+        pass_filenames: false
+      - id: pytest
+        name: pytest (offline)
+        entry: uv run pytest -q
+        language: system
+        # Fixtures, golden files and config changes can break tests too, so always run the offline suite.
+        always_run: true
+        pass_filenames: false
