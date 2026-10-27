@@ -95,6 +95,7 @@ class App(ctk.CTk):
         self._credits_countdown: int = settings.auto_start_delay
         self._credits_countdown_paused: bool = False
         self._kb_hooks: list = []
+        self._queue_sf: ctk.CTkScrollableFrame | None = None
         self._app_focused: bool = False
 
         self.bind("<FocusIn>", lambda _: setattr(self, "_app_focused", True))
@@ -829,6 +830,7 @@ class App(ctk.CTk):
         )
         self._pos = 0
         self._row_widgets = []
+        self._queue_sf = None
 
         # ── Top bar: song title + progress ──────────────────────────────
         hdr = ctk.CTkFrame(self, fg_color="transparent")
@@ -1369,7 +1371,7 @@ class App(ctk.CTk):
             self._card_instr_lbl.configure(text=self._instruction_text())
 
             # Auto-scroll the queue list to keep the current item visible
-            if hasattr(self, "_queue_sf") and hasattr(self._queue_sf, "_parent_canvas"):
+            if self._queue_sf is not None and self._queue_sf.winfo_exists():
                 fraction = max(0.0, (pos - 2) / max(1, total))
                 self._queue_sf._parent_canvas.yview_moveto(fraction)
 
