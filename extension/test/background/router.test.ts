@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
+import type { CoverService } from "../../src/background/covers";
 import { PasteService } from "../../src/background/paste";
 import { createRouter } from "../../src/background/router";
 import { Serial } from "../../src/background/serial";
 import { memoryStore } from "../ui/fakes";
 import { ALBUM_INFO, ALBUM_URL, FAST_CLIENT, PAGE_SCRAPE, SONG_URL, fakeBrowser } from "./fakePorts";
+
+const NO_COVERS: CoverService = { exact: () => Promise.resolve(""), search: () => Promise.resolve("") };
 
 function pasteFor(browser: ReturnType<typeof fakeBrowser>): PasteService {
   return new PasteService(browser.ports, { settings: memoryStore(), session: memoryStore() });
@@ -19,18 +22,18 @@ describe("router", () => {
     { type: "scrape-track", url: SONG_URL },
   ])("rejects the malformed request %j", async (raw) => {
     const browser = fakeBrowser();
-    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser));
+    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS);
     expect(await route(raw)).toMatchObject({ ok: false, error: { code: "bad-request" } });
     expect(browser.log).toEqual([]);
   });
 
   it("routes a detect request", async () => {
-    const route = createRouter(fakeBrowser().ports, FAST_CLIENT, pasteFor(fakeBrowser()));
+    const route = createRouter(fakeBrowser().ports, FAST_CLIENT, pasteFor(fakeBrowser()), NO_COVERS);
     expect(await route({ type: "detect", url: ALBUM_URL })).toEqual({ ok: true, data: ALBUM_INFO });
   });
 
   it("routes a scrape-track request", async () => {
-    const route = createRouter(fakeBrowser().ports, FAST_CLIENT, pasteFor(fakeBrowser()));
+    const route = createRouter(fakeBrowser().ports, FAST_CLIENT, pasteFor(fakeBrowser()), NO_COVERS);
     expect(await route({ type: "scrape-track", url: SONG_URL, trackTitle: "Fortnight" })).toEqual({
       ok: true,
       data: PAGE_SCRAPE,
@@ -39,7 +42,7 @@ describe("router", () => {
 
   it("runs requests one at a time: at most one tab is ever open", async () => {
     const browser = fakeBrowser({ loadingPolls: 3 });
-    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser));
+    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS);
     const results = await Promise.all(
       [1, 2, 3, 4].map(() => route({ type: "scrape-track", url: SONG_URL, trackTitle: "" })),
     );
@@ -50,7 +53,7 @@ describe("router", () => {
 
   it("keeps the worker alive while a request runs and stops afterwards, even on failure", async () => {
     const browser = fakeBrowser({ neverLoads: true });
-    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser));
+    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS);
     const pending = route({ type: "scrape-track", url: SONG_URL, trackTitle: "" });
     await Promise.resolve();
     expect(browser.keepAliveActive()).toBe(1);
@@ -60,7 +63,7 @@ describe("router", () => {
 
   it("a failed request does not block the next one", async () => {
     const browser = fakeBrowser({ createFails: true });
-    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser));
+    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS);
     expect(await route({ type: "scrape-track", url: SONG_URL, trackTitle: "" })).toMatchObject({ ok: false });
     expect(await route({ type: "detect", url: "https://example.com" })).toMatchObject({ ok: false });
   });

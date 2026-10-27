@@ -26,7 +26,11 @@ from scraper.apple_music import (
     split_copyright,
     track_count_from_footer,
 )
-from scraper.deezer import catalog_ref
+from scraper.deezer import (
+    _itunes_png,  # pyright: ignore[reportPrivateUsage]
+    _same_track,  # pyright: ignore[reportPrivateUsage]
+    catalog_ref,
+)
 from scraper.models import Credit, SongCredits, _extract_labels  # pyright: ignore[reportPrivateUsage]
 from scraper.text import core_title_words, words
 
@@ -102,6 +106,26 @@ TEXT_CASES = [
     "",
     "Songwriter\nTaylor Swift, Jack Antonoff\nProducer\nJack Antonoff\n© 2024 Label\n",
     "Composition, Lyrics\nSongwriter:\nA & B\nMore by A\nPerformer\nC\nDrums\nD • E\n",
+]
+
+ARTWORK_URLS = [
+    "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/100x100bb.jpg",
+    "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/600x600bb.webp",
+    "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/1000x1000bb.png",
+    "https://example.com/art.jpg",
+    "",
+]
+
+# (result title, result artist, wanted title, wanted artist)
+SAME_TRACK_CASES = [
+    ("Fortnight", "Taylor Swift", "Fortnight (feat. Post Malone)", "Taylor Swift"),
+    ("Fortnight (feat. Post Malone)", "Taylor Swift", "Fortnight", "Taylor Swift"),
+    ("Kill Bill", "SZA", "SOS", "SZA"),
+    ("D\u00c1KITI", "Bad Bunny", "Dakiti", "Bad Bunny & Jhay Cortez"),
+    ("Fortnight", "The Lullabeats", "Fortnight", "Taylor Swift"),
+    ("SOS", "Sza", "sos", "SZA"),
+    ("X", "Someone", "X", "Ed"),
+    ("Water (Remix)", "Tyla", "Water", "Tyla"),
 ]
 
 PAGE_TITLES = [
@@ -227,6 +251,11 @@ def build_vectors() -> dict[str, Any]:
             {"input": t, "output": [c.model_dump() for c in credits_from_text(t)]} for t in TEXT_CASES
         ],
         "extract_title_artist": [{"input": t, "output": list(_extract_title_artist(t))} for t in PAGE_TITLES],
+        "itunes_png": [{"input": u, "output": _itunes_png(u)} for u in ARTWORK_URLS],
+        "same_track": [
+            {"result_title": a, "result_artist": b, "title": c, "artist": d, "output": _same_track(a, b, c, d)}
+            for a, b, c, d in SAME_TRACK_CASES
+        ],
         "words": [{"input": t, "output": words(t)} for t in TITLES],
         "core_title_words": [{"input": t, "output": core_title_words(t)} for t in TITLES],
     }

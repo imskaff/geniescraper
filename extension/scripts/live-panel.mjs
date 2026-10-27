@@ -191,6 +191,19 @@ try {
   const queue = await panel.evaluate(
     "[...document.querySelectorAll('ol.queue li')].map((li) => li.children[0].textContent + ': ' + li.children[1].textContent)",
   );
+  const artworkKey = (url) => /\/image\/thumb\/(.+)\/[^/]+$/.exec(url)?.[1] ?? "";
+  const coverHref = await panel.evaluate("document.querySelector('dl.credits a')?.getAttribute('href') ?? ''");
+  check(
+    "the cover is the golden artwork, from Apple's own lookup, as a 1000x1000 PNG",
+    coverHref.endsWith("/1000x1000bb.png") && artworkKey(coverHref) === artworkKey(golden.cover_art_url),
+    coverHref,
+  );
+  check(
+    "the cover link is https and safe to open",
+    await panel.evaluate(
+      "(() => { const a = document.querySelector('dl.credits a'); return !!a && a.rel === 'noopener noreferrer' && a.href.startsWith('https://'); })()",
+    ),
+  );
   check("paste queue starts with Written By", queue[0]?.startsWith("Written By: "), queue[0]);
   check(
     "paste queue includes the copyright label",
@@ -335,6 +348,19 @@ try {
   check(
     "reopening the panel restores the credits",
     (await text("h2")) === "Credits" && (await text("#track-heading")) !== null,
+  );
+
+  // ── an album whose page header has no usable cover: only the catalog lookup can supply it ──
+  const sour = JSON.parse(readFileSync(join(root, "..", "tests", "golden", "rodrigo-sour-t6.json"), "utf-8"));
+  const detected = await panel.evaluate(
+    `chrome.runtime.sendMessage({ type: 'detect', url: 'https://music.apple.com/us/album/sour/1560734944' })`,
+  );
+  check("detect succeeds for the album with motion artwork", detected?.ok === true);
+  const sourCover = detected?.data?.coverArtUrl ?? "";
+  check(
+    "its cover comes from the catalog lookup, matching the golden artwork",
+    sourCover.endsWith("/1000x1000bb.png") && artworkKey(sourCover) === artworkKey(sour.cover_art_url),
+    sourCover,
   );
 
   // ── a missing page is reported in words ──

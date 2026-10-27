@@ -196,7 +196,7 @@ Each slice ends working, tested and committable.
 | 4 | Album and track detection, background-tab credits reader (done; reads song pages, see section 11) | Unit tests with fake `chrome.*` ports; real hidden-tab run matches golden |
 | 5 | Side panel UI: link, track picker, credits and paste queue, settings; accessibility pass (done) | Unit tests with fake worker and storage; `npm run live:panel` drives the real panel, worker and live Apple Music |
 | 6 | Genius fill, one field per press (done) | Fake-select tests on the saved form; engine and whole extension run live on Genius (`npm run live:genius`) |
-| 7 | iTunes cover lookup | Replays `tests/fixtures/lookups/covers` |
+| 7 | iTunes cover lookup (done) | Replays `tests/fixtures/lookups/covers` against the golden artwork; live lookup checked in `npm run live:panel` |
 | 8 | Deezer and YouTube lookups with optional permissions | Replays `tests/fixtures/lookups/youtube` and matches `tests/golden/youtube.json` |
 | 9 | Store readiness: icons, locales, privacy policy, listing text, permission justifications, packaging script | Zip validated; manifest contract tests green |
 | 10 | Edge check, Safari converter notes | Documented result |
@@ -315,3 +315,14 @@ Verification state:
 - Still unobserved: whether Chrome's F7 caret-browsing prompt is really suppressed by the page handler (CDP key events bypass browser shortcuts).
 - Known rough edges: a skipped step leaves its typed text in the Genius field, and waiting for suggestions that never come (a role Genius lacks) takes about 4 seconds.
 - The scratch Chromium profile used for the Genius sign-in holds that session's cookies and lives in the session's scratch folder; delete it when no more live checks are needed.
+
+## 14. Slice 7 decisions: the exact cover
+
+- The cover is looked up by Apple catalog id on `itunes.apple.com` (a required host), in the worker, in parallel with reading the album page, as in the desktop app.
+  The lookup wins over the page header, which shows only motion artwork for some albums (SOUR); a title search in the same catalog is the last resort, because it can return another edition.
+  A track's cover is its album's cover, as in the desktop app; the song page's header is only a fallback.
+- Every ported helper is checked against Python: `catalogRef`, the 1000x1000 PNG rewrite, `sameTrack` and `coreTitleWords` run the vectors, and all 7 golden cases run against the saved iTunes responses (one request when the lookup answers, one search when there is no catalog id).
+- Responses are untrusted: an artwork URL is used only if it is https on `mzstatic.com`, so a hostile or broken response cannot put another host into the paste queue or the panel.
+- `src/lookups/http.ts` is the only place that fetches third-party data: https only, an explicit host allow-list (`itunes.apple.com` for now), no cookies, no referrer, a 10 second timeout, and null on every failure.
+- Live: the golden track's cover through the real worker matches the golden artwork, and SOUR (no usable page header cover) gets its cover from the lookup.
+- Deezer (optional host) and YouTube arrive in slice 8; the Deezer cover fallback is not in this slice, so a track iTunes cannot find gets no cover from the extension.

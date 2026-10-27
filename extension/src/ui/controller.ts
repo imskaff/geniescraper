@@ -72,7 +72,8 @@ export function buildSong(album: AlbumInfo, result: Pick<TrackResult, "url">, sc
     // Song pages carry no ℗/© footer, so these come from the album page read at detection time.
     phonographicCopyright: album.phonographicCopyright,
     copyrightNotice: album.copyrightNotice,
-    coverArtUrl: scrape.coverArtUrl || album.coverArtUrl,
+    // The album's cover comes from Apple's catalog lookup, which is exact; the song page header is only a fallback.
+    coverArtUrl: album.coverArtUrl || scrape.coverArtUrl,
     youtubeUrl: "",
     youtubeIsMv: false,
   };

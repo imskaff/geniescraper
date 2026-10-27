@@ -45,3 +45,11 @@ export function words(text: string): string[] {
   const folded = text.toLowerCase().normalize("NFKD").replace(/\p{M}/gu, "");
   return folded.match(/[\p{L}\p{N}]+/gu) ?? [];
 }
+
+// Where a track title's featured-artist part starts: "(feat. X)", "[ft. X]", "with X" in brackets, or a bare feat.
+const FEATURING = /[([]\s*(?:feat|ft|featuring|with)\b|\b(?:feat|ft|featuring)\b\.?/i;
+
+/** Words of a track title without its featured-artist part: "Fortnight (feat. Post Malone)" gives ["fortnight"]. */
+export function coreTitleWords(title: string): string[] {
+  return words(title.split(FEATURING)[0] ?? "");
+}

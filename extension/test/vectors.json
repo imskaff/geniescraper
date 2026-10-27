@@ -9704,6 +9704,86 @@
    ]
   }
  ],
+ "itunes_png": [
+  {
+   "input": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/100x100bb.jpg",
+   "output": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/1000x1000bb.png"
+  },
+  {
+   "input": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/600x600bb.webp",
+   "output": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/1000x1000bb.png"
+  },
+  {
+   "input": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/1000x1000bb.png",
+   "output": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/1000x1000bb.png"
+  },
+  {
+   "input": "https://example.com/art.jpg",
+   "output": "https://example.com/art.jpg"
+  },
+  {
+   "input": "",
+   "output": ""
+  }
+ ],
+ "same_track": [
+  {
+   "result_title": "Fortnight",
+   "result_artist": "Taylor Swift",
+   "title": "Fortnight (feat. Post Malone)",
+   "artist": "Taylor Swift",
+   "output": true
+  },
+  {
+   "result_title": "Fortnight (feat. Post Malone)",
+   "result_artist": "Taylor Swift",
+   "title": "Fortnight",
+   "artist": "Taylor Swift",
+   "output": true
+  },
+  {
+   "result_title": "Kill Bill",
+   "result_artist": "SZA",
+   "title": "SOS",
+   "artist": "SZA",
+   "output": false
+  },
+  {
+   "result_title": "DÁKITI",
+   "result_artist": "Bad Bunny",
+   "title": "Dakiti",
+   "artist": "Bad Bunny & Jhay Cortez",
+   "output": true
+  },
+  {
+   "result_title": "Fortnight",
+   "result_artist": "The Lullabeats",
+   "title": "Fortnight",
+   "artist": "Taylor Swift",
+   "output": false
+  },
+  {
+   "result_title": "SOS",
+   "result_artist": "Sza",
+   "title": "sos",
+   "artist": "SZA",
+   "output": true
+  },
+  {
+   "result_title": "X",
+   "result_artist": "Someone",
+   "title": "X",
+   "artist": "Ed",
+   "output": true
+  },
+  {
+   "result_title": "Water (Remix)",
+   "result_artist": "Tyla",
+   "title": "Water",
+   "artist": "Tyla",
+   "output": false
+  }
+ ],
  "words": [
   {
    "input": "Fortnight (feat. Post Malone)",

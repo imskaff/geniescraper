@@ -21,7 +21,7 @@
     "default_path": "ui/panel.html"
   },
   "permissions": ["scripting", "sidePanel", "storage"],
-  "host_permissions": ["https://genius.com/*", "https://music.apple.com/*"],
+  "host_permissions": ["https://genius.com/*", "https://itunes.apple.com/*", "https://music.apple.com/*"],
   "content_scripts": [
     {
       "matches": ["https://genius.com/*"],
