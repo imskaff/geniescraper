@@ -239,7 +239,8 @@ h2 + .help {
 .check input {
   width: 18px;
   height: 18px;
-  accent-color: var(--accent);
+  /* The link color, not the yellow: a checked box has to stand out from the page in both schemes. */
+  accent-color: var(--link);
 }
 
 .check.muted {

@@ -111,6 +111,15 @@ describe("link screen", () => {
     expect($input(root, "#link").getAttribute("aria-invalid")).toBe("true");
   });
 
+  it("forgets the old link after New link, and offers the current page again", async () => {
+    const { root, panel } = await mount({ tab: { tabId: 3, url: "https://music.apple.com/us/album/other/77" } });
+    await submitLink(root, ALBUM.url);
+    byText(root, "button", "New link").click();
+    await flush();
+    expect($input(root, "#link").value).toBe("https://music.apple.com/us/album/other/77");
+    expect(panel.state.session.screen).toBe("link");
+  });
+
   it("keeps what the user typed when the screen re-renders", async () => {
     const { root, panel } = await mount();
     const input = $input(root, "#link");

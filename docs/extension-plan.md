@@ -220,7 +220,7 @@ Each slice ends working, tested and committable.
 - Genius shows a cookie consent dialog that can intercept clicks; the extension must not interact with it.
 - The fixture omits the Tags, Albums and Song Relationships sections, which the extension never touches.
 - **Hidden-tab side effects (slice 5)**: every scrape shows a tab briefly in the tab strip and adds a history entry for the song page; check whether a minimized window avoids the flash before relying on it.
-- **Real worker end to end**: done in slice 5; `npm run live:panel` goes through the real panel page, `chromePorts()`, the router and the sender filter. The user-tab detect path (panel opened while the user is on the album) is only unit tested.
+- **Real worker end to end**: done. `npm run live:panel` drives the real panel page through the real worker, `chromePorts()` and the router with real key events; `npm run live:sidepanel` opens a genuine side panel next to a visible album tab.
 - **Live coverage**: one track of one album has run live; the other six cases are covered by saved pages only.
 - **Safari**: confirm which APIs (`sidePanel`, `scripting`, session storage) are available before committing to the shared UI page.
 - **Genius ToS review**: confirm the per-press fill stays within the guidelines before the store listing.
@@ -259,3 +259,12 @@ Playwright forces pages to report `visibilityState: "visible"` and focus, so it 
   That test found a real problem: the yellow selected-track edge failed on the light scheme, so it uses the darker link color.
 - The live run at 400 px wide found a horizontal scrollbar caused by the unbreakable cover art URL in the paste queue; items now wrap.
 - Reading an album or song page needs no extra step from the user: when the active tab already shows the pasted link it is read in place, otherwise a hidden tab is used and closed again.
+- `chrome.sidePanel.open` needs a user gesture that a service worker cannot be given, even over CDP with `userGesture: true`.
+  The live check opens a helper window with an extension page and makes the call from there with the gesture, which Chrome accepts.
+- With the album open in a visible tab, the panel prefills its link, follows the user to another tab and back, reads that tab in place (peak tab count equals the number of tabs the user had open) and leaves the user's tabs untouched.
+- The keyboard-only pass found no focus problems: Tab from the heading reaches the link box, Enter reads the album, Tab visits Select all, Select none and the tracks (skipping the disabled one), Space toggles with focus kept, and Enter on the button starts reading.
+  It reads a whole 10-track album live, one hidden tab at a time.
+- Looking at the light scheme found that checked boxes were yellow on white; they now use the darker link color.
+  The focus ring is clearly visible around the yellow primary button in a screenshot.
+- "New link" now clears the previous link instead of leaving it in the box.
+- Still open: a visible tab flash and history entry per scrape, the popup fallback for Safari, a CDP side panel width narrower than 320 px (not measured), and settings for the YouTube link and cover art, which have no data to act on until the lookups arrive (slices 7 and 8).

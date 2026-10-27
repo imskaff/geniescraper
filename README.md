@@ -184,7 +184,8 @@ To try the extension, run `npm run build`, open `chrome://extensions`, switch on
 The toolbar button opens the side panel: paste an Apple Music album or song link (or open one and the panel offers it), choose tracks, and review the credits and the paste queue.
 Pasting into Genius is not part of the extension yet.
 
-`npm run live:panel -- --chrome <path to Chromium> --screenshots <folder>` drives the real panel against the real service worker and live Apple Music, checks the result against the golden file, and saves screenshots.
+`npm run live:panel -- --chrome <path to Chromium> --screenshots <folder>` drives the real panel with real key presses against the real service worker and live Apple Music (a whole 10-track album), checks the result against the golden file, and saves screenshots in both color schemes and at 320 px.
+`npm run live:sidepanel -- --chrome <path to Chromium>` checks the way the extension is really used: a genuine side panel next to a visible album tab, reading that tab in place.
 
 `npm run live:hidden-tab -- --chrome <path to Chromium>` is an opt-in live check against Apple Music that the extension can read song pages in a genuinely hidden tab; run `npm run build` first, and find a Chromium with `uv run python -c "from playwright.sync_api import sync_playwright as s; p = s().start(); print(p.chromium.executable_path); p.stop()"`.
 

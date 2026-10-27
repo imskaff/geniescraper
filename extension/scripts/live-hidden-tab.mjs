@@ -8,11 +8,10 @@
 //   node scripts/live-hidden-tab.mjs --chrome <chrome.exe> [--runs 3]
 //
 // Exit code 0 only when every run matched the golden file for tests/golden/eilish-hmhas-t3.json.
-import { spawn } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { connect, findServiceWorker, launchChromium, sleep, waitUntilReady } from "./lib/cdp.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -22,44 +21,9 @@ const chromePath = option("--chrome", process.env["CHROME_PATH"]);
 const runs = Number(option("--runs", "3"));
 if (!chromePath) throw new Error("Pass --chrome <path to a Chromium or Chrome executable> (or set CHROME_PATH).");
 
-const dist = join(root, "dist");
 const golden = JSON.parse(readFileSync(join(root, "..", "tests", "golden", "eilish-hmhas-t3.json"), "utf-8"));
 const ALBUM_URL = "https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134";
 const TRACK_INDEX = 2; // zero-based: CHIHIRO, the third track
-const PORT = 9333;
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const profile = mkdtempSync(join(tmpdir(), "geniescraper-hidden-tab-"));
-const chrome = spawn(
-  chromePath,
-  [
-    `--remote-debugging-port=${PORT}`,
-    `--user-data-dir=${profile}`,
-    `--disable-extensions-except=${dist}`,
-    `--load-extension=${dist}`,
-    "--no-first-run",
-    "--no-default-browser-check",
-    "about:blank",
-  ],
-  { stdio: "ignore" },
-);
-
-async function targets() {
-  try {
-    return await (await fetch(`http://127.0.0.1:${PORT}/json`)).json();
-  } catch {
-    return [];
-  }
-}
-
-async function connectToWorker() {
-  for (let attempt = 0; attempt < 100; attempt++) {
-    const worker = (await targets()).find((t) => t.type === "service_worker" && t.url.endsWith("background/worker.js"));
-    if (worker) return new WebSocket(worker.webSocketDebuggerUrl);
-    await sleep(200);
-  }
-  throw new Error("The extension's service worker did not start. Did you run `npm run build`?");
-}
 
 // Runs in the worker: open an inactive tab, inject the content script, ask it one question, close the tab.
 const drive = (message) => `(async () => {
@@ -89,38 +53,18 @@ function creditMap(credits) {
   return JSON.stringify(Object.entries(byRole).sort(([a], [b]) => a.localeCompare(b)));
 }
 
-const socket = await connectToWorker();
-await new Promise((resolve) => socket.addEventListener("open", resolve, { once: true }));
-let nextId = 1;
-const waiting = new Map();
-socket.addEventListener("message", (event) => {
-  const message = JSON.parse(event.data);
-  waiting.get(message.id)?.(message);
-});
-function evaluate(expression) {
-  const id = nextId++;
-  return new Promise((resolve, reject) => {
-    waiting.set(id, (message) => {
-      if (message.error) reject(new Error(JSON.stringify(message.error)));
-      else resolve(message.result.result.value);
-    });
-    socket.send(
-      JSON.stringify({
-        id,
-        method: "Runtime.evaluate",
-        params: { expression, awaitPromise: true, returnByValue: true },
-      }),
-    );
-  });
-}
-
+const browser = launchChromium({ chromePath, dist: join(root, "dist"), port: 9333 });
 const wanted = creditMap(golden.credits);
 let matched = 0;
+let worker;
 try {
+  worker = await connect((await findServiceWorker(browser)).webSocketDebuggerUrl);
+  await waitUntilReady(worker);
+
   for (let run = 1; run <= runs; run++) {
-    const detect = await evaluate(drive({ type: "apple/detect", url: ALBUM_URL }));
+    const detect = await worker.evaluate(drive({ type: "apple/detect", url: ALBUM_URL }));
     const album = detect.result.data;
-    const scrape = await evaluate(
+    const scrape = await worker.evaluate(
       drive({ type: "apple/scrape", url: album.trackUrls[TRACK_INDEX], trackTitle: album.trackTitles[TRACK_INDEX] }),
     );
     const page = scrape.result;
@@ -143,10 +87,8 @@ try {
     await sleep(1000);
   }
 } finally {
-  socket.close();
-  chrome.kill();
-  await sleep(500);
-  rmSync(profile, { recursive: true, force: true });
+  worker?.close();
+  await browser.stop();
 }
 console.log(`${String(matched)}/${String(runs)} runs matched the golden file`);
 process.exit(matched === runs ? 0 : 1);

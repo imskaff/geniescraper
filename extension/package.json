@@ -14,6 +14,7 @@
     "test": "vitest run",
     "live:hidden-tab": "node scripts/live-hidden-tab.mjs",
     "live:panel": "node scripts/live-panel.mjs",
+    "live:sidepanel": "node scripts/live-sidepanel.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"

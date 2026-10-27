@@ -84,16 +84,32 @@ export async function connect(webSocketUrl) {
 
   return {
     send,
-    /** Evaluate an expression and return its value, waiting for a returned promise. */
-    async evaluate(expression) {
+    /**
+     * Evaluate an expression and return its value, waiting for a returned promise.
+     * `userGesture` makes the page treat the call as user-initiated, which some APIs (sidePanel.open) require.
+     */
+    async evaluate(expression, { userGesture = false } = {}) {
       const { result, exceptionDetails } = await send("Runtime.evaluate", {
         expression,
         awaitPromise: true,
         returnByValue: true,
+        userGesture,
       });
       if (exceptionDetails) throw new Error(exceptionDetails.exception?.description ?? exceptionDetails.text);
       return result.value;
     },
     close: () => socket.close(),
   };
+}
+
+/**
+ * A worker target can be listed a moment before its JavaScript context exists; wait until `chrome` does.
+ * Without this the first evaluate sometimes fails with "chrome is not defined".
+ */
+export async function waitUntilReady(session, probe = "typeof chrome !== 'undefined' && !!chrome.runtime?.id") {
+  for (let attempt = 0; attempt < 50; attempt++) {
+    if (await session.evaluate(probe).catch(() => false)) return;
+    await sleep(200);
+  }
+  throw new Error("The extension's service worker never became ready.");
 }

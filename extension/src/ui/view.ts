@@ -108,6 +108,8 @@ export class PanelView {
     toggle.textContent = state.settingsOpen ? "Back" : "Settings";
 
     const key = state.settingsOpen ? "settings" : state.session.screen;
+    // Starting over with a new link forgets the old one; opening and closing settings does not.
+    if (key === "link" && (this.screenKey === "tracks" || this.screenKey === "review")) this.draft = null;
     main.setAttribute("aria-busy", String(state.busy !== null));
     main.replaceChildren(...(state.settingsOpen ? this.settings(state) : this.screen(state)));
 
