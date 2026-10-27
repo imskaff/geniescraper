@@ -2,6 +2,7 @@
 import { createWorkerApi, chromeSend } from "./api";
 import { PanelController, type Env } from "./controller";
 import { PanelView } from "./view";
+import { PASTE_KEY, normalisePaste } from "../core/paste";
 import { chromeStores } from "../shared/storage";
 
 const env: Env = {
@@ -18,6 +19,10 @@ if (!root) throw new Error("The panel page has no #app element.");
 
 void PanelController.create(env).then((panel) => {
   new PanelView(root, panel);
+  // The worker is the paste session's only writer; this panel just follows what it stores.
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "session" && PASTE_KEY in changes) panel.setPaste(normalisePaste(changes[PASTE_KEY].newValue));
+  });
   // Follow the user to another tab or page, so the link box offers the page they are on.
   const refresh = (): void => {
     void panel.refreshPage();

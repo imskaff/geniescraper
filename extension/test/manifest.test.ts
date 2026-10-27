@@ -19,7 +19,7 @@ interface Manifest {
   externally_connectable?: unknown;
   background?: { service_worker?: string };
   side_panel?: { default_path?: string };
-  content_scripts?: { matches: string[]; js?: string[] }[];
+  content_scripts?: { matches: string[]; js?: string[]; all_frames?: boolean; run_at?: string }[];
   icons?: Record<string, string>;
 }
 
@@ -87,13 +87,29 @@ describe("manifest", () => {
 
 describe("manifest files", () => {
   it("references files that exist", () => {
-    const referenced = [
-      ...Object.values(manifest.icons ?? {}),
-      ...(manifest.content_scripts ?? []).flatMap((script) => script.js ?? []),
-    ];
-    for (const path of referenced) {
+    for (const path of Object.values(manifest.icons ?? {})) {
       expect(existsSync(join(ROOT, path)), path).toBe(true);
     }
+  });
+
+  it("builds every content script from a source module", () => {
+    const build = readFileSync(join(ROOT, "scripts", "build.mjs"), "utf-8");
+    const scripts = (manifest.content_scripts ?? []).flatMap((script) => script.js ?? []);
+    expect(scripts.length).toBeGreaterThan(0);
+    for (const path of scripts) {
+      const source = `src/${path.replace(/\.js$/, ".ts")}`;
+      expect(existsSync(join(ROOT, source)), source).toBe(true);
+      expect(build, path).toContain(`"${path.replace(/\.js$/, "")}": "${source}"`);
+    }
+  });
+
+  it("runs the Genius content script on genius.com only, in the top frame, after the page is idle", () => {
+    const [script, ...others] = manifest.content_scripts ?? [];
+    expect(others).toEqual([]);
+    expect(script?.matches).toEqual(["https://genius.com/*"]);
+    expect(script?.js).toEqual(["genius/content.js"]);
+    expect(script?.all_frames).toBeUndefined();
+    expect(script?.run_at).toBe("document_idle");
   });
 
   it("builds the service worker from a source module", () => {

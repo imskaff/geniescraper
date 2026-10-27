@@ -1,7 +1,7 @@
 // The slice of the chrome.* API the worker uses, behind an interface so tests can fake it.
 // Nothing here needs the "tabs" permission: tabs.create and tabs.remove are unrestricted, and the host
 // permission for music.apple.com is what lets the worker read the URL of an Apple Music tab.
-import type { ContentRequest } from "../shared/messages";
+import type { ContentRequest, GeniusNotice } from "../shared/messages";
 
 export interface TabState {
   status: "loading" | "complete";
@@ -17,12 +17,19 @@ export interface BrowserPorts {
   /** Inject the Apple Music content script (idempotent in the page). */
   injectContentScript(tabId: number): Promise<void>;
   sendMessage(tabId: number, message: ContentRequest): Promise<unknown>;
+  /** Tabs showing genius.com, so a paste session can tell them it started or ended. */
+  geniusTabIds(): Promise<number[]>;
+  /** The genius.com tab the user is looking at in their current window, or null. */
+  activeGeniusTab(): Promise<number | null>;
+  /** Tell a Genius tab something; resolves false when nothing there is listening. */
+  notifyGenius(tabId: number, notice: GeniusNotice): Promise<boolean>;
   /** Keep the service worker alive while work is in flight; returns the function that stops it. */
   keepAlive(): () => void;
 }
 
 export const CONTENT_SCRIPT_FILE = "apple/content.js";
 const KEEP_ALIVE_MS = 20_000;
+const GENIUS_MATCH = "https://genius.com/*";
 
 export function chromePorts(): BrowserPorts {
   return {
@@ -47,6 +54,22 @@ export function chromePorts(): BrowserPorts {
     },
     sendMessage(tabId, message) {
       return chrome.tabs.sendMessage(tabId, message);
+    },
+    async geniusTabIds() {
+      const tabs = await chrome.tabs.query({ url: GENIUS_MATCH });
+      return tabs.flatMap((tab) => (tab.id === undefined ? [] : [tab.id]));
+    },
+    async activeGeniusTab() {
+      const [tab] = await chrome.tabs.query({ url: GENIUS_MATCH, active: true, lastFocusedWindow: true });
+      return tab?.id ?? null;
+    },
+    async notifyGenius(tabId, notice) {
+      try {
+        await chrome.tabs.sendMessage(tabId, notice);
+        return true;
+      } catch {
+        return false;
+      }
     },
     keepAlive() {
       // MV3 stops an idle worker after about 30 seconds; an extension API call resets that timer.

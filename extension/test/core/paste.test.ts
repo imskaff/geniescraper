@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { QueueItem } from "../../src/core/models";
 import {
+  BUSY_TIMEOUT_MS,
   IDLE_PASTE,
   STEP_LABELS,
   back,
@@ -21,11 +22,13 @@ const QUEUE: QueueItem[] = [
   ["artist", "Mixer One"],
 ];
 
+const NOW = 1_000_000;
+
 const started = (): PasteState => startPaste("Song", QUEUE);
 
 /** One full press: begin, then report the outcome. */
 function press(state: PasteState, outcome: Parameters<typeof report>[2]): PasteState {
-  const { state: busy, result } = begin(state);
+  const { state: busy, result } = begin(state, NOW);
   if (result.action !== "fill") return busy;
   return report(busy, result.position, outcome);
 }
@@ -44,14 +47,14 @@ describe("starting", () => {
 
 describe("a press", () => {
   it("asks for the current step and marks the fill as in progress", () => {
-    const { state, result } = begin(started());
+    const { state, result } = begin(started(), NOW);
     expect(result).toEqual({ action: "fill", item: ["written_by", "Writer One"], position: 0 });
     expect(state.busy).toBe(true);
   });
 
   it("is ignored while a fill is in progress, so a double press cannot fill twice", () => {
-    const { state } = begin(started());
-    const second = begin(state);
+    const { state } = begin(started(), NOW);
+    const second = begin(state, NOW);
     expect(second.result).toEqual({ action: "none" });
     expect(second.state).toBe(state);
   });
@@ -60,7 +63,7 @@ describe("a press", () => {
     ["inactive", { ...IDLE_PASTE }],
     ["finished", { ...startPaste("S", QUEUE), position: 3 }],
   ])("does nothing when %s", (_name, state) => {
-    expect(begin(state).result).toEqual({ action: "none" });
+    expect(begin(state, NOW).result).toEqual({ action: "none" });
   });
 
   it("moves on after a filled step", () => {
@@ -72,7 +75,7 @@ describe("a press", () => {
     const attention = press(started(), { status: "needs-choice", message: "No exact match." });
     expect(attention).toMatchObject({ position: 0, awaiting: true, busy: false, tone: "attention" });
 
-    const { state, result } = begin(attention);
+    const { state, result } = begin(attention, NOW);
     expect(result).toEqual({ action: "advanced" });
     expect(state).toMatchObject({ position: 1, awaiting: false, busy: false });
   });
@@ -93,19 +96,29 @@ describe("a press", () => {
     for (let i = 0; i < QUEUE.length; i++) state = press(state, { status: "filled", message: "ok" });
     expect(state.position).toBe(3);
     expect(isFinished(state)).toBe(true);
-    expect(begin(state).result).toEqual({ action: "none" });
+    expect(begin(state, NOW).result).toEqual({ action: "none" });
+  });
+});
+
+describe("a fill that never reports", () => {
+  it("is abandoned after the timeout, so presses work again", () => {
+    const { state } = begin(started(), NOW);
+    expect(begin(state, NOW + BUSY_TIMEOUT_MS).result).toEqual({ action: "none" });
+    const later = begin(state, NOW + BUSY_TIMEOUT_MS + 1);
+    expect(later.result).toEqual({ action: "fill", item: ["written_by", "Writer One"], position: 0 });
+    expect(later.state.busySince).toBe(NOW + BUSY_TIMEOUT_MS + 1);
   });
 });
 
 describe("reports", () => {
   it("ignores a report for another step, or one nobody asked for", () => {
-    const { state } = begin(started());
+    const { state } = begin(started(), NOW);
     expect(report(state, 2, { status: "filled", message: "x" })).toBe(state);
     expect(report(started(), 0, { status: "filled", message: "x" }).position).toBe(0);
   });
 
   it("ignores a late report after stop or back", () => {
-    const { state } = begin(started());
+    const { state } = begin(started(), NOW);
     const stopped = stop(state);
     expect(report(stopped, 0, { status: "filled", message: "x" })).toBe(stopped);
     const backed = back({ ...state, position: 1, busy: true });
@@ -131,7 +144,7 @@ describe("back, skip and stop", () => {
   });
 
   it("stop ends the session but keeps the queue for the panel to show", () => {
-    const state = stop(begin(started()).state);
+    const state = stop(begin(started(), NOW).state);
     expect(state).toMatchObject({ active: false, busy: false, awaiting: false });
     expect(state.queue).toEqual(QUEUE);
   });
@@ -184,15 +197,21 @@ describe("normalisePaste", () => {
     expect(normalisePaste(raw)).toEqual(IDLE_PASTE);
   });
 
-  it("restores a valid state but never a stuck busy flag", () => {
-    const stored = { ...started(), position: 1, busy: true, awaiting: true, message: "m", tone: "attention" };
-    expect(normalisePaste(stored)).toMatchObject({
-      active: true,
+  it("restores a valid state exactly, including a fill that is in progress", () => {
+    const stored = {
+      ...started(),
       position: 1,
-      busy: false,
+      busy: true,
+      busySince: 42,
       awaiting: true,
+      message: "m",
       tone: "attention",
-    });
+    };
+    expect(normalisePaste(stored)).toEqual(stored);
+  });
+
+  it("does not trust a malformed busy time", () => {
+    expect(normalisePaste({ ...started(), busy: true, busySince: "soon" }).busySince).toBe(0);
   });
 
   it("is not active with an empty queue and ignores an unknown tone", () => {

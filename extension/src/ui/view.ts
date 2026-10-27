@@ -4,7 +4,8 @@
 import type { QueueKind } from "../core/models";
 import type { AlbumInfo } from "../shared/messages";
 import type { TrackResult, TrackStatus } from "../shared/session";
-import type { Settings } from "../shared/settings";
+import { STEP_LABELS, instruction } from "../core/paste";
+import { HOTKEY_CHOICES, WAIT_RANGE } from "../shared/settings";
 import { el } from "./dom";
 import type { PanelController, PanelState } from "./controller";
 
@@ -20,7 +21,9 @@ export const FIELD_LABELS: Readonly<Record<QueueKind, string>> = {
   cover_art: "Cover art URL",
 };
 
-const SETTING_LABELS: readonly (readonly [keyof Settings, string])[] = [
+type ScrapeKey = "scrapeCore" | "scrapeAdditional" | "scrapeCopyright" | "scrapeYoutube" | "scrapeCoverArt";
+
+const SETTING_LABELS: readonly (readonly [ScrapeKey, string])[] = [
   ["scrapeCore", "Songwriters and producers"],
   ["scrapeAdditional", "Additional credits"],
   ["scrapeCopyright", "Copyright lines (℗ and ©)"],
@@ -107,11 +110,17 @@ export class PanelView {
     const toggle = this.region("settings-toggle");
     toggle.textContent = state.settingsOpen ? "Back" : "Settings";
 
-    const key = state.settingsOpen ? "settings" : state.session.screen;
+    const key = state.settingsOpen ? "settings" : state.paste.active ? "paste" : state.session.screen;
     // Starting over with a new link forgets the old one; opening and closing settings does not.
     if (key === "link" && (this.screenKey === "tracks" || this.screenKey === "review")) this.draft = null;
     main.setAttribute("aria-busy", String(state.busy !== null));
-    main.replaceChildren(...(state.settingsOpen ? this.settings(state) : this.screen(state)));
+    main.replaceChildren(
+      ...(state.settingsOpen
+        ? this.settings(state)
+        : state.paste.active
+          ? this.pasteScreen(state)
+          : this.screen(state)),
+    );
 
     if (key !== this.screenKey) {
       // A new screen starts at its heading, so the reader hears where they are.
@@ -371,6 +380,21 @@ export class PanelView {
     const queue = this.panel.queueFor(result.index);
     section.append(
       song.credits.length === 0 ? el("p", { class: "problem", text: "No credits were found for this track." }) : groups,
+      ...(queue.length > 0
+        ? [
+            el(
+              "div",
+              { class: "row" },
+              this.button(
+                "Start pasting",
+                "primary",
+                "paste-start",
+                () => void this.panel.startPaste(result.index),
+                state.busy !== null,
+              ),
+            ),
+          ]
+        : []),
       el("h4", { text: "Paste queue" }),
       queue.length === 0
         ? el("p", { class: "help", text: "Nothing to paste with the current settings." })
@@ -383,6 +407,73 @@ export class PanelView {
           ),
     );
     return section;
+  }
+
+  // ── pasting ─────────────────────────────────────────────────────────
+
+  private pasteScreen(state: PanelState): Node[] {
+    const { paste, settings } = state;
+    const total = paste.queue.length;
+    const finished = paste.position >= total;
+    const current = paste.queue[paste.position];
+    const progress = finished ? "All steps done" : `Step ${String(paste.position + 1)} of ${String(total)}`;
+
+    const steps = el(
+      "ol",
+      { class: "queue steps", attrs: { "aria-label": "All steps" } },
+      ...paste.queue.map(([kind, value], index) => {
+        const done = index < paste.position;
+        const here = index === paste.position;
+        const mark = done ? "Done" : here ? (paste.awaiting ? "Waiting for you" : "Next") : "";
+        return el(
+          "li",
+          { class: done ? "done" : here ? "here" : "", attrs: here ? { "aria-current": "step" } : {} },
+          el("span", { class: "tag", text: mark ? `${STEP_LABELS[kind]}: ${mark}` : STEP_LABELS[kind] }),
+          el("span", { text: value }),
+        );
+      }),
+    );
+
+    return [
+      this.heading("Paste into Genius"),
+      el("p", { class: "help", text: paste.title }),
+      el("p", { class: "progress", text: progress }),
+      current
+        ? el(
+            "div",
+            { class: "step" },
+            el("span", { class: "tag", text: STEP_LABELS[current[0]] }),
+            el("p", { class: "value", text: current[1] }),
+          )
+        : null,
+      el("p", { text: instruction(paste, settings.nextHotkey) }),
+      el(
+        "div",
+        { class: "row" },
+        this.button(
+          `Fill next (${settings.nextHotkey})`,
+          "primary",
+          "fill",
+          () => void this.panel.fillNext(),
+          finished || paste.busy,
+        ),
+        this.button(
+          `Back (${settings.backHotkey})`,
+          "quiet",
+          "pback",
+          () => void this.panel.pasteBack(),
+          paste.position === 0,
+        ),
+        this.button("Skip", "quiet", "pskip", () => void this.panel.pasteSkip(), finished),
+        this.button("Stop pasting", "quiet", "pstop", () => void this.panel.stopPaste(), false),
+      ),
+      el("p", {
+        class: "help",
+        text: "Keep the song's Edit Metadata form open on Genius. Nothing is saved for you: check the form, then save it there.",
+      }),
+      el("h3", { text: "All steps" }),
+      steps,
+    ].filter((node): node is HTMLElement => node !== null);
   }
 
   // ── settings ────────────────────────────────────────────────────────
@@ -412,7 +503,87 @@ export class PanelView {
         ),
         el("p", { class: "help", text: "Changes apply to the paste queue at once and are saved to your browser." }),
       ),
+      this.pastingSettings(state),
     ];
+  }
+
+  private pastingSettings(state: PanelState): HTMLElement {
+    const { settings } = state;
+    const keySelect = (id: "nextHotkey" | "backHotkey", label: string): HTMLElement => {
+      const select = el(
+        "select",
+        {
+          class: "field",
+          attrs: { id: `setting-${id}`, "data-key": `setting-${id}` },
+          on: {
+            change: (event) => {
+              void this.panel.setSetting(id, (event.target as HTMLSelectElement).value);
+            },
+          },
+        },
+        ...HOTKEY_CHOICES.map((key) => el("option", { text: key, attrs: { value: key } })),
+      );
+      select.value = settings[id];
+      return el("div", { class: "stack" }, el("label", { text: label, attrs: { for: `setting-${id}` } }), select);
+    };
+
+    const confirm = el("input", {
+      attrs: { type: "checkbox", "data-key": "setting-autoConfirm" },
+      on: {
+        change: (event) => {
+          void this.panel.setSetting("autoConfirm", (event.target as HTMLInputElement).checked);
+        },
+      },
+    });
+    confirm.checked = settings.autoConfirm;
+
+    const wait = el("input", {
+      class: "field",
+      attrs: {
+        id: "setting-wait",
+        "data-key": "setting-wait",
+        type: "number",
+        min: String(WAIT_RANGE.min),
+        max: String(WAIT_RANGE.max),
+        step: "0.1",
+        "aria-describedby": "setting-wait-help",
+      },
+      on: {
+        change: (event) => {
+          void this.panel.setSetting("autocompleteWaitSeconds", Number((event.target as HTMLInputElement).value));
+        },
+      },
+    });
+    wait.value = String(settings.autocompleteWaitSeconds);
+
+    return el(
+      "fieldset",
+      { class: "stack" },
+      el("legend", { text: "Pasting on Genius" }),
+      keySelect("nextHotkey", "Key that fills the next step"),
+      keySelect("backHotkey", "Key that goes back one step"),
+      el(
+        "label",
+        { class: "check" },
+        confirm,
+        el("span", { text: "Choose the exact match in Genius's suggestions for me" }),
+      ),
+      el("p", {
+        class: "help",
+        text: "When Genius has no exact match, the text stays typed and you choose. A close match is never picked for you.",
+      }),
+      el(
+        "div",
+        { class: "stack" },
+        el("label", { text: "Wait for suggestions to settle (seconds)", attrs: { for: "setting-wait" } }),
+        wait,
+      ),
+      el("p", {
+        class: "help",
+        text: "Raise this if Genius is slow to show suggestions.",
+        attrs: { id: "setting-wait-help" },
+      }),
+    );
   }
 
   // ── pieces ──────────────────────────────────────────────────────────

@@ -21,7 +21,14 @@
     "default_path": "ui/panel.html"
   },
   "permissions": ["scripting", "sidePanel", "storage"],
-  "host_permissions": ["https://music.apple.com/*"],
+  "host_permissions": ["https://genius.com/*", "https://music.apple.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://genius.com/*"],
+      "js": ["genius/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
   "background": {
     "service_worker": "background/worker.js"
   }

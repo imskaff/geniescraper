@@ -10,7 +10,22 @@ export interface Settings {
   scrapeCopyright: boolean;
   scrapeYoutube: boolean;
   scrapeCoverArt: boolean;
+  /** Keys pressed on the Genius page: fill the next step, and go back one. */
+  nextHotkey: string;
+  backHotkey: string;
+  /** Choose the exact match in Genius's suggestions without asking. */
+  autoConfirm: boolean;
+  /** How long Genius's suggestions must hold still before they are trusted, in seconds. */
+  autocompleteWaitSeconds: number;
 }
+
+/**
+ * Keys the page can take over. Each one is acted on only while a paste session is running, and the browser's own
+ * use of it (F7 is caret browsing in Chrome) is suppressed by the page handler for those presses.
+ */
+export const HOTKEY_CHOICES = ["F2", "F4", "F7", "F8", "F9"] as const;
+
+export const WAIT_RANGE = { min: 0.2, max: 3 } as const;
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = {
   scrapeCore: true,
@@ -18,23 +33,54 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   scrapeCopyright: true,
   scrapeYoutube: true,
   scrapeCoverArt: true,
+  nextHotkey: "F8",
+  backHotkey: "F7",
+  autoConfirm: true,
+  autocompleteWaitSeconds: 0.6,
 };
 
 export const SETTINGS_KEY = "settings";
 
-/** Every field of `raw` that is a boolean replaces its default; anything else is ignored. */
+type BooleanKey = {
+  [K in keyof Settings]: Settings[K] extends boolean ? K : never;
+}[keyof Settings];
+
+/** Every field of `raw` that is valid replaces its default; anything else is ignored. */
 export function normaliseSettings(raw: unknown): Settings {
   const source = typeof raw === "object" && raw !== null ? (raw as Record<string, unknown>) : {};
-  const pick = (key: keyof Settings): boolean => {
+  const flag = (key: BooleanKey): boolean => {
     const value = source[key];
     return typeof value === "boolean" ? value : DEFAULT_SETTINGS[key];
   };
+  const hotkey = (key: "nextHotkey" | "backHotkey"): string => {
+    const value = source[key];
+    return typeof value === "string" && (HOTKEY_CHOICES as readonly string[]).includes(value)
+      ? value
+      : DEFAULT_SETTINGS[key];
+  };
+  const wait = source["autocompleteWaitSeconds"];
+  const waitSeconds =
+    typeof wait === "number" && Number.isFinite(wait)
+      ? Math.min(WAIT_RANGE.max, Math.max(WAIT_RANGE.min, wait))
+      : DEFAULT_SETTINGS.autocompleteWaitSeconds;
+
+  let nextHotkey = hotkey("nextHotkey");
+  let backHotkey = hotkey("backHotkey");
+  // One key cannot do two things: fall back to the defaults rather than guess which was meant.
+  if (nextHotkey === backHotkey) {
+    nextHotkey = DEFAULT_SETTINGS.nextHotkey;
+    backHotkey = DEFAULT_SETTINGS.backHotkey;
+  }
   return {
-    scrapeCore: pick("scrapeCore"),
-    scrapeAdditional: pick("scrapeAdditional"),
-    scrapeCopyright: pick("scrapeCopyright"),
-    scrapeYoutube: pick("scrapeYoutube"),
-    scrapeCoverArt: pick("scrapeCoverArt"),
+    scrapeCore: flag("scrapeCore"),
+    scrapeAdditional: flag("scrapeAdditional"),
+    scrapeCopyright: flag("scrapeCopyright"),
+    scrapeYoutube: flag("scrapeYoutube"),
+    scrapeCoverArt: flag("scrapeCoverArt"),
+    nextHotkey,
+    backHotkey,
+    autoConfirm: flag("autoConfirm"),
+    autocompleteWaitSeconds: waitSeconds,
   };
 }
 

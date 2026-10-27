@@ -13,11 +13,16 @@ export interface PasteState {
   awaiting: boolean;
   /** A fill is in progress; presses are ignored until it reports. */
   busy: boolean;
+  /** When that fill started (ms since the epoch), so one that never reports cannot block presses for good. */
+  busySince: number;
   message: string;
   tone: "info" | "ok" | "attention";
 }
 
 export const PASTE_KEY = "paste";
+
+/** A fill that has not reported after this long is taken to have died (the page navigated, the tab closed). */
+export const BUSY_TIMEOUT_MS = 20_000;
 
 export const IDLE_PASTE: Readonly<PasteState> = {
   active: false,
@@ -26,6 +31,7 @@ export const IDLE_PASTE: Readonly<PasteState> = {
   position: 0,
   awaiting: false,
   busy: false,
+  busySince: 0,
   message: "",
   tone: "info",
 };
@@ -49,8 +55,10 @@ export function startPaste(title: string, queue: readonly QueueItem[]): PasteSta
   };
 }
 
-/** Decide what a press does, and mark a fill as in progress. */
-export function begin(state: PasteState): { state: PasteState; result: Begin } {
+/** Decide what a press does at time `now`, and mark a fill as in progress. */
+export function begin(current: PasteState, now: number): { state: PasteState; result: Begin } {
+  // A fill that never reported is abandoned rather than allowed to block every later press.
+  const state = current.busy && now - current.busySince > BUSY_TIMEOUT_MS ? { ...current, busy: false } : current;
   if (!state.active || state.busy || state.position >= state.queue.length) {
     return { state, result: { action: "none" } };
   }
@@ -64,7 +72,10 @@ export function begin(state: PasteState): { state: PasteState; result: Begin } {
   }
   const item = state.queue[state.position];
   if (!item) return { state, result: { action: "none" } };
-  return { state: { ...state, busy: true }, result: { action: "fill", item, position: state.position } };
+  return {
+    state: { ...state, busy: true, busySince: now },
+    result: { action: "fill", item, position: state.position },
+  };
 }
 
 /** Apply a fill's outcome. A report for a step that is no longer current, or that nobody started, is ignored. */
@@ -183,8 +194,10 @@ export function normalisePaste(raw: unknown): PasteState {
     queue: queue.map(([kind, value]) => [kind, value] as const),
     position,
     awaiting: r["awaiting"] === true,
-    // A fill cannot still be running after a restart; a stuck busy flag would block every press.
-    busy: false,
+    // Kept as stored: the worker reads this state back between a press and its report. A fill that died is
+    // abandoned by the timeout in begin(), not by forgetting the flag here.
+    busy: r["busy"] === true,
+    busySince: typeof r["busySince"] === "number" && Number.isFinite(r["busySince"]) ? r["busySince"] : 0,
     message: typeof r["message"] === "string" ? r["message"] : "",
     tone,
   };

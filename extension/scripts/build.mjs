@@ -12,6 +12,7 @@ const ENTRY_POINTS = {
   "background/worker": "src/background/worker.ts",
   "apple/content": "src/apple/content.ts",
   "ui/panel": "src/ui/panel.ts",
+  "genius/content": "src/genius/content.ts",
 };
 const STATIC_PATHS = ["manifest.json", "_locales", "icons"];
 // Files copied as they are, from source path to path inside dist/.

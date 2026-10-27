@@ -1,6 +1,6 @@
 import type { BrowserPorts, TabState } from "../../src/background/ports";
 import type { ClientTiming } from "../../src/background/appleClient";
-import type { AlbumInfo, ContentRequest, PageScrape } from "../../src/shared/messages";
+import type { AlbumInfo, ContentRequest, GeniusNotice, PageScrape } from "../../src/shared/messages";
 
 export const FAST_CLIENT: ClientTiming = { tabLoadMs: 200, requestMs: 100, pollMs: 5 };
 
@@ -39,6 +39,10 @@ export interface FakeBehaviour {
   answer?: (request: ContentRequest) => Promise<unknown>;
   /** Tabs that exist before the test starts, as the user's own tabs. */
   userTabs?: Record<number, TabState>;
+  /** Genius tabs: id and whether it is the one the user is looking at. */
+  geniusTabs?: { id: number; active: boolean }[];
+  /** Genius tabs that cannot receive notices (no content script loaded). */
+  deaf?: number[];
 }
 
 export interface FakeBrowser {
@@ -48,6 +52,8 @@ export interface FakeBrowser {
   openTabs: Set<number>;
   maxOpenTabs: () => number;
   keepAliveActive: () => number;
+  /** Notices delivered to Genius tabs, as `tabId:type[:detail]`. */
+  notices: string[];
 }
 
 export function fakeBrowser(behaviour: FakeBehaviour = {}): FakeBrowser {
@@ -58,6 +64,7 @@ export function fakeBrowser(behaviour: FakeBehaviour = {}): FakeBrowser {
   let nextId = 1000;
   let peak = 0;
   let keepAlive = 0;
+  const notices: string[] = [];
 
   const defaultAnswer = (request: ContentRequest): Promise<unknown> =>
     Promise.resolve({ ok: true, data: request.type === "apple/detect" ? ALBUM_INFO : PAGE_SCRAPE });
@@ -95,6 +102,19 @@ export function fakeBrowser(behaviour: FakeBehaviour = {}): FakeBrowser {
       log.push(`send:${String(tabId)}:${message.type}`);
       return (behaviour.answer ?? defaultAnswer)(message);
     },
+    geniusTabIds() {
+      return Promise.resolve((behaviour.geniusTabs ?? []).map((tab) => tab.id));
+    },
+    activeGeniusTab() {
+      return Promise.resolve((behaviour.geniusTabs ?? []).find((tab) => tab.active)?.id ?? null);
+    },
+    notifyGenius(tabId, notice: GeniusNotice) {
+      if (behaviour.deaf?.includes(tabId)) return Promise.resolve(false);
+      notices.push(
+        `${String(tabId)}:${notice.type}${notice.type === "genius/paste-active" ? `:${String(notice.active)}` : ""}`,
+      );
+      return Promise.resolve(true);
+    },
     keepAlive() {
       keepAlive++;
       return () => {
@@ -103,5 +123,5 @@ export function fakeBrowser(behaviour: FakeBehaviour = {}): FakeBrowser {
     },
   };
 
-  return { ports, log, openTabs, maxOpenTabs: () => peak, keepAliveActive: () => keepAlive };
+  return { ports, log, openTabs, maxOpenTabs: () => peak, keepAliveActive: () => keepAlive, notices };
 }

@@ -1,4 +1,5 @@
-import type { AlbumInfo, PageScrape, Result } from "../../src/shared/messages";
+import { IDLE_PASTE, back, skip, startPaste, stop, type PasteState } from "../../src/core/paste";
+import type { AlbumInfo, PageScrape, PasteCommand, Result } from "../../src/shared/messages";
 import type { KeyValueStore, Stores } from "../../src/shared/storage";
 import type { WorkerApi } from "../../src/ui/api";
 import type { ActiveTab, Env } from "../../src/ui/controller";
@@ -55,17 +56,42 @@ export function scrapeFor(title: string): PageScrape {
 
 export interface FakeApi extends WorkerApi {
   calls: string[];
+  /** The paste session the fake worker holds. */
+  pasteState: PasteState;
 }
 
 export interface ApiScript {
   detect?: (url: string, tabId?: number) => Promise<Result<AlbumInfo>>;
   scrapeTrack?: (url: string, title: string) => Promise<Result<PageScrape>>;
+  paste?: (command: PasteCommand) => Promise<Result<PasteState>>;
 }
 
 export function fakeApi(script: ApiScript = {}): FakeApi {
   const calls: string[] = [];
-  return {
+  const api: FakeApi = {
     calls,
+    pasteState: { ...IDLE_PASTE },
+    paste(command) {
+      calls.push(`paste:${command.type}`);
+      if (script.paste) return script.paste(command);
+      switch (command.type) {
+        case "paste-start":
+          api.pasteState = startPaste(command.title, command.queue as PasteState["queue"]);
+          break;
+        case "paste-back":
+          api.pasteState = back(api.pasteState);
+          break;
+        case "paste-skip":
+          api.pasteState = skip(api.pasteState);
+          break;
+        case "paste-stop":
+          api.pasteState = stop(api.pasteState);
+          break;
+        case "paste-fill":
+          break;
+      }
+      return Promise.resolve({ ok: true, data: api.pasteState });
+    },
     detect(url, tabId) {
       calls.push(`detect:${url}:${String(tabId)}`);
       return (script.detect ?? (() => Promise.resolve({ ok: true, data: ALBUM } as const)))(url, tabId);
@@ -78,6 +104,7 @@ export function fakeApi(script: ApiScript = {}): FakeApi {
       );
     },
   };
+  return api;
 }
 
 export interface FakeEnv extends Env {

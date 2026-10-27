@@ -3,10 +3,12 @@
 // runs in tests with fakes.
 import { parseAppleMusicUrl } from "../apple/url";
 import { typedQueue, type QueueItem, type SongCredits } from "../core/models";
+import type { PasteCommand } from "../shared/messages";
+import { IDLE_PASTE, type PasteState } from "../core/paste";
 import type { AlbumInfo, AppError, PageScrape } from "../shared/messages";
 import { EMPTY_SESSION, type Session, type TrackResult } from "../shared/session";
-import { queueOptions, type Settings } from "../shared/settings";
-import { loadSession, loadSettings, saveSession, saveSettings, type Stores } from "../shared/storage";
+import { normaliseSettings, queueOptions, type Settings } from "../shared/settings";
+import { loadPaste, loadSession, loadSettings, saveSession, saveSettings, type Stores } from "../shared/storage";
 import type { WorkerApi } from "./api";
 
 export interface ActiveTab {
@@ -25,6 +27,8 @@ export interface PanelState {
   session: Session;
   settings: Settings;
   settingsOpen: boolean;
+  /** The paste session, as the worker stores it. */
+  paste: PasteState;
   /** What the panel is waiting for; the buttons that would start another job are disabled meanwhile. */
   busy: "detect" | "scrape" | null;
   /** A problem the user has to act on; announced assertively. */
@@ -87,19 +91,21 @@ export class PanelController {
     settings: Settings,
     session: Session,
     pageUrl: string,
+    paste: PasteState = { ...IDLE_PASTE },
   ) {
-    this.current = { session, settings, settingsOpen: false, busy: null, error: "", status: "", pageUrl };
+    this.current = { session, settings, paste, settingsOpen: false, busy: null, error: "", status: "", pageUrl };
   }
 
   /** Load settings, the stored session and the active tab, and build the controller from them. */
   static async create(env: Env): Promise<PanelController> {
-    const [settings, session, tab] = await Promise.all([
+    const [settings, session, paste, tab] = await Promise.all([
       loadSettings(env.stores),
       loadSession(env.stores),
+      loadPaste(env.stores),
       env.activeTab().catch(() => null),
     ]);
     const pageUrl = tab && parseAppleMusicUrl(tab.url) ? tab.url : "";
-    const controller = new PanelController(env, settings, session, pageUrl);
+    const controller = new PanelController(env, settings, session, pageUrl, paste);
     // Tracks that were mid-read when the panel closed were restored as pending: carry on with them.
     if (session.screen === "review" && session.results.some((r) => r.status === "pending")) {
       void controller.scrapePending();
@@ -288,13 +294,71 @@ export class PanelController {
     this.update({ settingsOpen: false });
   }
 
-  async setSetting(key: keyof Settings, value: boolean): Promise<void> {
+  async setSetting<K extends keyof Settings>(key: K, value: Settings[K]): Promise<void> {
     const settings = { ...this.current.settings, [key]: value };
-    this.update({ settings });
+    // One key cannot do two jobs: choosing the other one's key swaps them instead of silently resetting both.
+    if (key === "nextHotkey" && value === this.current.settings.backHotkey) {
+      settings.backHotkey = this.current.settings.nextHotkey;
+    } else if (key === "backHotkey" && value === this.current.settings.nextHotkey) {
+      settings.nextHotkey = this.current.settings.backHotkey;
+    }
+    const normalised = normaliseSettings(settings);
+    this.update({ settings: normalised });
     try {
-      await saveSettings(this.env.stores, settings);
+      await saveSettings(this.env.stores, normalised);
     } catch {
       // Changed settings still apply for this session if they cannot be saved.
     }
+  }
+
+  // ── pasting ─────────────────────────────────────────────────────────
+
+  /** The worker changed the paste session (a hotkey press on Genius, or one of our own commands). */
+  setPaste(paste: PasteState): void {
+    // An attention message needs the user to act, so it is announced assertively; progress is announced politely.
+    this.update(
+      paste.active
+        ? {
+            paste,
+            error: paste.tone === "attention" ? paste.message : "",
+            status: paste.tone === "ok" ? paste.message : "",
+          }
+        : { paste },
+    );
+  }
+
+  private async pasteCommand(command: PasteCommand): Promise<void> {
+    const answer = await this.env.api.paste(command);
+    if (answer.ok) this.setPaste(answer.data);
+    else this.update({ error: describeError(answer.error), status: "" });
+  }
+
+  /** Begin pasting one track's queue into Genius. */
+  async startPaste(index: number): Promise<void> {
+    const result = this.current.session.results.find((r) => r.index === index);
+    const queue = this.queueFor(index);
+    if (!result?.song || queue.length === 0) return;
+    await this.pasteCommand({
+      type: "paste-start",
+      title: result.song.title || result.title,
+      queue: queue.map(([kind, value]) => [kind, value]),
+    });
+  }
+
+  fillNext(): Promise<void> {
+    return this.pasteCommand({ type: "paste-fill" });
+  }
+
+  pasteBack(): Promise<void> {
+    return this.pasteCommand({ type: "paste-back" });
+  }
+
+  pasteSkip(): Promise<void> {
+    return this.pasteCommand({ type: "paste-skip" });
+  }
+
+  async stopPaste(): Promise<void> {
+    await this.pasteCommand({ type: "paste-stop" });
+    this.update({ error: "", status: "Stopped pasting." });
   }
 }

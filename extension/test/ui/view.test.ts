@@ -315,6 +315,13 @@ describe("settings screen", () => {
       "Copyright lines (℗ and ©)",
       "YouTube link",
       "Cover art link",
+      "Choose the exact match in Genius's suggestions for me",
+    ]);
+    // Selects and the number box are named by their labels too (expectAccessible checks every control).
+    expect([...root.querySelectorAll<HTMLElement>("select, input[type=number]")].map(accessibleName)).toEqual([
+      "Key that fills the next step",
+      "Key that goes back one step",
+      "Wait for suggestions to settle (seconds)",
     ]);
 
     root.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));

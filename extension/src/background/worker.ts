@@ -1,19 +1,35 @@
 // Service worker entry point. MV3 workers are ephemeral, so nothing here relies on in-memory state between
-// requests: each request opens, reads and closes its own tab.
-import type { Result } from "../shared/messages";
+// requests: each request opens, reads and closes its own tab, and the paste session lives in storage.
+import { isGeniusRequest, type Result } from "../shared/messages";
+import { chromeStores } from "../shared/storage";
 import { REAL_CLIENT_TIMING } from "./appleClient";
+import { PasteService } from "./paste";
 import { chromePorts } from "./ports";
 import { createRouter } from "./router";
 
-const route = createRouter(chromePorts(), REAL_CLIENT_TIMING);
+const ports = chromePorts();
+const paste = new PasteService(ports, chromeStores());
+const route = createRouter(ports, REAL_CLIENT_TIMING, paste);
 
 // The toolbar button opens the side panel. The setting persists, so this is harmless on every worker start.
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => undefined);
 
+const GENIUS_ORIGIN = "https://genius.com";
+
 chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse: (response: Result<unknown>) => void) => {
-  // Only this extension's own pages may ask. A content script or a web page never gets an answer.
-  const own = sender.id === chrome.runtime.id && sender.url?.startsWith(chrome.runtime.getURL("")) === true;
-  if (!own) return false;
-  void route(message).then(sendResponse);
-  return true;
+  if (sender.id !== chrome.runtime.id) return false;
+
+  // The extension's own pages (the side panel) may ask for anything.
+  if (sender.url?.startsWith(chrome.runtime.getURL("")) === true) {
+    void route(message).then(sendResponse);
+    return true;
+  }
+  // A Genius page may only drive the paste session, and only a content script of this extension on genius.com
+  // (not a frame of another origin) counts as one.
+  if (sender.origin === GENIUS_ORIGIN && sender.tab !== undefined && isGeniusRequest(message)) {
+    void paste.fromGenius(message).then(sendResponse);
+    return true;
+  }
+  // Anything else, including the Apple Music content script, gets no answer.
+  return false;
 });
