@@ -127,7 +127,7 @@ Install the git hooks once per clone (all worktrees of a clone share them):
 uv run pre-commit install
 ```
 
-Every commit then runs ruff check, ruff format --check, basedpyright and the offline `pytest` suite, the same checks CI runs on each push and pull request.
+Every commit then runs ruff check, ruff format --check, basedpyright and the offline `pytest` suite, and for changes under `extension/` also its lint, type check, tests and build, the same checks CI runs on each push and pull request.
 The offline suite includes the fixture parsers, so run `uv run playwright install chromium` first.
 Never skip the hooks with `--no-verify`; fix the failure instead.
 CI (`.github/workflows/ci.yml`, `windows-latest`) runs the same checks on every push and pull request; the live tests run weekly and on manual dispatch, so Apple Music markup changes show up without blocking pushes.
@@ -178,7 +178,7 @@ cd extension && npm ci && npm run check
 uv run python -m tools.export_roles && uv run python -m tools.export_vectors
 ```
 
-A Python test fails when either file is stale, so run both after changing `scraper/roles.py`, `scraper/models.py`, `scraper/apple_music.py` or `assistant/flow.py`.
+A Python test fails when either file is stale, so run both after changing `scraper/roles.py`, `scraper/models.py`, `scraper/apple_music.py`, `scraper/deezer.py`, `scraper/text.py` or `assistant/flow.py`.
 
 ## License
 
