@@ -147,6 +147,7 @@ def _walk(on_screen: Callable[[Any, str], None]) -> None:
         app.quit()
         app.update()
         tk_destroy(app)
+        app._loop.call_soon_threadsafe(app._loop.stop)  # the app's background asyncio thread
 
 
 def tk_destroy(app: Any) -> None:
