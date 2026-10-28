@@ -116,7 +116,9 @@ export function fakeBrowser(behaviour: FakeBehaviour = {}): FakeBrowser {
             ? `:${String(notice.active)}`
             : notice.type === "genius/auto-state"
               ? `:${notice.auto}`
-              : ""
+              : notice.type === "genius/clear"
+                ? `:${notice.item[0]}:${notice.item[1]}${notice.role === undefined ? "" : `@${notice.role}`}`
+                : ""
         }`,
       );
       return Promise.resolve(true);

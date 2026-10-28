@@ -15,7 +15,7 @@ import {
   type PasteStatus,
 } from "../shared/messages";
 import type { ComboboxTiming } from "./combobox";
-import { fillStep, isStepDone, stepSnapshot } from "./fill";
+import { clearTyped, fillStep, isStepDone, stepSnapshot } from "./fill";
 import { findForm } from "./selectors";
 
 export interface PageEnv {
@@ -177,6 +177,12 @@ export class GeniusPage {
     } finally {
       this.busy = false;
     }
+  }
+
+  /** The user skipped a step: take back what was typed for it and left unchosen. */
+  clearStep(item: [string, string], role?: string): void {
+    if (!KINDS.has(item[0])) return;
+    clearTyped(this.env.doc, [item[0] as QueueKind, item[1]], role);
   }
 
   async back(): Promise<void> {

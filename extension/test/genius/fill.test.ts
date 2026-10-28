@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { typedQueue, type QueueItem } from "../../src/core/models";
-import { fillStep, type FillContext, type StepOutcome } from "../../src/genius/fill";
+import { clearTyped, fillStep, type FillContext, type StepOutcome } from "../../src/genius/fill";
 import { songFromVector } from "../parity/helpers";
 import { chipsIn, loadFakeGenius, rowChips, type FakeGenius, type FakeOptions } from "./fakeGenius";
 
@@ -390,5 +390,54 @@ describe("roles the form already has", () => {
       ["Mastering Engineer"],
       ["Lead Vocals"],
     ]);
+  });
+});
+
+describe("skipping a step leaves nothing of it in the field", () => {
+  const inputOf = (box: Element | null): HTMLInputElement | null => box?.querySelector("input") ?? null;
+
+  it("clears a name that was typed and not chosen, so it cannot become a new artist page", async () => {
+    const { fake, run } = setup({}, false);
+    await run(["written_by", "zzqxv nobody 99"]);
+    expect(inputOf(writerBox(fake))?.value).toBe("zzqxv nobody 99");
+    clearTyped(fake.doc, ["written_by", "zzqxv nobody 99"]);
+    expect(inputOf(writerBox(fake))?.value).toBe("");
+    expect(chipsIn(writerBox(fake))).toEqual([]);
+    expectSafe(fake);
+  });
+
+  it("keeps what is already chosen in the field", async () => {
+    const { fake, ctx } = setup();
+    await fillStep(["written_by", "Billie Eilish"], ctx);
+    await fillStep(["written_by", "zzqxv nobody 99"], { ...ctx, autoConfirm: false });
+    clearTyped(fake.doc, ["written_by", "zzqxv nobody 99"]);
+    expect(chipsIn(writerBox(fake))).toEqual(["Billie Eilish"]);
+    expect(inputOf(writerBox(fake))?.value).toBe("");
+  });
+
+  it("clears the producer field, a role, and an artist under its own role", async () => {
+    const { fake, ctx } = setup({}, false);
+    await fillStep(["produced_by", "zzqxv nobody 99"], ctx);
+    clearTyped(fake.doc, ["produced_by", "zzqxv nobody 99"]);
+    expect(inputOf(producerBox(fake))?.value).toBe("");
+
+    await fillStep(["role", "Mixing Engineer"], ctx);
+    const roleInput = fake.form.querySelector<HTMLInputElement>("#custom_performances-0-label input");
+    expect(roleInput?.value).not.toBe("");
+    clearTyped(fake.doc, ["role", "Mixing Engineer"]);
+    expect(roleInput?.value).toBe("");
+  });
+
+  it("leaves other fields alone, and does nothing when nothing was typed", async () => {
+    const { fake, ctx } = setup();
+    await fillStep(["youtube_url", "https://www.youtube.com/watch?v=abc"], ctx);
+    clearTyped(fake.doc, ["youtube_url", "https://www.youtube.com/watch?v=abc"]);
+    expect(fake.form.querySelector<HTMLInputElement>('input[name="youtube_url"]')?.value).toBe(
+      "https://www.youtube.com/watch?v=abc",
+    );
+    expect(() => {
+      clearTyped(fake.doc, ["artist", "Nobody"], "No Such Role");
+    }).not.toThrow();
+    expect(fake.chosen).toEqual([]);
   });
 });

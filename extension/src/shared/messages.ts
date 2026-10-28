@@ -134,7 +134,9 @@ export type GeniusNotice =
   /** The paste session started or ended, so the page knows whether the hotkeys are live. */
   | { type: "genius/paste-active"; active: boolean }
   /** An automatic run started, paused, resumed or ended, so the page loop knows whether to go on. */
-  | { type: "genius/auto-state"; auto: AutoMode };
+  | { type: "genius/auto-state"; auto: AutoMode }
+  /** A step was skipped: whatever was typed for it and not chosen has to go from the field. */
+  | { type: "genius/clear"; item: [string, string]; role?: string };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -242,6 +244,9 @@ export function isGeniusNotice(value: unknown): value is GeniusNotice {
   if (!isRecord(value)) return false;
   if (value["type"] === "genius/fill-now") return true;
   if (value["type"] === "genius/auto-state") return AUTO_MODES.has(value["auto"]);
+  if (value["type"] === "genius/clear") {
+    return isPair(value["item"]) && (value["role"] === undefined || typeof value["role"] === "string");
+  }
   return value["type"] === "genius/paste-active" && typeof value["active"] === "boolean";
 }
 

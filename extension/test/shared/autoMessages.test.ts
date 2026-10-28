@@ -68,4 +68,12 @@ describe("the messages automatic pasting adds", () => {
     expect(isGeniusNotice({ type: "genius/auto-state", auto: "turbo" })).toBe(false);
     expect(isGeniusNotice({ type: "genius/auto-state" })).toBe(false);
   });
+
+  it("checks the notice that asks the page to clear a skipped step", () => {
+    expect(isGeniusNotice({ type: "genius/clear", item: ["written_by", "X"] })).toBe(true);
+    expect(isGeniusNotice({ type: "genius/clear", item: ["artist", "X"], role: "Vocals" })).toBe(true);
+    expect(isGeniusNotice({ type: "genius/clear", item: ["artist"] })).toBe(false);
+    expect(isGeniusNotice({ type: "genius/clear", item: ["artist", "X"], role: 7 })).toBe(false);
+    expect(isGeniusNotice({ type: "genius/clear" })).toBe(false);
+  });
 });

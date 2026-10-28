@@ -170,6 +170,33 @@ describe("a command from the panel", () => {
     expect(stored().position).toBe(0);
   });
 
+  it("tells every Genius tab which step was skipped, so what was typed for it is cleared", async () => {
+    const { browser, start, service } = setup();
+    await start();
+    await service.command({ type: "paste-skip" });
+    expect(browser.notices.filter((n) => n.includes("genius/clear")).sort()).toEqual([
+      "7:genius/clear:written_by:Writer One",
+      "8:genius/clear:written_by:Writer One",
+    ]);
+  });
+
+  it("names the role of a skipped artist, and says nothing when there is nothing left to skip", async () => {
+    const { browser, start, begin, service } = setup();
+    await start();
+    await service.command({ type: "paste-skip" });
+    await begin();
+    await service.fromGenius({ type: "paste-report", position: 1, outcome: { status: "filled", message: "ok" } });
+    browser.notices.length = 0;
+    await service.command({ type: "paste-skip" });
+    expect(browser.notices.filter((n) => n.includes("genius/clear")).sort()).toEqual([
+      "7:genius/clear:artist:Mixer One@Mixing Engineer",
+      "8:genius/clear:artist:Mixer One@Mixing Engineer",
+    ]);
+    browser.notices.length = 0;
+    await service.command({ type: "paste-skip" });
+    expect(browser.notices.filter((n) => n.includes("genius/clear"))).toEqual([]);
+  });
+
   it("asks the Genius tab the user is looking at to fill the next step", async () => {
     const { browser, start, service } = setup();
     await start();

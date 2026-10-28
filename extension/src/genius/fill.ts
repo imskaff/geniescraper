@@ -157,15 +157,19 @@ function stepField(
     case "written_by":
     case "produced_by": {
       const input = comboboxByLabel(form, kind === "written_by" ? WRITER_LABEL : PRODUCER_LABEL);
-      return input ? { box: boxOf(input) } : {};
+      return input ? { box: boxOf(input), input } : {};
     }
     case "role":
-    case "copyright_role":
-      return { box: lastRow(form)?.roleBox };
+    case "copyright_role": {
+      const row = lastRow(form);
+      return { box: row?.roleBox, input: row?.role };
+    }
     case "artist":
     case "phonographic_copyright":
-    case "copyright_notice":
-      return { box: rowForArtist(form, role)?.artistsBox };
+    case "copyright_notice": {
+      const row = rowForArtist(form, role);
+      return { box: row?.artistsBox, input: row?.artists };
+    }
     case "youtube_url":
       return { input: plainInput(form, YOUTUBE_INPUT_NAME) ?? undefined };
     case "cover_art":
@@ -198,6 +202,18 @@ export function isStepDone(doc: Document, item: QueueItem, before: readonly stri
   }
   if (input) return input.value === value || (input.value.trim() !== "" && input.value !== (before[0] ?? ""));
   return false;
+}
+
+/**
+ * Take back what a step typed that was never chosen, when the user skips it. Text left in a combobox can become a new
+ * artist page when Genius's form is saved, and nobody asked for that. Only the typed text goes: chips already chosen
+ * stay, and plain fields (the YouTube link, the cover) are not touched.
+ */
+export function clearTyped(doc: Document, item: QueueItem, role?: string): void {
+  const form = findForm(doc);
+  if (!form) return;
+  const { box, input } = stepField(form, item[0], role);
+  if (box && input && input.value !== "") setValue(input, "");
 }
 
 export async function fillStep(item: QueueItem, ctx: FillContext): Promise<StepOutcome> {
