@@ -25,6 +25,10 @@ Géniescraper comes in two forms, and you only need one: the **browser extension
 
 ### Install the browser extension
 
+<img src="img/extension-demo.gif" alt="The side panel listening for Apple Music pages, finding one, reading the album and pasting the credits automatically" width="720">
+
+The panel listens for Apple Music pages you already have open and offers them in one press, reads the credits, and can fill the Genius form by itself (Auto-paste) while you watch; it never presses Save.
+
 No store and no command line needed.
 
 1. **Download.** Open the [Releases page](https://github.com/imskaff/geniescraper/releases), pick the newest **Géniescraper extension**, and download `geniescraper-extension-<version>.zip`.

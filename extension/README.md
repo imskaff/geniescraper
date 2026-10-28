@@ -4,6 +4,15 @@ A Chrome (Manifest V3) extension that copies song credits from Apple Music into 
 It reads an Apple Music album or song page, lists the credits in a side panel, and fills the Genius form one field at a time when you press a hotkey.
 It never presses Save on Genius: you check the form and save it yourself.
 
+![The side panel listening for Apple Music pages, finding one, reading the album and pasting the credits automatically](../img/extension-demo.gif)
+
+What it does:
+
+- **Detects open pages.** The link screen listens for Apple Music albums and songs already open in your browser and offers each in one press, the page you are on first.
+- **Reads the credits** of a whole album at once and marks what is missing.
+- **Auto-paste** (on by default, a switch in the panel and in Settings) fills the Genius form by itself with a short pause between fields, and pauses when you click or type in the form or press Esc.
+  Step by step with a hotkey is still there.
+
 The desktop app in the repository root does the same job; this folder is the extension only.
 The design, the decisions and the findings behind it are in [docs/extension-plan.md](../docs/extension-plan.md).
 
@@ -94,6 +103,15 @@ Each takes `--chrome <path to chrome.exe>` or the `CHROME_PATH` environment vari
 Three more hosts are optional and asked for in the panel only when you switch the feature on: `api.deezer.com` (cover art), `www.youtube.com` (finding a video link) and `www.googleapis.com` (finding it with your own YouTube key).
 Nothing is sent to any server of ours, because there is none.
 See [PRIVACY.md](PRIVACY.md).
+
+## Record the release animation
+
+```bash
+node scripts/release-demo.mjs --chrome <path to a Chromium or Chrome executable>
+```
+
+It plays the real side panel with sample data in one headless window (no extension, no network, no profile of yours) and joins the screenshots into `img/extension-demo.gif` in the repository root with `ffmpeg`, which must be on the PATH.
+Watch it before attaching it to a release; the story is in `test/preview/demo.ts`.
 
 ## Package for the Chrome Web Store
 

@@ -21,7 +21,7 @@ Géniescraper copies the credits of an Apple Music song into the Genius song edi
 
 How it works:
 
-1. Open the side panel and paste an Apple Music album or song link (or open the page and the panel offers it).
+1. Open the side panel and paste an Apple Music album or song link (or open the page and the panel offers it; the Apple Music albums and songs you already have open are listed to pick from).
 2. Choose the tracks you want, and review the credits the extension read.
 3. Open the song's Edit Metadata form on Genius and press Start pasting: the extension fills the fields by itself, one after another.
    Prefer to stay in control? Step by step fills one field per key press (F8), F7 goes back, and the panel can skip a step.
@@ -100,6 +100,6 @@ The store icon (128x128) is already in `icons/`.
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | 1-credits-list.png     | The side panel listing two tracks, each marked with whether all its credits were found.                                             |
 | 2-track-credits.png    | One track's credits opened: songwriters, producers, copyright lines, cover art and a YouTube link, and the paste queue.             |
-| 3-paste.png            | The paste screen showing step 1 of 11, the value to fill, and the Fill next, Back and Skip buttons.                                 |
+| 3-paste.png            | The paste screen showing step 1 of 11, the value to fill, and the Auto-paste, Next, Previous and Skip controls.                     |
 | 4-settings.png         | The settings screen: checkboxes for what to paste, the keys that fill the next step and go back, and the Genius suggestion options. |
 | promo-tile-440x280.png | The Géniescraper icon and the words "Apple Music credits, into the Genius form".                                                    |

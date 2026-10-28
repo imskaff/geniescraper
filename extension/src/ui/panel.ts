@@ -36,6 +36,18 @@ const env: Env = {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     return tab?.id !== undefined && tab.url ? { tabId: tab.id, url: tab.url } : null;
   },
+  async appleTabs() {
+    // The extension already has access to Apple Music, so Chrome lists these tabs with their addresses and titles.
+    const [tabs, [inView]] = await Promise.all([
+      chrome.tabs.query({ url: "https://music.apple.com/*" }),
+      chrome.tabs.query({ active: true, currentWindow: true }),
+    ]);
+    return tabs.flatMap((tab) =>
+      tab.id !== undefined && tab.url
+        ? [{ tabId: tab.id, url: tab.url, title: tab.title ?? "", current: tab.id === inView?.id }]
+        : [],
+    );
+  },
 };
 
 const root = document.getElementById("app");
@@ -72,6 +84,7 @@ void PanelController.create(env).then((panel) => {
     void panel.refreshPage();
   };
   chrome.tabs.onActivated.addListener(refresh);
+  chrome.tabs.onRemoved.addListener(refresh);
   chrome.tabs.onUpdated.addListener((_tabId, change) => {
     if (change.url !== undefined || change.status === "complete") refresh();
   });

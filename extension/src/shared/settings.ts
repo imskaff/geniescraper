@@ -68,7 +68,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   parallelReads: 3,
   autoReturn: true,
   returnSeconds: 30,
-  nextTrackSeconds: 15,
+  nextTrackSeconds: 0,
   onboarded: false,
 };
 

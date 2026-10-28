@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { PanelController, MESSAGES, YOUTUBE_WAIT_MS, describeError } from "../../src/ui/controller";
+import { PanelController, MESSAGES, YOUTUBE_RETRY_MS, YOUTUBE_WAIT_MS, describeError } from "../../src/ui/controller";
 import type { Result, PageScrape } from "../../src/shared/messages";
 import { ALBUM, SINGLE, deferred, fakeEnv, scrapeFor } from "./fakes";
 
@@ -657,10 +657,12 @@ describe("the YouTube link of a track", () => {
 
   it("still pastes when none is found, without asking for that track again", async () => {
     const { env, panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(NOTHING) } });
+    // Opening the track already gave its empty answer one more try; pasting asks nothing further.
+    const before = lookups(env).length;
     await panel.startPaste(0, "manual");
     expect(env.api.pasteState.active).toBe(true);
     expect(env.api.pasteState.queue.some(([kind]) => kind === "youtube_url")).toBe(false);
-    expect(lookups(env)).toHaveLength(2);
+    expect(lookups(env)).toHaveLength(before);
   });
 
   it("says no link was found, right after the look-up", async () => {
@@ -1091,5 +1093,129 @@ describe("a YouTube link the user pastes", () => {
     await panel.setYoutubeLink(0, LINK);
     const again = await PanelController.create(env);
     expect(again.state.session.results[0]?.song).toMatchObject({ youtubeUrl: LINK, youtubeByUser: true });
+  });
+});
+
+describe("links that were not found while the album was read", () => {
+  const LINK = "https://www.youtube.com/watch?v=abcDEF_-123";
+  const found = {
+    ok: true as const,
+    data: { url: LINK, isMusicVideo: true, throttled: false, keyProblem: "" as const },
+  };
+  const nothing = {
+    ok: true as const,
+    data: { url: "", isMusicVideo: false, throttled: false, keyProblem: "" as const },
+  };
+  const limited = {
+    ok: true as const,
+    data: { url: "", isMusicVideo: false, throttled: true, keyProblem: "" as const },
+  };
+  const KEY = "AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q";
+
+  async function read(options: Parameters<typeof fakeEnv>[0] = {}) {
+    const ui = await open({ hosts: { youtube: true }, ...options });
+    await ui.panel.detect(ALBUM_URL);
+    await ui.panel.setAllSelected(true);
+    await ui.panel.getCredits();
+    // Settle the lookups with microtasks only, so this works under fake timers too.
+    for (let i = 0; i < 40; i++) await Promise.resolve();
+    return ui;
+  }
+  const linkOf = (panel: PanelController, index: number): string =>
+    panel.state.session.results.find((r) => r.index === index)?.song?.youtubeUrl ?? "";
+
+  it("looks the tracks up strictly one after another, even with the user's key, so they cannot burst on YouTube", async () => {
+    let active = 0;
+    let peak = 0;
+    const { panel } = await read({
+      hosts: { youtube: true, youtubeApi: true },
+      youtubeKey: KEY,
+      api: {
+        lookupYoutube: async () => {
+          peak = Math.max(peak, ++active);
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          active--;
+          return found;
+        },
+      },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    expect(peak).toBe(1);
+    expect([linkOf(panel, 0), linkOf(panel, 2)]).toEqual([LINK, LINK]);
+  });
+
+  it("looks again by itself for tracks that YouTube was limiting, without the user clicking anything", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      let round = 0;
+      const { panel } = await read({
+        api: { lookupYoutube: () => Promise.resolve(round === 0 ? limited : found) },
+      });
+      // The first track was refused and the second was never asked: both say so, and neither has a link yet.
+      expect(panel.state.youtubeNotes[0]).toBe(MESSAGES.youtubeThrottled);
+      expect(panel.state.youtubeNotes[2]).toBe(MESSAGES.youtubeNotChecked);
+      expect([linkOf(panel, 0), linkOf(panel, 2)]).toEqual(["", ""]);
+
+      round = 1;
+      await vi.advanceTimersByTimeAsync(YOUTUBE_RETRY_MS);
+      await vi.advanceTimersByTimeAsync(0);
+      expect([linkOf(panel, 0), linkOf(panel, 2)]).toEqual([LINK, LINK]);
+      expect(panel.state.youtubeNotes).toEqual({});
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("gives up after a few tries, so a track YouTube keeps refusing is left for the user and not asked for ever", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      let asked = 0;
+      const { panel } = await read({
+        api: {
+          lookupYoutube: () => {
+            asked++;
+            return Promise.resolve(limited);
+          },
+        },
+      });
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(YOUTUBE_RETRY_MS);
+      const settled = asked;
+      await vi.advanceTimersByTimeAsync(YOUTUBE_RETRY_MS * 5);
+      expect(asked).toBe(settled);
+      expect(settled).toBeLessThanOrEqual(1 + 3 * 2);
+      expect(linkOf(panel, 0)).toBe("");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not retry for another album once the panel has moved on", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      let asked = 0;
+      const { panel } = await read({
+        api: {
+          lookupYoutube: () => {
+            asked++;
+            return Promise.resolve(limited);
+          },
+        },
+      });
+      const before = asked;
+      await panel.newAlbum();
+      await vi.advanceTimersByTimeAsync(YOUTUBE_RETRY_MS * 3);
+      expect(asked).toBe(before);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("asks again when the user opens a track whose lookup came back empty, instead of leaving it at 'no link found'", async () => {
+    let round = 0;
+    const { panel } = await read({ api: { lookupYoutube: () => Promise.resolve(round === 0 ? nothing : found) } });
+    expect(panel.state.youtubeNotes[0]).toBe(MESSAGES.noYoutubeShort);
+    round = 1;
+    await panel.showTrack(0);
+    expect(linkOf(panel, 0)).toBe(LINK);
   });
 });

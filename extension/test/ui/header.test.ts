@@ -73,12 +73,12 @@ describe("Start pasting in the button row", () => {
     }
   });
 
-  it("is in the row with Back to tracks and Back to main menu, first, and has the automatic look", async () => {
+  it("is in the row with Back to tracks and Back to main menu, first, in standard primary styling", async () => {
     const { root } = await toReview();
     const start = startButton(root);
     expect(start?.textContent).toBe("Start pasting");
     expect(start?.classList.contains("primary")).toBe(true);
-    expect(start?.classList.contains("magic")).toBe(true);
+    expect(start?.classList.contains("magic")).toBe(false);
     const row = start?.parentElement;
     expect(row?.firstElementChild).toBe(start);
     expect(row?.contains($(root, '[data-key="back"]'))).toBe(true);
@@ -106,7 +106,7 @@ describe("Start pasting in the button row", () => {
     const { root } = await toReview();
     const start = startButton(root);
     const label = start?.getAttribute("aria-label") ?? "";
-    expect(label).toBe("Start pasting One automatically");
+    expect(label).toBe("Start pasting One automatically. It pauses when you interact with Genius.");
     expect(label.startsWith(start?.textContent ?? "?")).toBe(true);
   });
 
@@ -114,7 +114,9 @@ describe("Start pasting in the button row", () => {
     const { root, env, panel } = await toReview();
     $(root, '[data-key="show-2"]').click();
     await flush();
-    expect(startButton(root)?.getAttribute("aria-label")).toBe("Start pasting Three automatically");
+    expect(startButton(root)?.getAttribute("aria-label")).toBe(
+      "Start pasting Three automatically. It pauses when you interact with Genius.",
+    );
     startButton(root)?.click();
     await flush();
     expect(env.api.pasteState.title).toBe("Three");
@@ -135,7 +137,7 @@ describe("Start pasting in the button row", () => {
     await flush();
     expect(panel.state.busy).toBeNull();
     expect(startButton(root)?.disabled).toBe(false);
-    expect(startButton(root)?.classList.contains("magic")).toBe(true);
+    expect(startButton(root)?.classList.contains("magic")).toBe(false);
   });
 
   it("is absent when the settings leave nothing to paste", async () => {

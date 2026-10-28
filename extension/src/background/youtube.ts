@@ -50,6 +50,26 @@ const REAL_CLOCK: Clock = {
   sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 };
 
+/** What YouTube or Google answers with when it is refusing a client: Google's own interruption pages. */
+const BLOCK_PAGE = /unusual traffic|google\.com\/sorry|consent\.youtube\.com|g-recaptcha/i;
+
+/** When Google's daily allowance next resets: midnight in Pacific time, as the service counts its day. */
+export function nextPacificMidnight(now: number): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    hourCycle: "h23",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+  }).formatToParts(new Date(now));
+  const part = (type: string): number => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  const sinceMidnight = ((part("hour") * 60 + part("minute")) * 60 + part("second")) * 1000 + (now % 1000);
+  return now - sinceMidnight + 24 * 60 * 60 * 1000;
+}
+
+/** How long a key that Google did not accept, or that is not switched on, is left alone before it is tried again. */
+const KEY_RETRY_MS = 10 * 60 * 1000;
+
 export class YoutubeGate {
   private readonly limit: Limiter;
   private nextStart = 0;
@@ -101,10 +121,16 @@ export function youtubePages(
 ): YoutubePages {
   const page = async (url: string, name: string): Promise<unknown> => {
     if (!(await granted().catch(() => false))) return null;
-    return gate.run(async () => {
+    // Only a failed request or a refusal page counts towards the gate's cool-down. A page that arrived fine but lacks
+    // the data we look for is an ordinary miss: counting it let a few of them lock the whole album out for a minute.
+    const read = await gate.run(async (): Promise<{ value: unknown } | null> => {
       const html = await getText(url);
-      return html === null ? null : extractVar(html, name);
+      if (html === null) return null;
+      const value = extractVar(html, name);
+      if (value !== null) return { value };
+      return BLOCK_PAGE.test(html) ? null : { value: null };
     });
+    return read?.value ?? null;
   };
   const html: YoutubePages = {
     search: (query) =>
@@ -146,6 +172,8 @@ export interface YoutubeOptions {
   getKey?: () => Promise<string>;
   getResult?: GetResult;
   apiGranted?: () => Promise<boolean>;
+  /** The time, in milliseconds since the epoch; replaced in tests. */
+  now?: () => number;
 }
 
 /**
@@ -162,25 +190,43 @@ export function realYoutube(options: YoutubeOptions = {}): YoutubeService {
     getKey = () => Promise.resolve(""),
     getResult = fetchResult,
     apiGranted: apiAllowed = apiGranted,
+    now = Date.now,
   } = options;
   const gate = new YoutubeGate();
   const pages = youtubePages(getText, gate, granted, post);
   const api = new Limiter(2);
+  // A key Google refused is not asked again for every song: the allowance is used up until midnight Pacific time, and a
+  // key that was not accepted waits a few minutes. Each song would otherwise spend a request finding that out again.
+  let blocked: { problem: "quota" | "key" | "not-enabled"; until: number; key: string } | null = null;
   return {
     async find(title, artist) {
       let keyProblem: YoutubeResult["keyProblem"] = "";
       const key = await getKey().catch(() => "");
       if (key && (await apiAllowed().catch(() => false))) {
-        const viaApi = apiPages(getResult, key);
-        const limited: YoutubePages = {
-          search: (query) => api.run(() => viaApi.search(query)),
-          watch: (id) => api.run(() => viaApi.watch(id)),
-        };
-        // Google's service is metered (a search costs 100 of the 10,000 free units a day): at most two searches a song.
-        const link = await findYoutube(limited, title, artist, { queriesPerPhase: API_QUERIES_PER_PHASE });
-        const problem = viaApi.problem();
-        if (link.url || problem === "" || problem === "failed") return { ...link, keyProblem: "" };
-        keyProblem = problem;
+        if (blocked && (blocked.key !== key || now() >= blocked.until)) blocked = null;
+        if (blocked) {
+          keyProblem = blocked.problem;
+        } else {
+          const viaApi = apiPages(getResult, key);
+          const limited: YoutubePages = {
+            search: (query) => api.run(() => viaApi.search(query)),
+            watch: (id) => api.run(() => viaApi.watch(id)),
+          };
+          // Google's service is metered (a search costs 100 of the 10,000 free units a day): at most two searches a song.
+          const link = await findYoutube(limited, title, artist, { queriesPerPhase: API_QUERIES_PER_PHASE });
+          if (link.url) return { ...link, keyProblem: "" };
+          const problem = viaApi.problem();
+          if (problem === "quota" || problem === "key" || problem === "not-enabled") {
+            keyProblem = problem;
+            blocked = {
+              problem,
+              key,
+              until: problem === "quota" ? nextPacificMidnight(now()) : now() + KEY_RETRY_MS,
+            };
+          }
+          // Google found nothing, or could not be reached: that is not the last word. With one search per kind its
+          // answer is thin, so the song is looked up the normal way too.
+        }
       }
       return { ...(await findYoutube(pages, title, artist)), keyProblem };
     },

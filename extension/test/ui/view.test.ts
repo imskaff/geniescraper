@@ -136,7 +136,10 @@ describe("link screen", () => {
     await submitLink(root, ALBUM.url);
     const button = $button(root, '[data-key="go"]');
     expect(button.disabled).toBe(true);
-    expect(button.textContent).toBe("Reading…");
+    // The label stays and three dots appear one after another, so the press is seen to be working.
+    expect(button.textContent).toBe("Get credits...");
+    expect(button.querySelectorAll(".dots i")).toHaveLength(3);
+    expect(button.getAttribute("aria-label")).toBe("Reading the page…");
     expect($(root, "main").getAttribute("aria-busy")).toBe("true");
     expect($(root, "#status").textContent).toBe("Reading the page…");
     gate.resolve({ ok: true, data: ALBUM });
@@ -330,7 +333,11 @@ describe("review screen", () => {
     it("has Start pasting right under the track list, ready for the first track", async () => {
       const { root } = await onReview();
       const start = root.querySelector<HTMLButtonElement>('main [data-key="start"]');
-      expect(start?.getAttribute("aria-label")).toBe("Start pasting One automatically");
+      expect(start?.textContent).toBe("Start pasting");
+      expect(start?.classList.contains("magic")).toBe(false);
+      expect(start?.getAttribute("aria-label")).toBe(
+        "Start pasting One automatically. It pauses when you interact with Genius.",
+      );
       expect(start?.hasAttribute("disabled")).toBe(false);
       const list = $(root, "ul.tracks");
       expect(list.compareDocumentPosition(start as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -912,15 +919,18 @@ describe("the YouTube link section in the credits", () => {
 
   it("has a labelled box for the link, described by its help text", async () => {
     const { root } = await reviewed();
-    expect(root.querySelector('label[for="youtube-link"]')?.textContent).toBe("YouTube link for this track");
+    expect(root.querySelector('label[for="youtube-link"]')?.textContent).toBe("YouTube video URL");
     expect(box(root).getAttribute("aria-describedby")).toBe("youtube-link-help");
-    expect(root.querySelector("#youtube-link-help")?.textContent).toContain("paste it here");
+    expect(root.querySelector("#youtube-link-help")?.textContent).toContain("choose Use");
+    expect(root.querySelector(".input-action")?.contains(box(root))).toBe(true);
+    expect((byText(root, "button", "Use") as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("takes a pasted link, shows it as the user's, and puts it in the paste queue", async () => {
     const { root, panel } = await reviewed();
     type(root, "https://youtu.be/BY_XwvKogC8");
-    byText(root, "button", "Use this link").click();
+    expect((byText(root, "button", "Use") as HTMLButtonElement).disabled).toBe(false);
+    byText(root, "button", "Use").click();
     await flush();
     const dt = [...root.querySelectorAll("dl.credits dt")].find((d) => d.textContent === "YouTube (your link)");
     expect(dt?.nextElementSibling?.querySelector("a")?.getAttribute("href")).toBe(LINK);
@@ -939,7 +949,7 @@ describe("the YouTube link section in the credits", () => {
   it("says what is wrong with something that is not a YouTube link, keeps what was typed, and marks the box", async () => {
     const { root } = await reviewed();
     type(root, "hello");
-    byText(root, "button", "Use this link").click();
+    byText(root, "button", "Use").click();
     await flush();
     expect(root.querySelector("#youtube-link-help")?.textContent).toContain("not a link to one YouTube video");
     expect(box(root).getAttribute("aria-invalid")).toBe("true");
@@ -949,7 +959,7 @@ describe("the YouTube link section in the credits", () => {
   it("can take the user's link off again", async () => {
     const { root } = await reviewed();
     type(root, LINK);
-    byText(root, "button", "Use this link").click();
+    byText(root, "button", "Use").click();
     await flush();
     byText(root, "button", "Remove my link").click();
     await flush();
@@ -958,7 +968,7 @@ describe("the YouTube link section in the credits", () => {
 
   it("says so when the YouTube step is turned off, because the link would not be pasted", async () => {
     const { root } = await reviewed({ settings: { scrapeYoutube: false } });
-    expect(root.querySelector("#youtube-link-help")?.textContent).toContain("turned off in Settings");
+    expect(root.querySelector("#youtube-link-help")?.textContent).toContain("off in Settings");
   });
 
   it("does not carry a half-typed link to another track", async () => {

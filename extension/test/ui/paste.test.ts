@@ -21,11 +21,11 @@ const button = (root: ParentNode, text: string): HTMLButtonElement => {
 };
 
 /** The panel, opened on the credits of an album and ready to start pasting the first track. */
-async function onReview() {
+async function onReview(options: Parameters<typeof fakeEnv>[0] = {}) {
   document.body.replaceChildren();
   const root = document.createElement("div");
   document.body.append(root);
-  const env = fakeEnv();
+  const env = fakeEnv(options);
   const panel = await PanelController.create(env);
   new PanelView(root, panel);
   await panel.detect(ALBUM.url);
@@ -37,8 +37,8 @@ async function onReview() {
 
 /** A track started step by step, as these tests are about the Next key; automatic pasting has its own tests. */
 async function onPaste() {
-  const ui = await onReview();
-  button(ui.root, "Step by step").click();
+  const ui = await onReview({ settings: { pasteMode: "manual" } });
+  button(ui.root, "Start pasting").click();
   await flush();
   return ui;
 }
@@ -105,15 +105,15 @@ describe("the paste screen", () => {
 
   it("names the keys on the buttons from the settings", async () => {
     const { root, panel } = await onPaste();
-    expect(button(root, "Fill next").textContent).toBe("Fill next (F8)");
-    expect(button(root, "Back (").textContent).toBe("Back (F7)");
+    expect(button(root, "Next").textContent).toBe("Next (F8)");
+    expect(button(root, "Previous").textContent).toBe("Previous (F7)");
     await panel.setSetting("nextHotkey", "F9");
-    expect(button(root, "Fill next").textContent).toBe("Fill next (F9)");
+    expect(button(root, "Next").textContent).toBe("Next (F9)");
   });
 
   it("sends Fill next, Skip and Back to the worker, and follows the state it answers with", async () => {
     const { root, env } = await onPaste();
-    button(root, "Fill next").click();
+    button(root, "Next").click();
     await flush();
     expect(env.api.calls).toContain("paste:paste-fill");
 
@@ -123,14 +123,14 @@ describe("the paste screen", () => {
     expect($(root, '[aria-current="step"]').textContent).toContain("Next");
     expect(root.querySelector("li.done")?.textContent).toContain("Done");
 
-    button(root, "Back (").click();
+    button(root, "Previous").click();
     await flush();
     expect($(root, ".progress").textContent).toMatch(/^Step 1 of/);
   });
 
   it("disables Back at the first step", async () => {
     const { root } = await onPaste();
-    expect(button(root, "Back (").disabled).toBe(true);
+    expect(button(root, "Previous").disabled).toBe(true);
   });
 
   it("follows the worker when a hotkey press on Genius moves the position", async () => {
@@ -194,7 +194,7 @@ describe("the paste screen", () => {
     await panel.startPaste(0, "manual");
     panel.setPaste({ ...env.api.pasteState, active: true, queue: [["written_by", "A"]], title: "T" });
     await flush();
-    button(root, "Fill next").click();
+    button(root, "Next").click();
     await flush();
     expect($(root, "#alert").textContent).toContain("Open the song's page on Genius.");
   });
@@ -259,7 +259,7 @@ describe("pasting settings", () => {
     const { root, panel, env } = await onSettings();
     const back = $(root, "#setting-returnSeconds") as HTMLInputElement;
     const next = $(root, "#setting-nextTrackSeconds") as HTMLInputElement;
-    expect([back.value, next.value]).toEqual(["30", "15"]);
+    expect([back.value, next.value]).toEqual(["30", "0"]);
 
     back.value = "45";
     back.dispatchEvent(new Event("change", { bubbles: true }));
@@ -290,7 +290,7 @@ describe("the automatic pasting settings", () => {
     await flush();
   };
 
-  it("shows the same Auto-paste switch as the paste screen, ON by default, with 0.6 seconds between fields", async () => {
+  it("shows the same automatic filling switch as the paste screen, ON by default, with 0.6 seconds between fields", async () => {
     const { root } = await onSettings();
     const toggle = $(root, "#setting-pasteMode");
     expect(toggle.tagName).toBe("BUTTON");
@@ -308,14 +308,14 @@ describe("the automatic pasting settings", () => {
     const [on, off] = [...help.querySelectorAll(".onoff")];
     expect(on?.querySelector("strong")?.textContent).toBe("ON");
     expect(on?.textContent).toContain("fills the whole track by itself");
-    expect(on?.textContent).toContain("stops the moment you click or type in the Genius form");
+    expect(on?.textContent).toContain("stops when you interact with the Genius form");
     expect(off?.querySelector("strong")?.textContent).toBe("OFF");
-    expect(off?.textContent).toContain("each time you press the fill key (F8)");
+    expect(off?.textContent).toContain("each time you press F8");
     expect(on?.classList.contains("current")).toBe(true);
     expect(off?.classList.contains("current")).toBe(false);
   });
 
-  it("turns Auto-paste off and on from the switch, saving each, and the switch and the marked meaning follow", async () => {
+  it("turns automatic filling off and on from the switch, saving each, and the switch and the marked meaning follow", async () => {
     const { root, panel, env } = await onSettings();
     $(root, "#setting-pasteMode").click();
     await flush();

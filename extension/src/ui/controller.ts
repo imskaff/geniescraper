@@ -2,6 +2,7 @@
 // Everything that touches the outside (the worker, storage, the browser's tabs) is injected, so the whole flow
 // runs in tests with fakes.
 import { parseAppleMusicUrl } from "../apple/url";
+import { appleTabEntries, type AppleTabEntry, type OpenTab } from "../core/appleTabs";
 import { geniusRole } from "../core/geniusRoles";
 import { typedQueue, type QueueItem, type SongCredits } from "../core/models";
 import type { PasteCommand } from "../shared/messages";
@@ -50,6 +51,8 @@ export interface Env {
   secrets: KeyValueStore;
   /** The tab the user is looking at, or null when there is none to read. */
   activeTab(): Promise<ActiveTab | null>;
+  /** Every tab of the browser that shows Apple Music, in the browser's order, with the one in view marked. */
+  appleTabs(): Promise<OpenTab[]>;
 }
 
 export interface PanelState {
@@ -84,6 +87,8 @@ export interface PanelState {
   status: string;
   /** The Apple Music page the user is on, offered as the default link ("" when there is none). */
   pageUrl: string;
+  /** The album and song pages already open in the browser, offered on the link screen; the page in view first. */
+  appleTabs: AppleTabEntry[];
 }
 
 export const MESSAGES = {
@@ -139,6 +144,10 @@ export function buildSong(album: AlbumInfo, result: Pick<TrackResult, "url">, sc
   };
 }
 
+/** How long the lookups rest before a track YouTube refused is asked about again, and how many times that happens. */
+export const YOUTUBE_RETRY_MS = 45_000;
+const YOUTUBE_RETRY_LIMIT = 3;
+
 /** The longest Start pasting waits for a YouTube link before starting without it. */
 export const YOUTUBE_WAIT_MS = 8000;
 
@@ -180,6 +189,7 @@ export class PanelController {
     settings: Settings,
     session: Session,
     pageUrl: string,
+    appleTabs: AppleTabEntry[] = [],
     paste: PasteState = { ...IDLE_PASTE },
     hosts: Record<OptionalHost, boolean> = { ...NO_HOSTS },
     keySaved = false,
@@ -205,21 +215,32 @@ export class PanelController {
       error: "",
       status: "",
       pageUrl,
+      appleTabs,
     };
   }
 
   /** Load settings, the stored session and the active tab, and build the controller from them. */
   static async create(env: Env): Promise<PanelController> {
-    const [settings, session, paste, tab, hosts, key] = await Promise.all([
+    const [settings, session, paste, tab, hosts, key, open] = await Promise.all([
       loadSettings(env.stores),
       loadSession(env.stores),
       loadPaste(env.stores),
       env.activeTab().catch(() => null),
       env.hosts.granted().catch(() => ({ ...NO_HOSTS })),
       loadYoutubeKey(env.secrets),
+      env.appleTabs().catch(() => []),
     ]);
     const pageUrl = tab && parseAppleMusicUrl(tab.url) ? tab.url : "";
-    const controller = new PanelController(env, settings, session, pageUrl, paste, hosts, key !== "");
+    const controller = new PanelController(
+      env,
+      settings,
+      session,
+      pageUrl,
+      appleTabEntries(open),
+      paste,
+      hosts,
+      key !== "",
+    );
     // A permission taken back in chrome://extensions, or granted elsewhere, changes the Settings box at once.
     env.hosts.subscribe(() => void controller.refreshHosts());
     // Tracks that were mid-read when the panel closed were restored as pending: carry on with them.
@@ -361,11 +382,16 @@ export class PanelController {
     await this.refreshHosts();
   }
 
-  /** Re-read which Apple Music page the user is on, after they switch tabs or navigate. */
+  /** Re-read which Apple Music page the user is on and which others are open, after tabs change or navigate. */
   async refreshPage(): Promise<void> {
-    const tab = await this.env.activeTab().catch(() => null);
+    const [tab, open] = await Promise.all([
+      this.env.activeTab().catch(() => null),
+      this.env.appleTabs().catch(() => []),
+    ]);
     const pageUrl = tab && parseAppleMusicUrl(tab.url) ? tab.url : "";
-    if (pageUrl !== this.current.pageUrl) this.update({ pageUrl });
+    const appleTabs = appleTabEntries(open);
+    const same = JSON.stringify(appleTabs) === JSON.stringify(this.current.appleTabs);
+    if (pageUrl !== this.current.pageUrl || !same) this.update({ pageUrl, appleTabs });
   }
 
   // ── link ────────────────────────────────────────────────────────────
@@ -509,8 +535,21 @@ export class PanelController {
     this.update({ youtubeLinkError: "" });
     const closing = this.current.session.current === index;
     await this.updateSession({ current: closing ? null : index });
+    if (closing) return;
+    // A lookup that came back empty is asked once more when the user opens the track: the first answer may have come
+    // from a thin search, and the user is now looking at exactly this link. One still running is left alone.
+    const song = this.current.session.results.find((r) => r.index === index)?.song;
+    if (
+      song &&
+      !song.youtubeUrl &&
+      this.current.youtubeNotes[index] === MESSAGES.noYoutubeShort &&
+      !this.youtubeReasked.has(index)
+    ) {
+      this.youtubeReasked.add(index); // once: a track that truly has no video is not asked about at every opening
+      this.youtubeLookups.delete(index);
+    }
     // Opened credits get their link looked up now, as the user is about to look at (and maybe fix) it.
-    if (!closing) void this.ensureYoutube(index);
+    void this.ensureYoutube(index);
   }
 
   /** The first track, in album order, whose credits are in and give something to paste; Start pasting begins here. */
@@ -695,31 +734,70 @@ export class PanelController {
    */
   private queueYoutube(index: number): void {
     if (!this.youtubeAskable()) return;
-    const { hosts, youtubeKey } = this.current;
-    if (youtubeKey.saved && hosts.youtubeApi) {
-      void this.ensureYoutube(index);
-      return;
-    }
+    // Always one track at a time, with the user's key too: the key may be refused (its allowance used up) and each
+    // lookup then reads YouTube's pages, so a whole album asked at once was a burst that got the album refused.
     const epoch = this.youtubeEpoch;
     if (!this.youtubeLookups.has(index)) this.note(index, MESSAGES.lookingForYoutubeShort);
     this.youtubeChain = this.youtubeChain.then(async () => {
       if (epoch !== this.youtubeEpoch) return;
       if (this.youtubePaused) {
         this.note(index, MESSAGES.youtubeNotChecked);
+        this.lookAgainLater(index);
         return;
       }
       await this.ensureYoutube(index);
       if (epoch !== this.youtubeEpoch) return;
       const song = this.current.session.results.find((r) => r.index === index)?.song;
       if (song?.youtubeUrl) this.note(index, "");
-      // A refused or failed lookup is forgotten so it can be asked again; that is the sign to stop sending more.
-      else if (song && !this.youtubeLookups.has(index)) this.youtubePaused = true;
+      // A refused or failed lookup is forgotten so it can be asked again; that is the sign to stop sending more, and to
+      // look again later by itself.
+      else if (song && !this.youtubeLookups.has(index)) {
+        this.youtubePaused = true;
+        this.lookAgainLater(index);
+      }
     });
+  }
+
+  /** Tracks whose lookup was refused or never made, to be asked again after a rest. */
+  private readonly youtubeRetries = new Set<number>();
+  private readonly youtubeAttempts = new Map<number, number>();
+  /** Tracks whose empty answer has already been given the one more try that opening them brings. */
+  private readonly youtubeReasked = new Set<number>();
+  private youtubeRetryTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /**
+   * A track whose link could not be looked up because YouTube was limiting requests is tried again after a rest, a few
+   * times, so the user is not left to open each track to get it going. Past the limit it is left to them.
+   */
+  private lookAgainLater(index: number): void {
+    if ((this.youtubeAttempts.get(index) ?? 0) >= YOUTUBE_RETRY_LIMIT) return;
+    this.youtubeRetries.add(index);
+    if (this.youtubeRetryTimer !== undefined) return;
+    const epoch = this.youtubeEpoch;
+    this.youtubeRetryTimer = setTimeout(() => {
+      this.youtubeRetryTimer = undefined;
+      if (epoch !== this.youtubeEpoch) return;
+      const again = [...this.youtubeRetries].sort((a, b) => a - b);
+      this.youtubeRetries.clear();
+      // The rest is over: the chain may ask again.
+      this.youtubePaused = false;
+      for (const index of again) {
+        const song = this.current.session.results.find((r) => r.index === index)?.song;
+        if (!song || song.youtubeUrl || !this.youtubeAskable()) continue;
+        this.youtubeAttempts.set(index, (this.youtubeAttempts.get(index) ?? 0) + 1);
+        this.queueYoutube(index);
+      }
+    }, YOUTUBE_RETRY_MS);
   }
 
   private forgetYoutube(): void {
     this.youtubeEpoch++;
     this.youtubePaused = false;
+    clearTimeout(this.youtubeRetryTimer);
+    this.youtubeRetryTimer = undefined;
+    this.youtubeRetries.clear();
+    this.youtubeAttempts.clear();
+    this.youtubeReasked.clear();
     this.youtubeLookups.clear();
     if (this.current.youtubeLinkError) this.update({ youtubeLinkError: "" });
     this.keyNote = "";

@@ -252,10 +252,11 @@ describe("the service with a key", () => {
     expect(google.calls.length).toBeGreaterThan(0);
   });
 
-  it("does not read YouTube's pages when Google answered and simply had nothing", async () => {
+  it("reads YouTube's pages as a second opinion when Google answered and simply had nothing", async () => {
+    // One search per kind is a thin answer, so an empty one is not the last word; it is no key problem either.
     const { yt, scraped } = service({ key: KEY, result: { status: 200, body: { items: [] } } });
     expect(await yt.find("SOS", "SZA")).toEqual({ url: "", isMusicVideo: false, keyProblem: "" });
-    expect(scraped).toEqual([]);
+    expect(scraped.length).toBeGreaterThan(0);
   });
 
   it.each([
@@ -272,8 +273,9 @@ describe("the service with a key", () => {
     },
   );
 
-  it("forgets a problem once a later lookup works", async () => {
+  it("forgets a problem once the allowance is back (midnight Pacific time), and not before", async () => {
     let result: FetchResult = { status: 403, body: error("quotaExceeded") };
+    let now = Date.UTC(2026, 9, 28, 20, 0, 0); // 13:00 in Pacific time
     const google = fakeGoogle({ search: () => result });
     const yt = realYoutube({
       getText: () => Promise.resolve(null),
@@ -281,8 +283,29 @@ describe("the service with a key", () => {
       getKey: () => Promise.resolve(KEY),
       getResult: google.getResult,
       apiGranted: () => Promise.resolve(true),
+      now: () => now,
     });
     expect((await yt.find("SOS", "SZA")).keyProblem).toBe("quota");
+    result = okSearch;
+    // Still the same day: Google is not asked again, and the problem stands.
+    expect((await yt.find("SOS", "SZA")).keyProblem).toBe("quota");
+    now = Date.UTC(2026, 9, 29, 7, 30, 0); // 00:30 the next day in Pacific time
+    expect((await yt.find("SOS", "SZA")).keyProblem).toBe("");
+  });
+
+  it("forgets a problem at once when the user saves another key", async () => {
+    let key = KEY;
+    let result: FetchResult = { status: 400, body: error("badRequest", "API key not valid") };
+    const google = fakeGoogle({ search: () => result });
+    const yt = realYoutube({
+      getText: () => Promise.resolve(null),
+      granted: () => Promise.resolve(true),
+      getKey: () => Promise.resolve(key),
+      getResult: google.getResult,
+      apiGranted: () => Promise.resolve(true),
+    });
+    expect((await yt.find("SOS", "SZA")).keyProblem).toBe("key");
+    key = "AIzaSyB9z8Y7x6W5v4U3t2S1r0Q9p8O7n6M5l4K";
     result = okSearch;
     expect((await yt.find("SOS", "SZA")).keyProblem).toBe("");
   });

@@ -182,9 +182,25 @@ label {
   font: inherit;
 }
 
+.input-action {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+.input-action .field {
+  min-width: 0;
+  flex: 1;
+}
+
 .help {
   margin: 0;
   color: var(--muted);
+}
+
+/* Room for three lines, whichever of the link screen's two messages shows, so the detector below stays put. */
+#link-help {
+  min-height: 4.5em;
 }
 
 h2 + .help {
@@ -459,12 +475,21 @@ h2 + .help {
   overflow-wrap: anywhere;
 }
 
+.youtube-link {
+  padding: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+}
+
 a {
   color: var(--link);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     transition: none !important;
     animation: none !important;
     scroll-behavior: auto !important;
@@ -513,6 +538,229 @@ a {
 
 select.field {
   min-height: 36px;
+}
+
+/* The detector on the link screen: a card that listens for Apple Music pages open in the browser. Listening, it
+   shows a radar and a slow sweep; on a find the radar settles into a solid dot, the card takes the accent and the
+   page in view glows. The reduced-motion rule at the end of this file stops every animation here. */
+.detector {
+  position: relative;
+  overflow: hidden;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--surface-hi);
+  border-radius: 10px;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.detector[data-state="listening"]::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgb(243 192 3 / 10%), transparent);
+  animation: sweep 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.detector[data-state="found"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 14px 1px rgb(243 192 3 / 25%);
+  animation: found-pop 0.5s ease-out;
+}
+
+.detector-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.detector-title {
+  margin: 0;
+}
+
+.detector-hint {
+  margin: 0;
+  color: var(--muted);
+}
+
+.radar {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 40px;
+}
+
+.radar i,
+.radar b {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  border-radius: 50%;
+}
+
+.radar b {
+  width: 12px;
+  height: 12px;
+  background: var(--muted);
+}
+
+.radar i {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--accent);
+  opacity: 0;
+}
+
+/* The dot is the visible sign that it is listening: yellow, growing and glowing in a steady beat. */
+.detector[data-state="listening"] .radar b {
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  animation: beat 1.4s ease-in-out infinite;
+}
+
+.detector[data-state="listening"] .radar i {
+  animation: ping 2.7s ease-out infinite;
+}
+
+.detector[data-state="listening"] .radar i:nth-child(2) {
+  animation-delay: 0.9s;
+}
+
+.detector[data-state="listening"] .radar i:nth-child(3) {
+  animation-delay: 1.8s;
+}
+
+.detector[data-state="found"] .radar b {
+  width: 16px;
+  height: 16px;
+  background: var(--accent);
+  box-shadow: 0 0 12px 2px rgb(243 192 3 / 60%);
+}
+
+/* One ring bursts outward when something is found, then the radar is still. */
+.detector[data-state="found"] .radar i:first-child {
+  animation: ping 0.9s ease-out 1;
+}
+
+.open-pages {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.open-pages li {
+  animation: rise 0.35s ease-out backwards;
+}
+
+.open-pages li:nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+.open-pages li:nth-child(n + 3) {
+  animation-delay: 0.16s;
+}
+
+.button.detected {
+  justify-content: space-between;
+}
+
+.button.detected .go {
+  flex: none;
+  color: var(--link);
+  font-weight: 600;
+}
+
+.button.detected[data-current="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 10px 1px rgb(243 192 3 / 35%);
+}
+
+@keyframes ping {
+  0% {
+    transform: scale(0.3);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes beat {
+  0%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.6;
+    box-shadow: 0 0 0 0 rgb(243 192 3 / 0%);
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 1;
+    box-shadow: 0 0 12px 3px rgb(243 192 3 / 60%);
+  }
+}
+
+.dots i {
+  font-style: normal;
+  animation: dot 1.2s infinite;
+}
+
+.dots i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dots i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes dot {
+  0%,
+  20% {
+    opacity: 0;
+  }
+  40%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(260%);
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes found-pop {
+  0% {
+    transform: scale(0.98);
+  }
+  60% {
+    transform: scale(1.01);
+  }
+  100% {
+    transform: none;
+  }
 }
 
 h3.section {
