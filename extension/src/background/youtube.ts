@@ -127,6 +127,9 @@ export function youtubePages(
   };
 }
 
+/** The most queries either phase sends through the Data API: one for the video, one for the audio. */
+export const API_QUERIES_PER_PHASE = 1;
+
 const youtubeGranted = (): Promise<boolean> => chrome.permissions.contains({ origins: [hostOrigin("youtube")] });
 const apiGranted = (): Promise<boolean> => chrome.permissions.contains({ origins: [hostOrigin("youtubeApi")] });
 
@@ -173,7 +176,8 @@ export function realYoutube(options: YoutubeOptions = {}): YoutubeService {
           search: (query) => api.run(() => viaApi.search(query)),
           watch: (id) => api.run(() => viaApi.watch(id)),
         };
-        const link = await findYoutube(limited, title, artist);
+        // Google's service is metered (a search costs 100 of the 10,000 free units a day): at most two searches a song.
+        const link = await findYoutube(limited, title, artist, { queriesPerPhase: API_QUERIES_PER_PHASE });
         const problem = viaApi.problem();
         if (link.url || problem === "" || problem === "failed") return { ...link, keyProblem: "" };
         keyProblem = problem;

@@ -361,10 +361,16 @@ async function top10(pages: YoutubePages, query: string): Promise<Video[]> {
 }
 
 /** Phase 1: the canonical audio, from a Topic channel or the artist's own channel. */
-async function audioPhase(pages: YoutubePages, title: string, artist: string): Promise<Candidate[]> {
+async function audioPhase(
+  pages: YoutubePages,
+  title: string,
+  artist: string,
+  queryLimit: number,
+): Promise<Candidate[]> {
   const candidates: Candidate[] = [];
   const seen = new Set<string>();
-  for (const query of audioQueries(title, artist)) {
+  for (const [n, query] of audioQueries(title, artist).entries()) {
+    if (n >= queryLimit && candidates.length > 0) break;
     for (const [rank, video] of (await top10(pages, query)).entries()) {
       if (seen.has(video.id)) continue;
       seen.add(video.id);
@@ -382,13 +388,15 @@ async function mvPhase(
   pages: YoutubePages,
   title: string,
   artist: string,
+  queryLimit: number,
 ): Promise<[Candidate[], Candidate[], Candidate[]]> {
   const confirmed: Candidate[] = [];
   const provisional: Candidate[] = [];
   const label: Candidate[] = [];
   // Its own seen-set, so phase 1's rejects (MV-keyword videos) can still be scored here.
   const seen = new Set<string>();
-  for (const query of mvQueries(title, artist)) {
+  for (const [n, query] of mvQueries(title, artist).entries()) {
+    if (n >= queryLimit && confirmed.length + provisional.length + label.length > 0) break;
     for (const [rank, video] of (await top10(pages, query)).entries()) {
       if (seen.has(video.id)) continue;
       seen.add(video.id);
@@ -425,11 +433,26 @@ const byScoreThenRank = (a: Candidate, b: Candidate): number => b[0] - a[0] || a
  * anyway), and only the best few candidates have their descriptions read. Google answers a burst of requests with
  * its "sorry" page, and a song's lookup has to fit well inside what it tolerates.
  */
-export async function findYoutube(pages: YoutubePages, title: string, artist: string): Promise<YoutubeLink> {
+export interface FindOptions {
+  /**
+   * The most queries either phase may send. The default is every query the phase has (up to 2 for the video, 3 for
+   * the audio); 1 for each caps a song at two searches, which is what a metered service (the Data API, 100 units a
+   * search) is asked with.
+   */
+  queriesPerPhase?: number;
+}
+
+export async function findYoutube(
+  pages: YoutubePages,
+  title: string,
+  artist: string,
+  options: FindOptions = {},
+): Promise<YoutubeLink> {
   if (!title || !artist) return NONE;
+  const limit = options.queriesPerPhase ?? Number.POSITIVE_INFINITY;
   try {
-    const [mv, provisional, label] = await mvPhase(pages, title, artist);
-    const audio = mv.length > 0 ? [] : await audioPhase(pages, title, artist);
+    const [mv, provisional, label] = await mvPhase(pages, title, artist, limit);
+    const audio = mv.length > 0 ? [] : await audioPhase(pages, title, artist, limit);
 
     // Every description the checks below may read, each fetched once.
     const mvIds = new Set(mv.map(([, , u]) => videoId(u)));

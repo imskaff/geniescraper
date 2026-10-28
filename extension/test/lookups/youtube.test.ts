@@ -324,3 +324,48 @@ describe("reading YouTube's pages", () => {
     expect(descriptionOf(null)).toBe("");
   });
 });
+
+describe("the cheaper lookup for a metered service (one query for the video, one for the audio)", () => {
+  it.each(golden.map((g) => [g.id, g] as const))(
+    "%s still gets an accepted video, with at most three searches",
+    async (_id, g) => {
+      const log: string[] = [];
+      const link = await findYoutube(savedPages(g.id, log), g.title, g.artist, { queriesPerPhase: 1 });
+      const id = link.url.split("=").pop() ?? "";
+      expect(g.accept, link.url).toContain(id);
+      expect(link.isMusicVideo).toBe(g.is_music_video);
+      expect(log.filter((l) => l.startsWith("search:")).length).toBeLessThanOrEqual(3);
+    },
+  );
+
+  it("needs more than two searches for only a few songs, so a day's allowance covers about fifty", async () => {
+    let over = 0;
+    for (const g of golden) {
+      const log: string[] = [];
+      await findYoutube(savedPages(g.id, log), g.title, g.artist, { queriesPerPhase: 1 });
+      if (log.filter((l) => l.startsWith("search:")).length > 2) over++;
+    }
+    expect(over).toBeLessThanOrEqual(3);
+  });
+
+  it("asks for a description only for the few candidates that need confirming", async () => {
+    let watches = 0;
+    for (const g of golden) {
+      const log: string[] = [];
+      await findYoutube(savedPages(g.id, log), g.title, g.artist, { queriesPerPhase: 1 });
+      watches = Math.max(watches, log.filter((l) => l.startsWith("watch:")).length);
+    }
+    expect(watches).toBeLessThanOrEqual(7);
+  });
+
+  it("is never more expensive than the full lookup", async () => {
+    for (const g of golden) {
+      const cheap: string[] = [];
+      const full: string[] = [];
+      await findYoutube(savedPages(g.id, cheap), g.title, g.artist, { queriesPerPhase: 1 });
+      await findYoutube(savedPages(g.id, full), g.title, g.artist);
+      const searches = (log: string[]) => log.filter((l) => l.startsWith("search:")).length;
+      expect(searches(cheap), g.id).toBeLessThanOrEqual(searches(full));
+    }
+  });
+});
