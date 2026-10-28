@@ -157,6 +157,23 @@ describe("waitForCredits", () => {
     expect(doc.querySelectorAll(".artist-name")).toHaveLength(2);
   });
 
+  it("waits while a card's text changes even though the number of cards does not", async () => {
+    const doc = html("<body></body>");
+    card(doc, "A");
+    const roles = doc.createElement("div");
+    roles.className = "artist-roles";
+    doc.body.append(roles);
+    // Two edits to the same card, the second after the first settle check: a count alone would already be done.
+    setTimeout(() => {
+      roles.textContent = "Songwriter";
+    }, 10);
+    setTimeout(() => {
+      roles.textContent = "Songwriter, Producer";
+    }, 55);
+    await waitForCredits(doc, { ...FAST, settleMs: 40 });
+    expect(roles.textContent).toBe("Songwriter, Producer");
+  });
+
   it("is bounded when no card ever appears", async () => {
     const started = Date.now();
     await waitForCredits(html("<body></body>"), { ...FAST, creditsMs: 60 });

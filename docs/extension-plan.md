@@ -728,3 +728,9 @@ An independent review of the extension suggested nine changes; each was checked 
 - **Track titles stay level with their song links.** `readTrackTitles` dropped blank titles before padding, so a blank row in the middle shifted every later title onto the wrong link. It now keeps one title per row and names a blank one "Track N" by its position.
 - **Every request gets an answer.** A job that threw something unplanned (a rejected key check, a failed lookup) rejected the worker's promise, and the panel was left with a closed channel. The router, and the Genius path in the worker, now turn any rejection into an `internal` error result without passing on its text.
 Not done, on purpose: waiting for stable credit text, naming a bad locale file in the package validator, a slow-load warning, and an extension README (offered, not chosen); measuring the 24-tab ceiling (the default of 3 parallel reads already limits it); and extension CI, which already exists in `.github/workflows/ci.yml`.
+
+Three more of the review's suggestions were done afterwards:
+- **Stable credit text, not just a stable card count.** `waitForCredits` now compares the cards' names and roles between checks, so a card whose roles are still filling in is not read early (a test edits one card twice, the second time after the first check).
+- **A bad locale file is named.** The package validator reports `_locales/<lang>/messages.json is not valid JSON` instead of crashing with a raw parse error, as it already did for `manifest.json`.
+- **`extension/README.md`** gives set-up, build, check, load-unpacked, permission and packaging steps.
+Still not done: the slow-load warning (credits that did not appear in time versus a track with none).

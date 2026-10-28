@@ -6,7 +6,7 @@
 // real Chromium: the album hydrates but the hover-armed menu never opens), while a song page renders its
 // credit cards at once, hidden or not.
 import type { AlbumInfo, PageScrape } from "../shared/messages";
-import { CARD_NAME_SELECTOR, parseCreditsDocument } from "./credits";
+import { CARD_NAME_SELECTOR, CARD_ROLES_SELECTOR, parseCreditsDocument } from "./credits";
 import { AppleError, NOT_FOUND_MESSAGE, TIMEOUT_MESSAGE } from "./errors";
 import {
   NOT_FOUND_SELECTOR,
@@ -75,16 +75,22 @@ export async function detectAlbum(doc: Document, url: string, timing: Timing): P
   };
 }
 
-/** Wait for the credit cards, then for their count to stop changing (all cards render in one batch). */
+/** What the cards say right now: their names and roles, so a card whose text is still filling in is seen changing. */
+function cardsSignature(doc: Document): string {
+  const text = (selector: string): string => [...doc.querySelectorAll(selector)].map((el) => el.textContent).join("\n");
+  return `${text(CARD_NAME_SELECTOR)}\u0000${text(CARD_ROLES_SELECTOR)}`;
+}
+
+/** Wait for the credit cards, then for their names and roles to stop changing (all cards render in one batch). */
 export async function waitForCredits(doc: Document, timing: Timing): Promise<void> {
   const first = await waitFor(doc, () => doc.querySelector(CARD_NAME_SELECTOR), timing.creditsMs, timing.pollMs);
   if (!first) return;
-  let count = doc.querySelectorAll(CARD_NAME_SELECTOR).length;
+  let seen = cardsSignature(doc);
   for (let i = 0; i < SETTLE_CHECKS; i++) {
     await sleep(timing.settleMs);
-    const next = doc.querySelectorAll(CARD_NAME_SELECTOR).length;
-    if (next === count) return;
-    count = next;
+    const next = cardsSignature(doc);
+    if (next === seen) return;
+    seen = next;
   }
 }
 

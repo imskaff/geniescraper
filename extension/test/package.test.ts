@@ -151,6 +151,11 @@ describe("the package check", () => {
   it.each([
     ["a manifest that is not JSON", { "manifest.json": "{" }, "not valid JSON"],
     [
+      "a locale file that is not JSON",
+      { "_locales/en/messages.json": "{" },
+      "_locales/en/messages.json is not valid JSON",
+    ],
+    [
       "manifest version 2",
       { "manifest.json": JSON.stringify({ ...GOOD_MANIFEST, manifest_version: 2 }) },
       "manifest_version must be 3",

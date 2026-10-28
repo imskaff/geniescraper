@@ -60,9 +60,16 @@ export function validateDist(dist, packageVersion) {
 
   // Names and descriptions come from the locale files, and the description has a store limit.
   const localeFile = `_locales/${manifest.default_locale ?? "en"}/messages.json`;
+  let messages = null;
   if (!has(localeFile)) problem(`${localeFile} is missing.`);
   else {
-    const messages = JSON.parse(readFileSync(join(dist, localeFile), "utf-8"));
+    try {
+      messages = JSON.parse(readFileSync(join(dist, localeFile), "utf-8"));
+    } catch {
+      problem(`${localeFile} is not valid JSON.`);
+    }
+  }
+  if (messages) {
     for (const key of ["extName", "extDescription"]) {
       if (typeof messages[key]?.message !== "string" || !messages[key].message)
         problem(`${localeFile} has no "${key}" message.`);
