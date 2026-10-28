@@ -26,15 +26,17 @@ The short version: it collects nothing, has no accounts, no analytics and no ser
 
 The extension sends song titles and artist names (public text from the page you are viewing) to these services, and nothing else:
 
-| Service              | When                                                                              | What is sent                                                                   |
-| -------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `itunes.apple.com`   | Always, to find the exact cover art                                               | The Apple Music catalog id of the album or song, or the song title and artist  |
-| `api.deezer.com`     | Only if you tick "Search Deezer for a cover" and allow Chrome's permission prompt | Song title and artist                                                          |
-| `www.youtube.com`    | Only if you tick "Find a YouTube link" and allow Chrome's permission prompt       | Search terms made of the song title and artist, and the id of candidate videos |
-| `www.googleapis.com` | Only if you add your own YouTube key and allow Chrome's permission prompt         | Search terms (song title and artist) and your key, in a request header         |
+| Service              | When                                                                                                                                                   | What is sent                                                                                        |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `itunes.apple.com`   | Always, to find the exact cover art                                                                                                                    | The Apple Music catalog id of the album or song, or the song title and artist                       |
+| `api.deezer.com`     | Only if you tick "Search Deezer for a cover" and allow Chrome's permission prompt                                                                      | Song title and artist                                                                               |
+| `www.youtube.com`    | Only if you tick "Find a YouTube link" and allow Chrome's permission prompt. Then it happens for every track whose credits are read, one after another | Search terms made of the song title and artist, and the id of candidate videos                      |
+| `www.googleapis.com` | Only if you add your own YouTube key and allow Chrome's permission prompt. Then it happens for every track whose credits are read                      | Search terms (song title and artist), the id of candidate videos, and your key, in a request header |
 
 Requests carry no cookies and no referrer.
-Apple Music pages are opened in a background tab of your own browser, as if you had visited them.
+Apple Music pages are opened in a minimized window of your own browser (a background tab if that is not possible), as if you had visited them, and closed again when read.
+Because that is a real visit, Apple Music sees it as it would see any visit from your browser, including any cookies you already have for it; the extension reads only the page's public credits text.
+If you add the optional YouTube link by pasting one yourself, nothing is sent anywhere: the link is only copied into the Genius form.
 The extension does not send anything to the developer or to any other party.
 
 ## What the extension does not do

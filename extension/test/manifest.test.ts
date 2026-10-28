@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { LOOKUP_HOSTS } from "../src/lookups/http";
@@ -89,6 +89,29 @@ describe("manifest", () => {
   it("grants every host a lookup may contact, required or optional", () => {
     const granted = [...(manifest.host_permissions ?? []), ...(manifest.optional_host_permissions ?? [])];
     for (const host of LOOKUP_HOSTS) expect(granted, host).toContain(`https://${host}/*`);
+  });
+
+  it("hardcodes no address in the lookup and worker code except for hosts the privacy policy names", () => {
+    const policy = readFileSync(join(ROOT, "PRIVACY.md"), "utf-8");
+    const folders = ["src/lookups", "src/background"];
+    const found = new Set<string>();
+    for (const folder of folders) {
+      for (const file of readdirSync(join(ROOT, folder)).filter((name) => name.endsWith(".ts"))) {
+        const code = readFileSync(join(ROOT, folder, file), "utf-8")
+          .split("\n")
+          .filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line));
+        for (const line of code) for (const m of line.matchAll(/https?:\/\/([a-z0-9.-]+)/g)) found.add(m[1] ?? "");
+      }
+    }
+    // The scan must actually see the addresses, or the check below proves nothing.
+    expect(found.size).toBeGreaterThanOrEqual(4);
+    expect([...found].sort()).toEqual([...found].sort().filter((host) => policy.includes(host)));
+    // Plain http would be readable on the way: every address is https.
+    for (const folder of folders) {
+      for (const file of readdirSync(join(ROOT, folder)).filter((name) => name.endsWith(".ts"))) {
+        expect(readFileSync(join(ROOT, folder, file), "utf-8"), file).not.toMatch(/["'`]http:\/\//);
+      }
+    }
   });
 
   it("does not request the tabs permission", () => {
