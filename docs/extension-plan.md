@@ -577,3 +577,11 @@ Accessibility: focus moves to each step's heading, every control has a label and
 
 Verified: unit tests for every step, the summary, that nothing offers a skip or a second run, the intro's one-time play, the animation rules in the CSS, persistence and the migration rule, and an accessibility sweep of all five steps; the live panel check drives it in real Chrome (the intro mid-play, fully visible after it, focus, no horizontal scroll at 400 and 320 px, light and dark screenshots).
 Not verified: Chrome's real permission prompts from inside the set-up, and the real side panel on a first install (the live check opens the panel page as a tab).
+
+### The key box: clearer results
+
+The message under the key box is a success (green, with a tick) only when the key is saved and working, and an error (red, with a cross) otherwise: a mistyped key, an empty box, a declined Chrome prompt, a key Google rejects, a key kept but not usable yet (allowance used up, service not enabled), or an unreachable Google.
+The tick and cross are decoration; the words carry the meaning, and the message is still announced politely.
+"Save and check key" is disabled while the box holds the key that is already saved and working, since pressing it would change nothing; it enables again when the text changes, after the key is removed, or after a check that did not succeed.
+Because a button that disables itself drops keyboard focus, focus moves to the key box when that happens.
+The green and red are checked for contrast in both themes.

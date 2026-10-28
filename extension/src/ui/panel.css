@@ -16,6 +16,7 @@
   --nav: #6cb6ff;
   --danger: #ff6f5e;
   --danger-ink: #1a0a08;
+  --ok: #5ddc8a;
   --focus: #f4f3ee;
 }
 
@@ -34,6 +35,7 @@
     --nav: #0b5cad;
     --danger: #b3261e;
     --danger-ink: #ffffff;
+    --ok: #146c2e;
     --focus: #1a1916;
   }
 }
@@ -588,6 +590,16 @@ a.link-button {
 
 .key-message {
   color: var(--text);
+}
+
+.key-message.ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.key-message.error {
+  color: var(--danger);
+  font-weight: 600;
 }
 
 /* Only the title of the step that must not be skipped is filled yellow, like a highlighter. */

@@ -547,7 +547,7 @@ describe("the YouTube key help in Settings", () => {
     const { root } = await openSettings();
     byText(root, "button", "Save and check key").click();
     await flush();
-    expect(root.querySelector("#youtube-key-message")?.textContent).toBe("Paste your key into the box first.");
+    expect(root.querySelector("#youtube-key-message")?.textContent).toContain("Paste your key into the box first.");
   });
 
   it("offers Remove only when a key is saved, and removing it says so", async () => {
@@ -578,5 +578,132 @@ describe("the YouTube key help in Settings", () => {
     byText(root, "button", "Paste from clipboard").click();
     await flush();
     expect(root.querySelector("#youtube-key-message")?.textContent).toContain("Ctrl+V");
+  });
+});
+
+describe("the key message shows success or error", () => {
+  const KEY = "AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q";
+  const settings = async (options: Parameters<typeof fakeEnv>[0] = {}) => {
+    const ui = await mount(options);
+    byText(ui.root, "button", "Settings").click();
+    await flush();
+    return ui;
+  };
+  const message = (root: HTMLElement) => root.querySelector<HTMLElement>("#youtube-key-message") as HTMLElement;
+  const save = async (root: HTMLElement, text = KEY) => {
+    const box = root.querySelector<HTMLInputElement>("#youtube-key") as HTMLInputElement;
+    box.value = text;
+    box.dispatchEvent(new Event("input", { bubbles: true }));
+    byText(root, "button", "Save and check key").click();
+    await flush();
+  };
+
+  it("is a success, with a tick, when the key is saved and working", async () => {
+    const { root } = await settings();
+    await save(root);
+    expect(message(root).classList.contains("ok")).toBe(true);
+    expect(message(root).dataset["tone"]).toBe("ok");
+    expect(message(root).querySelector(".tone-mark")?.textContent).toBe("✓ ");
+    expect(message(root).textContent).toContain("Key saved and working");
+  });
+
+  it.each([
+    [
+      "Google rejects it",
+      { api: { checkYoutubeKey: () => Promise.resolve({ ok: true as const, data: "key" as const }) } },
+    ],
+    [
+      "the allowance is used up",
+      { api: { checkYoutubeKey: () => Promise.resolve({ ok: true as const, data: "quota" as const }) } },
+    ],
+    [
+      "the service is not enabled",
+      { api: { checkYoutubeKey: () => Promise.resolve({ ok: true as const, data: "not-enabled" as const }) } },
+    ],
+  ])("is an error, with a cross, when %s", async (_name, options) => {
+    const { root } = await settings(options);
+    await save(root);
+    expect(message(root).classList.contains("error")).toBe(true);
+    expect(message(root).classList.contains("ok")).toBe(false);
+    expect(message(root).querySelector(".tone-mark")?.textContent).toBe("✗ ");
+  });
+
+  it("is an error for a key of the wrong shape, an empty box, and a declined prompt", async () => {
+    const { root, env } = await settings();
+    await save(root, "hello");
+    expect(message(root).classList.contains("error")).toBe(true);
+    await save(root, "");
+    expect(message(root).classList.contains("error")).toBe(true);
+    env.hosts.allow = false;
+    await save(root);
+    expect(message(root).classList.contains("error")).toBe(true);
+  });
+
+  it("is neither while checking, and neither after the key is removed", async () => {
+    const { root } = await settings({ youtubeKey: KEY, hosts: { youtubeApi: true } });
+    byText(root, "button", "Remove my key").click();
+    await flush();
+    expect(message(root).dataset["tone"]).toBe("");
+    expect(message(root).querySelector(".tone-mark")).toBeNull();
+  });
+});
+
+describe("Save and check key waits for a different key", () => {
+  const KEY = "AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q";
+  const OTHER = "AIzaSyZ9y8X7w6V5u4T3s2R1q0P9o8N7m6L5k4J";
+  const setup = async (options: Parameters<typeof fakeEnv>[0] = {}) => {
+    const ui = await mount(options);
+    byText(ui.root, "button", "Settings").click();
+    await flush();
+    const box = () => ui.root.querySelector<HTMLInputElement>("#youtube-key") as HTMLInputElement;
+    const saveButton = () => byText(ui.root, "button", "Save and check key") as HTMLButtonElement;
+    const type = (text: string) => {
+      box().value = text;
+      box().dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    return { ...ui, box, saveButton, type };
+  };
+
+  it("is enabled for a new key, disabled once that key is saved and working, and enabled again when it changes", async () => {
+    const { saveButton, type } = await setup();
+    type(KEY);
+    expect(saveButton().disabled).toBe(false);
+    saveButton().click();
+    await flush();
+    expect(saveButton().disabled).toBe(true);
+    type(OTHER);
+    expect(saveButton().disabled).toBe(false);
+    type(`  ${KEY}  `);
+    expect(saveButton().disabled).toBe(true);
+  });
+
+  it("stays enabled after a key that failed, so the user can try it again", async () => {
+    const { saveButton, type } = await setup({
+      api: { checkYoutubeKey: () => Promise.resolve({ ok: true as const, data: "quota" as const }) },
+    });
+    type(KEY);
+    saveButton().click();
+    await flush();
+    expect(saveButton().disabled).toBe(false);
+  });
+
+  it("is enabled again after the key is removed", async () => {
+    const { saveButton, type, root } = await setup();
+    type(KEY);
+    saveButton().click();
+    await flush();
+    byText(root, "button", "Remove my key").click();
+    await flush();
+    expect(saveButton().disabled).toBe(false);
+  });
+
+  it("moves keyboard focus to the key box when Save becomes disabled, instead of losing it", async () => {
+    const { saveButton, type, box } = await setup();
+    type(KEY);
+    saveButton().focus();
+    saveButton().click();
+    await flush();
+    expect(saveButton().disabled).toBe(true);
+    expect(document.activeElement).toBe(box());
   });
 });

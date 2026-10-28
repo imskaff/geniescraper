@@ -55,6 +55,10 @@ export class PanelView {
   private readonly expanded = new Map<string, boolean>();
   /** What the user has typed into the key box, kept across re-renders and never stored by the view. */
   private keyDraft = "";
+
+  private keyBusy(): boolean {
+    return this.panel.state.youtubeKey.busy;
+  }
   /** The welcome's intro has played; later redraws show it still. */
   private welcomePlayed = false;
 
@@ -212,7 +216,11 @@ export class PanelView {
     } else if (headingHadFocus) {
       main.querySelector<HTMLElement>("h2")?.focus();
     } else if (focusKey) {
-      this.root.querySelector<HTMLElement>(`[data-key="${focusKey}"]`)?.focus();
+      const target = this.root.querySelector<HTMLElement>(`[data-key="${focusKey}"]`);
+      // A button that has just become disabled cannot hold focus: hand it to the key box next to it.
+      if (target instanceof HTMLButtonElement && target.disabled && focusKey === "youtube-key-save") {
+        this.root.querySelector<HTMLElement>("#youtube-key")?.focus();
+      } else target?.focus();
     }
   }
 
@@ -952,6 +960,9 @@ export class PanelView {
       on: {
         input: (event) => {
           this.keyDraft = (event.target as HTMLInputElement).value;
+          // Pressing Save for a key that is already saved and working changes nothing, so it waits for a different one.
+          const save = this.root.querySelector<HTMLButtonElement>('[data-key="youtube-key-save"]');
+          if (save) save.disabled = this.keyBusy() || this.panel.keyIsCurrent(this.keyDraft);
         },
       },
     });
@@ -988,7 +999,7 @@ export class PanelView {
           "primary",
           "youtube-key-save",
           () => void this.panel.saveYoutubeKey(input.value),
-          busy,
+          busy || this.panel.keyIsCurrent(this.keyDraft),
         ),
         this.button(
           "Paste from clipboard",
@@ -1008,11 +1019,24 @@ export class PanelView {
         text: state.youtubeKey.saved ? "A key is saved in this browser." : "No key is saved.",
         attrs: { "data-key": "youtube-key-state" },
       }),
-      el("p", {
-        class: message ? "help key-message" : "help",
-        text: message,
-        attrs: { id: "youtube-key-message", "aria-live": "polite" },
-      }),
+      el(
+        "p",
+        {
+          class: message ? `help key-message ${state.youtubeKey.tone}`.trim() : "help",
+          attrs: { id: "youtube-key-message", "aria-live": "polite", "data-tone": state.youtubeKey.tone },
+        },
+        // The mark is for sighted users; the words carry the meaning for everyone else.
+        ...(message && state.youtubeKey.tone
+          ? [
+              el("span", {
+                class: "tone-mark",
+                text: state.youtubeKey.tone === "ok" ? "✓ " : "✗ ",
+                attrs: { "aria-hidden": "true" },
+              }),
+            ]
+          : []),
+        message,
+      ),
       el(
         "p",
         { class: "help" },

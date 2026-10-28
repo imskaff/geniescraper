@@ -64,7 +64,7 @@ export interface PanelState {
   /** Which optional hosts the user has granted, as Chrome reports it. */
   hosts: Record<OptionalHost, boolean>;
   /** The user's own YouTube key: whether one is saved (never the key itself), and how the last attempt went. */
-  youtubeKey: { saved: boolean; message: string; busy: boolean };
+  youtubeKey: { saved: boolean; message: string; tone: "" | "ok" | "error"; busy: boolean };
   /** What became of each track's YouTube look-up, shown in its credits so a missing link is never a mystery. */
   youtubeNotes: Record<number, string>;
   /** Seconds left before the finished screen returns to the main menu, or null when no countdown runs. */
@@ -182,7 +182,7 @@ export class PanelController {
       paste,
       pasteIndex,
       hosts,
-      youtubeKey: { saved: keySaved, message: "", busy: false },
+      youtubeKey: { saved: keySaved, message: "", tone: "", busy: false },
       youtubeNotes: {},
       doneCountdown: null,
       errorSeq: 0,
@@ -275,6 +275,14 @@ export class PanelController {
 
   // ── the user's own YouTube key ──────────────────────────────────────
 
+  /** The key that last checked out as saved and working. Kept here, never in the state the view renders from. */
+  private workingKey = "";
+
+  /** True when this text is the key already saved and working, so pressing Save again would change nothing. */
+  keyIsCurrent(raw: string): boolean {
+    return this.workingKey !== "" && cleanKey(raw) === this.workingKey;
+  }
+
   private setKeyState(patch: Partial<PanelState["youtubeKey"]>): void {
     this.update({ youtubeKey: { ...this.current.youtubeKey, ...patch } });
   }
@@ -291,16 +299,18 @@ export class PanelController {
         message: key
           ? "That does not look like a YouTube key. A key starts with AIza and is 39 letters, digits, dashes and underscores long. Copy it again from Google's page, using its copy button."
           : "Paste your key into the box first.",
+        tone: "error",
       });
       return;
     }
     const asked = this.env.hosts.request("youtubeApi");
-    this.setKeyState({ busy: true, message: "Checking your key with Google…" });
+    this.setKeyState({ busy: true, message: "Checking your key with Google…", tone: "" });
     const granted = await asked.catch(() => false);
     await this.refreshHosts();
     if (!granted) {
       this.setKeyState({
         busy: false,
+        tone: "error",
         message:
           "Chrome needs your OK before the extension can talk to Google's YouTube service. Press Save again and choose Allow.",
       });
@@ -314,22 +324,26 @@ export class PanelController {
       await saveYoutubeKey(this.env.secrets, key).catch(() => undefined);
     }
     const kept = outcome === "ok" || outcome === "quota" || outcome === "not-enabled";
+    this.workingKey = outcome === "ok" ? key : "";
     this.setKeyState({
       saved: kept ? true : this.current.youtubeKey.saved,
       busy: false,
       message: KEY_CHECK_MESSAGES[outcome],
+      // Only a key that is saved and working is a success; one kept for later (quota, service off) still needs action.
+      tone: outcome === "ok" ? "ok" : "error",
     });
   }
 
   /** Show a message under the key box (the view uses it for things only it can know, such as a refused clipboard). */
   noteKeyMessage(message: string): void {
-    this.setKeyState({ message });
+    this.setKeyState({ message, tone: "error" });
   }
 
   /** Forget the key and take back the permission for Google's service. */
   async removeYoutubeKey(): Promise<void> {
     await saveYoutubeKey(this.env.secrets, "").catch(() => undefined);
-    this.setKeyState({ saved: false, message: "Your key was removed from this browser." });
+    this.workingKey = "";
+    this.setKeyState({ saved: false, message: "Your key was removed from this browser.", tone: "" });
     await this.env.hosts.remove("youtubeApi").catch(() => false);
     await this.refreshHosts();
   }

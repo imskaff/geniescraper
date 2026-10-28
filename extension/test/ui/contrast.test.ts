@@ -38,6 +38,8 @@ const PAIRS: readonly [string, string, number, string][] = [
   ["accent-ink", "accent-hover", 4.5, "primary button text on hover"],
   ["danger", "bg", 4.5, "error text"],
   ["danger", "surface", 4.5, "error text on cards"],
+  ["ok", "bg", 4.5, "success text"],
+  ["ok", "surface", 4.5, "success text on cards"],
   ["link", "bg", 4.5, "links"],
   ["link", "surface", 4.5, "links on cards"],
   ["nav", "bg", 4.5, "the main menu button"],
