@@ -137,12 +137,6 @@ export function buildSong(album: AlbumInfo, result: Pick<TrackResult, "url">, sc
   };
 }
 
-/** Seconds the finished screen waits before returning to the main menu, as the desktop app does. */
-export const DONE_SECONDS = 30;
-
-/** Seconds the finished screen waits before starting the next track by itself, when one is waiting. */
-export const NEXT_TRACK_SECONDS = 15;
-
 /** The longest Start pasting waits for a YouTube link before starting without it. */
 export const YOUTUBE_WAIT_MS = 8000;
 
@@ -587,7 +581,12 @@ export class PanelController {
     }
     const normalised = normaliseSettings(settings);
     this.update({ settings: normalised });
-    if (!normalised.autoReturn) this.cancelCountdown();
+    // Each countdown stops when its own setting says so; the other one is none of this change's business.
+    if (
+      (!normalised.autoReturn && this.current.doneCountdown !== null) ||
+      (normalised.nextTrackSeconds === 0 && this.current.nextCountdown !== null)
+    )
+      this.cancelCountdown();
     try {
       await saveSettings(this.env.stores, normalised);
     } catch {
@@ -606,7 +605,8 @@ export class PanelController {
     // away (leaving wipes the credits). When it is not known which track was pasted, nothing is assumed.
     else if (!wasFinished && this.current.settings.autoReturn && this.finishedLastTrack()) this.startCountdown();
     // Another track with credits is waiting: press its button for the user after a short pause, once, on arrival.
-    else if (!wasFinished && this.nextPastable() !== null) this.startNextCountdown();
+    else if (!wasFinished && this.current.settings.nextTrackSeconds > 0 && this.nextPastable() !== null)
+      this.startNextCountdown();
   }
 
   /** Tracks the user has started pasting in this album, so 'last track' does not depend on the order they chose. */
@@ -837,13 +837,13 @@ export class PanelController {
   private startCountdown(): void {
     // The pause flag is left as the view last set it: the pointer may already be over the panel.
     // Only one countdown runs at a time: starting one takes the other away.
-    this.update({ doneCountdown: DONE_SECONDS, nextCountdown: null });
+    this.update({ doneCountdown: this.current.settings.returnSeconds, nextCountdown: null });
     this.scheduleTick();
   }
 
   /** The same hold for the next track: a countdown that starts it unless the user gets there first. */
   private startNextCountdown(): void {
-    this.update({ nextCountdown: NEXT_TRACK_SECONDS, doneCountdown: null });
+    this.update({ nextCountdown: this.current.settings.nextTrackSeconds, doneCountdown: null });
     this.scheduleTick();
   }
 

@@ -253,6 +253,26 @@ describe("pasting settings", () => {
     await flush();
     expect(panel.state.settings.autocompleteWaitSeconds).toBe(3);
   });
+
+  it("saves the seconds for the two countdowns, clamped, and shows what is kept", async () => {
+    const { root, panel, env } = await onSettings();
+    const back = $(root, "#setting-returnSeconds") as HTMLInputElement;
+    const next = $(root, "#setting-nextTrackSeconds") as HTMLInputElement;
+    expect([back.value, next.value]).toEqual(["30", "15"]);
+
+    back.value = "45";
+    back.dispatchEvent(new Event("change", { bubbles: true }));
+    next.value = "0";
+    next.dispatchEvent(new Event("change", { bubbles: true }));
+    await flush();
+    expect(panel.state.settings).toMatchObject({ returnSeconds: 45, nextTrackSeconds: 0 });
+    expect(env.settingsStore.data.get("settings")).toMatchObject({ returnSeconds: 45, nextTrackSeconds: 0 });
+
+    back.value = "1";
+    back.dispatchEvent(new Event("change", { bubbles: true }));
+    await flush();
+    expect(panel.state.settings.returnSeconds).toBe(5);
+  });
 });
 
 describe("the paste error box", () => {

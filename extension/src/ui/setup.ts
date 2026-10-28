@@ -234,7 +234,7 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
             panel,
             state,
             "autoReturn",
-            "Go back to the main menu 30 seconds after the last track",
+            "Go back to the main menu after the last track",
             "Recommended: the next song is one click away. It waits while you are using the panel.",
           ),
         ),

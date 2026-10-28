@@ -114,3 +114,38 @@ describe("parallelReads setting", () => {
     expect(normaliseSettings({ parallelReads: value }).parallelReads).toBe(3);
   });
 });
+
+describe("the countdown settings", () => {
+  it("default to 30 seconds back to the menu and 15 to the next track", () => {
+    expect(DEFAULT_SETTINGS.returnSeconds).toBe(30);
+    expect(DEFAULT_SETTINGS.nextTrackSeconds).toBe(15);
+  });
+
+  it.each([5, 20, 120])("accepts %i seconds for both", (value) => {
+    const settings = normaliseSettings({ returnSeconds: value, nextTrackSeconds: value });
+    expect([settings.returnSeconds, settings.nextTrackSeconds]).toEqual([value, value]);
+  });
+
+  it.each([
+    [1, 5],
+    [4, 5],
+    [500, 120],
+    [12.6, 13],
+  ])("keeps %j inside the range as %i", (value, expected) => {
+    expect(normaliseSettings({ returnSeconds: value }).returnSeconds).toBe(expected);
+    expect(normaliseSettings({ nextTrackSeconds: value }).nextTrackSeconds).toBe(expected);
+  });
+
+  it("lets the next track wait for the user with zero, but never the menu countdown", () => {
+    expect(normaliseSettings({ nextTrackSeconds: 0 }).nextTrackSeconds).toBe(0);
+    expect(normaliseSettings({ returnSeconds: 0 }).returnSeconds).toBe(5);
+  });
+
+  it.each(["20", null, undefined, Number.NaN, Number.POSITIVE_INFINITY, {}])(
+    "falls back to the defaults for %j",
+    (value) => {
+      const settings = normaliseSettings({ returnSeconds: value, nextTrackSeconds: value });
+      expect([settings.returnSeconds, settings.nextTrackSeconds]).toEqual([30, 15]);
+    },
+  );
+});

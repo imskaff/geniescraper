@@ -7,7 +7,7 @@ import { shownTrack, type TrackResult } from "../shared/session";
 import { trackHealth, type Health, type HealthLevel } from "../core/trackHealth";
 import { STEP_LABELS, instruction } from "../core/paste";
 import type { OptionalHost } from "../lookups/http";
-import { HOTKEY_CHOICES, PARALLEL_CHOICES, WAIT_RANGE } from "../shared/settings";
+import { COUNTDOWN_RANGE, HOTKEY_CHOICES, PARALLEL_CHOICES, WAIT_RANGE } from "../shared/settings";
 import { youtubeSearchUrl } from "../core/youtubeLink";
 import { el } from "./dom";
 import { renderSetup } from "./setup";
@@ -900,6 +900,31 @@ export class PanelView {
     });
     autoReturn.checked = settings.autoReturn;
 
+    // A whole number of seconds; the model keeps it in range, so an out-of-range entry snaps back on the next draw.
+    const seconds = (key: "returnSeconds" | "nextTrackSeconds", id: string, min: number): HTMLInputElement => {
+      const input = el("input", {
+        class: "field",
+        attrs: {
+          id,
+          "data-key": id,
+          type: "number",
+          min: String(min),
+          max: String(COUNTDOWN_RANGE.max),
+          step: "1",
+          "aria-describedby": `${id}-help`,
+        },
+        on: {
+          change: (event) => {
+            void this.panel.setSetting(key, Number((event.target as HTMLInputElement).value));
+          },
+        },
+      });
+      input.value = String(settings[key]);
+      return input;
+    };
+    const returnBox = seconds("returnSeconds", "setting-returnSeconds", COUNTDOWN_RANGE.min);
+    const nextBox = seconds("nextTrackSeconds", "setting-nextTrackSeconds", 0);
+
     const wait = el("input", {
       class: "field",
       attrs: {
@@ -939,8 +964,30 @@ export class PanelView {
         "label",
         { class: "check" },
         autoReturn,
-        el("span", { text: "Go back to the main menu 30 seconds after the last track" }),
+        el("span", { text: "Go back to the main menu after the last track" }),
       ),
+      el(
+        "div",
+        { class: "stack" },
+        el("label", { text: "Seconds before going back to the main menu", attrs: { for: "setting-returnSeconds" } }),
+        returnBox,
+      ),
+      el("p", {
+        class: "help",
+        text: `Between ${String(COUNTDOWN_RANGE.min)} and ${String(COUNTDOWN_RANGE.max)}. It waits while you are using the panel.`,
+        attrs: { id: "setting-returnSeconds-help" },
+      }),
+      el(
+        "div",
+        { class: "stack" },
+        el("label", { text: "Seconds before pasting the next track", attrs: { for: "setting-nextTrackSeconds" } }),
+        nextBox,
+      ),
+      el("p", {
+        class: "help",
+        text: `Between ${String(COUNTDOWN_RANGE.min)} and ${String(COUNTDOWN_RANGE.max)}, or 0 to wait for you to press the button.`,
+        attrs: { id: "setting-nextTrackSeconds-help" },
+      }),
       el(
         "div",
         { class: "stack" },

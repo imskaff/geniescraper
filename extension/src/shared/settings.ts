@@ -21,6 +21,10 @@ export interface Settings {
   parallelReads: number;
   /** Go back to the main menu a few seconds after the last step, as the desktop app does. */
   autoReturn: boolean;
+  /** Seconds the finished screen waits before going back to the main menu. */
+  returnSeconds: number;
+  /** Seconds the finished screen waits before starting the next track by itself; 0 waits for the user. */
+  nextTrackSeconds: number;
   /** The first-time set-up has been seen (finished or skipped). */
   onboarded: boolean;
 }
@@ -36,6 +40,9 @@ export const PARALLEL_CHOICES = [1, 2, 3, 5, 0] as const;
 
 export const WAIT_RANGE = { min: 0.2, max: 3 } as const;
 
+/** Whole seconds a countdown may hold for: long enough to look at the Genius form, short enough to stay useful. */
+export const COUNTDOWN_RANGE = { min: 5, max: 120 } as const;
+
 export const DEFAULT_SETTINGS: Readonly<Settings> = {
   scrapeCore: true,
   scrapeAdditional: true,
@@ -48,6 +55,8 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   autocompleteWaitSeconds: 0.6,
   parallelReads: 3,
   autoReturn: true,
+  returnSeconds: 30,
+  nextTrackSeconds: 15,
   onboarded: false,
 };
 
@@ -80,6 +89,15 @@ export function normaliseSettings(raw: unknown): Settings {
       ? Math.min(WAIT_RANGE.max, Math.max(WAIT_RANGE.min, wait))
       : DEFAULT_SETTINGS.autocompleteWaitSeconds;
 
+  // Whole seconds inside the range; anything that is not a finite number is the default. Zero is allowed only where
+  // it means "do not count down" (the next track), never for the return to the menu.
+  const seconds = (key: "returnSeconds" | "nextTrackSeconds", allowZero: boolean): number => {
+    const value = source[key];
+    if (typeof value !== "number" || !Number.isFinite(value)) return DEFAULT_SETTINGS[key];
+    if (allowZero && value === 0) return 0;
+    return Math.min(COUNTDOWN_RANGE.max, Math.max(COUNTDOWN_RANGE.min, Math.round(value)));
+  };
+
   const reads = source["parallelReads"];
   const parallelReads =
     typeof reads === "number" && (PARALLEL_CHOICES as readonly number[]).includes(reads)
@@ -105,6 +123,8 @@ export function normaliseSettings(raw: unknown): Settings {
     autocompleteWaitSeconds: waitSeconds,
     parallelReads,
     autoReturn: flag("autoReturn"),
+    returnSeconds: seconds("returnSeconds", false),
+    nextTrackSeconds: seconds("nextTrackSeconds", true),
     onboarded,
   };
 }

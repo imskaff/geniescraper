@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PageScrape, Result } from "../../src/shared/messages";
-import { DONE_SECONDS, NEXT_TRACK_SECONDS, PanelController } from "../../src/ui/controller";
+import { PanelController } from "../../src/ui/controller";
+import { DEFAULT_SETTINGS } from "../../src/shared/settings";
 import { PanelView } from "../../src/ui/view";
 import { ALBUM, SINGLE, deferred, fakeEnv, scrapeFor } from "./fakes";
 
@@ -288,7 +289,7 @@ describe("the finished screen", () => {
   it("offers the next track with credits, as the main action", async () => {
     const { root, env } = await toDone();
     const next = button(root, "Paste next track");
-    expect(next.textContent).toBe(`Paste next track: Three (${String(NEXT_TRACK_SECONDS)}s)`);
+    expect(next.textContent).toBe(`Paste next track: Three (${String(DEFAULT_SETTINGS.nextTrackSeconds)}s)`);
     expect(next.classList.contains("primary")).toBe(true);
     next.click();
     await flush();
@@ -394,7 +395,7 @@ describe("returning to the main menu after the last step", () => {
 
   it("starts a countdown on the finished screen and shows it on the main menu button", async () => {
     const { root } = await timed();
-    expect(DONE_SECONDS).toBe(30);
+    expect(DEFAULT_SETTINGS.returnSeconds).toBe(30);
     expect(button(root, "Back to main menu").textContent).toBe("Back to main menu (30s)");
     await tick(3);
     expect(button(root, "Back to main menu").textContent).toBe("Back to main menu (27s)");
@@ -466,7 +467,7 @@ describe("returning to the main menu after the last step", () => {
   it("starts the next track by itself after fifteen seconds, then the menu countdown after the last one", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     const { root, panel, env } = await toDone();
-    expect(NEXT_TRACK_SECONDS).toBe(15);
+    expect(DEFAULT_SETTINGS.nextTrackSeconds).toBe(15);
     expect(button(root, "Paste next track").textContent).toBe("Paste next track: Three (15s)");
     await tick(3);
     expect(button(root, "Paste next track").textContent).toBe("Paste next track: Three (12s)");
@@ -480,6 +481,46 @@ describe("returning to the main menu after the last step", () => {
     const state = panel.state.paste;
     panel.setPaste({ ...state, position: state.queue.length });
     expect(panel.state.doneCountdown).toBe(30);
+    expect(panel.state.nextCountdown).toBeNull();
+  });
+
+  it("counts the next track down from the number of seconds in the settings", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { root, panel } = await toDone({ settings: { nextTrackSeconds: 7 } });
+    expect(button(root, "Paste next track").textContent).toBe("Paste next track: Three (7s)");
+    await tick(6);
+    expect(panel.state.nextCountdown).toBe(1);
+    await tick(1);
+    await flush();
+    expect($(root, "h2").textContent).toBe("Paste into Genius");
+  });
+
+  it("returns to the main menu after the number of seconds in the settings", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { root, panel } = await toDone({ settings: { returnSeconds: 12 } }, 2, [0]);
+    expect(panel.state.doneCountdown).toBe(12);
+    expect(button(root, "Back to main menu").textContent).toBe("Back to main menu (12s)");
+    await tick(12);
+    await flush();
+    expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
+  });
+
+  it("does not start the next track by itself when its seconds are zero, and keeps the button", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { root, panel } = await toDone({ settings: { nextTrackSeconds: 0 } });
+    expect(panel.state.nextCountdown).toBeNull();
+    expect(button(root, "Paste next track").textContent).toBe("Paste next track: Three");
+    await tick(200);
+    expect($(root, "h2").textContent).toBe("All credits entered");
+  });
+
+  it("stops a running next-track countdown when its seconds are set to zero, and leaves the other one alone", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { panel } = await toDone();
+    expect(panel.state.nextCountdown).toBe(15);
+    await panel.setSetting("autoReturn", false);
+    expect(panel.state.nextCountdown).toBe(15);
+    await panel.setSetting("nextTrackSeconds", 0);
     expect(panel.state.nextCountdown).toBeNull();
   });
 

@@ -734,3 +734,11 @@ Three more of the review's suggestions were done afterwards:
 - **A bad locale file is named.** The package validator reports `_locales/<lang>/messages.json is not valid JSON` instead of crashing with a raw parse error, as it already did for `manifest.json`.
 - **`extension/README.md`** gives set-up, build, check, load-unpacked, permission and packaging steps.
 Still not done: the slow-load warning (credits that did not appear in time versus a track with none).
+
+## 35. The two countdowns are settings
+
+The seconds before the finished screen goes back to the main menu (`returnSeconds`, default 30) and before it starts the next track (`nextTrackSeconds`, default 15) are settings, in "Pasting on Genius" beside the Go-back checkbox.
+- Both are whole seconds from 5 to 120; anything else stored is clamped, and anything that is not a number falls back to the default (`COUNTDOWN_RANGE` in `shared/settings.ts`).
+- `nextTrackSeconds` also accepts 0, which means "do not start it by itself": the button stays, with no countdown. The return to the menu has no zero: the checkbox turns it off.
+- A change applies from the next countdown; setting the next-track seconds to 0 stops one that is running. Turning off the menu return no longer stops a running next-track countdown (it used to cancel both).
+- The label and the first-time set-up no longer say "30 seconds", since the number is now the user's.

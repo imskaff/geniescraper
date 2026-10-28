@@ -444,7 +444,7 @@ describe("settings screen", () => {
       "YouTube link",
       "PNG cover art link",
       "Choose the exact match in Genius's suggestions for me",
-      "Go back to the main menu 30 seconds after the last track",
+      "Go back to the main menu after the last track",
       "Search Deezer for a cover when Apple has none",
       "Find a YouTube link for each track",
       "Show the key",
@@ -453,6 +453,8 @@ describe("settings screen", () => {
     expect([...root.querySelectorAll<HTMLElement>("select, input[type=number]")].map(accessibleName)).toEqual([
       "Key that fills the next step",
       "Key that goes back one step",
+      "Seconds before going back to the main menu",
+      "Seconds before pasting the next track",
       "Wait for suggestions to settle (seconds)",
       "Tracks read at the same time",
     ]);
