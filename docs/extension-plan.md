@@ -873,6 +873,17 @@ The link screen shows them as "Open in your browser"; one press reads that page.
 The page in view is read in place, any other in a hidden window, as `detect` already did.
 The list refreshes when tabs are activated, updated or closed.
 
+### YouTube priority follows Genius's order
+
+Genius ranks the video for a song: music video, then lyric video, then official audio, then the auto-generated upload.
+The lookup used to rank the auto-generated "Artist - Topic" upload above the artist's own audio and skipped lyric videos altogether.
+`scoreAudio` now gives the artist's own audio 2 and the Topic upload 1, and the new `scoreLyric` gives a lyric video on the artist's own channel 3 (the Official Artist badge counts when the title names the artist; remixes, live versions and other songs never do).
+The music video phase is unchanged and still wins.
+The same search results are scored, so no search was added; a Topic upload alone no longer ends the search, so a song whose first search finds only that goes on to the next one, and the request caps in the tests still hold.
+The Python app (`scraper/youtube.py`) has the same rules.
+In the golden set only `sza-sos-t1` changed: its results hold "SZA - SOS (Lyric Video)" on SZA's channel, which by this order beats the audio and the Topic upload it accepted before (the entry was reviewed and updated by hand).
+Not checked live: the saved pages replay all five queries per song, but how often a lyric video turns up in the live top ten is only measured by a live run.
+
 ### Roles the song already has on Genius
 
 Writers and producers were already skipped when the field held the name; additional roles were not: a song with a Vocals row and V in it got a second Vocals row with V.

@@ -14,7 +14,7 @@
 - ⚡ **Fast**: about 5 seconds from link to credits per track, with the next tracks of an album scraped in the background while you paste.
 - 🕵️ **Accurate Extraction**: Playwright with stealth patches reads songwriters, producers, every additional role and the ℗ / © lines from Apple Music albums and songs.
 - 🖼️ **Exact Cover Art**: the 1000×1000 PNG of the exact release you opened, looked up by its Apple Music catalog ID.
-- ▶️ **Official YouTube Link**: the artist's official music video, or the official audio when there is no video.
+- ▶️ **Official YouTube Link**: in Genius's order: the artist's official music video, else the official lyric video, else the official audio, else the auto-generated upload.
 - ⌨️ **Hotkey Assistant**: press `F8` to paste each field into Genius and `F7` to go back; Back and Skip buttons and a clickable step list work with the mouse too.
 - 🤖 **Auto-Tab and Auto-Confirm**: moves between Genius fields and picks the autocomplete suggestion for you, so you rarely touch the keyboard. Both can be switched on or off while pasting.
 - ⚙️ **Settings Everywhere**: a Settings window over any screen; every change applies and saves immediately and is shared by every copy of the app.

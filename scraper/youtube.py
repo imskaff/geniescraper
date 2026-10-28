@@ -36,6 +36,9 @@ _SKIP_KEYWORDS = (
     "teaser",
     "trailer",
 )
+# A lyric video's own words; every other skip word still rules a lyric video out.
+_LYRIC_KEYWORDS = ("lyric video", "lyrics video", "official lyric", "lyrics", "lyric")
+_LYRIC_FILLER = frozenset({"lyric", "lyrics"})
 _AUDIO_INDICATORS = ("official audio", "(audio)", "audio only", "audio stream")
 
 # Description-based MV signals - two separate arrays so they can be weighted differently
@@ -96,7 +99,9 @@ _PLAIN_TITLE_FILLER = frozenset(
 )
 
 
-def _title_matches_song(video_title: str, song_title: str, artist: str) -> bool:
+def _title_matches_song(
+    video_title: str, song_title: str, artist: str, extra_filler: frozenset[str] = frozenset()
+) -> bool:
     """True when the video title is just this song, as a plain upload titles it.
 
     Accepts "Song", "Artist - Song", "Song - Artist" and either with tags such as
@@ -108,7 +113,7 @@ def _title_matches_song(video_title: str, song_title: str, artist: str) -> bool:
     if not core:
         return False
     title = words(video_title)
-    allowed = set(words(song_title)) | set(words(artist)) | _PLAIN_TITLE_FILLER
+    allowed = set(words(song_title)) | set(words(artist)) | _PLAIN_TITLE_FILLER | extra_filler
     return set(core) <= set(title) and all(w in allowed for w in title)
 
 
@@ -169,10 +174,10 @@ def _score_audio(
     official_artist: bool = False,
     snippet: str = "",
 ) -> int:
-    """Phase 1 - find the canonical song upload (Topic channel or artist's own channel).
+    """Phase 1 - find the song's audio, in Genius's order (music video, lyric video, official audio, auto-generated).
 
-     2  - Topic upload: "Artist - Topic" channel or "Provided to YouTube by" (title must match song)
-     1  - artist's official channel with a matching plain title
+     2  - the artist's own channel with a matching plain title (the official audio)
+     1  - Topic upload: "Artist - Topic" channel or "Provided to YouTube by" (title must match song), auto-generated
     -1  - skip (is an MV, wrong title, unrelated channel, or skip-keyword hit)
 
     `official_artist` is YouTube's Official Artist Channel badge. It identifies the
@@ -195,12 +200,32 @@ def _score_audio(
     artist_ch = _is_artist_ch(channel, artist)
     if _is_topic_upload(ch, snippet, artist, artist_ch or official_artist):
         # Topic-channel titles are exactly the song name - require a close match
-        return 2 if _title_matches_song(video_title, song_title, artist) else -1
-
-    if artist_ch or (official_artist and _names_artist(video_title, artist)):
         return 1 if _title_matches_song(video_title, song_title, artist) else -1
 
+    if artist_ch or (official_artist and _names_artist(video_title, artist)):
+        return 2 if _title_matches_song(video_title, song_title, artist) else -1
+
     return -1
+
+
+def _score_lyric(video_title: str, channel: str, artist: str, song_title: str, *, official_artist: bool = False) -> int:
+    """A lyric video, which Genius ranks just below a music video.
+
+     3  - the artist's own channel (or the Official Artist badge, when the title names the artist)
+          uploaded the song with "lyric" or "lyrics" in the title
+    -1  - anything else: other channels, remixes, live versions, other songs
+    """
+    t = video_title.lower()
+    if not any(kw in t for kw in _LYRIC_KEYWORDS):
+        return -1
+    if any(kw in t for kw in _SKIP_KEYWORDS if kw not in _LYRIC_KEYWORDS):
+        return -1
+    if not _sig_present(video_title, song_title):
+        return -1
+    own_channel = _is_artist_ch(channel, artist) or (official_artist and _names_artist(video_title, artist))
+    if not own_channel:
+        return -1
+    return 3 if _title_matches_song(video_title, song_title, artist, _LYRIC_FILLER) else -1
 
 
 def _score_mv(video_title: str, channel: str, artist: str, song_title: str, *, verified: bool = False) -> int:
@@ -392,7 +417,7 @@ async def _search(client: httpx.AsyncClient, query: str) -> list[_Video]:
 
 
 async def _audio_phase(client: httpx.AsyncClient, title: str, artist: str) -> list[_Candidate]:
-    """Phase 1: canonical audio / Topic channel."""
+    """Phase 1: a lyric video (3), the artist's own audio (2) or the Topic upload (1), as scored candidates."""
     candidates: list[_Candidate] = []
     seen: set[str] = set()
     for query in _audio_queries(title, artist):
@@ -400,18 +425,24 @@ async def _audio_phase(client: httpx.AsyncClient, title: str, artist: str) -> li
             if video.id in seen:
                 continue
             seen.add(video.id)
-            score = _score_audio(
-                video.title,
-                video.channel,
-                artist,
-                title,
-                official_artist=video.official_artist,
-                snippet=video.snippet,
+            lyric = _score_lyric(video.title, video.channel, artist, title, official_artist=video.official_artist)
+            score = (
+                lyric
+                if lyric > 0
+                else _score_audio(
+                    video.title,
+                    video.channel,
+                    artist,
+                    title,
+                    official_artist=video.official_artist,
+                    snippet=video.snippet,
+                )
             )
             if score > 0:
                 candidates.append((score, rank, _watch_url(video.id)))
 
-        # Topic-channel hit (score 2) is definitive - skip remaining queries
+        # The artist's own audio or a lyric video outranks the Topic upload, so a Topic upload alone
+        # does not end the search.
         if any(s >= 2 for s, _, _ in candidates):
             break
     return candidates
@@ -475,10 +506,10 @@ def _description_bonus(desc: str) -> int:
 async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
     """Search YouTube for a song. Returns (url, is_music_video).
 
-    Phase 1 - canonical audio:
-      Searches for the plain song, prioritising the "Artist - Topic" auto-channel
-      (title = exactly the song name) then the artist's own channel with a clean
-      title ("Song" or "Artist - Song").  Explicit MV results are excluded here.
+    Phase 1 - lyric video and audio:
+      Searches for the plain song.  A lyric video on the artist's channel ranks
+      first, then the artist's own audio ("Song" or "Artist - Song"), then the
+      auto-generated "Artist - Topic" upload.  Explicit MV results are excluded here.
 
     Phase 2 - official music video:
       Searches specifically for the MV.  VEVO and artist-channel uploads with MV
@@ -487,9 +518,9 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
     The two phases search concurrently, then the descriptions of the candidates
     that need confirming are fetched together.
 
-    Returns the MV URL (is_music_video=True) when Phase 2 succeeds, otherwise
-    the audio URL (is_music_video=False).  Returns ("", False) if neither phase
-    finds a reliable match.
+    Returns, in Genius's order: the MV URL (is_music_video=True) when Phase 2
+    succeeds, otherwise the lyric video, the official audio, or the Topic upload
+    (is_music_video=False).  Returns ("", False) if nothing reliable is found.
     """
     if not title or not artist:
         return "", False
@@ -504,7 +535,7 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
         wanted = [_video_id(u) for _, _, u in mv_candidates[:3]]
         wanted += [_video_id(u) for _, _, u in provisional_mv[:3] if _video_id(u) not in mv_ids]
         wanted += [_video_id(u) for _, _, u in label_mv[:2]]
-        wanted += [_video_id(u) for s, _, u in audio_candidates[:5] if s == 1 and _video_id(u) not in mv_ids]
+        wanted += [_video_id(u) for s, _, u in audio_candidates[:5] if s == 2 and _video_id(u) not in mv_ids]
         descriptions = await _fetch_descriptions(client, list(dict.fromkeys(wanted)))
 
     # ── Description boost for MV candidates ───────────────────────
@@ -530,19 +561,20 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
             mv_candidates.append((score, rank, url))
 
     # ── Audio-to-MV promotion (Phase 1 plain-title hits) ──────────
-    # Artist-channel (score=1) audio hits may not appear in Phase 2
+    # Artist-channel (score=2) audio hits may not appear in Phase 2
     # search results at all; check their descriptions here and
     # reclassify as MV if confirmed.
     mv_ids = {_video_id(u) for _, _, u in mv_candidates}
     for score, rank, url in audio_candidates[:5]:
-        # Topic-channel (score=2) is canonical audio; skip
-        if score != 1 or _video_id(url) in mv_ids or _video_id(url) not in descriptions:
+        # Lyric videos (3) and Topic uploads (1) are not reclassified
+        if score != 2 or _video_id(url) in mv_ids or _video_id(url) not in descriptions:
             continue
         bonus = _description_bonus(descriptions[_video_id(url)])
         if bonus:
-            mv_candidates.append((score + bonus, rank, url))
+            # Scored as it was before audio moved up a point, so an MV it turns out to be ranks the same.
+            mv_candidates.append((score - 1 + bonus, rank, url))
 
-    # MV takes priority; audio is the fallback
+    # MV takes priority; then the lyric video, the official audio and the Topic upload by score
     if mv_candidates:
         mv_candidates.sort(key=lambda x: (-x[0], x[1]))
         return mv_candidates[0][2], True
