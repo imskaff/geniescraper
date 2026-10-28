@@ -493,6 +493,11 @@ describe("the YouTube key help in Settings", () => {
       expect(a.rel).toBe("noopener noreferrer");
     }
     expect(root.textContent).toContain("starts with AIza");
+    const restrict = root.querySelectorAll(".how-to > li")[2]?.textContent ?? "";
+    expect(restrict).toContain("Restrict key");
+    expect(restrict).toContain("YouTube Data API v3");
+    expect(restrict).toContain("bottom of the list");
+    expect(restrict).toContain("Don't restrict key");
     expect(root.querySelector('a[href^="https://developers.google.com/youtube/v3/"]')).not.toBeNull();
   });
 

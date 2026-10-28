@@ -897,7 +897,7 @@ export class PanelView {
       ),
       step(
         "Create your key.",
-        "Press + Create credentials, then choose API key. A box shows your key: a long text that starts with AIza. Press the copy icon next to it.",
+        "Press + Create credentials, then choose API key. Under API restrictions choose Restrict key, open the list, and tick only YouTube Data API v3 (it is at the bottom of the list; you can also type YouTube in the list's search box). Press OK, then Create. If you are unsure, choosing Don't restrict key also works. A box then shows your key: a long text that starts with AIza. Press the copy icon next to it.",
         link("Open step 3 in Google", "https://console.cloud.google.com/apis/credentials"),
       ),
       step(
@@ -905,8 +905,8 @@ export class PanelView {
         "Come back to this panel, click the box below and press Ctrl+V (Cmd+V on a Mac), or press Paste from clipboard. Then press Save and check key. You will see whether Google accepted it.",
       ),
       step(
-        "Optional, for safety.",
-        "On Google's key page you can press Restrict key and choose YouTube Data API v3, so the key cannot be used for anything else. Never share your key with anyone.",
+        "Keep it private.",
+        "Never share your key or post it online. If it ever leaks, delete it on Google's Credentials page and create a new one.",
       ),
     );
 
