@@ -15,7 +15,8 @@
 // could be a save, and discards the form by reloading the page at the end.
 //
 // The page used is a song you created (edit it freely); change SONG_URL to one of yours if you run this yourself.
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { connect, findServiceWorker, launchChromium, sleep, waitUntilReady } from "./lib/cdp.mjs";
@@ -55,7 +56,17 @@ const words = (text) =>
       .match(/[\p{L}\p{N}]+/gu) ?? []
   ).join(" ");
 
-const browser = launchChromium({ chromePath, dist: join(root, "dist"), port: 9337, profileDir });
+// A profile that has run this extension before keeps its service worker script cached under the same version, so a
+// rebuilt extension can silently run the old worker. A throwaway copy of the build with a version of its own forces a
+// fresh one, and nothing in the profile has to be deleted.
+const loaded = join(mkdtempSync(join(tmpdir(), "geniescraper-live-dist-")), "dist");
+cpSync(join(root, "dist"), loaded, { recursive: true });
+const manifestFile = join(loaded, "manifest.json");
+const manifest = JSON.parse(readFileSync(manifestFile, "utf-8"));
+manifest.version = `${String(manifest.version).split(".").slice(0, 3).join(".")}.${String(Math.floor(Date.now() / 60000) % 65535)}`;
+writeFileSync(manifestFile, JSON.stringify(manifest));
+
+const browser = launchChromium({ chromePath, dist: loaded, port: 9337, profileDir });
 let worker;
 let panel;
 let genius;
@@ -112,6 +123,22 @@ try {
   await gEval("[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Edit Metadata').click()");
   await gUntil("!!document.querySelector('form[aria-label=\"Edit Song Metadata Form\"]')", "the edit form");
   check("the edit form is open", true);
+
+  // A real song already has credits; they are not the run's doing, so note them before it starts.
+  const before = await gEval(`(() => {
+    const form = document.querySelector('form[aria-label="Edit Song Metadata Form"]');
+    const chips = (box) => [...box.querySelectorAll('[class*="multiValue"]')].map((c) => c.textContent.trim());
+    const field = (label) => [...form.querySelectorAll('label')].find((l) => (l.querySelector('span')?.textContent || '').replace(/\\s+/g, ' ').replace(/\\*$/, '').trim() === label);
+    const note = document.querySelector('[data-testid="custom-performances-expander"]')?.parentElement?.querySelector('p');
+    return {
+      writer: chips(field('Writer')),
+      producer: chips(field('Producer')),
+      roles: Number(note?.textContent.match(/\\d+/)?.[0] ?? 0),
+    };
+  })()`);
+  console.log(
+    `      already on the song: ${String(before.writer.length)} writers, ${String(before.producer.length)} producers, ${String(before.roles)} additional roles`,
+  );
 
   // ── the panel, in its own window so the Genius tab stays the one in front of the user ──
   let panelWindowId = 0;
@@ -185,6 +212,7 @@ try {
   };
 
   const skipped = [];
+  const problems = [];
   const filled = [];
   let presses = 0;
 
@@ -208,7 +236,15 @@ try {
     while (Date.now() < deadline) {
       const now = await position();
       if (now >= total || now >= start + by) return true;
-      if (await isPaused().catch(() => false)) return false;
+      if (await isPaused().catch(() => false)) {
+        const problem = (await pText("#alert")) ?? "";
+        if (!problem) return false;
+        // A paused run with a problem message: record it, skip that step, and carry on, so the rest is still checked.
+        problems.push(`${(await pText(".step .value")) ?? ""}: ${problem}`);
+        await pClick("Skip");
+        await resume();
+        continue;
+      }
       if (((await pText("#alert")) ?? "").length > 0 || ((await pText(".step + p")) ?? "").includes("Choose ")) {
         // Genius had no exact match: the run waits for the user, who here skips the field.
         skipped.push((await pText(".step .value")) ?? "");
@@ -224,10 +260,19 @@ try {
     await pUntil("!!document.querySelector('[data-key=\"auto-pause\"]')", "the run to be going again", 15000);
   };
   const runAuto = async () => {
-    check(
-      "the run starts by itself, with Pause on screen",
-      await pUntil("!!document.querySelector('[data-key=\"auto-pause\"]')", "Pause", 20000),
-    );
+    const started = await pUntil("!!document.querySelector('[data-key=\"auto-pause\"]')", "Pause", 20000);
+    check("the run starts by itself, with Pause on screen", started);
+    if (!started) {
+      // Say what the panel and the worker hold, so a failure here can be understood without another run.
+      const text = await panel.evaluate("document.querySelector('main')?.innerText ?? document.body.innerText");
+      const held = await stateInStorage();
+      console.log(`      panel says: ${String(text).replace(/\s+/g, " ").slice(0, 700)}`);
+      console.log(
+        `      worker holds: ${JSON.stringify({ active: held?.active, auto: held?.auto, reason: held?.pauseReason, position: held?.position, awaiting: held?.awaiting, busy: held?.busy, message: held?.message })}`,
+      );
+      await shot(panel, "genius-auto-0-not-started");
+      throw new Error("the automatic run did not start");
+    }
     check("it fills fields without a key press", await runFor(3));
     await shot(panel, "genius-auto-1-running");
 
@@ -318,6 +363,7 @@ try {
   console.log(
     `      filled ${String(filled.length)}, left for the user ${String(skipped.length)}: ${skipped.join(" | ")}`,
   );
+  check("no step stopped the run as a problem", problems.length === 0, problems.join(" | "));
   check("the panel ends on All steps done", (await position()) >= total);
   await shot(genius, "genius-2-filled-form");
 
@@ -363,7 +409,8 @@ try {
 
   // Every pair on the form must be a pair from the credits: an artist filed under the wrong role, or a fuzzy
   // pick, would show up here, which a check on names alone would miss.
-  const wrongPairs = state.rows.flatMap((row) =>
+  const newRows = state.rows.slice(before.roles);
+  const wrongPairs = newRows.flatMap((row) =>
     row.artists
       .filter((artist) => !wanted.has(pair(row.role[0] ?? "", artist)))
       .map((artist) => `${row.role[0] ?? "(no role)"} / ${artist}`),
@@ -373,11 +420,12 @@ try {
     wrongPairs.length === 0,
     wrongPairs.join("; "),
   );
-  const rowsWithoutRole = state.rows.filter((row) => row.artists.length > 0 && row.role.length === 0);
+  const rowsWithoutRole = newRows.filter((row) => row.artists.length > 0 && row.role.length === 0);
   check("no artist sits in a row without a role", rowsWithoutRole.length === 0, String(rowsWithoutRole.length));
+  const had = new Set([...before.writer, ...before.producer].map(words));
   const wrongPeople = [
-    ...state.writer.filter((name) => !writers.has(words(name))),
-    ...state.producer.filter((name) => !producers.has(words(name))),
+    ...state.writer.filter((name) => !had.has(words(name)) && !writers.has(words(name))),
+    ...state.producer.filter((name) => !had.has(words(name)) && !producers.has(words(name))),
   ];
   check("writers and producers are only people credited as such", wrongPeople.length === 0, wrongPeople.join(", "));
   check(
@@ -392,8 +440,8 @@ try {
   );
   check(
     "credit rows were created and filled",
-    state.rows.filter((r) => r.role.length > 0 && r.artists.length > 0).length >= 3,
-    String(state.rows.length),
+    newRows.filter((r) => r.role.length > 0 && r.artists.length > 0).length >= 3,
+    String(newRows.length),
   );
   check(
     "the copyright rows use Genius's own role names",
@@ -414,6 +462,7 @@ try {
   genius?.close();
   worker?.close();
   await browser.stop();
+  rmSync(dirname(loaded), { recursive: true, force: true });
 }
 
 console.log(failures.length === 0 ? "\nAll checks passed." : `\n${String(failures.length)} check(s) failed.`);

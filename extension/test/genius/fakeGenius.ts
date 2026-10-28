@@ -48,6 +48,11 @@ export interface FakeOptions {
   noRows?: boolean;
   /** Leave out the Add additional credits button. */
   noAddButton?: boolean;
+  /**
+   * Hide the additional credits behind an "N additional roles" line with an Expand button, as the live form does for
+   * a song that already has some: while collapsed there are no rows and no Add button in the page at all.
+   */
+  collapsedRoles?: boolean;
 }
 
 export interface FakeGenius {
@@ -66,6 +71,8 @@ export interface FakeGenius {
   plainKeys: string[];
   /** Fired `input` and `change` events on plain inputs. */
   plainEvents: string[];
+  /** How many times the Expand button of the collapsed additional credits was pressed. */
+  expands: number;
 }
 
 const SUGGESTION_LIMIT = 10;
@@ -102,6 +109,7 @@ export function loadFakeGenius(options: FakeOptions = {}): FakeGenius {
     cancelClicks: 0,
     plainKeys: [],
     plainEvents: [],
+    expands: 0,
   };
   const artists = options.artists ?? ARTISTS;
   const roles = options.roles ?? ROLES;
@@ -257,6 +265,38 @@ export function loadFakeGenius(options: FakeOptions = {}): FakeGenius {
     for (const input of row.querySelectorAll<HTMLInputElement>('input[role="combobox"]')) wire(input);
     row.querySelector<HTMLInputElement>('[id$="-label"] input')?.focus();
   });
+
+  // The captured form is open, so its button reads "Hide": any press of an expander is counted, to catch a fill that
+  // would close an open section.
+  for (const open of form.querySelectorAll('[data-testid="custom-performances-expander"]')) {
+    open.addEventListener("click", () => fake.expands++);
+    if (options.collapsedRoles) open.remove();
+  }
+
+  if (options.collapsedRoles && rows && add) {
+    // The live form shows only "N additional roles" and an Expand button until it is pressed; the rows and the Add
+    // button are not in the page meanwhile, and appear a moment after the press.
+    let block: HTMLElement | null = rows;
+    while (block && !block.contains(add)) block = block.parentElement;
+    if (block) {
+      const note = element(doc, "div");
+      note.append(element(doc, "p", {}, "2 additional roles"));
+      const expander = element(
+        doc,
+        "button",
+        { type: "button", "data-testid": "custom-performances-expander" },
+        "Expand",
+      );
+      note.append(expander);
+      block.replaceWith(note);
+      expander.addEventListener("click", () => {
+        fake.expands++;
+        setTimeout(() => {
+          note.replaceWith(block);
+        }, delay);
+      });
+    }
+  }
 
   return fake;
 }

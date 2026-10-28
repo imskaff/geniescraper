@@ -16,6 +16,7 @@ import {
   WRITER_LABEL,
   YOUTUBE_INPUT_NAME,
   addCreditsButton,
+  creditsExpander,
   boxOf,
   chipTexts,
   comboboxByLabel,
@@ -92,8 +93,24 @@ function lastRow(form: HTMLFormElement): CreditRow | undefined {
   return creditRows(form).at(-1);
 }
 
+/**
+ * Open the additional credits when the form shows them collapsed behind "N additional roles" and Expand. Pressing
+ * Expand only reveals what the song already has: it saves nothing. Resolves once the rows or the Add button are in
+ * the page, or the time is up; with nothing collapsed it does nothing.
+ */
+async function openCredits(form: HTMLFormElement, ctx: FillContext): Promise<void> {
+  const expander = creditsExpander(form);
+  if (!expander) return;
+  expander.click();
+  const deadline = Date.now() + ctx.timing.selectMs;
+  while (Date.now() < deadline && creditRows(form).length === 0 && !addCreditsButton(form)) {
+    await sleep(ctx.timing.pollMs);
+  }
+}
+
 /** The row a role goes into: the last one if its role is still empty, otherwise a new one. */
 async function rowForNewRole(form: HTMLFormElement, ctx: FillContext): Promise<CreditRow | null> {
+  await openCredits(form, ctx);
   const last = lastRow(form);
   if (last && chipTexts(last.roleBox).length === 0) return last;
 
@@ -170,6 +187,8 @@ export async function fillStep(item: QueueItem, ctx: FillContext): Promise<StepO
     case "artist":
     case "phonographic_copyright":
     case "copyright_notice": {
+      // An artist step can come first when its role was skipped on a previous run: open the credits to look.
+      await openCredits(form, ctx);
       const row = lastRow(form);
       if (!row) {
         return { status: "unavailable", message: "Add the role first: there is no additional credit to put this in." };

@@ -99,6 +99,15 @@ describe("an automatic run", () => {
     expect(fake.strayEnters).toEqual([]);
   });
 
+  it("fills a form whose additional credits are collapsed, as a song that already has some shows them", async () => {
+    const { fake, page, stored, begin } = setup({ collapsedRoles: true });
+    await begin();
+    await page.whenAutoIdle();
+    expect(rowChips(fake.form)).toEqual([{ role: ["Mixing Engineer"], artists: ["FINNEAS"] }]);
+    expect(stored()).toMatchObject({ position: WHOLE.length, auto: "off" });
+    expect(fake.expands).toBe(1);
+  });
+
   it("pauses between fields for the pace the worker hands out", async () => {
     const { page, begin, asked } = setup();
     await begin(SHORT);
