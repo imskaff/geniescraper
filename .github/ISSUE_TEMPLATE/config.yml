@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Read the extension FAQ first
+    url: https://github.com/imskaff/geniescraper/blob/main/extension/FAQ.md
+    about: Common problems (YouTube limits, F-keys, "no exact match") and how to fix them.

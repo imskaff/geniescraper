@@ -1,0 +1,16 @@
+version: 2
+updates:
+  # The extension's npm packages. Grouped, so a week's updates arrive as one pull request that CI checks as a whole.
+  - package-ecosystem: npm
+    directory: /extension
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      extension-dev-tools:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
