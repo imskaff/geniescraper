@@ -423,7 +423,11 @@ export class PanelController {
         if (answer.ok && album) {
           await this.setResult(next.index, { status: "done", song: buildSong(album, next, answer.data), error: "" });
           // The track in front of the user gets its link while the rest are read, so Start pasting does not wait.
-          if (next.index === this.current.session.current) void this.ensureYoutube(next.index);
+          // With the user's own key every track does: Google's official service has no burst limit like the page
+          // reading has, so the whole album gets its links (the worker still asks two at a time).
+          const { youtubeKey, hosts } = this.current;
+          const withKey = youtubeKey.saved && hosts.youtubeApi;
+          if (withKey || next.index === this.current.session.current) void this.ensureYoutube(next.index);
         } else if (!answer.ok) {
           await this.setResult(next.index, { status: "error", error: describeError(answer.error) });
         }
@@ -438,7 +442,8 @@ export class PanelController {
       failed === 0
         ? `Got credits for ${String(done)} ${done === 1 ? "track" : "tracks"}.`
         : `Got credits for ${String(done)} of ${String(results.length)} tracks; ${String(failed)} failed.`;
-    this.update({ busy: null, status });
+    // A problem with the user's YouTube key found while reading stays on screen, not lost under the summary.
+    this.update({ busy: null, status: this.keyNote ? `${status} ${this.keyNote}` : status });
   }
 
   private async setResult(index: number, patch: Partial<TrackResult>): Promise<void> {
@@ -554,6 +559,8 @@ export class PanelController {
 
   /** Each track is asked about once per panel session; a track in the map has been, or is being, looked up. */
   private readonly youtubeLookups = new Map<number, Promise<void>>();
+  /** The last thing found wrong with the user's YouTube key, shown after a read finishes. */
+  private keyNote = "";
 
   /**
    * Look up this track's YouTube link if it needs one and the user has allowed it. Called when the user is about to
@@ -584,6 +591,7 @@ export class PanelController {
     // The panel may have moved on (another album, the main menu) while YouTube was being asked.
     if (current?.song?.title !== title) return;
     const keyMessage = answer.ok && answer.data.keyProblem ? KEY_MESSAGES[answer.data.keyProblem] : "";
+    if (keyMessage) this.keyNote = keyMessage;
     if (answer.ok && answer.data.url) {
       await this.setResult(index, {
         song: { ...current.song, youtubeUrl: answer.data.url, youtubeIsMv: answer.data.isMusicVideo },

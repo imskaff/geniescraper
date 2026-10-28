@@ -488,3 +488,10 @@ A user who enters their own free key gets links from Google's official service, 
   A mistyped key is caught before any request, with what a key looks like.
 - **Verified.** Offline: problem classification, entity decoding, the rewriting, the choice of videos through the API (Topic upload, official video, an apostrophe in a title), the header-not-URL rule, the permission gate, the service's order and fallbacks, the concurrency limit, the stored key, the messages, the panel flow (including that the permission is requested before anything is awaited) and the Settings help; live: the Settings screen renders the steps and links in both themes.
   **Not verified:** a real Google key (none is available here), so the exact answers of Google's API are as its documentation describes and the first real try is the check; and Chrome's permission prompt.
+
+### Whole albums with a key
+
+Without a key a track's link is looked up only for the track in front of the user and for each track as it is pasted (Google limits page reading), so after reading an album only those tracks show a link; the owner saw 2 of 10.
+With a saved key and Google's permission, every track is looked up as its credits arrive (Google's service has no such burst limit; the worker still asks it two requests at a time), so the whole album gets its links.
+That spends the free daily allowance on tracks that may never be pasted: roughly 25 to 50 songs a day.
+A problem with the key found while reading (wrong key, allowance used up, service not enabled) stays in the status line after the "Got credits" summary.

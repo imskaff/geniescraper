@@ -786,6 +786,26 @@ describe("the user's own YouTube key", () => {
     expect(panel.state.session.results[0]?.song?.youtubeUrl).toContain("abcDEF_-123");
   });
 
+  it("looks up every track of the album as it is read with a saved key, but only the first without one", async () => {
+    const run = async (options: Parameters<typeof open>[0]) => {
+      const { env, panel } = await open(options);
+      await panel.detect(ALBUM_URL);
+      await panel.setAllSelected(true);
+      await panel.getCredits();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      return { env, panel };
+    };
+    const withKey = await run({
+      youtubeKey: KEY,
+      hosts: { youtubeApi: true },
+      api: { lookupYoutube: () => Promise.resolve(found) },
+    });
+    expect(withKey.env.api.calls.filter((c) => c.startsWith("youtube:"))).toHaveLength(2);
+    expect(withKey.panel.state.session.results.every((r) => r.song?.youtubeUrl)).toBe(true);
+    const without = await run({ hosts: { youtube: true }, api: { lookupYoutube: () => Promise.resolve(found) } });
+    expect(without.env.api.calls.filter((c) => c.startsWith("youtube:"))).toHaveLength(1);
+  });
+
   it("does not look up with a saved key when Chrome's permission for Google's service is gone", async () => {
     const { env, panel } = await open({ youtubeKey: KEY });
     await panel.detect(ALBUM_URL);
@@ -810,7 +830,7 @@ describe("the user's own YouTube key", () => {
     await panel.detect(ALBUM_URL);
     await panel.setAllSelected(true);
     await panel.getCredits();
-    await panel.ensureYoutube(2);
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(panel.state.status).toContain(words);
   });
 });
