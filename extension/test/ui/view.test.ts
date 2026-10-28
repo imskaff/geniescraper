@@ -229,8 +229,16 @@ describe("review screen", () => {
     return ui;
   }
 
+  /** The review screen with the first track's credits opened, which the user does by clicking it. */
+  async function withFirstOpen(api: Parameters<typeof fakeEnv>[0] = {}) {
+    const ui = await onReview(api);
+    $(ui.root, '[data-key="show-0"]').click();
+    await flush();
+    return ui;
+  }
+
   it("shows the credits, the album's copyright and the paste queue, accessibly", async () => {
-    const { root } = await onReview();
+    const { root } = await withFirstOpen();
     expectAccessible(root);
     expect(root.querySelector("h2")?.textContent).toBe("Credits");
     expect(byText(root, "dt", "Songwriter").nextElementSibling?.textContent).toBe("Writer One, Writer Two");
@@ -248,7 +256,7 @@ describe("review screen", () => {
   });
 
   it("marks the shown track in the track list and lets the user switch", async () => {
-    const { root } = await onReview();
+    const { root } = await withFirstOpen();
     const current = $(root, '[aria-current="true"]');
     expect(current.textContent).toBe("1. One: Ready");
     byText(root, "button", "3. Three").click();
@@ -257,8 +265,55 @@ describe("review screen", () => {
     expect($(root, '[aria-current="true"]').textContent).toBe("3. Three: Ready");
   });
 
+  describe("with no track opened", () => {
+    it("shows no credits, no queue and no YouTube box, and says how to see them", async () => {
+      const { root } = await onReview();
+      expect(root.querySelector("dl.credits")).toBeNull();
+      expect(root.querySelector("#youtube-link")).toBeNull();
+      expect(root.querySelector('[data-key="details-queue"]')).toBeNull();
+      expect(root.querySelector('[aria-current="true"]')).toBeNull();
+      expect(root.textContent).toContain("Choose a track to see its credits");
+      const buttons = [...root.querySelectorAll<HTMLElement>('[data-key^="show-"]')];
+      expect(buttons).toHaveLength(2);
+      expect(buttons.every((b) => b.getAttribute("aria-expanded") === "false")).toBe(true);
+    });
+
+    it("has Start pasting right under the track list, ready for the first track", async () => {
+      const { root } = await onReview();
+      const start = root.querySelector<HTMLButtonElement>('main [data-key="start"]');
+      expect(start?.getAttribute("aria-label")).toBe("Start pasting One");
+      expect(start?.hasAttribute("disabled")).toBe(false);
+      const list = $(root, "ul.tracks");
+      expect(list.compareDocumentPosition(start as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it("starts the first track that is ready when Start pasting is pressed", async () => {
+      const { root, env } = await onReview();
+      $(root, '[data-key="start"]').click();
+      await flush();
+      expect(env.api.pasteState.title).toBe("One");
+    });
+
+    it("opens a track's credits, with the YouTube box for when no link was found, on a click, and closes them on another", async () => {
+      const { root } = await onReview();
+      $(root, '[data-key="show-2"]').click();
+      await flush();
+      expect($(root, "#track-heading").textContent).toBe("Three");
+      expect($(root, '[data-key="show-2"]').getAttribute("aria-expanded")).toBe("true");
+      expect(root.querySelector("dl.credits")).not.toBeNull();
+      expect(root.querySelector("#youtube-link")).not.toBeNull();
+      expect(root.querySelector('[data-key="youtube-find"]')).not.toBeNull();
+
+      $(root, '[data-key="show-2"]').click();
+      await flush();
+      expect(root.querySelector("dl.credits")).toBeNull();
+      expect(root.querySelector("#youtube-link")).toBeNull();
+      expect($(root, '[data-key="show-2"]').getAttribute("aria-expanded")).toBe("false");
+    });
+  });
+
   it("changes the queue at once when a setting changes", async () => {
-    const { root } = await onReview();
+    const { root } = await withFirstOpen();
     byText(root, "button", "Settings").click();
     await flush();
     $input(root, '[data-key="setting-scrapeCore"]').click();
@@ -272,7 +327,7 @@ describe("review screen", () => {
 
   it("shows a failed track's error with a working Try again", async () => {
     let attempts = 0;
-    const { root } = await onReview({
+    const { root } = await withFirstOpen({
       api: {
         scrapeTrack: (_url, title): Promise<Result<PageScrape>> =>
           Promise.resolve(
@@ -302,7 +357,7 @@ describe("review screen", () => {
   });
 
   it("goes back to the track list and to a new link", async () => {
-    const { root } = await onReview();
+    const { root } = await withFirstOpen();
     byText(root, "button", "Back to tracks").click();
     await flush();
     expect($(root, "h2").textContent).toBe("Demo Album");
@@ -313,7 +368,7 @@ describe("review screen", () => {
 
   it("says when a track has no credits", async () => {
     const empty = { ...scrapeFor("One"), credits: [] };
-    const { root } = await onReview({ api: { scrapeTrack: () => Promise.resolve({ ok: true, data: empty }) } });
+    const { root } = await withFirstOpen({ api: { scrapeTrack: () => Promise.resolve({ ok: true, data: empty }) } });
     expect(root.textContent).toContain("No credits were found for this track.");
   });
 
@@ -385,6 +440,8 @@ describe("untrusted text", () => {
     await flush();
     byText(ui.root, "button", "Get credits for").click();
     await flush();
+    $(ui.root, '[data-key="show-0"]').click();
+    await flush();
 
     expect(ui.root.querySelector("img, script")).toBeNull();
     expect((window as unknown as Record<string, unknown>)["__pwned"]).toBeUndefined();
@@ -400,6 +457,8 @@ describe("untrusted text", () => {
     byText(root, "button", "Select all").click();
     await flush();
     byText(root, "button", "Get credits for").click();
+    await flush();
+    $(root, '[data-key="show-0"]').click();
     await flush();
     const link = $link(root, "dd a");
     expect(link.getAttribute("href")).toBe(ALBUM.coverArtUrl);
@@ -716,6 +775,8 @@ describe("the YouTube link section in the credits", () => {
     byText(ui.root, "button", "Select all").click();
     await flush();
     byText(ui.root, "button", "Get credits for").click();
+    await flush();
+    $(ui.root, '[data-key="show-0"]').click();
     await flush();
     return ui;
   };

@@ -26,11 +26,17 @@ export interface Session {
   /** Zero-based indexes of the tracks the user picked. */
   selected: number[];
   results: TrackResult[];
-  /** Index of the track shown on the review screen. */
-  current: number;
+  /** Index of the track whose credits are open on the review screen; null until the user opens one. */
+  current: number | null;
 }
 
-export const EMPTY_SESSION: Readonly<Session> = { screen: "link", album: null, selected: [], results: [], current: 0 };
+export const EMPTY_SESSION: Readonly<Session> = {
+  screen: "link",
+  album: null,
+  selected: [],
+  results: [],
+  current: null,
+};
 
 const STATUSES: ReadonlySet<string> = new Set(["pending", "loading", "done", "error", "unavailable"]);
 const SCREENS: ReadonlySet<string> = new Set(["link", "tracks", "review"]);
@@ -91,6 +97,15 @@ export function normaliseSession(raw: unknown): Session {
     typeof raw["screen"] === "string" && SCREENS.has(raw["screen"]) ? (raw["screen"] as Screen) : "tracks";
   // The review screen needs something to review.
   const screen = screenName === "review" && tracks.length === 0 ? "tracks" : screenName;
-  const current = inRange(raw["current"]) ? raw["current"] : (tracks[0]?.index ?? 0);
+  const current = inRange(raw["current"]) ? raw["current"] : null;
   return { screen, album, selected: [...new Set(selected)], results: tracks, current };
+}
+
+/**
+ * The track whose credits are on screen: the one the user opened, or the only one there is. With several tracks
+ * none is open until the user picks one, so Start pasting is in reach without scrolling past a long credits list.
+ */
+export function shownTrack(session: Pick<Session, "results" | "current">): TrackResult | null {
+  if (session.current !== null) return session.results.find((r) => r.index === session.current) ?? null;
+  return session.results.length === 1 ? (session.results[0] ?? null) : null;
 }

@@ -7,7 +7,7 @@ import { typedQueue, type QueueItem, type SongCredits } from "../core/models";
 import type { PasteCommand } from "../shared/messages";
 import { IDLE_PASTE, type PasteState } from "../core/paste";
 import type { AlbumInfo, AppError, PageScrape } from "../shared/messages";
-import { EMPTY_SESSION, type Session, type TrackResult } from "../shared/session";
+import { EMPTY_SESSION, shownTrack, type Session, type TrackResult } from "../shared/session";
 import { normaliseSettings, queueOptions, type Settings } from "../shared/settings";
 import {
   loadPaste,
@@ -393,7 +393,7 @@ export class PanelController {
       album,
       selected: onlyTrack ? available : [],
       results: [],
-      current: 0,
+      current: null,
     });
     // The track list names the album and its track count itself, and its heading takes focus, so nothing is announced twice.
     this.update({ busy: null, status: "" });
@@ -438,7 +438,7 @@ export class PanelController {
       error: "",
     }));
     this.update({ error: "" });
-    await this.updateSession({ screen: "review", results, current: selected[0] ?? 0 });
+    await this.updateSession({ screen: "review", results, current: null });
     await this.scrapePending();
   }
 
@@ -466,7 +466,7 @@ export class PanelController {
           // reading has, so the whole album gets its links (the worker still asks two at a time).
           const { youtubeKey, hosts } = this.current;
           const withKey = youtubeKey.saved && hosts.youtubeApi;
-          if (withKey || next.index === this.current.session.current) void this.ensureYoutube(next.index);
+          if (withKey || next.index === shownTrack(this.current.session)?.index) void this.ensureYoutube(next.index);
         } else if (!answer.ok) {
           await this.setResult(next.index, { status: "error", error: describeError(answer.error) });
         }
@@ -506,9 +506,20 @@ export class PanelController {
     await this.scrapePending();
   }
 
+  /** Open a track's credits, or close them when they are already open. */
   async showTrack(index: number): Promise<void> {
     this.update({ youtubeLinkError: "" });
-    await this.updateSession({ current: index });
+    const closing = this.current.session.current === index;
+    await this.updateSession({ current: closing ? null : index });
+    // Opened credits get their link looked up now, as the user is about to look at (and maybe fix) it.
+    if (!closing) void this.ensureYoutube(index);
+  }
+
+  /** The first track, in album order, whose credits are in and give something to paste; Start pasting begins here. */
+  firstPastable(): number | null {
+    return (
+      this.current.session.results.find((r) => r.song !== null && this.queueFor(r.index).length > 0)?.index ?? null
+    );
   }
 
   async backToTracks(): Promise<void> {

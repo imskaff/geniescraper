@@ -56,6 +56,14 @@ async function toReview(options: Parameters<typeof fakeEnv>[0] = {}) {
   return ui;
 }
 
+/** The review screen with the first track's credits opened, which the user does by clicking it. */
+async function toReviewOpen(options: Parameters<typeof fakeEnv>[0] = {}) {
+  const ui = await toReview(options);
+  await ui.panel.showTrack(0);
+  await flush();
+  return ui;
+}
+
 /** Start pasting the first track and walk every step, so the done screen is up. */
 async function toDone(options: Parameters<typeof fakeEnv>[0] = {}, index = 0, alsoPasted: number[] = []) {
   const ui = await toReview(options);
@@ -90,7 +98,7 @@ describe("Back to main menu", () => {
   });
 
   it("sits under the paste queue, in the row Back to tracks is in, and no longer in the header", async () => {
-    const { root } = await toReview();
+    const { root } = await toReviewOpen();
     const row = button($(root, "main"), "Back to main menu").parentElement;
     expect(row?.contains(button(root, "Back to tracks"))).toBe(true);
     const queue = details(root, "Paste queue");
@@ -353,7 +361,7 @@ describe("the YouTube link in the credits list", () => {
   });
 
   it("is listed with the credits, as a safe link, saying whether it is the music video", async () => {
-    const { root } = await toReview(withLink(true));
+    const { root } = await toReviewOpen(withLink(true));
     const dt = [...root.querySelectorAll("dl.credits dt")].find((d) => d.textContent === "YouTube (music video)");
     const link = dt?.nextElementSibling?.querySelector("a");
     expect(link?.getAttribute("href")).toBe(LINK);
@@ -361,12 +369,12 @@ describe("the YouTube link in the credits list", () => {
   });
 
   it("says audio when it is not a music video", async () => {
-    const { root } = await toReview(withLink(false));
+    const { root } = await toReviewOpen(withLink(false));
     expect([...root.querySelectorAll("dl.credits dt")].some((d) => d.textContent === "YouTube (audio)")).toBe(true);
   });
 
   it("is absent when no link was found", async () => {
-    const { root } = await toReview();
+    const { root } = await toReviewOpen();
     expect([...root.querySelectorAll("dl.credits dt")].some((d) => d.textContent.startsWith("YouTube"))).toBe(false);
   });
 });
@@ -511,7 +519,7 @@ describe("returning to the main menu after the last step", () => {
 
 describe("the YouTube note in the credits list", () => {
   it("says why a track has no link, in its credits", async () => {
-    const { root } = await toReview({
+    const { root } = await toReviewOpen({
       hosts: { youtube: true },
       api: {
         lookupYoutube: () =>

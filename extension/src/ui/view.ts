@@ -3,7 +3,7 @@
 // fire), focus moved to the new screen's heading, and focus kept where it was across a re-render.
 import type { QueueKind, SongCredits } from "../core/models";
 import type { AlbumInfo } from "../shared/messages";
-import type { TrackResult, TrackStatus } from "../shared/session";
+import { shownTrack, type TrackResult, type TrackStatus } from "../shared/session";
 import { STEP_LABELS, instruction } from "../core/paste";
 import type { OptionalHost } from "../lookups/http";
 import { HOTKEY_CHOICES, PARALLEL_CHOICES, WAIT_RANGE } from "../shared/settings";
@@ -244,9 +244,10 @@ export class PanelView {
   /** The track whose credits are on screen and can be pasted now, or null. */
   private startableIndex(state: PanelState): number | null {
     if (state.setup.open || state.settingsOpen || state.paste.active || state.session.screen !== "review") return null;
-    const { results, current } = state.session;
-    const shown = results.find((r) => r.index === current) ?? results[0];
-    return shown?.song && this.panel.queueFor(shown.index).length > 0 ? shown.index : null;
+    const shown = shownTrack(state.session);
+    // With no track open it starts the first one that is ready, so Start pasting never needs a choice first.
+    if (!shown) return this.panel.firstPastable();
+    return shown.song && this.panel.queueFor(shown.index).length > 0 ? shown.index : null;
   }
 
   /** A section the user can open and close, closed until they do unless it opens by default. Its state survives re-rendering. */
@@ -400,7 +401,7 @@ export class PanelView {
 
   private reviewScreen(state: PanelState): Node[] {
     const { session } = state;
-    const shown = session.results.find((r) => r.index === session.current) ?? session.results[0];
+    const shown = shownTrack(session);
     const busy = state.busy === "scrape";
 
     const nav = el(
@@ -419,6 +420,7 @@ export class PanelView {
               attrs: {
                 type: "button",
                 "data-key": `show-${String(result.index)}`,
+                "aria-expanded": result.index === shown?.index ? "true" : "false",
                 ...(result.index === shown?.index ? { "aria-current": "true" } : {}),
               },
               on: {
@@ -436,7 +438,9 @@ export class PanelView {
       this.heading("Credits"),
       // One track needs no list to choose from.
       session.results.length > 1 ? nav : null,
-      shown ? this.trackDetail(state, shown) : null,
+      shown
+        ? this.trackDetail(state, shown)
+        : el("p", { class: "help", text: "Choose a track to see its credits, or fix its YouTube link." }),
       el(
         "div",
         { class: "row" },

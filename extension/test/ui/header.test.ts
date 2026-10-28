@@ -50,6 +50,14 @@ async function toReview(options: Parameters<typeof fakeEnv>[0] = {}) {
   return ui;
 }
 
+/** The review screen with the first track's credits opened, which the user does by clicking it. */
+async function toReviewOpen(options: Parameters<typeof fakeEnv>[0] = {}) {
+  const ui = await toReview(options);
+  await ui.panel.showTrack(0);
+  await flush();
+  return ui;
+}
+
 afterEach(() => {
   document.body.replaceChildren();
 });
@@ -155,7 +163,7 @@ describe("Start pasting in the button row", () => {
 
 describe("the paste queue", () => {
   it("is collapsed until the user opens it, and says how long it is", async () => {
-    const { root } = await toReview();
+    const { root } = await toReviewOpen();
     const queue = details(root, "Paste queue");
     expect(queue.open).toBe(false);
     expect(queue.querySelector("summary")?.textContent).toMatch(/^Paste queue \(\d+ steps\)$/);
@@ -163,7 +171,7 @@ describe("the paste queue", () => {
   });
 
   it("opens and closes on request, and stays open when the screen is redrawn", async () => {
-    const { root, panel } = await toReview();
+    const { root, panel } = await toReviewOpen();
     open(details(root, "Paste queue"), true);
     await panel.setSetting("scrapeYoutube", false); // any change redraws the screen
     await flush();
@@ -176,7 +184,7 @@ describe("the paste queue", () => {
   });
 
   it("keeps keyboard focus on its heading across a redraw", async () => {
-    const { root, panel } = await toReview();
+    const { root, panel } = await toReviewOpen();
     const summary = $(root, '[data-key="details-queue"]');
     summary.focus();
     await panel.setSetting("scrapeYoutube", false);
@@ -185,7 +193,7 @@ describe("the paste queue", () => {
   });
 
   it("counts a single step in the singular", async () => {
-    const { root, panel } = await toReview();
+    const { root, panel } = await toReviewOpen();
     for (const key of ["scrapeAdditional", "scrapeCopyright", "scrapeYoutube", "scrapeCoverArt"] as const) {
       await panel.setSetting(key, false);
     }
@@ -200,7 +208,7 @@ describe("the paste queue", () => {
       { role: "Programming", artists: ["P"] },
       { role: "Drum Programming", artists: ["D"] },
     ];
-    const { root } = await toReview({
+    const { root } = await toReviewOpen({
       api: { scrapeTrack: (_url, title) => Promise.resolve({ ok: true, data: { ...scrapeFor(title), credits } }) },
     });
     const items = [...details(root, "Paste queue").querySelectorAll("li")].map((li) => li.textContent);

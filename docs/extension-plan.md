@@ -680,3 +680,13 @@ node scripts/live-youtube-api.mjs --limit 5
 It runs the extension's own lookup against the golden songs, prints per song the link, whether it is accepted and the units spent, and never prints the key.
 Without `--limit` it spends about 3,000 units, so run it once, not repeatedly.
 Not yet run against the real API: it needs the user's key.
+
+## 29. No track open until the user opens one
+
+The credits screen used to open the first track's credits, so Start pasting sat below a long list of credits, a YouTube section and the paste queue.
+Now no track is open when the credits arrive (`Session.current` is `null`), the track list is followed at once by the button row, and a line says to choose a track to see its credits.
+- Clicking a track opens its credits, the YouTube section (with Find on YouTube and the box for a link, so a missing link can be fixed) and the paste queue; clicking it again closes them. The buttons carry `aria-expanded`.
+- Start pasting with nothing open starts the first track, in album order, whose credits are in and give something to paste. With a track open it pastes that one, as before.
+- A single track has no list to click, so it stays open.
+- A track's YouTube link is looked up when it is opened (or on Start pasting), no longer for the first track by default. With a saved key every track is still looked up as it is read.
+- A restored session whose stored open track is missing or out of range comes back with none open.

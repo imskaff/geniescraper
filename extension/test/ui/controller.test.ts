@@ -557,6 +557,8 @@ describe("the YouTube link of a track", () => {
     await ui.panel.detect(ALBUM_URL);
     await ui.panel.setAllSelected(true);
     await ui.panel.getCredits();
+    // The user opens the first track's credits, which is what puts it in front of them.
+    await ui.panel.showTrack(0);
     return ui;
   }
   const lookups = (env: Awaited<ReturnType<typeof ready>>["env"]) =>
@@ -580,6 +582,32 @@ describe("the YouTube link of a track", () => {
     expect(lookups(env)[1]).toBe("youtube:Demo Artist / Three");
     expect(panel.state.session.results[1]?.song?.youtubeUrl).toBe(LINK);
     expect(env.api.pasteState.queue.some(([kind, value]) => kind === "youtube_url" && value === LINK)).toBe(true);
+  });
+
+  it("is not looked up for a track until the user opens it, and then only once", async () => {
+    const ui = await open({ hosts: { youtube: true }, api: { lookupYoutube: () => Promise.resolve(FOUND) } });
+    await ui.panel.detect(ALBUM_URL);
+    await ui.panel.setAllSelected(true);
+    await ui.panel.getCredits();
+    expect(ui.panel.state.session.current).toBeNull();
+    expect(lookups(ui.env)).toEqual([]);
+
+    await ui.panel.showTrack(2);
+    expect(ui.panel.state.session.current).toBe(2);
+    expect(lookups(ui.env)).toEqual(["youtube:Demo Artist / Three"]);
+
+    await ui.panel.showTrack(2); // a second click closes it
+    expect(ui.panel.state.session.current).toBeNull();
+    await ui.panel.showTrack(2);
+    expect(lookups(ui.env)).toHaveLength(1);
+  });
+
+  it("starts pasting from the first track that is ready when none is open", async () => {
+    const ui = await open({ hosts: { youtube: true }, api: { lookupYoutube: () => Promise.resolve(FOUND) } });
+    await ui.panel.detect(ALBUM_URL);
+    await ui.panel.setAllSelected(true);
+    await ui.panel.getCredits();
+    expect(ui.panel.firstPastable()).toBe(0);
   });
 
   it("is asked once per track, however often pasting starts", async () => {
@@ -792,6 +820,7 @@ describe("the user's own YouTube key", () => {
       await panel.detect(ALBUM_URL);
       await panel.setAllSelected(true);
       await panel.getCredits();
+      await panel.showTrack(0);
       await new Promise((resolve) => setTimeout(resolve, 0));
       return { env, panel };
     };
@@ -925,6 +954,7 @@ describe("YouTube look-ups and the status line", () => {
     await ui.panel.detect(ALBUM_URL);
     await ui.panel.setAllSelected(true);
     await ui.panel.getCredits();
+    await ui.panel.showTrack(0);
     await new Promise((resolve) => setTimeout(resolve, 0));
     return ui;
   }
@@ -973,6 +1003,7 @@ describe("a YouTube link the user pastes", () => {
     await ui.panel.detect(ALBUM_URL);
     await ui.panel.setAllSelected(true);
     await ui.panel.getCredits();
+    await ui.panel.showTrack(0);
     return ui;
   }
 
