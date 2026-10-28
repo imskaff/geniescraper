@@ -17,6 +17,7 @@
   --danger: #ff6f5e;
   --danger-ink: #1a0a08;
   --ok: #5ddc8a;
+  --warn: #ffa94d;
   --focus: #f4f3ee;
 }
 
@@ -36,6 +37,7 @@
     --danger: #b3261e;
     --danger-ink: #ffffff;
     --ok: #146c2e;
+    --warn: #8a4b00;
     --focus: #1a1916;
   }
 }
@@ -300,9 +302,66 @@ h2 + .help {
 }
 
 .button.track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
   text-align: left;
   font-weight: 400;
+}
+
+.button.track .body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.button.track .name {
+  overflow-wrap: anywhere;
+}
+
+.button.track .state {
+  font-size: 0.85em;
+  color: var(--muted);
+}
+
+/* The mark is a ring around a glyph, so it reads as a badge; its colour repeats what the words say. */
+.button.track .mark {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.button.track.health-ok .mark,
+.button.track.health-ok .state {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.button.track.health-attention .mark,
+.button.track.health-attention .state {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.button.track.health-error .mark,
+.button.track.health-error .state {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.button.track.health-attention .state,
+.button.track.health-error .state,
+.button.track.health-ok .state {
+  font-weight: 600;
 }
 
 .button.track.current {

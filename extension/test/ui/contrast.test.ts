@@ -40,6 +40,8 @@ const PAIRS: readonly [string, string, number, string][] = [
   ["danger", "surface", 4.5, "error text on cards"],
   ["ok", "bg", 4.5, "success text"],
   ["ok", "surface", 4.5, "success text on cards"],
+  ["warn", "bg", 4.5, "needs-a-look text"],
+  ["warn", "surface", 4.5, "needs-a-look text on cards"],
   ["link", "bg", 4.5, "links"],
   ["link", "surface", 4.5, "links on cards"],
   ["nav", "bg", 4.5, "the main menu button"],

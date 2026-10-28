@@ -258,11 +258,60 @@ describe("review screen", () => {
   it("marks the shown track in the track list and lets the user switch", async () => {
     const { root } = await withFirstOpen();
     const current = $(root, '[aria-current="true"]');
-    expect(current.textContent).toBe("1. One: Ready");
+    expect(current.getAttribute("aria-label")).toBe("1. One: All found");
     byText(root, "button", "3. Three").click();
     await flush();
     expect($(root, "#track-heading").textContent).toBe("Three");
-    expect($(root, '[aria-current="true"]').textContent).toBe("3. Three: Ready");
+    expect($(root, '[aria-current="true"]').getAttribute("aria-label")).toBe("3. Three: All found");
+  });
+
+  describe("the state of each track in the list", () => {
+    const state = (root: HTMLElement, index: number) => {
+      const button = $(root, `[data-key="show-${String(index)}"]`);
+      return {
+        health: button.getAttribute("data-health"),
+        mark: button.querySelector(".mark")?.textContent,
+        markHidden: button.querySelector(".mark")?.getAttribute("aria-hidden"),
+        words: button.querySelector(".state")?.textContent,
+        name: button.getAttribute("aria-label"),
+      };
+    };
+
+    it("shows a tick and 'All found' for a track with everything", async () => {
+      const { root } = await onReview();
+      expect(state(root, 0)).toEqual({
+        health: "ok",
+        mark: "✓",
+        markHidden: "true",
+        words: "All found",
+        name: "1. One: All found",
+      });
+    });
+
+    it("asks for a look, naming what is missing, when something was not found", async () => {
+      const { root } = await onReview({
+        api: {
+          scrapeTrack: (_url, title) =>
+            Promise.resolve({ ok: true, data: { ...scrapeFor(title), coverArtUrl: "", credits: [] } }),
+        },
+      });
+      expect(state(root, 0)).toMatchObject({ health: "attention", mark: "!" });
+      expect(state(root, 0).words).toContain("Needs a look:");
+      expect(state(root, 0).words).toContain("credits");
+    });
+
+    it("marks a track that failed with a cross and 'Failed'", async () => {
+      const { root } = await onReview({
+        api: { scrapeTrack: () => Promise.resolve({ ok: false, error: { code: "timeout", message: "x" } }) },
+      });
+      expect(state(root, 0)).toMatchObject({ health: "error", mark: "✕", words: "Failed" });
+    });
+
+    it("says Reading while a track is being read", async () => {
+      const gate = deferred<Result<PageScrape>>();
+      const { root } = await onReview({ api: { scrapeTrack: () => gate.promise } });
+      expect(state(root, 0)).toMatchObject({ health: "working", words: "Reading" });
+    });
   });
 
   describe("with no track opened", () => {
@@ -341,7 +390,7 @@ describe("review screen", () => {
     expect(root.querySelector('[data-key="show-0"]')?.textContent).toContain("Failed");
     $(root, '[data-key="retry"]').click();
     await flush();
-    expect(root.querySelector('[data-key="show-0"]')?.textContent).toContain("Ready");
+    expect(root.querySelector('[data-key="show-0"]')?.textContent).toContain("All found");
   });
 
   it("offers Stop only while reading", async () => {

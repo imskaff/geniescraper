@@ -690,3 +690,11 @@ Now no track is open when the credits arrive (`Session.current` is `null`), the 
 - A single track has no list to click, so it stays open.
 - A track's YouTube link is looked up when it is opened (or on Start pasting), no longer for the first track by default. With a saved key every track is still looked up as it is read.
 - A restored session whose stored open track is missing or out of range comes back with none open.
+
+## 30. A state on every track in the list
+
+"Ready" said nothing about whether the read found what was wanted. Each track in the credits list now has a round mark and a few words (`core/trackHealth.ts`, pure and tested):
+- **All found** (green tick): credits, and each optional step the user switched on, were found.
+- **Needs a look: ...** (amber `!`): the credits are empty, or the copyright lines, the cover art link or the YouTube link are missing; the words name which. A missing YouTube link counts only after a look-up came back empty, since links are looked up when a track is opened or pasted.
+- **Failed** (red cross), **Reading**, **Waiting** and **No page** keep their words.
+The mark is hidden from screen readers and the words carry the meaning, so colour is never the only signal. A step switched off in Settings is never reported missing. `--warn` is a new token with its contrast pairs in `test/ui/contrast.test.ts`.

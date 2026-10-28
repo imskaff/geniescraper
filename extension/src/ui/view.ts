@@ -3,14 +3,15 @@
 // fire), focus moved to the new screen's heading, and focus kept where it was across a re-render.
 import type { QueueKind, SongCredits } from "../core/models";
 import type { AlbumInfo } from "../shared/messages";
-import { shownTrack, type TrackResult, type TrackStatus } from "../shared/session";
+import { shownTrack, type TrackResult } from "../shared/session";
+import { trackHealth, type Health, type HealthLevel } from "../core/trackHealth";
 import { STEP_LABELS, instruction } from "../core/paste";
 import type { OptionalHost } from "../lookups/http";
 import { HOTKEY_CHOICES, PARALLEL_CHOICES, WAIT_RANGE } from "../shared/settings";
 import { youtubeSearchUrl } from "../core/youtubeLink";
 import { el } from "./dom";
 import { renderSetup } from "./setup";
-import type { PanelController, PanelState } from "./controller";
+import { MESSAGES, type PanelController, type PanelState } from "./controller";
 
 export const FIELD_LABELS: Readonly<Record<QueueKind, string>> = {
   written_by: "Written By",
@@ -34,12 +35,14 @@ const SETTING_LABELS: readonly (readonly [ScrapeKey, string])[] = [
   ["scrapeCoverArt", "PNG cover art link"],
 ];
 
-const STATUS_TEXT: Readonly<Record<TrackStatus, string>> = {
-  pending: "Waiting",
-  loading: "Reading",
-  done: "Ready",
-  error: "Failed",
-  unavailable: "No page",
+/** The mark in front of a track in the list; it repeats what the words say, so it is hidden from screen readers. */
+const HEALTH_MARKS: Readonly<Record<HealthLevel, string>> = {
+  waiting: "·",
+  working: "…",
+  ok: "✓",
+  attention: "!",
+  error: "✕",
+  none: "–",
 };
 
 /** Only https links are made clickable; the value shown is always the text. */
@@ -411,25 +414,7 @@ export class PanelView {
         "ul",
         { class: "tracks" },
         ...session.results.map((result) =>
-          el(
-            "li",
-            {},
-            el("button", {
-              class: result.index === shown?.index ? "button track current" : "button track",
-              text: `${String(result.index + 1)}. ${result.title}: ${STATUS_TEXT[result.status]}`,
-              attrs: {
-                type: "button",
-                "data-key": `show-${String(result.index)}`,
-                "aria-expanded": result.index === shown?.index ? "true" : "false",
-                ...(result.index === shown?.index ? { "aria-current": "true" } : {}),
-              },
-              on: {
-                click: () => {
-                  void this.panel.showTrack(result.index);
-                },
-              },
-            }),
-          ),
+          el("li", {}, this.trackButton(state, result, result.index === shown?.index)),
         ),
       ),
     );
@@ -454,6 +439,54 @@ export class PanelView {
         this.button("Back to main menu", "nav", "menu", () => void this.panel.newAlbum(), false),
       ),
     ].filter((node): node is HTMLElement => node !== null);
+  }
+
+  /** How a track is doing under the user's settings; a missing YouTube link counts once a look-up came back empty. */
+  private healthOf(state: PanelState, result: TrackResult): Health {
+    const note = state.youtubeNotes[result.index];
+    const { settings } = state;
+    return trackHealth({
+      status: result.status,
+      song: result.song,
+      wants: {
+        copyright: settings.scrapeCopyright,
+        coverArt: settings.scrapeCoverArt,
+        youtube: settings.scrapeYoutube,
+      },
+      youtubeSearchedInVain: Boolean(note) && note !== MESSAGES.lookingForYoutubeShort,
+    });
+  }
+
+  /** A track in the list: a mark and words for how its read went, so the state never rests on colour alone. */
+  private trackButton(state: PanelState, result: TrackResult, open: boolean): HTMLElement {
+    const health = this.healthOf(state, result);
+    const name = `${String(result.index + 1)}. ${result.title}`;
+    return el(
+      "button",
+      {
+        class: `${open ? "button track current" : "button track"} health-${health.level}`,
+        attrs: {
+          type: "button",
+          "aria-label": `${name}: ${health.label}`,
+          "data-key": `show-${String(result.index)}`,
+          "data-health": health.level,
+          "aria-expanded": open ? "true" : "false",
+          ...(open ? { "aria-current": "true" } : {}),
+        },
+        on: {
+          click: () => {
+            void this.panel.showTrack(result.index);
+          },
+        },
+      },
+      el("span", { class: "mark", text: HEALTH_MARKS[health.level], attrs: { "aria-hidden": "true" } }),
+      el(
+        "span",
+        { class: "body" },
+        el("span", { class: "name", text: name }),
+        el("span", { class: "state", text: health.label }),
+      ),
+    );
   }
 
   private trackDetail(state: PanelState, result: TrackResult): HTMLElement {
