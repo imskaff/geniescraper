@@ -20,6 +20,7 @@ import {
 } from "../shared/storage";
 import type { WorkerApi } from "./api";
 import type { OptionalHost } from "../lookups/http";
+import { parseYoutubeLink } from "../core/youtubeLink";
 import { cleanKey, loadYoutubeKey, looksLikeApiKey, saveYoutubeKey } from "../shared/secrets";
 import type { KeyCheck } from "../shared/messages";
 
@@ -67,6 +68,8 @@ export interface PanelState {
   youtubeKey: { saved: boolean; message: string; tone: "" | "ok" | "error"; busy: boolean };
   /** What became of each track's YouTube look-up, shown in its credits so a missing link is never a mystery. */
   youtubeNotes: Record<number, string>;
+  /** What was wrong with the YouTube link the user last pasted, or "". */
+  youtubeLinkError: string;
   /** Seconds left before the finished screen returns to the main menu, or null when no countdown runs. */
   doneCountdown: number | null;
   /** Counts every error shown, so the same message appearing again (a repeated attempt) can still be told apart. */
@@ -91,6 +94,9 @@ export const MESSAGES = {
   youtubeFailedShort: "The look-up did not finish.",
   noYoutube: "No YouTube link was found for this track.",
   youtubeThrottled: "YouTube is limiting requests right now, so this track has no YouTube link. Try again in a minute.",
+  notAYoutubeLink:
+    "That is not a link to one YouTube video. Open the video on YouTube and copy the address from the address bar, or use its Share button.",
+  pasteYoutubeLink: "Paste the YouTube link into the box first.",
   allDone: "All credits entered. Check the Genius page, then press Save there.",
 } as const;
 
@@ -187,6 +193,7 @@ export class PanelController {
       hosts,
       youtubeKey: { saved: keySaved, message: "", tone: "", busy: false },
       youtubeNotes: {},
+      youtubeLinkError: "",
       doneCountdown: null,
       errorSeq: 0,
       settingsOpen: false,
@@ -500,6 +507,7 @@ export class PanelController {
   }
 
   async showTrack(index: number): Promise<void> {
+    this.update({ youtubeLinkError: "" });
     await this.updateSession({ current: index });
   }
 
@@ -650,6 +658,7 @@ export class PanelController {
 
   private forgetYoutube(): void {
     this.youtubeLookups.clear();
+    if (this.current.youtubeLinkError) this.update({ youtubeLinkError: "" });
     this.keyNote = "";
     if (Object.keys(this.current.youtubeNotes).length > 0) this.update({ youtubeNotes: {} });
   }
@@ -709,6 +718,36 @@ export class PanelController {
     } finally {
       clearTimeout(timer);
     }
+  }
+
+  /**
+   * Use a YouTube link the user pasted for a track, in place of whatever the look-up found. Only a link to one
+   * YouTube video is taken, in its canonical form; anything else is refused with a message and changes nothing.
+   */
+  async setYoutubeLink(index: number, raw: string): Promise<boolean> {
+    const result = this.current.session.results.find((r) => r.index === index);
+    if (!result?.song) return false;
+    const link = parseYoutubeLink(raw);
+    if (link === null) {
+      this.update({ youtubeLinkError: raw.trim() ? MESSAGES.notAYoutubeLink : MESSAGES.pasteYoutubeLink });
+      return false;
+    }
+    this.update({ youtubeLinkError: "" });
+    this.note(index, "");
+    await this.setResult(index, {
+      song: { ...result.song, youtubeUrl: link, youtubeIsMv: false, youtubeByUser: true },
+    });
+    return true;
+  }
+
+  /** Take the link off a track, for the user to paste another or none. */
+  async clearYoutubeLink(index: number): Promise<void> {
+    const result = this.current.session.results.find((r) => r.index === index);
+    if (!result?.song) return;
+    const song = { ...result.song, youtubeUrl: "", youtubeIsMv: false };
+    delete song.youtubeByUser;
+    this.update({ youtubeLinkError: "" });
+    await this.setResult(index, { song });
   }
 
   /** Begin pasting one track's queue into Genius. */

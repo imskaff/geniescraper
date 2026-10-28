@@ -965,3 +965,78 @@ describe("YouTube look-ups and the status line", () => {
     expect(env.api.pasteState.queue.some(([kind]) => kind === "youtube_url")).toBe(true);
   });
 });
+
+describe("a YouTube link the user pastes", () => {
+  const LINK = "https://www.youtube.com/watch?v=BY_XwvKogC8";
+  async function ready(options: Parameters<typeof open>[0] = {}) {
+    const ui = await open(options);
+    await ui.panel.detect(ALBUM_URL);
+    await ui.panel.setAllSelected(true);
+    await ui.panel.getCredits();
+    return ui;
+  }
+
+  it("goes onto the track and into its paste queue, in its canonical form", async () => {
+    const { panel } = await ready();
+    expect(await panel.setYoutubeLink(0, "  https://youtu.be/BY_XwvKogC8?si=abc  ")).toBe(true);
+    expect(panel.state.session.results[0]?.song).toMatchObject({ youtubeUrl: LINK, youtubeByUser: true });
+    expect(panel.queueFor(0).some(([kind, value]) => kind === "youtube_url" && value === LINK)).toBe(true);
+    expect(panel.state.youtubeLinkError).toBe("");
+  });
+
+  it("replaces a link the look-up found", async () => {
+    const found = {
+      ok: true as const,
+      data: {
+        url: "https://www.youtube.com/watch?v=aaaaaaaaaaa",
+        isMusicVideo: true,
+        throttled: false,
+        keyProblem: "" as const,
+      },
+    };
+    const { panel } = await ready({ hosts: { youtube: true }, api: { lookupYoutube: () => Promise.resolve(found) } });
+    expect(panel.state.session.results[0]?.song?.youtubeUrl).toContain("aaaaaaaaaaa");
+    await panel.setYoutubeLink(0, LINK);
+    expect(panel.state.session.results[0]?.song).toMatchObject({
+      youtubeUrl: LINK,
+      youtubeIsMv: false,
+      youtubeByUser: true,
+    });
+  });
+
+  it("is refused, with a message and no change, when it is not a link to one YouTube video", async () => {
+    const { panel } = await ready();
+    expect(await panel.setYoutubeLink(0, "https://example.com/watch?v=BY_XwvKogC8")).toBe(false);
+    expect(panel.state.youtubeLinkError).toBe(MESSAGES.notAYoutubeLink);
+    expect(panel.state.session.results[0]?.song?.youtubeUrl).toBe("");
+    expect(await panel.setYoutubeLink(0, "   ")).toBe(false);
+    expect(panel.state.youtubeLinkError).toBe(MESSAGES.pasteYoutubeLink);
+  });
+
+  it("can be taken off again", async () => {
+    const { panel } = await ready();
+    await panel.setYoutubeLink(0, LINK);
+    await panel.clearYoutubeLink(0);
+    expect(panel.state.session.results[0]?.song).toMatchObject({ youtubeUrl: "", youtubeIsMv: false });
+    expect(panel.state.session.results[0]?.song?.youtubeByUser).toBeUndefined();
+  });
+
+  it("does nothing for a track whose credits are not in", async () => {
+    const { panel } = await open();
+    expect(await panel.setYoutubeLink(0, LINK)).toBe(false);
+  });
+
+  it("forgets the error when another track is shown", async () => {
+    const { panel } = await ready();
+    await panel.setYoutubeLink(0, "nope");
+    await panel.showTrack(2);
+    expect(panel.state.youtubeLinkError).toBe("");
+  });
+
+  it("survives the panel being closed and reopened, as part of the session", async () => {
+    const { env, panel } = await ready();
+    await panel.setYoutubeLink(0, LINK);
+    const again = await PanelController.create(env);
+    expect(again.state.session.results[0]?.song).toMatchObject({ youtubeUrl: LINK, youtubeByUser: true });
+  });
+});

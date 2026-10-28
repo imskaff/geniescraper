@@ -1,12 +1,13 @@
 // Renders the controller's state. The structure follows the accessibility basics rather than decoration:
 // real headings, labelled controls, a status and an alert region that are never rebuilt (so announcements
 // fire), focus moved to the new screen's heading, and focus kept where it was across a re-render.
-import type { QueueKind } from "../core/models";
+import type { QueueKind, SongCredits } from "../core/models";
 import type { AlbumInfo } from "../shared/messages";
 import type { TrackResult, TrackStatus } from "../shared/session";
 import { STEP_LABELS, instruction } from "../core/paste";
 import type { OptionalHost } from "../lookups/http";
 import { HOTKEY_CHOICES, PARALLEL_CHOICES, WAIT_RANGE } from "../shared/settings";
+import { youtubeSearchUrl } from "../core/youtubeLink";
 import { el } from "./dom";
 import { renderSetup } from "./setup";
 import type { PanelController, PanelState } from "./controller";
@@ -55,6 +56,8 @@ export class PanelView {
   private readonly expanded = new Map<string, boolean>();
   /** What the user has typed into the key box, kept across re-renders and never stored by the view. */
   private keyDraft = "";
+  /** What the user typed into the YouTube link box, and for which track; a draft is not carried to another track. */
+  private linkDraft: { index: number; text: string } | null = null;
 
   private keyBusy(): boolean {
     return this.panel.state.youtubeKey.busy;
@@ -493,7 +496,13 @@ export class PanelView {
 
     if (song.youtubeUrl) {
       groups.append(
-        el("dt", { text: song.youtubeIsMv ? "YouTube (music video)" : "YouTube (audio)" }),
+        el("dt", {
+          text: song.youtubeByUser
+            ? "YouTube (your link)"
+            : song.youtubeIsMv
+              ? "YouTube (music video)"
+              : "YouTube (audio)",
+        }),
         el(
           "dd",
           {},
@@ -513,6 +522,7 @@ export class PanelView {
     const queue = this.panel.queueFor(result.index);
     section.append(
       song.credits.length === 0 ? el("p", { class: "problem", text: "No credits were found for this track." }) : groups,
+      this.youtubeLinkSection(state, result.index, song),
       queue.length === 0
         ? el("p", { class: "help", text: "Nothing to paste with the current settings." })
         : this.disclosure(
@@ -528,6 +538,88 @@ export class PanelView {
           ),
     );
     return section;
+  }
+
+  /**
+   * The way to a YouTube link that needs no look-up: a button that opens YouTube's own search for the song in a new tab,
+   * and a box to paste the link chosen there. The look-up may find nothing, or the wrong video; this always works.
+   */
+  private youtubeLinkSection(state: PanelState, index: number, song: SongCredits): HTMLElement {
+    const artist = song.artist || state.session.album?.artist || "";
+    const draft = this.linkDraft?.index === index ? this.linkDraft.text : "";
+    const input = el("input", {
+      class: "field",
+      attrs: {
+        id: "youtube-link",
+        "data-key": "youtube-link",
+        type: "text",
+        autocomplete: "off",
+        spellcheck: "false",
+        placeholder: "https://www.youtube.com/watch?v=…",
+        "aria-describedby": "youtube-link-help",
+        ...(state.youtubeLinkError ? { "aria-invalid": "true" } : {}),
+      },
+      on: {
+        input: (event) => {
+          this.linkDraft = { index, text: (event.target as HTMLInputElement).value };
+        },
+      },
+    });
+    input.value = draft;
+    const use = (): void => {
+      void this.panel.setYoutubeLink(index, input.value).then((ok) => {
+        if (ok) {
+          this.linkDraft = null;
+          this.render();
+        }
+      });
+    };
+    const form = el(
+      "form",
+      {
+        class: "stack",
+        attrs: { novalidate: "" },
+        on: {
+          submit: (event) => {
+            event.preventDefault();
+            use();
+          },
+        },
+      },
+      el("label", { class: "sr-only", text: "YouTube link for this track", attrs: { for: "youtube-link" } }),
+      input,
+      this.button("Use this link", "quiet", "youtube-use", use, false),
+    );
+    // The YouTube step is a setting like the other fields: with it off, a link has nowhere to go.
+    const off = !state.settings.scrapeYoutube;
+    return el(
+      "section",
+      { class: "stack youtube-link", attrs: { "aria-label": "YouTube link" } },
+      el("h4", { text: "YouTube link" }),
+      el("a", {
+        class: "button quiet link-button",
+        text: "Find on YouTube",
+        attrs: {
+          href: youtubeSearchUrl(song.title, artist),
+          target: "_blank",
+          rel: "noopener noreferrer",
+          "data-key": "youtube-find",
+        },
+      }),
+      form,
+      el("p", {
+        class: state.youtubeLinkError ? "help problem" : "help",
+        text: state.youtubeLinkError
+          ? state.youtubeLinkError
+          : off
+            ? "The YouTube link step is turned off in Settings, so a link is not pasted."
+            : "Search for the video on YouTube, copy its address, and paste it here.",
+        attrs: { id: "youtube-link-help", "aria-live": "polite" },
+      }),
+      song.youtubeByUser && song.youtubeUrl
+        ? this.button("Remove my link", "quiet", "youtube-remove", () => void this.panel.clearYoutubeLink(index), false)
+        : null,
+    );
   }
 
   // ── pasting ─────────────────────────────────────────────────────────

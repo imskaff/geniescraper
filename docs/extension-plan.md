@@ -655,3 +655,10 @@ Offline: the saved captures are served through both paths, so all 15 golden song
 Live (`uv run python -m bench.lookups --only youtube`, the 15 golden songs one after another): accuracy 1.0 and music-video flag accuracy 1.0, median 1.74 s and 24.9 s in total per song set, from an address where the HTML pages had been refused.
 No clean before-number exists: the HTML path was already being refused from this address (2 of 6 album tracks found), and it was not run again to avoid hammering Google.
 Payload per search is about 535 KB against about 1.4 MB for the HTML page.
+
+## 27. A YouTube link without any look-up
+
+The look-up may find nothing, or the wrong video, and Google can refuse it, so a track's credits now have a way that always works:
+- **Find on YouTube** is a plain link (new tab, `noopener`) to YouTube's own results page for "<artist> <title> official music video". Nothing is fetched by the extension, so it needs no permission and cannot be blocked.
+- **A box for the link** takes whatever the user copied from YouTube: a watch link, a youtu.be link, a shorts, embed or live link, with or without the scheme or extra parameters. It is reduced to `https://www.youtube.com/watch?v=<11-character id>` (`core/youtubeLink.ts`); anything that is not a link to one YouTube video (another site, a lookalike host, a playlist, a channel, a script) is refused with a message and changes nothing.
+- The link replaces any link the look-up found, is shown as "YouTube (your link)", goes into the paste queue like any other, survives the panel being closed (it is part of the session), and can be removed. If the YouTube step is turned off in Settings the section says the link will not be pasted.

@@ -281,6 +281,29 @@ try {
   );
   await shot("4-review-golden-track");
 
+  // The YouTube link the user can add without any look-up: a search opened on YouTube, and a box for the link.
+  check(
+    "Find on YouTube opens YouTube's own search for the song in a new tab",
+    await panel.evaluate(
+      "(() => { const a = document.querySelector('[data-key=youtube-find]'); const u = new URL(a.href); return u.origin === 'https://www.youtube.com' && u.pathname === '/results' && u.searchParams.get('search_query').includes('CHIHIRO') && a.target === '_blank' && a.rel.includes('noopener'); })()",
+    ),
+  );
+  await panel.evaluate(
+    "(() => { const box = document.querySelector('#youtube-link'); box.value = 'https://youtu.be/BY_XwvKogC8'; box.dispatchEvent(new Event('input', { bubbles: true })); [...document.querySelectorAll('button')].find((b) => b.textContent === 'Use this link').click(); })()",
+  );
+  await until(
+    "[...document.querySelectorAll('dl.credits dt')].some((d) => d.textContent === 'YouTube (your link)')",
+    "the pasted YouTube link",
+    5000,
+  );
+  check(
+    "a pasted YouTube link shows as the user's own, in its canonical form",
+    await panel.evaluate(
+      "[...document.querySelectorAll('dl.credits dt')].find((d) => d.textContent === 'YouTube (your link)')?.nextElementSibling?.textContent === 'https://www.youtube.com/watch?v=BY_XwvKogC8'",
+    ),
+  );
+  await shot("4-review-with-own-link");
+
   // ── the button row, the glow, the collapsed queue, Genius role names ──
   await panel.send("Emulation.setEmulatedMedia", {
     features: [{ name: "prefers-reduced-motion", value: "no-preference" }],

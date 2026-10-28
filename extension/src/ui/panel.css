@@ -745,3 +745,14 @@ main > .tracks li + li {
 .setup-nav.animate {
   animation: welcome-rise 800ms ease-out 2000ms backwards;
 }
+
+/* Text for screen readers only. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

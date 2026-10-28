@@ -16,6 +16,8 @@ export interface SongCredits {
   coverArtUrl: string;
   youtubeUrl: string;
   youtubeIsMv: boolean;
+  /** True when the user pasted this link themselves, instead of the look-up finding it. */
+  youtubeByUser?: boolean;
 }
 
 export type QueueKind =

@@ -707,3 +707,93 @@ describe("Save and check key waits for a different key", () => {
     expect(document.activeElement).toBe(box());
   });
 });
+
+describe("the YouTube link section in the credits", () => {
+  const LINK = "https://www.youtube.com/watch?v=BY_XwvKogC8";
+  const reviewed = async (options: Parameters<typeof fakeEnv>[0] = {}) => {
+    const ui = await mount(options);
+    await submitLink(ui.root, ALBUM.url);
+    byText(ui.root, "button", "Select all").click();
+    await flush();
+    byText(ui.root, "button", "Get credits for").click();
+    await flush();
+    return ui;
+  };
+  const box = (root: HTMLElement) => root.querySelector<HTMLInputElement>("#youtube-link") as HTMLInputElement;
+  const type = (root: HTMLElement, text: string): void => {
+    box(root).value = text;
+    box(root).dispatchEvent(new Event("input", { bubbles: true }));
+  };
+  const hasRow = (root: HTMLElement, label: string): boolean =>
+    [...root.querySelectorAll("dl.credits dt")].some((d) => d.textContent === label);
+
+  it("offers a way to find the video: a link that opens YouTube's own search in a new tab, safely", async () => {
+    const { root } = await reviewed();
+    const find = root.querySelector<HTMLAnchorElement>('[data-key="youtube-find"]');
+    expect(find?.textContent).toBe("Find on YouTube");
+    const url = new URL(find?.href ?? "");
+    expect(url.origin + url.pathname).toBe("https://www.youtube.com/results");
+    expect(url.searchParams.get("search_query")).toBe("Demo Artist One official music video");
+    expect(find?.target).toBe("_blank");
+    expect(find?.rel).toBe("noopener noreferrer");
+  });
+
+  it("has a labelled box for the link, described by its help text", async () => {
+    const { root } = await reviewed();
+    expect(root.querySelector('label[for="youtube-link"]')?.textContent).toBe("YouTube link for this track");
+    expect(box(root).getAttribute("aria-describedby")).toBe("youtube-link-help");
+    expect(root.querySelector("#youtube-link-help")?.textContent).toContain("paste it here");
+  });
+
+  it("takes a pasted link, shows it as the user's, and puts it in the paste queue", async () => {
+    const { root, panel } = await reviewed();
+    type(root, "https://youtu.be/BY_XwvKogC8");
+    byText(root, "button", "Use this link").click();
+    await flush();
+    const dt = [...root.querySelectorAll("dl.credits dt")].find((d) => d.textContent === "YouTube (your link)");
+    expect(dt?.nextElementSibling?.querySelector("a")?.getAttribute("href")).toBe(LINK);
+    expect(box(root).value).toBe("");
+    expect(panel.queueFor(0).some(([kind, value]) => kind === "youtube_url" && value === LINK)).toBe(true);
+  });
+
+  it("submits with Enter in the box too", async () => {
+    const { root } = await reviewed();
+    type(root, LINK);
+    box(root).form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flush();
+    expect(hasRow(root, "YouTube (your link)")).toBe(true);
+  });
+
+  it("says what is wrong with something that is not a YouTube link, keeps what was typed, and marks the box", async () => {
+    const { root } = await reviewed();
+    type(root, "hello");
+    byText(root, "button", "Use this link").click();
+    await flush();
+    expect(root.querySelector("#youtube-link-help")?.textContent).toContain("not a link to one YouTube video");
+    expect(box(root).getAttribute("aria-invalid")).toBe("true");
+    expect(box(root).value).toBe("hello");
+  });
+
+  it("can take the user's link off again", async () => {
+    const { root } = await reviewed();
+    type(root, LINK);
+    byText(root, "button", "Use this link").click();
+    await flush();
+    byText(root, "button", "Remove my link").click();
+    await flush();
+    expect([...root.querySelectorAll("dl.credits dt")].some((d) => d.textContent.startsWith("YouTube"))).toBe(false);
+  });
+
+  it("says so when the YouTube step is turned off, because the link would not be pasted", async () => {
+    const { root } = await reviewed({ settings: { scrapeYoutube: false } });
+    expect(root.querySelector("#youtube-link-help")?.textContent).toContain("turned off in Settings");
+  });
+
+  it("does not carry a half-typed link to another track", async () => {
+    const { root } = await reviewed();
+    type(root, "half");
+    (root.querySelector('[data-key="show-2"]') as HTMLElement).click();
+    await flush();
+    expect(box(root).value).toBe("");
+  });
+});
