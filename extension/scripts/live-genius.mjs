@@ -103,6 +103,19 @@ try {
   };
 
   await gUntil("!!document.querySelector('button')", "the Genius page");
+  // The privacy dialog (Google's consent manager) dims the page and swallows clicks when it shows. The most
+  // privacy-preserving answer is the only one this script ever gives: "Do not consent".
+  await sleep(1500);
+  const declined = await gEval(`(() => {
+    const decline = document.querySelector('.fc-cta-do-not-consent');
+    if (!decline) return false;
+    decline.click();
+    return true;
+  })()`).catch(() => false);
+  if (declined) {
+    console.log("      declined the privacy dialog (do not consent)");
+    await sleep(1000);
+  }
   const hasEdit = await gUntil(
     "[...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Edit Metadata')",
     "the Edit Metadata button",
@@ -142,6 +155,7 @@ try {
       url: location.href,
       forms: [...document.querySelectorAll('form')].map((f) => f.getAttribute('aria-label') || f.id || '(unnamed)'),
       dialogs: [...document.querySelectorAll('[role="dialog"]')].map((d) => d.innerText.slice(0, 200)),
+      dialogButtons: [...document.querySelectorAll('[role="dialog"] button')].map((b) => b.className + ' : ' + b.textContent.trim()).slice(0, 12),
       buttons: [...document.querySelectorAll('button')].map((b) => b.textContent.trim()).filter(Boolean).slice(0, 25),
     })`).catch(() => "(page not readable)");
     console.log(`      the page shows: ${seen}`);
@@ -406,6 +420,11 @@ try {
       secondRows.length === firstRows.length,
       `${String(firstRows.length)} rows, then ${String(secondRows.length)}`,
     );
+    if (secondRows.length !== firstRows.length) {
+      // Name the rows that were added, so one run is enough to see which role did it.
+      console.log(`      rows after the first run:  ${JSON.stringify(firstRows)}`);
+      console.log(`      rows after the second run: ${JSON.stringify(secondRows)}`);
+    }
     const repeated = secondRows.filter((role, i) => role !== "" && secondRows.indexOf(role) !== i);
     check("no role has two rows after the second run", repeated.length === 0, repeated.join(", "));
   };

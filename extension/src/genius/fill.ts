@@ -162,10 +162,9 @@ function stepField(
       return input ? { box: boxOf(input), input } : {};
     }
     case "role":
-    case "copyright_role": {
-      const row = lastRow(form);
-      return { box: row?.roleBox, input: row?.role };
-    }
+    case "copyright_role":
+      // The row a role goes into is any empty one, so it is not tracked here: see roleChips and clearTyped.
+      return {};
     case "artist":
     case "phonographic_copyright":
     case "copyright_notice": {
@@ -179,10 +178,18 @@ function stepField(
   }
 }
 
+const isRoleStep = (kind: QueueKind): boolean => kind === "role" || kind === "copyright_role";
+
+/** Every role chosen in any row: a role goes into whichever row is empty, so a new one is seen across all of them. */
+function roleChips(form: HTMLFormElement): string[] {
+  return creditRows(form).flatMap((row) => chipTexts(row.roleBox));
+}
+
 /** What a step's field holds right now: its chips, or its value. The user's choice is what changes this afterwards. */
 export function stepSnapshot(doc: Document, item: QueueItem, role?: string): string[] {
   const form = findForm(doc);
   if (!form) return [];
+  if (isRoleStep(item[0])) return roleChips(form);
   const { box, input } = stepField(form, item[0], role);
   if (box) return chipTexts(box);
   return input ? [input.value] : [];
@@ -197,6 +204,10 @@ export function isStepDone(doc: Document, item: QueueItem, before: readonly stri
   const form = findForm(doc);
   if (!form) return false;
   const value = item[1];
+  if (isRoleStep(item[0])) {
+    const chips = roleChips(form);
+    return chips.some((chip) => sameName(chip, value)) || chips.length > before.length;
+  }
   const { box, input } = stepField(form, item[0], role);
   if (box) {
     const chips = chipTexts(box);
@@ -214,6 +225,13 @@ export function isStepDone(doc: Document, item: QueueItem, before: readonly stri
 export function clearTyped(doc: Document, item: QueueItem, role?: string): void {
   const form = findForm(doc);
   if (!form) return;
+  if (isRoleStep(item[0])) {
+    // The text is in the role field of whichever empty row the role went into.
+    for (const row of creditRows(form)) {
+      if (chipTexts(row.roleBox).length === 0 && row.role.value !== "") setValue(row.role, "");
+    }
+    return;
+  }
   const { box, input } = stepField(form, item[0], role);
   if (box && input && input.value !== "") setValue(input, "");
 }

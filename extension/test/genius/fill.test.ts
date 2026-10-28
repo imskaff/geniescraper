@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { typedQueue, type QueueItem } from "../../src/core/models";
-import { clearTyped, fillStep, type FillContext, type StepOutcome } from "../../src/genius/fill";
+import {
+  clearTyped,
+  fillStep,
+  isStepDone,
+  stepSnapshot,
+  type FillContext,
+  type StepOutcome,
+} from "../../src/genius/fill";
 import { songFromVector } from "../parity/helpers";
 import { chipsIn, loadFakeGenius, rowChips, type FakeGenius, type FakeOptions } from "./fakeGenius";
 import { addCreditsButton } from "../../src/genius/selectors";
@@ -404,6 +411,35 @@ describe("roles the form already has", () => {
 
     await run(["role", "Mixing Engineer"]);
     expect(rowChips(fake.form).map((r) => r.role)).toEqual([["Mixing Engineer"], ["Lead Vocals"]]);
+  });
+
+  /** A form whose first row is empty (a skipped role) and whose last row is filled. */
+  async function emptyThenFilled() {
+    const { fake, ctx, run } = setup();
+    await fillStep(["role", "Mixing Engineer"], { ...ctx, autoConfirm: false });
+    clearTyped(fake.doc, ["role", "Mixing Engineer"]);
+    addCreditsButton(fake.form)?.click();
+    await run(["role", "Lead Vocals"]);
+    return { fake, ctx, run };
+  }
+
+  it("clears the text typed for a role in the empty row it used, not in the last row", async () => {
+    const { fake, ctx } = await emptyThenFilled();
+    await fillStep(["role", "Mastering Engineer"], { ...ctx, autoConfirm: false });
+    const input = fake.form.querySelector<HTMLInputElement>("#custom_performances-0-label input");
+    expect(input?.value).not.toBe("");
+    clearTyped(fake.doc, ["role", "Mastering Engineer"]);
+    expect(input?.value).toBe("");
+  });
+
+  it("sees the role the user chose in an empty row that is not the last, so a run is not left waiting", async () => {
+    const { fake, ctx } = await emptyThenFilled();
+    const item = ["role", "Mastering Engineer"] as const;
+    await fillStep(item, { ...ctx, autoConfirm: false });
+    const before = stepSnapshot(fake.doc, item);
+    expect(isStepDone(fake.doc, item, before)).toBe(false);
+    await fillStep(item, ctx);
+    expect(isStepDone(fake.doc, item, before)).toBe(true);
   });
 });
 
