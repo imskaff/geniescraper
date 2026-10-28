@@ -21,6 +21,8 @@ export interface Settings {
   parallelReads: number;
   /** Go back to the main menu a few seconds after the last step, as the desktop app does. */
   autoReturn: boolean;
+  /** The first-time set-up has been seen (finished or skipped). */
+  onboarded: boolean;
 }
 
 /**
@@ -46,6 +48,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   autocompleteWaitSeconds: 0.6,
   parallelReads: 3,
   autoReturn: true,
+  onboarded: false,
 };
 
 export const SETTINGS_KEY = "settings";
@@ -67,6 +70,10 @@ export function normaliseSettings(raw: unknown): Settings {
       ? value
       : DEFAULT_SETTINGS[key];
   };
+  // Someone who already has saved settings from before the set-up existed has been using the extension: they are not
+  // welcomed as a new user. Only an empty store, or one that says so, shows the set-up.
+  const seen = source["onboarded"];
+  const onboarded = typeof seen === "boolean" ? seen : Object.keys(source).length > 0;
   const wait = source["autocompleteWaitSeconds"];
   const waitSeconds =
     typeof wait === "number" && Number.isFinite(wait)
@@ -98,6 +105,7 @@ export function normaliseSettings(raw: unknown): Settings {
     autocompleteWaitSeconds: waitSeconds,
     parallelReads,
     autoReturn: flag("autoReturn"),
+    onboarded,
   };
 }
 

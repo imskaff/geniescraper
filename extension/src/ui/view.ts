@@ -8,6 +8,7 @@ import { STEP_LABELS, instruction } from "../core/paste";
 import type { OptionalHost } from "../lookups/http";
 import { HOTKEY_CHOICES, PARALLEL_CHOICES, WAIT_RANGE } from "../shared/settings";
 import { el } from "./dom";
+import { renderSetup } from "./setup";
 import type { PanelController, PanelState } from "./controller";
 
 export const FIELD_LABELS: Readonly<Record<QueueKind, string>> = {
@@ -29,7 +30,7 @@ const SETTING_LABELS: readonly (readonly [ScrapeKey, string])[] = [
   ["scrapeAdditional", "Additional credits"],
   ["scrapeCopyright", "Copyright lines (℗ and ©)"],
   ["scrapeYoutube", "YouTube link"],
-  ["scrapeCoverArt", "Cover art link"],
+  ["scrapeCoverArt", "PNG cover art link"],
 ];
 
 const STATUS_TEXT: Readonly<Record<TrackStatus, string>> = {
@@ -54,6 +55,8 @@ export class PanelView {
   private readonly expanded = new Map<string, boolean>();
   /** What the user has typed into the key box, kept across re-renders and never stored by the view. */
   private keyDraft = "";
+  /** The welcome's intro has played; later redraws show it still. */
+  private welcomePlayed = false;
 
   constructor(
     private readonly root: HTMLElement,
@@ -138,6 +141,13 @@ export class PanelView {
     });
   }
 
+  /** True once: the first time the welcome is drawn. */
+  private playWelcome(): boolean {
+    const first = !this.welcomePlayed;
+    this.welcomePlayed = true;
+    return first;
+  }
+
   private region(id: string): HTMLElement {
     const node = this.root.querySelector<HTMLElement>(`#${id}`);
     if (!node) throw new Error(`missing #${id}`);
@@ -158,28 +168,41 @@ export class PanelView {
     this.region("status").textContent = state.status;
     const toggle = this.region("settings-toggle");
     toggle.textContent = state.settingsOpen ? "Back" : "Settings";
+    // The set-up is the whole screen: no Settings button over it (its steps are the settings that matter).
+    toggle.hidden = state.setup.open;
     this.updateHeader(state);
 
     const finished =
       state.paste.active && state.paste.queue.length > 0 && state.paste.position >= state.paste.queue.length;
-    const key = state.settingsOpen
-      ? "settings"
-      : finished
-        ? "done"
-        : state.paste.active
-          ? "paste"
-          : state.session.screen;
+    const key = state.setup.open
+      ? `setup-${String(state.setup.step)}`
+      : state.settingsOpen
+        ? "settings"
+        : finished
+          ? "done"
+          : state.paste.active
+            ? "paste"
+            : state.session.screen;
     // Starting over with a new link forgets the old one; opening and closing settings does not.
     if (key === "link" && (this.screenKey === "tracks" || this.screenKey === "review")) this.draft = null;
     main.setAttribute("aria-busy", String(state.busy !== null));
     main.replaceChildren(
-      ...(state.settingsOpen
-        ? this.settings(state)
-        : finished
-          ? this.doneScreen(state)
-          : state.paste.active
-            ? this.pasteScreen(state)
-            : this.screen(state)),
+      ...(state.setup.open
+        ? renderSetup(state, this.panel, {
+            button: (text, variant, key, onClick, disabled, wide) =>
+              this.button(text, variant, key, onClick, disabled, wide),
+            heading: (text) => this.heading(text),
+            lookupFieldset: () => this.lookupSettings(state),
+            keyFieldset: () => this.youtubeKeySettings(state),
+            animateWelcome: () => this.playWelcome(),
+          })
+        : state.settingsOpen
+          ? this.settings(state)
+          : finished
+            ? this.doneScreen(state)
+            : state.paste.active
+              ? this.pasteScreen(state)
+              : this.screen(state)),
     );
 
     if (key !== this.screenKey) {
@@ -210,7 +233,7 @@ export class PanelView {
 
   /** The track whose credits are on screen and can be pasted now, or null. */
   private startableIndex(state: PanelState): number | null {
-    if (state.settingsOpen || state.paste.active || state.session.screen !== "review") return null;
+    if (state.setup.open || state.settingsOpen || state.paste.active || state.session.screen !== "review") return null;
     const { results, current } = state.session;
     const shown = results.find((r) => r.index === current) ?? results[0];
     return shown?.song && this.panel.queueFor(shown.index).length > 0 ? shown.index : null;

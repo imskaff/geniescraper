@@ -598,3 +598,138 @@ a.link-button {
   background: var(--accent);
   border-radius: 4px;
 }
+
+/* The first-time set-up */
+.setup-progress {
+  margin: 4px 0 0;
+}
+
+.option-help {
+  margin: 2px 0 0 26px;
+}
+
+.plain-list {
+  margin: 8px 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.setup-nav {
+  margin-top: 20px;
+  padding-bottom: 16px;
+}
+
+fieldset .tracks li + li,
+main > .tracks li + li {
+  margin-top: 8px;
+}
+
+/* The welcome: the logo fades in with a soft glow, then the words rise into place, once. The keyframes only say where
+   each part starts from; a part that does not play (reduced motion, or a redraw) simply sits at its normal look. */
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.welcome-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 140px;
+  height: 140px;
+  margin: 8px 0 4px;
+}
+
+.welcome-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 68%);
+  opacity: 0.22;
+}
+
+.welcome-logo {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 22px;
+}
+
+.welcome-title h2 {
+  margin: 6px 0 0;
+  font-size: 1.5rem;
+}
+
+.welcome-lead {
+  margin: 10px 0 0;
+}
+
+.welcome-points {
+  text-align: left;
+}
+
+.welcome.animate .welcome-glow {
+  animation: welcome-glow 1600ms ease-out 100ms backwards;
+}
+
+.welcome.animate .welcome-logo {
+  animation: welcome-logo 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) 150ms backwards;
+}
+
+.welcome.animate .welcome-title {
+  animation: welcome-rise 800ms ease-out 900ms backwards;
+}
+
+.welcome.animate .welcome-lead {
+  animation: welcome-rise 800ms ease-out 1250ms backwards;
+}
+
+.welcome.animate .welcome-points {
+  animation: welcome-rise 800ms ease-out 1600ms backwards;
+}
+
+@keyframes welcome-logo {
+  from {
+    opacity: 0;
+    transform: scale(0.72);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes welcome-glow {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  60% {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 0.22;
+    transform: scale(1);
+  }
+}
+
+@keyframes welcome-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.setup-nav.animate {
+  animation: welcome-rise 800ms ease-out 2000ms backwards;
+}
