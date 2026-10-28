@@ -277,6 +277,31 @@ export class PanelView {
 
   private linkScreen(state: PanelState): Node[] {
     const busy = state.busy === "detect";
+    const start = this.draft ?? state.pageUrl;
+    // Get credits needs a link: it stays off while the box is empty and while a page is being read.
+    const go = el(
+      "button",
+      {
+        class: "button primary",
+        attrs: {
+          type: "submit",
+          "data-key": "go",
+          ...(busy ? { "aria-label": "Reading the page…" } : {}),
+          ...(busy || start.trim() === "" ? { disabled: "" } : {}),
+        },
+      },
+      "Get credits",
+      // Three dots that light up one after another while the page is read.
+      busy
+        ? el(
+            "span",
+            { class: "dots", attrs: { "aria-hidden": "true" } },
+            el("i", { text: "." }),
+            el("i", { text: "." }),
+            el("i", { text: "." }),
+          )
+        : null,
+    );
     const input = el("input", {
       class: "field",
       attrs: {
@@ -293,15 +318,16 @@ export class PanelView {
       on: {
         input: (event) => {
           this.draft = (event.target as HTMLInputElement).value;
+          go.disabled = busy || this.draft.trim() === "";
         },
       },
     });
-    input.value = this.draft ?? state.pageUrl;
+    input.value = start;
 
     const form = el(
       "form",
       {
-        class: "stack",
+        class: "stack link-form",
         attrs: { novalidate: "" },
         on: {
           submit: (event) => {
@@ -320,28 +346,7 @@ export class PanelView {
           : "Open an album or song on Apple Music and paste its link.",
         attrs: { id: "link-help" },
       }),
-      el(
-        "button",
-        {
-          class: "button primary",
-          attrs: {
-            type: "submit",
-            "data-key": "go",
-            ...(busy ? { disabled: "", "aria-label": "Reading the page…" } : {}),
-          },
-        },
-        "Get credits",
-        // Three dots that light up one after another while the page is read.
-        busy
-          ? el(
-              "span",
-              { class: "dots", attrs: { "aria-hidden": "true" } },
-              el("i", { text: "." }),
-              el("i", { text: "." }),
-              el("i", { text: "." }),
-            )
-          : null,
-      ),
+      go,
     );
     return [this.heading("Get credits from Apple Music"), form, ...this.openPages(state)];
   }
