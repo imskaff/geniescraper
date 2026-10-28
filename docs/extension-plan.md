@@ -662,3 +662,21 @@ The look-up may find nothing, or the wrong video, and Google can refuse it, so a
 - **Find on YouTube** is a plain link (new tab, `noopener`) to YouTube's own results page for "<artist> <title> official music video". Nothing is fetched by the extension, so it needs no permission and cannot be blocked.
 - **A box for the link** takes whatever the user copied from YouTube: a watch link, a youtu.be link, a shorts, embed or live link, with or without the scheme or extra parameters. It is reduced to `https://www.youtube.com/watch?v=<11-character id>` (`core/youtubeLink.ts`); anything that is not a link to one YouTube video (another site, a lookalike host, a playlist, a channel, a script) is refused with a message and changes nothing.
 - The link replaces any link the look-up found, is shown as "YouTube (your link)", goes into the paste queue like any other, survives the panel being closed (it is part of the session), and can be removed. If the YouTube step is turned off in Settings the section says the link will not be pasted.
+
+## 28. A cheaper lookup on the YouTube API path
+
+A key gives 10,000 free units a day and a search costs 100, so the number of searches per song decides how many songs a day can be looked up.
+With a key, each phase (music video, then audio) now runs one query (`API_QUERIES_PER_PHASE = 1` in `background/youtube.ts`), and a phase that found no candidate at all moves on to its next query.
+The audio phase still runs only when no music video was confirmed, and only the best few candidates have their descriptions read (1 unit each).
+Replayed on the saved results of the 15 golden songs (`test/lookups/youtube.test.ts`): all 15 still get an accepted video with the right music-video flag, 3 searches at most, and no more than 3 songs need more than 2 (Rosalia and Frank Ocean need a retry).
+That is about 2 searches for most songs, so roughly 50 songs a day instead of about 20.
+The saved results are Google's HTML pages, not the API's, so the check against the real API is a script to run with your own key:
+
+```
+$env:YOUTUBE_API_KEY = "<your key>"
+node scripts/live-youtube-api.mjs --limit 5
+```
+
+It runs the extension's own lookup against the golden songs, prints per song the link, whether it is accepted and the units spent, and never prints the key.
+Without `--limit` it spends about 3,000 units, so run it once, not repeatedly.
+Not yet run against the real API: it needs the user's key.
