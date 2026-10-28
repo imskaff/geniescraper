@@ -21,7 +21,7 @@ const health = (patch: Partial<Omit<HealthInput, "song">> & { song?: Partial<Son
     status: "done",
     song: song === null ? null : { ...SONG, ...song },
     wants: ALL,
-    youtubeSearchedInVain: false,
+    youtubeSearching: false,
     ...rest,
   });
 };
@@ -38,7 +38,7 @@ describe("a track's health in the credits list", () => {
   it("names each thing that is missing", () => {
     const result = health({
       song: { phonographicCopyright: "", coverArtUrl: "", youtubeUrl: "" },
-      youtubeSearchedInVain: true,
+      youtubeSearching: false,
     });
     expect(result.level).toBe("attention");
     expect(result.missing).toEqual(["copyright", "cover art", "YouTube link"]);
@@ -49,15 +49,31 @@ describe("a track's health in the credits list", () => {
     expect(health({ song: { phonographicCopyright: "", copyrightNotice: "© 2024" } }).level).toBe("ok");
   });
 
-  it("does not blame a missing YouTube link before it was looked for", () => {
-    expect(health({ song: { youtubeUrl: "" } }).level).toBe("ok");
+  it("never says All found while the YouTube link is still being looked for", () => {
+    expect(health({ song: { youtubeUrl: "" }, youtubeSearching: true })).toEqual({
+      level: "working",
+      label: "Finding YouTube link",
+      missing: [],
+    });
+  });
+
+  it("asks for a look once the link was looked for and not found", () => {
+    expect(health({ song: { youtubeUrl: "" } })).toMatchObject({
+      level: "attention",
+      missing: ["YouTube link"],
+    });
+  });
+
+  it("reports other missing things while the link is still being looked for", () => {
+    const result = health({ song: { youtubeUrl: "", coverArtUrl: "" }, youtubeSearching: true });
+    expect(result).toMatchObject({ level: "attention", missing: ["cover art"] });
   });
 
   it("does not count a step the user switched off", () => {
     const result = health({
       song: { phonographicCopyright: "", coverArtUrl: "", youtubeUrl: "" },
       wants: { copyright: false, coverArt: false, youtube: false },
-      youtubeSearchedInVain: true,
+      youtubeSearching: false,
     });
     expect(result.level).toBe("ok");
   });

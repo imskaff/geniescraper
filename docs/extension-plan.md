@@ -698,3 +698,11 @@ Now no track is open when the credits arrive (`Session.current` is `null`), the 
 - **Needs a look: ...** (amber `!`): the credits are empty, or the copyright lines, the cover art link or the YouTube link are missing; the words name which. A missing YouTube link counts only after a look-up came back empty, since links are looked up when a track is opened or pasted.
 - **Failed** (red cross), **Reading**, **Waiting** and **No page** keep their words.
 The mark is hidden from screen readers and the words carry the meaning, so colour is never the only signal. A step switched off in Settings is never reported missing. `--warn` is a new token with its contrast pairs in `test/ui/contrast.test.ts`.
+
+## 31. Every track gets its link, and what is missing is flagged
+
+Hands-on finding: with YouTube links looked up only for the track the user opened, the list said "All found" for tracks whose link had never been asked for.
+- **Every track is looked up as its credits arrive.** With the user's key the worker spreads the asks; with YouTube's pages they go one after another, and the first refusal or failure stops the rest (those tracks say "Not checked: YouTube is limiting requests. Open this track to try again."). Opening a track, or Start pasting, still asks for it straight away and ahead of the queue. This supersedes the "looked up when opened" rule of section 29. Not yet run live against a whole album without a key; the refusal stop is what keeps it from hammering Google.
+- **No "All found" while a link is still being looked for:** the track says "Finding YouTube link". A link that cannot be asked for (no permission, or the step is off) is the user's choice and is not counted missing.
+- **Missing things are flagged in the credits too:** a row for the copyright, cover art or YouTube link that was not found, in amber on a tinted band with "Not found" (or the look-up's own words), so it is visible without reading the list.
+- **The YouTube link section appears only when the program did not find the link** (and while it is still looking it stays hidden). A link the user gave keeps the section, so it can be taken off.

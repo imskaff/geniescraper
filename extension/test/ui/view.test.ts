@@ -848,6 +848,65 @@ describe("the YouTube link section in the credits", () => {
     expect(find?.rel).toBe("noopener noreferrer");
   });
 
+  describe("when the program looks for the link itself", () => {
+    const FOUND = {
+      ok: true as const,
+      data: { url: LINK, isMusicVideo: true, throttled: false, keyProblem: "" as const },
+    };
+    const NONE = {
+      ok: true as const,
+      data: { url: "", isMusicVideo: false, throttled: false, keyProblem: "" as const },
+    };
+    const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+    it("hides the section when it found the link", async () => {
+      const ui = await reviewed({ hosts: { youtube: true }, api: { lookupYoutube: () => Promise.resolve(FOUND) } });
+      await settle();
+      await flush();
+      expect(ui.root.querySelector("#youtube-link")).toBeNull();
+      expect(ui.root.querySelector('[data-key="youtube-find"]')).toBeNull();
+      expect(hasRow(ui.root, "YouTube (music video)")).toBe(true);
+      expect($(ui.root, '[data-key="show-0"]').getAttribute("data-health")).toBe("ok");
+    });
+
+    it("shows the section, and marks the missing link in amber, when it found none", async () => {
+      const ui = await reviewed({ hosts: { youtube: true }, api: { lookupYoutube: () => Promise.resolve(NONE) } });
+      await settle();
+      await flush();
+      expect(ui.root.querySelector("#youtube-link")).not.toBeNull();
+      const dt = [...ui.root.querySelectorAll("dl.credits dt")].find((d) => d.textContent === "YouTube");
+      expect(dt?.classList.contains("attn")).toBe(true);
+      expect(dt?.nextElementSibling?.classList.contains("attn")).toBe(true);
+      expect($(ui.root, '[data-key="show-0"]').getAttribute("aria-label")).toBe("1. One: Needs a look: YouTube link");
+    });
+
+    it("keeps the section out of the way, and the track unfinished, while the link is still being looked for", async () => {
+      const gate = deferred<typeof FOUND>();
+      const ui = await reviewed({ hosts: { youtube: true }, api: { lookupYoutube: () => gate.promise } });
+      expect(ui.root.querySelector("#youtube-link")).toBeNull();
+      expect($(ui.root, '[data-key="show-0"]').getAttribute("data-health")).toBe("working");
+      expect($(ui.root, '[data-key="show-0"]').getAttribute("aria-label")).toBe("1. One: Finding YouTube link");
+      gate.resolve(FOUND);
+    });
+
+    it("keeps the section for a link the user gave, so it can be taken off", async () => {
+      const ui = await reviewed({ hosts: { youtube: true }, api: { lookupYoutube: () => Promise.resolve(FOUND) } });
+      await settle();
+      await ui.panel.setYoutubeLink(0, "https://youtu.be/BY_XwvKogC8");
+      await flush();
+      expect(ui.root.querySelector('[data-key="youtube-remove"]')).not.toBeNull();
+    });
+  });
+
+  it("marks what the read did not find in the credits too, for a track that needs a look", async () => {
+    const bare = { ...ALBUM, coverArtUrl: "", phonographicCopyright: "", copyrightNotice: "" };
+    const { root } = await reviewed({ api: { detect: () => Promise.resolve({ ok: true, data: bare }) } });
+    const flagged = [...root.querySelectorAll("dl.credits dt.attn")].map((d) => d.textContent);
+    expect(flagged).toContain("Copyright");
+    expect(flagged).toContain("Cover art");
+    expect(root.querySelector("dl.credits dd.attn")?.textContent).toBe("Not found");
+  });
+
   it("has a labelled box for the link, described by its help text", async () => {
     const { root } = await reviewed();
     expect(root.querySelector('label[for="youtube-link"]')?.textContent).toBe("YouTube link for this track");

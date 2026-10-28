@@ -451,9 +451,10 @@ export class PanelView {
       wants: {
         copyright: settings.scrapeCopyright,
         coverArt: settings.scrapeCoverArt,
-        youtube: settings.scrapeYoutube,
+        // A link that cannot be asked for (no permission, or the step is off) is the user's choice, not a miss.
+        youtube: this.panel.youtubeAskable(),
       },
-      youtubeSearchedInVain: Boolean(note) && note !== MESSAGES.lookingForYoutubeShort,
+      youtubeSearching: note === MESSAGES.lookingForYoutubeShort,
     });
   }
 
@@ -512,9 +513,16 @@ export class PanelView {
     for (const credit of song.credits) {
       groups.append(el("dt", { text: credit.role }), el("dd", { text: credit.artists.join(", ") }));
     }
+    const { missing } = this.healthOf(state, result);
+    // What the read should have found and did not is spelled out in the list, in the colour of the "Needs a look" mark.
+    const notFound = (label: string, words = "Not found"): void => {
+      groups.append(el("dt", { class: "attn", text: label }), el("dd", { class: "attn", text: words }));
+    };
     if (song.phonographicCopyright)
       groups.append(el("dt", { text: "Phonographic copyright" }), el("dd", { text: song.phonographicCopyright }));
     if (song.copyrightNotice) groups.append(el("dt", { text: "Copyright" }), el("dd", { text: song.copyrightNotice }));
+    if (missing.includes("copyright")) notFound("Copyright");
+    if (!song.coverArtUrl && missing.includes("cover art")) notFound("Cover art");
     if (song.coverArtUrl) {
       groups.append(
         el("dt", { text: "Cover art" }),
@@ -554,12 +562,20 @@ export class PanelView {
     }
 
     const note = state.youtubeNotes[result.index];
-    if (note && !song.youtubeUrl) groups.append(el("dt", { text: "YouTube" }), el("dd", { class: "help", text: note }));
+    if (missing.includes("YouTube link")) notFound("YouTube", note || "Not found");
+    else if (note && !song.youtubeUrl)
+      groups.append(el("dt", { text: "YouTube" }), el("dd", { class: "help", text: note }));
+
+    // The link box is for a link the program did not find (or one the user gave, which they may take off again).
+    const searching = note === MESSAGES.lookingForYoutubeShort;
+    const needsOwnLink = song.youtubeByUser === true || (!song.youtubeUrl && !searching);
 
     const queue = this.panel.queueFor(result.index);
     section.append(
-      song.credits.length === 0 ? el("p", { class: "problem", text: "No credits were found for this track." }) : groups,
-      this.youtubeLinkSection(state, result.index, song),
+      song.credits.length === 0
+        ? el("p", { class: "problem attn", text: "No credits were found for this track." })
+        : groups,
+      ...(needsOwnLink ? [this.youtubeLinkSection(state, result.index, song)] : []),
       queue.length === 0
         ? el("p", { class: "help", text: "Nothing to paste with the current settings." })
         : this.disclosure(

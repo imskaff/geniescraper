@@ -815,3 +815,24 @@ main > .tracks li + li {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* A row the read should have filled and did not: amber text on a tinted band, with the words saying so as well. */
+.credits dt.attn,
+.credits dd.attn {
+  color: var(--warn);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+}
+
+.credits dt.attn {
+  padding-left: 6px;
+  border-left: 3px solid var(--warn);
+}
+
+p.attn {
+  color: var(--warn);
+  font-weight: 600;
+  padding: 8px 10px;
+  border-left: 3px solid var(--warn);
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+}

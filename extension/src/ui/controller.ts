@@ -7,7 +7,7 @@ import { typedQueue, type QueueItem, type SongCredits } from "../core/models";
 import type { PasteCommand } from "../shared/messages";
 import { IDLE_PASTE, type PasteState } from "../core/paste";
 import type { AlbumInfo, AppError, PageScrape } from "../shared/messages";
-import { EMPTY_SESSION, shownTrack, type Session, type TrackResult } from "../shared/session";
+import { EMPTY_SESSION, type Session, type TrackResult } from "../shared/session";
 import { normaliseSettings, queueOptions, type Settings } from "../shared/settings";
 import {
   loadPaste,
@@ -92,6 +92,7 @@ export const MESSAGES = {
   lookingForYoutubeShort: "Looking for it…",
   noYoutubeShort: "No link found for this track.",
   youtubeFailedShort: "The look-up did not finish.",
+  youtubeNotChecked: "Not checked: YouTube is limiting requests. Open this track to try again.",
   noYoutube: "No YouTube link was found for this track.",
   youtubeThrottled: "YouTube is limiting requests right now, so this track has no YouTube link. Try again in a minute.",
   notAYoutubeLink:
@@ -461,12 +462,7 @@ export class PanelController {
         const album = this.current.session.album;
         if (answer.ok && album) {
           await this.setResult(next.index, { status: "done", song: buildSong(album, next, answer.data), error: "" });
-          // The track in front of the user gets its link while the rest are read, so Start pasting does not wait.
-          // With the user's own key every track does: Google's official service has no burst limit like the page
-          // reading has, so the whole album gets its links (the worker still asks two at a time).
-          const { youtubeKey, hosts } = this.current;
-          const withKey = youtubeKey.saved && hosts.youtubeApi;
-          if (withKey || next.index === shownTrack(this.current.session)?.index) void this.ensureYoutube(next.index);
+          this.queueYoutube(next.index);
         } else if (!answer.ok) {
           await this.setResult(next.index, { status: "error", error: describeError(answer.error) });
         }
@@ -648,26 +644,66 @@ export class PanelController {
   /** The last thing found wrong with the user's YouTube key, shown after a read finishes. */
   private keyNote = "";
 
+  /** Starts at 0 and moves on whenever the lookups are forgotten, so a queue from another album stops itself. */
+  private youtubeEpoch = 0;
+  /** The tracks waiting for their turn, one after another: Google blocks a burst of searches. */
+  private youtubeChain: Promise<void> = Promise.resolve();
+  /** Set when Google refused a lookup: the rest of the queue is not sent, so it does not make things worse. */
+  private youtubePaused = false;
+
+  /** Whether the YouTube step is on and there is a way to ask: YouTube's pages (its permission) or the user's key. */
+  youtubeAskable(): boolean {
+    const { hosts, youtubeKey, settings } = this.current;
+    return settings.scrapeYoutube && (hosts.youtube || (youtubeKey.saved && hosts.youtubeApi));
+  }
+
   /**
-   * Look up this track's YouTube link if it needs one and the user has allowed it. Called when the user is about to
-   * paste the track, never for a whole album at once: Google blocks a burst of searches, which left most of an
-   * album without links. The answer is kept on the track, so it is not asked again.
+   * Look up this track's YouTube link if it needs one and the user has allowed it. The answer is kept on the track,
+   * so it is not asked again. Opening a track and Start pasting call this straight away.
    */
   ensureYoutube(index: number, announce = false): Promise<void> {
     const known = this.youtubeLookups.get(index);
     if (known) return known;
     const result = this.current.session.results.find((r) => r.index === index);
     const song = result?.song;
-    const { hosts, youtubeKey, settings } = this.current;
-    // Either way of asking will do: reading YouTube's pages (its permission) or Google's service with the user's key.
-    const canAsk = hosts.youtube || (youtubeKey.saved && hosts.youtubeApi);
-    if (!result || !song || song.youtubeUrl || !settings.scrapeYoutube || !canAsk) return Promise.resolve();
+    if (!result || !song || song.youtubeUrl || !this.youtubeAskable()) return Promise.resolve();
     const lookup = this.lookupYoutube(index, song, announce);
     this.youtubeLookups.set(index, lookup);
     return lookup;
   }
 
+  /**
+   * A track whose credits just arrived gets its link without the user having to open it, so the list never claims
+   * "All found" for a track whose link was never asked for. With the user's key the worker spreads the asks itself;
+   * with YouTube's pages they go one after another, and stop at the first refusal (opening a track tries again).
+   */
+  private queueYoutube(index: number): void {
+    if (!this.youtubeAskable()) return;
+    const { hosts, youtubeKey } = this.current;
+    if (youtubeKey.saved && hosts.youtubeApi) {
+      void this.ensureYoutube(index);
+      return;
+    }
+    const epoch = this.youtubeEpoch;
+    if (!this.youtubeLookups.has(index)) this.note(index, MESSAGES.lookingForYoutubeShort);
+    this.youtubeChain = this.youtubeChain.then(async () => {
+      if (epoch !== this.youtubeEpoch) return;
+      if (this.youtubePaused) {
+        this.note(index, MESSAGES.youtubeNotChecked);
+        return;
+      }
+      await this.ensureYoutube(index);
+      if (epoch !== this.youtubeEpoch) return;
+      const song = this.current.session.results.find((r) => r.index === index)?.song;
+      if (song?.youtubeUrl) this.note(index, "");
+      // A refused or failed lookup is forgotten so it can be asked again; that is the sign to stop sending more.
+      else if (song && !this.youtubeLookups.has(index)) this.youtubePaused = true;
+    });
+  }
+
   private forgetYoutube(): void {
+    this.youtubeEpoch++;
+    this.youtubePaused = false;
     this.youtubeLookups.clear();
     if (this.current.youtubeLinkError) this.update({ youtubeLinkError: "" });
     this.keyNote = "";

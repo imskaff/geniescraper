@@ -16,12 +16,12 @@ export interface HealthInput {
   song: SongCredits | null;
   /** Which of the optional steps are switched on; a step that is off is never "missing". */
   wants: { copyright: boolean; coverArt: boolean; youtube: boolean };
-  /** True once a YouTube look-up for this track has run and found nothing; before that the link is simply not asked for yet. */
-  youtubeSearchedInVain: boolean;
+  /** True while the YouTube look-up for this track is running or waiting its turn. */
+  youtubeSearching: boolean;
 }
 
 /** Nothing here is judged by what the track has not been asked for: only what was asked and is absent counts. */
-export function trackHealth({ status, song, wants, youtubeSearchedInVain }: HealthInput): Health {
+export function trackHealth({ status, song, wants, youtubeSearching }: HealthInput): Health {
   switch (status) {
     case "pending":
       return { level: "waiting", label: "Waiting", missing: [] };
@@ -39,7 +39,9 @@ export function trackHealth({ status, song, wants, youtubeSearchedInVain }: Heal
   if (song.credits.length === 0) missing.push("credits");
   if (wants.copyright && !song.phonographicCopyright && !song.copyrightNotice) missing.push("copyright");
   if (wants.coverArt && !song.coverArtUrl) missing.push("cover art");
-  if (wants.youtube && !song.youtubeUrl && youtubeSearchedInVain) missing.push("YouTube link");
+  const awaitingLink = wants.youtube && !song.youtubeUrl;
+  if (awaitingLink && !youtubeSearching) missing.push("YouTube link");
+  if (missing.length === 0 && awaitingLink) return { level: "working", label: "Finding YouTube link", missing };
   if (missing.length === 0) return { level: "ok", label: "All found", missing };
   return { level: "attention", label: `Needs a look: ${missing.join(", ")}`, missing };
 }

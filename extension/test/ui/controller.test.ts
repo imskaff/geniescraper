@@ -559,47 +559,59 @@ describe("the YouTube link of a track", () => {
     await ui.panel.getCredits();
     // The user opens the first track's credits, which is what puts it in front of them.
     await ui.panel.showTrack(0);
+    await new Promise((resolve) => setTimeout(resolve, 0)); // the queue asks for the other tracks one after another
     return ui;
   }
   const lookups = (env: Awaited<ReturnType<typeof ready>>["env"]) =>
     env.api.calls.filter((c) => c.startsWith("youtube:"));
 
-  it("is not looked up while an album is read, except for the track in front of the user", async () => {
+  it("is looked up for every track as the album is read, one after another, with the song's own artist", async () => {
     const { env } = await ready({ api: { lookupYoutube: () => Promise.resolve(FOUND) } });
-    expect(lookups(env)).toHaveLength(1);
+    expect(lookups(env)).toEqual(["youtube:Demo Artist / One", "youtube:Demo Artist / Three"]);
   });
 
-  it("is looked up for the track in front of the user once its credits are in, so Start pasting does not wait", async () => {
-    const { panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(FOUND) } });
+  it("gives each track its link without the user opening it, so Start pasting does not wait", async () => {
+    const { panel, env } = await ready({ api: { lookupYoutube: () => Promise.resolve(FOUND) } });
     expect(panel.state.session.results[0]?.song).toMatchObject({ youtubeUrl: LINK, youtubeIsMv: true });
-    expect(panel.state.session.results[1]?.song?.youtubeUrl).toBe("");
-  });
-
-  it("is looked up for another track when the user starts pasting it, with the song's own artist", async () => {
-    const { env, panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(FOUND) } });
-    await panel.startPaste(2);
-    expect(lookups(env)).toHaveLength(2);
-    expect(lookups(env)[1]).toBe("youtube:Demo Artist / Three");
     expect(panel.state.session.results[1]?.song?.youtubeUrl).toBe(LINK);
+    await panel.startPaste(2);
     expect(env.api.pasteState.queue.some(([kind, value]) => kind === "youtube_url" && value === LINK)).toBe(true);
   });
 
-  it("is not looked up for a track until the user opens it, and then only once", async () => {
-    const ui = await open({ hosts: { youtube: true }, api: { lookupYoutube: () => Promise.resolve(FOUND) } });
+  it("looks up a track the user opens first, even before its turn in the queue", async () => {
+    const gate = deferred<typeof FOUND>();
+    let calls = 0;
+    const ui = await open({
+      hosts: { youtube: true },
+      api: { lookupYoutube: () => (calls++ === 0 ? gate.promise : Promise.resolve(FOUND)) },
+    });
     await ui.panel.detect(ALBUM_URL);
     await ui.panel.setAllSelected(true);
     await ui.panel.getCredits();
     expect(ui.panel.state.session.current).toBeNull();
-    expect(lookups(ui.env)).toEqual([]);
+    expect(lookups(ui.env)).toEqual(["youtube:Demo Artist / One"]); // the first is still being asked
 
     await ui.panel.showTrack(2);
-    expect(ui.panel.state.session.current).toBe(2);
-    expect(lookups(ui.env)).toEqual(["youtube:Demo Artist / Three"]);
+    expect(lookups(ui.env)).toEqual(["youtube:Demo Artist / One", "youtube:Demo Artist / Three"]);
+    gate.resolve(FOUND);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(lookups(ui.env)).toHaveLength(2); // the queue does not ask for the same track again
+  });
 
-    await ui.panel.showTrack(2); // a second click closes it
-    expect(ui.panel.state.session.current).toBeNull();
-    await ui.panel.showTrack(2);
-    expect(lookups(ui.env)).toHaveLength(1);
+  it("stops asking after YouTube refuses, says the rest were not checked, and asks again when a track is opened", async () => {
+    const { env, panel } = await open({
+      hosts: { youtube: true },
+      api: { lookupYoutube: () => Promise.resolve(THROTTLED) },
+    });
+    await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
+    await panel.getCredits();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(lookups(env)).toEqual(["youtube:Demo Artist / One"]);
+    expect(panel.state.youtubeNotes[2]).toBe(MESSAGES.youtubeNotChecked);
+
+    await panel.showTrack(2);
+    expect(lookups(env)).toHaveLength(2);
   });
 
   it("starts pasting from the first track that is ready when none is open", async () => {
@@ -614,7 +626,7 @@ describe("the YouTube link of a track", () => {
     const { env, panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(FOUND) } });
     await panel.startPaste(0);
     await panel.startPaste(0);
-    expect(lookups(env)).toHaveLength(1);
+    expect(lookups(env)).toHaveLength(2);
   });
 
   it("waits for a look-up already running instead of asking again", async () => {
@@ -626,7 +638,7 @@ describe("the YouTube link of a track", () => {
     gate.resolve(FOUND);
     await started;
     expect(env.api.pasteState.active).toBe(true);
-    expect(lookups(env)).toHaveLength(1);
+    expect(lookups(env)).toHaveLength(2);
   });
 
   it("is not asked at all while the permission is off or the YouTube link setting is off", async () => {
@@ -634,7 +646,7 @@ describe("the YouTube link of a track", () => {
     await off.panel.startPaste(0);
     expect(lookups(off.env)).toEqual([]);
     const unticked = await ready({ api: { lookupYoutube: () => Promise.resolve(FOUND) } });
-    expect(lookups(unticked.env)).toHaveLength(1);
+    expect(lookups(unticked.env)).toHaveLength(2);
     const fresh = await open({ hosts: { youtube: true }, settings: { scrapeYoutube: false } });
     await fresh.panel.detect(ALBUM_URL);
     await fresh.panel.setAllSelected(true);
@@ -648,13 +660,23 @@ describe("the YouTube link of a track", () => {
     await panel.startPaste(0);
     expect(env.api.pasteState.active).toBe(true);
     expect(env.api.pasteState.queue.some(([kind]) => kind === "youtube_url")).toBe(false);
-    expect(lookups(env)).toHaveLength(1);
+    expect(lookups(env)).toHaveLength(2);
   });
 
   it("says no link was found, right after the look-up", async () => {
-    const { panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(NOTHING) } });
-    await panel.ensureYoutube(2, true);
-    expect(panel.state.status).toBe(MESSAGES.noYoutube);
+    // The queue is still on the first track, so the second is asked for here, as Start pasting would.
+    const gate = deferred<typeof NOTHING>();
+    let calls = 0;
+    const ui = await open({
+      hosts: { youtube: true },
+      api: { lookupYoutube: () => (calls++ === 0 ? gate.promise : Promise.resolve(NOTHING)) },
+    });
+    await ui.panel.detect(ALBUM_URL);
+    await ui.panel.setAllSelected(true);
+    await ui.panel.getCredits();
+    await ui.panel.ensureYoutube(2, true);
+    expect(ui.panel.state.status).toBe(MESSAGES.noYoutube);
+    gate.resolve(NOTHING);
   });
 
   it("says YouTube is limiting requests when it is, and asks again next time", async () => {
@@ -662,7 +684,7 @@ describe("the YouTube link of a track", () => {
     await panel.ensureYoutube(0, true);
     expect(panel.state.status).toBe(MESSAGES.youtubeThrottled);
     await panel.startPaste(0);
-    expect(lookups(env)).toHaveLength(3);
+    expect(lookups(env)).toHaveLength(4);
   });
 
   it("pastes without the link when the look-up fails outright", async () => {
@@ -814,7 +836,7 @@ describe("the user's own YouTube key", () => {
     expect(panel.state.session.results[0]?.song?.youtubeUrl).toContain("abcDEF_-123");
   });
 
-  it("looks up every track of the album as it is read with a saved key, but only the first without one", async () => {
+  it("looks up every track of the album as it is read, at once with a saved key and one after another without", async () => {
     const run = async (options: Parameters<typeof open>[0]) => {
       const { env, panel } = await open(options);
       await panel.detect(ALBUM_URL);
@@ -832,7 +854,7 @@ describe("the user's own YouTube key", () => {
     expect(withKey.env.api.calls.filter((c) => c.startsWith("youtube:"))).toHaveLength(2);
     expect(withKey.panel.state.session.results.every((r) => r.song?.youtubeUrl)).toBe(true);
     const without = await run({ hosts: { youtube: true }, api: { lookupYoutube: () => Promise.resolve(found) } });
-    expect(without.env.api.calls.filter((c) => c.startsWith("youtube:"))).toHaveLength(1);
+    expect(without.env.api.calls.filter((c) => c.startsWith("youtube:"))).toHaveLength(2);
   });
 
   it("does not look up with a saved key when Chrome's permission for Google's service is gone", async () => {
