@@ -343,7 +343,8 @@ From the owner's first try of the extension:
 - **Genius role names.** Apple's "Programming" is "Programmer" on Genius.
   Checked on the live form against every role in the golden credits: Genius has Programmer, Drum Programmer, Additional Production and Vocal Engineer, and nothing for Editing Engineer.
   `geniusRole` maps "Programming" and "<X> Programming" to "... Programmer", "Additional Producer" to "Additional Production" and "Vocal Recording Engineer" to "Vocal Engineer"; the queue shows, and the extension types, the Genius name.
-  The mapping is the extension's own: `scraper/roles.py` and the golden files, shared with the desktop app, are unchanged, so the desktop app still types "Programming" (a separate task if wanted).
+  Later the desktop app was fixed the same way for the Programming family: `scraper/roles.py` now maps "Programming" and "<X> Programming" to "Programmer" and "<X> Programmer" (the role values in four golden files were updated by hand to match, and the exports regenerated).
+  The extension still maps "Additional Producer" and "Vocal Recording Engineer" itself; the desktop app does not.
 - **Collapsible queues.** The paste queue on the credits and the step list on the paste screen are native `details` elements, closed by default, with their length in the heading; each keeps its open state across redraws and keeps keyboard focus.
 - Not changed: the credits-screen queue still labels the first steps "Written By" while the paste screen says "Writer" (Genius's name).
 
