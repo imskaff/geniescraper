@@ -41,6 +41,8 @@ export interface FillContext {
   autoConfirm: boolean;
   /** An automatic run is filling: the wording does not ask the user to press the Next key. */
   auto?: boolean;
+  /** For an artist step: the additional role it belongs to, so it goes under that role's row whichever row that is. */
+  role?: string;
 }
 
 export const REAL_COMBOBOX_TIMING: ComboboxTiming = { suggestionMs: 4_000, settleMs: 600, selectMs: 1_500, pollMs: 50 };
@@ -108,6 +110,16 @@ async function openCredits(form: HTMLFormElement, ctx: FillContext): Promise<voi
   }
 }
 
+/** The row the form already has for this role, wherever it is: a song pasted before keeps its rows. */
+function rowForRole(form: HTMLFormElement, role: string): CreditRow | undefined {
+  return creditRows(form).find((row) => chipTexts(row.roleBox).some((chip) => sameName(chip, role)));
+}
+
+/** The row an artist goes into: that of its own role if the form has one, otherwise the last row. */
+function rowForArtist(form: HTMLFormElement, role: string | undefined): CreditRow | undefined {
+  return (role ? rowForRole(form, role) : undefined) ?? lastRow(form);
+}
+
 /** The row a role goes into: the last one if its role is still empty, otherwise a new one. */
 async function rowForNewRole(form: HTMLFormElement, ctx: FillContext): Promise<CreditRow | null> {
   await openCredits(form, ctx);
@@ -139,6 +151,7 @@ function fillPlain(form: HTMLFormElement, name: string, value: string, label: st
 function stepField(
   form: HTMLFormElement,
   kind: QueueKind,
+  role?: string,
 ): { box?: Element | undefined; input?: HTMLInputElement | undefined } {
   switch (kind) {
     case "written_by":
@@ -152,7 +165,7 @@ function stepField(
     case "artist":
     case "phonographic_copyright":
     case "copyright_notice":
-      return { box: lastRow(form)?.artistsBox };
+      return { box: rowForArtist(form, role)?.artistsBox };
     case "youtube_url":
       return { input: plainInput(form, YOUTUBE_INPUT_NAME) ?? undefined };
     case "cover_art":
@@ -161,10 +174,10 @@ function stepField(
 }
 
 /** What a step's field holds right now: its chips, or its value. The user's choice is what changes this afterwards. */
-export function stepSnapshot(doc: Document, item: QueueItem): string[] {
+export function stepSnapshot(doc: Document, item: QueueItem, role?: string): string[] {
   const form = findForm(doc);
   if (!form) return [];
-  const { box, input } = stepField(form, item[0]);
+  const { box, input } = stepField(form, item[0], role);
   if (box) return chipTexts(box);
   return input ? [input.value] : [];
 }
@@ -174,11 +187,11 @@ export function stepSnapshot(doc: Document, item: QueueItem): string[] {
  * the label, which is not spelled as Apple spells it, so waiting for Apple's exact name would wait for ever: the step
  * is done once something new is in its field since `before` (a chip, or a changed value), or the exact name is.
  */
-export function isStepDone(doc: Document, item: QueueItem, before: readonly string[]): boolean {
+export function isStepDone(doc: Document, item: QueueItem, before: readonly string[], role?: string): boolean {
   const form = findForm(doc);
   if (!form) return false;
   const value = item[1];
-  const { box, input } = stepField(form, item[0]);
+  const { box, input } = stepField(form, item[0], role);
   if (box) {
     const chips = chipTexts(box);
     return chips.some((chip) => sameName(chip, value)) || chips.length > before.length;
@@ -202,6 +215,9 @@ export async function fillStep(item: QueueItem, ctx: FillContext): Promise<StepO
     }
     case "role":
     case "copyright_role": {
+      // A role the form already has is not added again: its artists go into the row it has.
+      await openCredits(form, ctx);
+      if (rowForRole(form, value)) return { status: "filled", message: `${value} was already there.` };
       const row = await rowForNewRole(form, ctx);
       if (!row) return { status: "unavailable", message: "Genius has no Add additional credits button on this form." };
       return fillCombobox(row.role, row.roleBox, value, ctx);
@@ -211,7 +227,7 @@ export async function fillStep(item: QueueItem, ctx: FillContext): Promise<StepO
     case "copyright_notice": {
       // An artist step can come first when its role was skipped on a previous run: open the credits to look.
       await openCredits(form, ctx);
-      const row = lastRow(form);
+      const row = rowForArtist(form, ctx.role);
       if (!row) {
         return { status: "unavailable", message: "Add the role first: there is no additional credit to put this in." };
       }

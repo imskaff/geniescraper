@@ -873,6 +873,13 @@ The link screen shows them as "Open in your browser"; one press reads that page.
 The page in view is read in place, any other in a hidden window, as `detect` already did.
 The list refreshes when tabs are activated, updated or closed.
 
+### Roles the song already has on Genius
+
+Writers and producers were already skipped when the field held the name; additional roles were not: a song with a Vocals row and V in it got a second Vocals row with V.
+The worker's `paste-begin` reply now carries `role` for an artist or label step (the nearest role step before it, `roleOfStep` in `core/paste.ts`).
+The fill looks for a row that already has the role (names compared the way chips always are, so the ℗ and © Genius adds to copyright roles do not matter): a role the form has is reported as already there and not added again, and the artists go into that row, wherever it is, with names already in it left alone.
+A role the form does not have still gets a new row, and a step without a role falls back to the last row as before.
+
 ### Open risks
 
 - Genius's guidelines: per-press filling was chosen to stay inside them, and full automation is more automation.

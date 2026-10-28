@@ -186,7 +186,7 @@ export class GeniusPage {
   // ── automatic pasting ───────────────────────────────────────────────
 
   private async fill(reply: FillReply, auto: boolean): Promise<Outcome> {
-    const { item, settleMs, autoConfirm } = reply;
+    const { item, settleMs, autoConfirm, role } = reply;
     if (!KINDS.has(item[0])) return GAVE_UP;
     try {
       return await fillStep([item[0] as QueueKind, item[1]] satisfies QueueItem, {
@@ -194,6 +194,7 @@ export class GeniusPage {
         timing: { ...this.env.timing, settleMs },
         autoConfirm,
         auto,
+        ...(role === undefined ? {} : { role }),
       });
     } catch {
       return GAVE_UP;
@@ -232,11 +233,11 @@ export class GeniusPage {
         if (!state) return;
         this.auto = state.auto;
         if (state.auto !== "running") return;
-        if (state.awaiting && !(await this.waitForChoice(reply.item, reply.position))) return;
+        if (state.awaiting && !(await this.waitForChoice(reply.item, reply.position, reply.role))) return;
         await sleep(reply.paceMs ?? DEFAULT_PACE_MS);
       } else if (reply.action === "await") {
         idleAsks = 0;
-        if (!(await this.waitForChoice(reply.item, reply.position))) return;
+        if (!(await this.waitForChoice(reply.item, reply.position, reply.role))) return;
         await sleep(reply.paceMs ?? DEFAULT_PACE_MS);
       } else {
         // Nothing to fill: the track is done, the run was paused, or a fill is still in progress for a moment.
@@ -262,18 +263,18 @@ export class GeniusPage {
    * Wait for the user to put the step's value on the form themselves, then count the step as done. False when the run
    * stopped meanwhile. A step skipped from the panel ends the wait too, and the loop carries on with the next one.
    */
-  private async waitForChoice(item: [string, string], position: number): Promise<boolean> {
+  private async waitForChoice(item: [string, string], position: number, role?: string): Promise<boolean> {
     if (!KINDS.has(item[0])) return false;
     const step = [item[0] as QueueKind, item[1]] satisfies QueueItem;
     // What the field held when the wait began. It is kept across a pause, so a choice made while paused still counts
     // when the user turns the run back on; a page loaded fresh has none and takes it as it finds the field.
-    const before = this.baselines.get(position) ?? stepSnapshot(this.env.doc, step);
+    const before = this.baselines.get(position) ?? stepSnapshot(this.env.doc, step, role);
     this.baselines.set(position, before);
     this.awaitingChoice = true;
     try {
       let polls = 0;
       while (this.auto === "running") {
-        if (isStepDone(this.env.doc, step, before)) {
+        if (isStepDone(this.env.doc, step, before, role)) {
           this.baselines.delete(position);
           const state = this.stateOf(await this.env.send({ type: "paste-confirm" }).catch(() => null));
           if (!state) return false;

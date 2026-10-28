@@ -15,6 +15,7 @@ import {
   stop,
   type AutoMode,
   type PasteState,
+  roleOfStep,
 } from "../core/paste";
 import type { QueueItem, QueueKind } from "../core/models";
 import {
@@ -176,6 +177,7 @@ export class PasteService {
           const waiting = next.queue[next.position];
           let reply: BeginReply;
           if (result.action === "fill") {
+            const role = roleOfStep(next.queue, result.position);
             reply = {
               action: "fill",
               item: [result.item[0], result.item[1]],
@@ -183,10 +185,18 @@ export class PasteService {
               autoConfirm: settings.autoConfirm,
               settleMs: Math.round(settings.autocompleteWaitSeconds * 1000),
               ...paceMs,
+              ...(role === undefined ? {} : { role }),
             };
           } else if (request.source === "auto" && next.auto === "running" && next.awaiting && waiting) {
             // A run resumed while a step still waits for the user's choice: tell it what to wait for.
-            reply = { action: "await", item: [waiting[0], waiting[1]], position: next.position, ...paceMs };
+            const role = roleOfStep(next.queue, next.position);
+            reply = {
+              action: "await",
+              item: [waiting[0], waiting[1]],
+              position: next.position,
+              ...paceMs,
+              ...(role === undefined ? {} : { role }),
+            };
           } else {
             reply = { action: result.action };
           }

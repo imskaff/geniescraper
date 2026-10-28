@@ -106,7 +106,7 @@ export type BeginReply =
   | { action: "none" }
   | { action: "advanced" }
   /** An automatic run resumed while a step still awaits the user's choice: wait for it, do not fill again. */
-  | { action: "await"; item: [string, string]; position: number; paceMs?: number }
+  | { action: "await"; item: [string, string]; position: number; paceMs?: number; role?: string }
   | {
       action: "fill";
       item: [string, string];
@@ -116,6 +116,8 @@ export type BeginReply =
       settleMs: number;
       /** The pause an automatic run makes after each field; absent for a key press. */
       paceMs?: number;
+      /** For an artist or label step: the additional role it goes under. */
+      role?: string;
     };
 
 export function isOutcome(value: unknown): value is Outcome {
@@ -206,7 +208,8 @@ export function isBeginReply(value: unknown): value is BeginReply {
     return (
       isPair(value["item"]) &&
       typeof value["position"] === "number" &&
-      (value["paceMs"] === undefined || typeof value["paceMs"] === "number")
+      (value["paceMs"] === undefined || typeof value["paceMs"] === "number") &&
+      (value["role"] === undefined || typeof value["role"] === "string")
     );
   }
   return (
@@ -218,7 +221,8 @@ export function isBeginReply(value: unknown): value is BeginReply {
     typeof value["position"] === "number" &&
     typeof value["autoConfirm"] === "boolean" &&
     typeof value["settleMs"] === "number" &&
-    (value["paceMs"] === undefined || typeof value["paceMs"] === "number")
+    (value["paceMs"] === undefined || typeof value["paceMs"] === "number") &&
+    (value["role"] === undefined || typeof value["role"] === "string")
   );
 }
 

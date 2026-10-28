@@ -47,6 +47,10 @@ describe("the messages automatic pasting adds", () => {
     [{ action: "await", item: ["written_by", "X"], position: 2, paceMs: "fast" }, false],
     [{ action: "fill", item: ["written_by", "X"], position: 0, autoConfirm: true, settleMs: 5, paceMs: 600 }, true],
     [{ action: "fill", item: ["written_by", "X"], position: 0, autoConfirm: true, settleMs: 5, paceMs: "x" }, false],
+    [{ action: "fill", item: ["artist", "X"], position: 0, autoConfirm: true, settleMs: 5, role: "Vocals" }, true],
+    [{ action: "fill", item: ["artist", "X"], position: 0, autoConfirm: true, settleMs: 5, role: 7 }, false],
+    [{ action: "await", item: ["artist", "X"], position: 2, role: "Vocals" }, true],
+    [{ action: "await", item: ["artist", "X"], position: 2, role: 7 }, false],
   ])("checks the reply %j: %s", (reply, ok) => {
     expect(isBeginReply(reply)).toBe(ok);
   });

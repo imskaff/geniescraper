@@ -30,6 +30,23 @@ export interface PasteState {
 
 export const PASTE_KEY = "paste";
 
+const ARTIST_UNDER_ROLE: ReadonlySet<QueueKind> = new Set(["artist", "phonographic_copyright", "copyright_notice"]);
+
+/**
+ * The additional role the step at `position` belongs to, when it is an artist or label under one: the nearest role
+ * step before it. The page needs it to put the name under that role's row, whichever row that is on a form that
+ * already has some. Anything else has none.
+ */
+export function roleOfStep(queue: readonly QueueItem[], position: number): string | undefined {
+  const step = queue[position];
+  if (!step || !ARTIST_UNDER_ROLE.has(step[0])) return undefined;
+  for (let i = position - 1; i >= 0; i--) {
+    const earlier = queue[i];
+    if (earlier && (earlier[0] === "role" || earlier[0] === "copyright_role")) return earlier[1];
+  }
+  return undefined;
+}
+
 /** A fill that has not reported after this long is taken to have died (the page navigated, the tab closed). */
 export const BUSY_TIMEOUT_MS = 20_000;
 

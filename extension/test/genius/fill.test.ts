@@ -336,3 +336,59 @@ describe("a whole song", () => {
     expectSafe(fake);
   });
 });
+
+describe("roles the form already has", () => {
+  async function formWithRoles() {
+    const { fake, ctx, run } = setup();
+    await run(["role", "Mixing Engineer"]);
+    await run(["artist", "Billie Eilish"]);
+    await run(["role", "Mastering Engineer"]);
+    await run(["artist", "Taylor Swift"]);
+    return { fake, ctx, run };
+  }
+
+  it("does not add a second row for a role that is already there", async () => {
+    const { fake, run } = await formWithRoles();
+    const outcome = await run(["role", "Mixing Engineer"]);
+    expect(outcome).toEqual({ status: "filled", message: "Mixing Engineer was already there." });
+    expect(rowChips(fake.form)).toHaveLength(2);
+    expectSafe(fake);
+  });
+
+  it("recognises the role however Genius spells it, such as the symbol it adds to a copyright role", async () => {
+    const { fake, run } = setup();
+    await run(["copyright_role", "Phonographic Copyright"]);
+    const rows = rowChips(fake.form).length;
+    const outcome = await run(["copyright_role", "Phonographic Copyright"]);
+    expect(outcome).toMatchObject({ status: "filled" });
+    expect(outcome.message).toMatch(/already there/);
+    expect(rowChips(fake.form)).toHaveLength(rows);
+  });
+
+  it("puts an artist under the row of its own role, not under the last row", async () => {
+    const { fake, ctx } = await formWithRoles();
+    const outcome = await fillStep(["artist", "FINNEAS"], { ...ctx, role: "Mixing Engineer" });
+    expect(outcome).toMatchObject({ status: "filled" });
+    expect(rowChips(fake.form).map((r) => ({ role: r.role, artists: [...r.artists].sort() }))).toEqual([
+      { role: ["Mixing Engineer"], artists: ["Billie Eilish", "FINNEAS"] },
+      { role: ["Mastering Engineer"], artists: ["Taylor Swift"] },
+    ]);
+  });
+
+  it("leaves an artist alone that is already under that role", async () => {
+    const { fake, ctx } = await formWithRoles();
+    const outcome = await fillStep(["artist", "Billie Eilish"], { ...ctx, role: "Mixing Engineer" });
+    expect(outcome.message).toMatch(/already there/);
+    expect(rowChips(fake.form)[0]).toEqual({ role: ["Mixing Engineer"], artists: ["Billie Eilish"] });
+  });
+
+  it("still adds a row for a role the form does not have yet", async () => {
+    const { fake, run } = await formWithRoles();
+    await run(["role", "Lead Vocals"]);
+    expect(rowChips(fake.form).map((r) => r.role)).toEqual([
+      ["Mixing Engineer"],
+      ["Mastering Engineer"],
+      ["Lead Vocals"],
+    ]);
+  });
+});
