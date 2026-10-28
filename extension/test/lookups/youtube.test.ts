@@ -434,23 +434,39 @@ const pagesWith = (videos: Parameters<typeof resultsOf>[0]): YoutubePages => ({
 describe("which video wins, by Genius's order: music video, lyric video, official audio, auto-generated", () => {
   const pick = async (videos: Parameters<typeof resultsOf>[0]) => {
     const link = await findYoutube(pagesWith(videos), "SOS", "SZA");
-    return { id: link.url.split("=").pop(), mv: link.isMusicVideo };
+    return { id: link.url.split("=").pop(), mv: link.isMusicVideo, kind: link.kind };
   };
 
   it("takes the music video over everything else", async () => {
-    expect(await pick([TOPIC_UPLOAD, OFFICIAL_AUDIO, LYRIC_VIDEO, MV_VIDEO])).toEqual({ id: MV_VIDEO.id, mv: true });
+    expect(await pick([TOPIC_UPLOAD, OFFICIAL_AUDIO, LYRIC_VIDEO, MV_VIDEO])).toEqual({
+      id: MV_VIDEO.id,
+      mv: true,
+      kind: "music-video",
+    });
   });
 
   it("takes the lyric video over the official audio and the Topic upload", async () => {
-    expect(await pick([TOPIC_UPLOAD, OFFICIAL_AUDIO, LYRIC_VIDEO])).toEqual({ id: LYRIC_VIDEO.id, mv: false });
+    expect(await pick([TOPIC_UPLOAD, OFFICIAL_AUDIO, LYRIC_VIDEO])).toEqual({
+      id: LYRIC_VIDEO.id,
+      mv: false,
+      kind: "lyric-video",
+    });
   });
 
   it("takes the official audio over the Topic upload, even when the Topic upload is listed first", async () => {
-    expect(await pick([TOPIC_UPLOAD, OFFICIAL_AUDIO])).toEqual({ id: OFFICIAL_AUDIO.id, mv: false });
+    expect(await pick([TOPIC_UPLOAD, OFFICIAL_AUDIO])).toEqual({
+      id: OFFICIAL_AUDIO.id,
+      mv: false,
+      kind: "official-audio",
+    });
   });
 
   it("takes the Topic upload only when nothing better exists", async () => {
-    expect(await pick([TOPIC_UPLOAD])).toEqual({ id: TOPIC_UPLOAD.id, mv: false });
+    expect(await pick([TOPIC_UPLOAD])).toEqual({ id: TOPIC_UPLOAD.id, mv: false, kind: "auto-generated" });
+  });
+
+  it("names no kind when nothing is found", async () => {
+    expect(await pick([])).toEqual({ id: "", mv: false, kind: undefined });
   });
 
   it("still looks past a Topic upload in the first search for something better", async () => {

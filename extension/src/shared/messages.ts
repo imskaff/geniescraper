@@ -1,6 +1,6 @@
 // Contracts between the extension's contexts. Everything crossing a context boundary is plain JSON
 // and is validated on receipt: a message is data, never trusted to have the shape it claims.
-import type { Credit } from "../core/models";
+import { VIDEO_KINDS, type Credit, type VideoKind } from "../core/models";
 import type { AutoMode, Outcome } from "../core/paste";
 
 export interface AlbumInfo {
@@ -33,6 +33,8 @@ export interface YoutubeAnswer {
   /** The link, or "" when none was found or YouTube may not be asked. */
   url: string;
   isMusicVideo: boolean;
+  /** Which kind of video the link is, when there is one. */
+  kind?: VideoKind;
   /** True when YouTube is limiting requests, so "no link" does not mean the song has none. */
   throttled: boolean;
   /** When the user's YouTube key could not be used: why. "" when no key was involved or it worked. */
@@ -296,6 +298,7 @@ export function isYoutubeAnswer(value: unknown): value is YoutubeAnswer {
     isRecord(value) &&
     typeof value["url"] === "string" &&
     typeof value["isMusicVideo"] === "boolean" &&
+    (value["kind"] === undefined || VIDEO_KINDS.includes(value["kind"] as VideoKind)) &&
     typeof value["throttled"] === "boolean" &&
     ["", "key", "quota", "not-enabled"].includes(value["keyProblem"] as string)
   );

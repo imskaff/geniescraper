@@ -1,7 +1,7 @@
 // Renders the controller's state. The structure follows the accessibility basics rather than decoration:
 // real headings, labelled controls, a status and an alert region that are never rebuilt (so announcements
 // fire), focus moved to the new screen's heading, and focus kept where it was across a re-render.
-import type { QueueKind, SongCredits } from "../core/models";
+import type { QueueKind, SongCredits, VideoKind } from "../core/models";
 import type { AlbumInfo } from "../shared/messages";
 import { shownTrack, type TrackResult } from "../shared/session";
 import { trackHealth, type Health, type HealthLevel } from "../core/trackHealth";
@@ -46,6 +46,19 @@ const HEALTH_MARKS: Readonly<Record<HealthLevel, string>> = {
 };
 
 /** Only https links are made clickable; the value shown is always the text. */
+const VIDEO_KIND_LABELS: Readonly<Record<VideoKind, string>> = {
+  "music-video": "music video",
+  "lyric-video": "lyric video",
+  "official-audio": "official audio",
+  "auto-generated": "auto-generated",
+};
+
+/** What to call the song's link: its kind when known, otherwise what the older record can say. */
+function videoKindLabel(song: Pick<SongCredits, "youtubeKind" | "youtubeIsMv">): string {
+  if (song.youtubeKind) return VIDEO_KIND_LABELS[song.youtubeKind];
+  return song.youtubeIsMv ? "music video" : "audio";
+}
+
 function isHttps(value: string): boolean {
   return URL.canParse(value) && new URL(value).protocol === "https:";
 }
@@ -658,11 +671,7 @@ export class PanelView {
     if (song.youtubeUrl) {
       groups.append(
         el("dt", {
-          text: song.youtubeByUser
-            ? "YouTube (your link)"
-            : song.youtubeIsMv
-              ? "YouTube (music video)"
-              : "YouTube (audio)",
+          text: song.youtubeByUser ? "YouTube (your link)" : `YouTube (${videoKindLabel(song)})`,
         }),
         el(
           "dd",
