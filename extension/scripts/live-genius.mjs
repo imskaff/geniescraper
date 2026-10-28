@@ -3,6 +3,12 @@
 //
 //   npm run build
 //   node scripts/live-genius.mjs --chrome <chrome.exe> --profile <folder with a Genius sign-in> [--screenshots <folder>]
+//        [--mode manual|auto] [--song <the edit page of a song you created>]
+//
+// --mode manual (the default) starts "Step by step" and presses a real F8 for every field.
+// --mode auto starts Start pasting, lets the run fill the form by itself, and on the way checks that it stops and
+// resumes for Pause, Esc, a real click in the form and the panel closing. Leave the mouse and keyboard alone while it
+// runs: a real click in the Genius window pauses an automatic run, which is the point of the check.
 //
 // You sign in to Genius yourself, once, in a Chromium window that uses that profile folder; this script never
 // handles a password. It NEVER presses Save: it only fills the open form, watches the network for anything that
@@ -22,6 +28,10 @@ const profileDir = option("--profile", "");
 const shotsDir = option("--screenshots", "");
 if (!chromePath || !profileDir)
   throw new Error("Pass --chrome <path to Chromium> and --profile <signed-in profile folder>.");
+
+// "manual" presses a real F8 per field; "auto" starts the automatic run and checks every way it must stop and resume.
+const mode = option("--mode", "manual");
+if (mode !== "manual" && mode !== "auto") throw new Error('--mode must be "manual" or "auto".');
 
 const SONG_URL = option("--song", "https://genius.com/Insane-shinobi-and-mike-pratt-float-indigo-lyrics");
 const ALBUM_URL = "https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134";
@@ -104,15 +114,19 @@ try {
   check("the edit form is open", true);
 
   // ── the panel, in its own window so the Genius tab stays the one in front of the user ──
-  await worker.evaluate(
-    `chrome.windows.create({ url: ${JSON.stringify(panelUrl)}, focused: false, width: 440, height: 860 }).then((w) => w.id)`,
-  );
-  let panelTarget;
-  for (let i = 0; i < 100 && !panelTarget; i++) {
-    panelTarget = (await browser.targets()).find((t) => t.url === panelUrl && t.type === "page");
-    if (!panelTarget) await sleep(200);
-  }
-  panel = await connect(panelTarget.webSocketDebuggerUrl);
+  let panelWindowId = 0;
+  const openPanel = async () => {
+    panelWindowId = await worker.evaluate(
+      `chrome.windows.create({ url: ${JSON.stringify(panelUrl)}, focused: false, width: 440, height: 860 }).then((w) => w.id)`,
+    );
+    let panelTarget;
+    for (let i = 0; i < 100 && !panelTarget; i++) {
+      panelTarget = (await browser.targets()).find((t) => t.url === panelUrl && t.type === "page");
+      if (!panelTarget) await sleep(200);
+    }
+    panel = await connect(panelTarget.webSocketDebuggerUrl);
+  };
+  await openPanel();
   const pText = (selector) =>
     panel.evaluate(`document.querySelector(${JSON.stringify(selector)})?.textContent ?? null`);
   const pUntil = async (expression, what, ms = 60000) => {
@@ -150,7 +164,8 @@ try {
     "[...document.querySelectorAll('button')].some((b) => b.textContent === 'Start pasting')",
     "the credits",
   );
-  await pClick("Start pasting");
+  // Start pasting runs by itself; Step by step is the one-press-per-field flow the manual mode checks.
+  await pClick(mode === "auto" ? "Start pasting" : "Step by step");
   await pUntil("document.querySelector('h2')?.textContent === 'Paste into Genius'", "the paste screen");
   check("the paste screen opens", (await pText("h2")) === "Paste into Genius");
   const total = Number(((await pText(".progress")) ?? "").match(/of (\d+)/)?.[1] ?? 0);
@@ -164,6 +179,7 @@ try {
     }
   };
   const position = async () => {
+    if ((await pText("h2")) === "All credits entered") return total; // the finished screen replaces the step counter
     const text = (await pText(".progress")) ?? "";
     return text === "All steps done" ? total : Number(text.match(/Step (\d+) of/)?.[1] ?? 0) - 1;
   };
@@ -171,7 +187,115 @@ try {
   const skipped = [];
   const filled = [];
   let presses = 0;
-  for (; presses < MAX_PRESSES; presses++) {
+
+  // ── an automatic run, and every way it must stop and start again ──
+  const pHas = (selector) => panel.evaluate(`!!document.querySelector(${JSON.stringify(selector)})`);
+  const isPaused = () => pHas('[data-key="auto-resume"]');
+  const stateInStorage = () =>
+    worker.evaluate("chrome.storage.session.get('paste').then((items) => items.paste ?? null)");
+  const pausedWithin = async (ms) => {
+    const deadline = Date.now() + ms;
+    while (Date.now() < deadline) {
+      if (await isPaused().catch(() => false)) return true;
+      await sleep(150);
+    }
+    return false;
+  };
+  /** Run until the position has moved `by` steps (or the track is done); a step needing the user's choice is skipped. */
+  const runFor = async (by, limitMs = 90000) => {
+    const start = await position();
+    const deadline = Date.now() + limitMs;
+    while (Date.now() < deadline) {
+      const now = await position();
+      if (now >= total || now >= start + by) return true;
+      if (await isPaused().catch(() => false)) return false;
+      if (((await pText("#alert")) ?? "").length > 0 || ((await pText(".step + p")) ?? "").includes("Choose ")) {
+        // Genius had no exact match: the run waits for the user, who here skips the field.
+        skipped.push((await pText(".step .value")) ?? "");
+        await pClick("Skip");
+        await sleep(400);
+      }
+      await sleep(300);
+    }
+    return false;
+  };
+  const resume = async () => {
+    await pClick("Resume");
+    await pUntil("!!document.querySelector('[data-key=\"auto-pause\"]')", "the run to be going again", 15000);
+  };
+  const runAuto = async () => {
+    check(
+      "the run starts by itself, with Pause on screen",
+      await pUntil("!!document.querySelector('[data-key=\"auto-pause\"]')", "Pause", 20000),
+    );
+    check("it fills fields without a key press", await runFor(3));
+    await shot(panel, "genius-auto-1-running");
+
+    // Pause, from the panel: it stops after the step in progress and stays stopped.
+    await pClick("Pause");
+    check("Pause pauses the run", await pausedWithin(15000));
+    await sleep(1500);
+    const held = await position();
+    await sleep(3000);
+    check("a paused run fills nothing more", (await position()) === held, String(held));
+    await resume();
+    check("Resume carries on", await runFor(1));
+
+    // Esc, a real key press in the Genius window.
+    await genius.send("Page.bringToFront");
+    await press("Escape", "Escape", 27);
+    check("Esc pauses the run", await pausedWithin(10000));
+    await resume();
+    check("it carries on after Esc", await runFor(1));
+
+    // A real click in the form: the page sees a trusted event and pauses the run.
+    const point = await gEval(`(() => {
+      const r = document.querySelector('form[aria-label="Edit Song Metadata Form"]').getBoundingClientRect();
+      return { x: Math.round(r.left + 6), y: Math.round(Math.max(r.top, 0) + 6) };
+    })()`);
+    for (const type of ["mousePressed", "mouseReleased"]) {
+      await genius.send("Input.dispatchMouseEvent", { type, x: point.x, y: point.y, button: "left", clickCount: 1 });
+    }
+    const clickPaused = await pausedWithin(10000);
+    check("a real click in the form pauses the run", clickPaused);
+    if (clickPaused) {
+      check(
+        "it says it paused because of the form",
+        ((await pText("#status")) ?? "").includes("used the form"),
+        (await pText("#status")) ?? "",
+      );
+      await resume();
+    }
+    check("it carries on after the click", await runFor(1));
+
+    // The panel closing: the worker pauses the run, since nobody is watching it.
+    await panel.send("Page.close").catch(() => undefined);
+    await worker.evaluate(`chrome.windows.remove(${String(panelWindowId)})`).catch(() => undefined);
+    let stored = null;
+    for (let i = 0; i < 40; i++) {
+      await sleep(250);
+      stored = await stateInStorage();
+      if (stored?.auto === "paused") break;
+    }
+    check(
+      "closing the panel pauses the run",
+      stored?.auto === "paused" && stored?.pauseReason === "panel-closed",
+      JSON.stringify({ auto: stored?.auto, reason: stored?.pauseReason }),
+    );
+    const heldClosed = stored?.position;
+    await sleep(3000);
+    check("nothing is filled while the panel is closed", (await stateInStorage())?.position === heldClosed);
+
+    // Open the panel again: the session is restored, paused, and Resume finishes the track.
+    await openPanel();
+    await pUntil("!!document.querySelector('[data-key=\"auto-resume\"]')", "the restored paste screen", 20000);
+    check("the reopened panel shows the paused run", await isPaused());
+    await resume();
+    check("it finishes the track by itself", await runFor(total, 180000));
+  };
+
+  if (mode === "auto") await runAuto();
+  for (; mode === "manual" && presses < MAX_PRESSES; presses++) {
     const before = await position();
     if (before >= total) break;
     const step = (await pText(".step .value")) ?? "";
@@ -194,7 +318,7 @@ try {
   console.log(
     `      filled ${String(filled.length)}, left for the user ${String(skipped.length)}: ${skipped.join(" | ")}`,
   );
-  check("the panel ends on All steps done", (await pText(".progress")) === "All steps done");
+  check("the panel ends on All steps done", (await position()) >= total);
   await shot(genius, "genius-2-filled-form");
 
   // ── what is on the form ──
