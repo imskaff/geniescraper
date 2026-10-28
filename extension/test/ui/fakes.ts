@@ -175,9 +175,14 @@ export function fakeEnv(
     session?: unknown;
     hosts?: Partial<Record<OptionalHost, boolean>>;
     youtubeKey?: string;
+    /** Start with an empty settings store, as a new user's browser has, so the set-up shows. */
+    firstRun?: boolean;
   } = {},
 ): FakeEnv {
-  const settingsStore = memoryStore(options.settings === undefined ? {} : { settings: options.settings });
+  // Tests start past the first-time set-up unless they ask for it: a store with nothing in it would show it.
+  const settingsStore = memoryStore(
+    options.firstRun ? {} : { settings: options.settings === undefined ? { onboarded: true } : options.settings },
+  );
   const sessionStore = memoryStore(options.session === undefined ? {} : { session: options.session });
   const stores: Stores = { settings: settingsStore, session: sessionStore };
   const secretsStore = memoryStore(options.youtubeKey === undefined ? {} : { youtubeApiKey: options.youtubeKey });

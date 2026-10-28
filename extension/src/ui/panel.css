@@ -598,3 +598,30 @@ a.link-button {
   background: var(--accent);
   border-radius: 4px;
 }
+
+/* The first-time set-up */
+.setup-progress {
+  margin: 4px 0 0;
+}
+
+.option-help {
+  margin: 2px 0 0 26px;
+}
+
+.plain-list {
+  margin: 8px 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.setup-nav {
+  margin-top: 20px;
+  padding-bottom: 16px;
+}
+
+fieldset .tracks li + li,
+main > .tracks li + li {
+  margin-top: 8px;
+}

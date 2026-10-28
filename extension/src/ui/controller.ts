@@ -8,7 +8,7 @@ import type { PasteCommand } from "../shared/messages";
 import { IDLE_PASTE, type PasteState } from "../core/paste";
 import type { AlbumInfo, AppError, PageScrape } from "../shared/messages";
 import { EMPTY_SESSION, type Session, type TrackResult } from "../shared/session";
-import { normaliseSettings, queueOptions, type Settings } from "../shared/settings";
+import { RECOMMENDED_SETTINGS, normaliseSettings, queueOptions, type Settings } from "../shared/settings";
 import {
   loadPaste,
   loadSession,
@@ -38,6 +38,9 @@ export interface HostPermissions {
   subscribe(listener: () => void): void;
 }
 
+/** The steps of the first-time set-up: welcome, what to paste, speed, look-ups, summary. */
+export const SETUP_STEPS = 5;
+
 export interface Env {
   api: WorkerApi;
   hosts: HostPermissions;
@@ -52,6 +55,8 @@ export interface PanelState {
   session: Session;
   settings: Settings;
   settingsOpen: boolean;
+  /** The first-time set-up: whether it is showing (it opens by itself until finished or skipped) and which step. */
+  setup: { open: boolean; step: number };
   /** The paste session, as the worker stores it. */
   paste: PasteState;
   /** Which track is being pasted (null when unknown, for example after a restart with no match). */
@@ -182,6 +187,7 @@ export class PanelController {
       doneCountdown: null,
       errorSeq: 0,
       settingsOpen: false,
+      setup: { open: !settings.onboarded, step: 0 },
       busy: null,
       error: "",
       status: "",
@@ -511,6 +517,40 @@ export class PanelController {
 
   closeSettings(): void {
     this.update({ settingsOpen: false });
+  }
+
+  // ── the first-time set-up ───────────────────────────────────────────
+
+  /** Show the set-up from its first step (from Settings, "Run the setup again"). */
+  openSetup(): void {
+    this.update({ setup: { open: true, step: 0 }, settingsOpen: false, status: "", error: "" });
+  }
+
+  setupNext(): void {
+    const step = Math.min(SETUP_STEPS - 1, this.current.setup.step + 1);
+    this.update({ setup: { open: true, step }, status: "", error: "" });
+  }
+
+  setupBack(): void {
+    const step = Math.max(0, this.current.setup.step - 1);
+    this.update({ setup: { open: true, step }, status: "", error: "" });
+  }
+
+  /** Close the set-up for good, whether it was finished or skipped; it does not show by itself again. */
+  async finishSetup(): Promise<void> {
+    this.update({ setup: { open: false, step: 0 }, status: "", error: "" });
+    await this.setSetting("onboarded", true);
+  }
+
+  /** Apply the recommended choices in one go (not the look-ups, which need Chrome's permission). */
+  async useRecommended(): Promise<void> {
+    const normalised = normaliseSettings({ ...this.current.settings, ...RECOMMENDED_SETTINGS });
+    this.update({ settings: normalised });
+    try {
+      await saveSettings(this.env.stores, normalised);
+    } catch {
+      // Applied for this session even if it cannot be saved.
+    }
   }
 
   async setSetting<K extends keyof Settings>(key: K, value: Settings[K]): Promise<void> {

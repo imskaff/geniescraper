@@ -500,3 +500,27 @@ A problem with the key found while reading (wrong key, allowance used up, servic
 
 Each track's credits now say what became of its YouTube look-up: "Looking for it…", "No link found for this track.", that YouTube is limiting requests, or what is wrong with the key, so a missing link always has a visible reason.
 Also fixed: the record of which tracks had been asked about was keyed by track number and survived a change of album, so a second album's tracks could be skipped as already asked; it is now cleared when a new album is read or the user returns to the main menu.
+
+## 22. The first-time set-up
+
+A short walk through the choices that matter, shown the first time the panel opens (and from Settings, "Run the setup again").
+It is a whole screen with five steps, each skippable, and it adds no settings of its own except `onboarded`:
+
+1. **Welcome.** What the extension does, that it never presses Save, that nothing is sent to us and there is no account.
+2. **What should it paste?** The five scrape toggles, each with a sentence saying what it does; the recommended ones are already ticked (YouTube link is ticked too, but yields nothing until a look-up is set up in step 4).
+3. **Speed and comfort.** Tracks read at once (recommended 3, measured in section 16), auto-confirm, auto-return, and the two Genius keys with a note that laptops often need Fn for F-keys.
+4. **Better covers and links (optional).** The Deezer and YouTube look-up boxes and the YouTube key help, reused from Settings.
+   Each asks Chrome for its permission inside its own click, because a prompt needs a user gesture; the set-up therefore never turns a look-up on by itself.
+5. **You're all set.** A plain-words summary of what was chosen (from the live settings and permissions) and three lines on how to use it, with the real key names.
+
+"Use recommended" (steps 2 and 3) applies `RECOMMENDED_SETTINGS` in one press.
+It contains only choices that cost nothing: it leaves out everything that contacts another site.
+"Skip the set-up" keeps what was chosen so far and marks it seen.
+
+Who sees it: `onboarded` is read from the synced settings.
+Someone who already has saved settings from before this existed is treated as having seen it (any stored settings without the flag count as onboarded), so an update does not greet existing users; only an empty store shows it, and the flag syncs, so a second browser on the same account does not repeat it.
+The Settings button and Start pasting are hidden while it shows.
+Accessibility: focus moves to each step's heading, every control has a label and a description, headings stay in order, and it is checked at 320 px.
+
+Verified: unit tests for every step, the summary, the skip and finish paths, persistence and the migration rule, and an accessibility sweep of all five steps; the live panel check drives it in real Chrome (focus, no horizontal scroll at 400 and 320 px, light and dark screenshots).
+Not verified: Chrome's real permission prompts from inside the set-up (a script cannot click them), and the extension's real side panel on a first install (the live check opens the panel page as a tab).

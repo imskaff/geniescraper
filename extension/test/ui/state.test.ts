@@ -13,6 +13,7 @@ describe("normaliseSettings", () => {
     expect(normaliseSettings({ scrapeCore: false, scrapeYoutube: "no", scrapeCoverArt: 0, extra: true })).toEqual({
       ...DEFAULT_SETTINGS,
       scrapeCore: false,
+      onboarded: true,
     });
   });
 

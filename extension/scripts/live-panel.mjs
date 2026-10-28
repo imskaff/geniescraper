@@ -97,7 +97,49 @@ try {
     })()`);
   const checked = (key) => panel.evaluate(`document.querySelector('[data-key="${key}"]').checked`);
 
+  // A new browser profile has no saved settings, so the first-time set-up shows before anything else.
+  await until("document.querySelector('h2')?.textContent === 'Welcome to Géniescraper'", "the first-time set-up");
+  check(
+    "a first run opens on the set-up, with no Settings button over it",
+    (await panel.evaluate("document.querySelector('#settings-toggle').hidden")) === true,
+  );
+  await shot("0a-setup-welcome-dark");
+  for (const [step, title] of [
+    [1, "What should it paste?"],
+    [2, "Speed and comfort"],
+    [3, "Better covers and links (optional)"],
+    [4, "You're all set"],
+  ]) {
+    await clickButton(step === 1 ? "Get started" : "Next");
+    await until(`document.querySelector('h2')?.textContent === ${JSON.stringify(title)}`, `set-up step ${step + 1}`);
+    check(`set-up step ${step + 1} has focus on its heading`, (await focused()) === "H2");
+    const overflow = await horizontalOverflow();
+    check(
+      `set-up step ${step + 1} has no horizontal scrollbar`,
+      overflow.scroll <= overflow.client,
+      `${overflow.scroll} vs ${overflow.client}`,
+    );
+    await shot(`0b-setup-step-${step + 1}-dark`);
+  }
+  await panel.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "light" }] });
+  await sleep(300);
+  await shot("0c-setup-summary-light");
+  await panel.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "dark" }] });
+  await setWidth(320);
+  await sleep(300);
+  const setupNarrow = await horizontalOverflow();
+  check(
+    "the set-up summary has no horizontal scrollbar at 320 px",
+    setupNarrow.scroll <= setupNarrow.client,
+    `${setupNarrow.scroll} vs ${setupNarrow.client}`,
+  );
+  await setWidth(400);
+  await clickButton("Start using");
   await until("!!document.querySelector('#link')", "the link screen");
+  check(
+    "finishing the set-up shows the Settings button again",
+    (await panel.evaluate("document.querySelector('#settings-toggle').hidden")) === false,
+  );
   check("panel opens on the link screen", (await text("h2")) === "Get credits from Apple Music");
   check("focus starts on the heading", (await focused()) === "H2");
   await shot("1-link");
