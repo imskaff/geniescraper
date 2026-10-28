@@ -831,6 +831,14 @@ The review screen keeps Start pasting as the first, glowing button, with Step by
 
 The hands-on test also showed "Something went wrong while reading the page: Unrecognised request." on Start pasting: the panel was newer than the extension's background worker, which the browser had kept from before the update, so it rejected the new `paste-auto-start`. The router accepts every paste command (a test pins that), so the panel now says what happened, to reload the extension on chrome://extensions, and that Step by step still works; a new version number also makes the browser take the new worker.
 
+### A choice that is not spelled as Apple spells it, and a clearer Settings screen (second hands-on round)
+
+- **The run stopped after the user chose.** When Genius had no exact match, the run waited for a chip spelled exactly as Apple spells the name. The user usually picks what Genius calls the person or the label, so that chip never came and the run waited for ever while the button said ON; only Skip got it going.
+  A step awaiting a choice is now done when anything new is in its field since the wait began (a chip, or a changed value), or the exact name is there.
+  What the field held is remembered per step across a pause, so choosing while paused and turning Auto-paste back on works; it is forgotten when the step is done, skipped, or the session changes (`stepSnapshot` and `isStepDone` in `genius/fill.ts`, `baselines` in `genius/page.ts`).
+- **Settings.** Every section is a card with a heading (24 apart; 16 inside a card; 4 between a setting's label, control and help), and "Pasting on Genius" has labelled groups (Keys, When Genius has no exact match, After a track).
+  Its first control is the same Auto-paste switch as on the paste screen, ON by default, with what ON and OFF mean below it and the one in force marked.
+
 ### The live run (slice 5)
 
 `node scripts/live-genius.mjs --mode auto` (signed-in scratch profile, the owner's own song, never Save) ran an automatic paste of a whole track on the real Genius form.

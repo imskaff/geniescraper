@@ -142,6 +142,48 @@ describe("when Genius has no exact match", () => {
     expect(fake.form.querySelector<HTMLInputElement>('input[name="youtube_url"]')?.value).toBe(URL);
   });
 
+  it("carries on when the user picks a differently named entry, since Genius has no entry with Apple's name", async () => {
+    // The usual reason for a no-match: Genius calls the person or label something else. The user picks the right one,
+    // and the run must go on, not wait for a chip that has Apple's spelling and never comes.
+    const { fake, page, stored, begin, choose } = setup({ artists: ["Taylor Swift"] });
+    await begin(SHORT);
+    await until(() => stored().awaiting);
+    choose("Billie Eilish (Genius's own spelling)");
+    await page.whenAutoIdle();
+    expect(stored()).toMatchObject({ position: SHORT.length, auto: "off", awaiting: false });
+    expect(fake.form.querySelector<HTMLInputElement>('input[name="youtube_url"]')?.value).toBe(URL);
+  });
+
+  it("carries on when the user picks a different role than Apple's for a role Genius does not have", async () => {
+    const { fake, page, stored, begin } = setup({ roles: ["Vocal Engineer"] });
+    await begin([
+      ["role", "Editing Engineer"],
+      ["artist", "FINNEAS"],
+      ["youtube_url", URL],
+    ]);
+    await until(() => stored().awaiting);
+    const rowRole = fake.form.querySelector('[id$="-label"]');
+    const chip = fake.doc.createElement("div");
+    chip.className = "css-user-multiValue";
+    chip.textContent = "Vocal Engineer";
+    rowRole?.append(chip);
+    await page.whenAutoIdle();
+    expect(stored().auto).toBe("off");
+    expect(stored().position).toBe(3);
+  });
+
+  it("carries on when the user picked while the run was paused and then turns it back on", async () => {
+    const { page, service, stored, begin, choose } = setup({ artists: ["Taylor Swift"] });
+    await begin(SHORT);
+    await until(() => stored().awaiting);
+    await service.command({ type: "paste-auto-pause" });
+    await page.whenAutoIdle();
+    choose("Taylor Swift");
+    await service.command({ type: "paste-auto-start" });
+    await page.whenAutoIdle();
+    expect(stored()).toMatchObject({ position: SHORT.length, auto: "off" });
+  });
+
   it("does not pause for the user clicking or typing in the form while it waits", async () => {
     const { fake, page, stored, begin, choose } = setup({ artists: ["Taylor Swift"] });
     await begin(SHORT);

@@ -1098,3 +1098,102 @@ main > .help {
 .button.magic-off:disabled .sparkles {
   display: none;
 }
+
+/* The settings screen. Each section is a card with a heading, so where one starts and ends is plain: the space between
+   cards (24) is larger than the space inside one, and inside a card a setting (label, control, help) is tight (4) while
+   settings are 16 apart and groups are told apart by a line and a small heading. */
+.settings-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--surface-hi);
+  border-radius: 8px;
+}
+
+.settings-card > h3 {
+  margin: 0;
+  font-size: 1.0625rem;
+}
+
+.settings-card .setting {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.settings-card .setting > .field,
+.settings-card .setting > select {
+  align-self: stretch;
+}
+
+.settings-card .setting > .help {
+  margin: 0;
+}
+
+.settings-card .setting-label {
+  margin: 0;
+  font-weight: 600;
+}
+
+.settings-card .stack {
+  margin: 0;
+  gap: var(--space-1);
+}
+
+.settings-card .tracks {
+  gap: var(--space-2);
+}
+
+.settings-card > .help {
+  margin: 0;
+}
+
+.subgroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--surface-hi);
+}
+
+.subgroup > h4 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* What each side of the Auto-paste switch means; the one in force is marked and brighter. */
+.onoff-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-self: stretch;
+}
+
+.onoff {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  color: var(--muted);
+  border-left: 3px solid var(--surface-hi);
+  border-radius: 4px;
+}
+
+.onoff strong {
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+}
+
+.onoff.current {
+  color: var(--text);
+  background: var(--surface-hi);
+  border-left-color: var(--link);
+}

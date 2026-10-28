@@ -788,20 +788,16 @@ export class PanelView {
   }
 
   /**
-   * The main controls of the paste screen. Auto-paste is a switch and always the first, primary button: ON (the
-   * glowing gradient) while a run goes, OFF (gray, with the sparkles and light colours on hover) when it is off or
-   * paused, whatever the reason. Pressing it turns it the other way. Fill next, the manual way, is secondary, and
-   * only there while the run is off: while it is on, the Next key would only take over from it.
+   * The Auto-paste switch, the same button on the paste screen and in Settings: ON in the glowing gradient, OFF in
+   * gray (lit with sparkles when pointed at). Its text says the state and its name says what pressing it does.
    */
-  private pasteControls(state: PanelState, finished: boolean): HTMLElement[] {
-    const { paste, settings } = state;
-    const on = paste.auto === "running";
+  private autoSwitch(on: boolean, onClick: () => void, disabled: boolean): HTMLElement {
     const toggle = this.button(
       on ? "Auto-paste: ON" : "Auto-paste: OFF",
       on ? "primary" : "quiet",
       "auto-toggle",
-      () => void (on ? this.panel.pauseAutoPaste() : this.panel.autoPaste()),
-      finished,
+      onClick,
+      disabled,
     );
     toggle.classList.add(on ? "magic" : "magic-off");
     toggle.setAttribute("data-state", on ? "on" : "off");
@@ -810,6 +806,23 @@ export class PanelView {
       on ? "Auto-paste: ON. Press to turn it off and take over." : "Auto-paste: OFF. Press to turn it on.",
     );
     toggle.append(el("span", { class: "sparkles", attrs: { "aria-hidden": "true" } }));
+    return toggle;
+  }
+
+  /**
+   * The main controls of the paste screen. Auto-paste is a switch and always the first, primary button: ON (the
+   * glowing gradient) while a run goes, OFF (gray, with the sparkles and light colours on hover) when it is off or
+   * paused, whatever the reason. Pressing it turns it the other way. Fill next, the manual way, is secondary, and
+   * only there while the run is off: while it is on, the Next key would only take over from it.
+   */
+  private pasteControls(state: PanelState, finished: boolean): HTMLElement[] {
+    const { paste, settings } = state;
+    const on = paste.auto === "running";
+    const toggle = this.autoSwitch(
+      on,
+      () => void (on ? this.panel.pauseAutoPaste() : this.panel.autoPaste()),
+      finished,
+    );
     if (on) return [toggle];
     const fill = this.button(
       `Fill next (${settings.nextHotkey})`,
@@ -899,10 +912,9 @@ export class PanelView {
   private settings(state: PanelState): Node[] {
     return [
       this.heading("Settings"),
-      el(
-        "fieldset",
-        { class: "stack" },
-        el("legend", { text: "What to paste" }),
+      this.settingsCard(
+        "settings-paste",
+        "What to paste",
         el(
           "ul",
           { class: "tracks" },
@@ -926,6 +938,35 @@ export class PanelView {
       this.lookupSettings(state),
       this.youtubeKeySettings(state),
     ];
+  }
+
+  /**
+   * A section of the settings: a card with its own heading, so where one starts and ends is plain. The space between
+   * cards is larger than the space inside one, and inside a card the groups are told apart by `subgroup`.
+   */
+  private settingsCard(id: string, title: string, ...children: (Node | null)[]): HTMLElement {
+    return el(
+      "section",
+      { class: "settings-card", attrs: { "aria-labelledby": id } },
+      el("h3", { text: title, attrs: { id } }),
+      ...children,
+    );
+  }
+
+  /** A titled group inside a card, set off from the one before it by a line. */
+  private subgroup(title: string, ...children: Node[]): HTMLElement {
+    return el("div", { class: "subgroup" }, el("h4", { text: title }), ...children);
+  }
+
+  /** One setting: its label, its control and its help, close together, so they read as one thing. */
+  private setting(label: string, forId: string, control: Node, helpId: string, help: string): HTMLElement {
+    return el(
+      "div",
+      { class: "setting" },
+      el("label", { text: label, attrs: { for: forId } }),
+      control,
+      el("p", { class: "help", text: help, attrs: { id: helpId } }),
+    );
   }
 
   private pastingSettings(state: PanelState): HTMLElement {
@@ -1012,27 +1053,37 @@ export class PanelView {
     });
     wait.value = String(settings.autocompleteWaitSeconds);
 
-    // How the main Start pasting button works, and how fast an automatic run goes.
-    const modeSelect = el(
-      "select",
-      {
-        class: "field",
-        attrs: {
-          id: "setting-pasteMode",
-          "data-key": "setting-pasteMode",
-          "aria-describedby": "setting-pasteMode-help",
-        },
-        on: {
-          change: (event) => {
-            const value = (event.target as HTMLSelectElement).value;
-            void this.panel.setSetting("pasteMode", value === "manual" ? "manual" : "auto");
-          },
-        },
-      },
-      el("option", { text: "Automatically", attrs: { value: "auto" } }),
-      el("option", { text: "Step by step, one key press per field", attrs: { value: "manual" } }),
+    // The same Auto-paste switch as on the paste screen, ON by default, and what each side of it means.
+    const autoOn = settings.pasteMode === "auto";
+    const modeSwitch = this.autoSwitch(
+      autoOn,
+      () => void this.panel.setSetting("pasteMode", autoOn ? "manual" : "auto"),
+      false,
     );
-    modeSelect.value = settings.pasteMode;
+    modeSwitch.setAttribute("data-key", "setting-pasteMode");
+    modeSwitch.id = "setting-pasteMode";
+    modeSwitch.setAttribute("aria-describedby", "setting-pasteMode-help");
+    const meaning = (label: string, text: string, current: boolean): HTMLElement =>
+      el(
+        "div",
+        { class: current ? "onoff current" : "onoff", attrs: current ? { "aria-current": "true" } : {} },
+        el("strong", { text: label }),
+        el("span", { text }),
+      );
+    const meanings = el(
+      "div",
+      { class: "onoff-list", attrs: { id: "setting-pasteMode-help" } },
+      meaning(
+        "ON",
+        "Start pasting fills the whole track by itself, one field after another, pausing briefly between them. It stops the moment you click or type in the Genius form, press Esc, switch it off or close the panel, and you turn it back on to carry on. When Genius has no exact match for a name it waits for you to choose, then goes on by itself.",
+        autoOn,
+      ),
+      meaning(
+        "OFF",
+        `Start pasting fills one field each time you press the fill key (${settings.nextHotkey}), so you stay in control of every step. Auto-paste is still one button away on the paste screen.`,
+        !autoOn,
+      ),
+    );
     const paceBox = el("input", {
       class: "field",
       attrs: {
@@ -1052,86 +1103,69 @@ export class PanelView {
     });
     paceBox.value = String(settings.autoPaceSeconds);
 
-    return el(
-      "fieldset",
-      { class: "stack" },
-      el("legend", { text: "Pasting on Genius" }),
-      el(
-        "div",
-        { class: "stack" },
-        el("label", { text: "Start pasting", attrs: { for: "setting-pasteMode" } }),
-        modeSelect,
-      ),
-      el("p", {
-        class: "help",
-        text: "The other way is always one button away. Automatic pasting stops when you click or type in the form, press Esc or Pause, or close the panel.",
-        attrs: { id: "setting-pasteMode-help" },
-      }),
-      el(
-        "div",
-        { class: "stack" },
-        el("label", {
-          text: "Seconds between fields when pasting automatically",
-          attrs: { for: "setting-autoPace" },
-        }),
+    return this.settingsCard(
+      "settings-pasting",
+      "Pasting on Genius",
+      el("div", { class: "setting" }, el("p", { class: "setting-label", text: "Start pasting" }), modeSwitch, meanings),
+      this.setting(
+        "Seconds between fields when pasting automatically",
+        "setting-autoPace",
         paceBox,
+        "setting-autoPace-help",
+        `Between ${String(PACE_RANGE.min)} and ${String(PACE_RANGE.max)}. A longer pause is gentler on Genius and easier to follow.`,
       ),
-      el("p", {
-        class: "help",
-        text: `Between ${String(PACE_RANGE.min)} and ${String(PACE_RANGE.max)}. A longer pause is gentler on Genius and easier to follow.`,
-        attrs: { id: "setting-autoPace-help" },
-      }),
-      keySelect("nextHotkey", "Key that fills the next step"),
-      keySelect("backHotkey", "Key that goes back one step"),
-      el(
-        "label",
-        { class: "check" },
-        confirm,
-        el("span", { text: "Choose the exact match in Genius's suggestions for me" }),
+      this.subgroup(
+        "Keys",
+        keySelect("nextHotkey", "Key that fills the next step"),
+        keySelect("backHotkey", "Key that goes back one step"),
       ),
-      el("p", {
-        class: "help",
-        text: "When Genius has no exact match, the text stays typed and you choose. A close match is never picked for you.",
-      }),
-      el(
-        "label",
-        { class: "check" },
-        autoReturn,
-        el("span", { text: "Go back to the main menu after the last track" }),
+      this.subgroup(
+        "When Genius has no exact match",
+        el(
+          "div",
+          { class: "setting" },
+          el(
+            "label",
+            { class: "check" },
+            confirm,
+            el("span", { text: "Choose the exact match in Genius's suggestions for me" }),
+          ),
+          el("p", {
+            class: "help",
+            text: "When Genius has no exact match, the text stays typed and you choose. A close match is never picked for you.",
+          }),
+        ),
+        this.setting(
+          "Wait for suggestions to settle (seconds)",
+          "setting-wait",
+          wait,
+          "setting-wait-help",
+          "Raise this if Genius is slow to show suggestions.",
+        ),
       ),
-      el(
-        "div",
-        { class: "stack" },
-        el("label", { text: "Seconds before going back to the main menu", attrs: { for: "setting-returnSeconds" } }),
-        returnBox,
+      this.subgroup(
+        "After a track",
+        el(
+          "label",
+          { class: "check" },
+          autoReturn,
+          el("span", { text: "Go back to the main menu after the last track" }),
+        ),
+        this.setting(
+          "Seconds before going back to the main menu",
+          "setting-returnSeconds",
+          returnBox,
+          "setting-returnSeconds-help",
+          `Between ${String(COUNTDOWN_RANGE.min)} and ${String(COUNTDOWN_RANGE.max)}. It waits while you are using the panel.`,
+        ),
+        this.setting(
+          "Seconds before pasting the next track",
+          "setting-nextTrackSeconds",
+          nextBox,
+          "setting-nextTrackSeconds-help",
+          `Between ${String(COUNTDOWN_RANGE.min)} and ${String(COUNTDOWN_RANGE.max)}, or 0 to wait for you to press the button.`,
+        ),
       ),
-      el("p", {
-        class: "help",
-        text: `Between ${String(COUNTDOWN_RANGE.min)} and ${String(COUNTDOWN_RANGE.max)}. It waits while you are using the panel.`,
-        attrs: { id: "setting-returnSeconds-help" },
-      }),
-      el(
-        "div",
-        { class: "stack" },
-        el("label", { text: "Seconds before pasting the next track", attrs: { for: "setting-nextTrackSeconds" } }),
-        nextBox,
-      ),
-      el("p", {
-        class: "help",
-        text: `Between ${String(COUNTDOWN_RANGE.min)} and ${String(COUNTDOWN_RANGE.max)}, or 0 to wait for you to press the button.`,
-        attrs: { id: "setting-nextTrackSeconds-help" },
-      }),
-      el(
-        "div",
-        { class: "stack" },
-        el("label", { text: "Wait for suggestions to settle (seconds)", attrs: { for: "setting-wait" } }),
-        wait,
-      ),
-      el("p", {
-        class: "help",
-        text: "Raise this if Genius is slow to show suggestions.",
-        attrs: { id: "setting-wait-help" },
-      }),
     );
   }
 
@@ -1161,17 +1195,16 @@ export class PanelView {
     );
     reads.value = String(settings.parallelReads);
 
-    return el(
-      "fieldset",
-      { class: "stack" },
-      el("legend", { text: "Reading credits" }),
-      el("label", { text: "Tracks read at the same time", attrs: { for: "setting-parallelReads" } }),
-      reads,
-      el("p", {
-        class: "help",
-        text: "More at once is faster for an album, but opens that many hidden tabs on Apple Music together. One by one is the gentlest; three is the default.",
-        attrs: { id: "setting-parallelReads-help" },
-      }),
+    return this.settingsCard(
+      "settings-reading",
+      "Reading credits",
+      this.setting(
+        "Tracks read at the same time",
+        "setting-parallelReads",
+        reads,
+        "setting-parallelReads-help",
+        "More at once is faster for an album, but opens that many hidden tabs on Apple Music together. One by one is the gentlest; three is the default.",
+      ),
     );
   }
 
@@ -1188,14 +1221,17 @@ export class PanelView {
       });
       input.checked = state.hosts[host];
       return [
-        el("label", { class: "check" }, input, el("span", { text: label })),
-        el("p", { class: "help", text: help, attrs: { id: `host-${host}-help` } }),
+        el(
+          "div",
+          { class: "setting" },
+          el("label", { class: "check" }, input, el("span", { text: label })),
+          el("p", { class: "help", text: help, attrs: { id: `host-${host}-help` } }),
+        ),
       ];
     };
-    return el(
-      "fieldset",
-      { class: "stack" },
-      el("legend", { text: "Look-ups on other sites" }),
+    return this.settingsCard(
+      "settings-lookups",
+      "Look-ups on other sites",
       ...box(
         "deezer",
         "Search Deezer for a cover when Apple has none",
@@ -1292,10 +1328,9 @@ export class PanelView {
 
     const busy = state.youtubeKey.busy;
     const message = state.youtubeKey.message;
-    return el(
-      "fieldset",
-      { class: "stack" },
-      el("legend", { text: "Better YouTube links (optional)" }),
+    return this.settingsCard(
+      "settings-youtube-key",
+      "Better YouTube links (optional)",
       el("p", {
         class: "help",
         text: "The free YouTube search can be blocked by Google, and then no link is found. For reliable links you can use Google's official YouTube service with your own free key. It is free for roughly 25 songs a day, and the key stays in this browser: it is not synced and it is sent only to Google.",

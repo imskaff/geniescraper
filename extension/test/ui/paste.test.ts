@@ -290,17 +290,72 @@ describe("the automatic pasting settings", () => {
     await flush();
   };
 
-  it("shows the defaults: automatic, with 0.6 seconds between fields", async () => {
+  it("shows the same Auto-paste switch as the paste screen, ON by default, with 0.6 seconds between fields", async () => {
     const { root } = await onSettings();
-    expect(($(root, "#setting-pasteMode") as HTMLSelectElement).value).toBe("auto");
+    const toggle = $(root, "#setting-pasteMode");
+    expect(toggle.tagName).toBe("BUTTON");
+    expect(toggle.textContent).toBe("Auto-paste: ON");
+    expect(toggle.getAttribute("data-state")).toBe("on");
+    expect(toggle.classList.contains("magic")).toBe(true);
+    expect($(toggle, ".sparkles").getAttribute("aria-hidden")).toBe("true");
     expect(($(root, "#setting-autoPace") as HTMLInputElement).value).toBe("0.6");
   });
 
-  it("saves the way Start pasting works", async () => {
+  it("explains what ON and OFF mean for the user below the switch, and marks the one that is in force", async () => {
+    const { root } = await onSettings();
+    const help = $(root, "#setting-pasteMode-help");
+    expect($(root, "#setting-pasteMode").getAttribute("aria-describedby")).toBe("setting-pasteMode-help");
+    const [on, off] = [...help.querySelectorAll(".onoff")];
+    expect(on?.querySelector("strong")?.textContent).toBe("ON");
+    expect(on?.textContent).toContain("fills the whole track by itself");
+    expect(on?.textContent).toContain("stops the moment you click or type in the Genius form");
+    expect(off?.querySelector("strong")?.textContent).toBe("OFF");
+    expect(off?.textContent).toContain("each time you press the fill key (F8)");
+    expect(on?.classList.contains("current")).toBe(true);
+    expect(off?.classList.contains("current")).toBe(false);
+  });
+
+  it("turns Auto-paste off and on from the switch, saving each, and the switch and the marked meaning follow", async () => {
     const { root, panel, env } = await onSettings();
-    await change($(root, "#setting-pasteMode") as HTMLSelectElement, "manual");
+    $(root, "#setting-pasteMode").click();
+    await flush();
     expect(panel.state.settings.pasteMode).toBe("manual");
     expect(env.settingsStore.data.get("settings")).toMatchObject({ pasteMode: "manual" });
+    const off = $(root, "#setting-pasteMode");
+    expect(off.textContent).toBe("Auto-paste: OFF");
+    expect(off.classList.contains("magic-off")).toBe(true);
+    expect($(root, ".onoff.current strong").textContent).toBe("OFF");
+
+    $(root, "#setting-pasteMode").click();
+    await flush();
+    expect(panel.state.settings.pasteMode).toBe("auto");
+    expect($(root, ".onoff.current strong").textContent).toBe("ON");
+  });
+
+  it("gives every settings section its own labelled card with a heading, so each starts and ends in plain view", async () => {
+    const { root } = await onSettings();
+    const cards = [...root.querySelectorAll<HTMLElement>("section.settings-card")];
+    expect(cards.map((card) => card.querySelector("h3")?.textContent)).toEqual([
+      "What to paste",
+      "Pasting on Genius",
+      "Reading credits",
+      "Look-ups on other sites",
+      "Better YouTube links (optional)",
+    ]);
+    for (const card of cards) {
+      const heading = card.querySelector("h3");
+      expect(card.getAttribute("aria-labelledby"), heading?.textContent).toBe(heading?.id);
+    }
+  });
+
+  it("groups the pasting settings under their own headings", async () => {
+    const { root } = await onSettings();
+    const card = $(root, 'section[aria-labelledby="settings-pasting"]');
+    expect([...card.querySelectorAll(".subgroup > h4")].map((h) => h.textContent)).toEqual([
+      "Keys",
+      "When Genius has no exact match",
+      "After a track",
+    ]);
   });
 
   it("saves the pace, kept between 0.2 and 5 seconds", async () => {

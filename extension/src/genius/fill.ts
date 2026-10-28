@@ -7,7 +7,7 @@
 //   - when nothing matches exactly, the text stays typed and the user decides: a fuzzy first suggestion
 //     (measured: "99 Neighbors" for a made-up name) is never picked on their behalf;
 //   - plain inputs get a value and input/change events, never key presses.
-import type { QueueItem } from "../core/models";
+import type { QueueItem, QueueKind } from "../core/models";
 import { sleep } from "../apple/wait";
 import { chooseOption, sameName, setValue, suggestionsFor, waitForChip, type ComboboxTiming } from "./combobox";
 import {
@@ -135,34 +135,56 @@ function fillPlain(form: HTMLFormElement, name: string, value: string, label: st
     : { status: "needs-choice", message: `Genius did not keep the ${label}. Paste it yourself: ${value}` };
 }
 
-/**
- * Whether the user has put this step's value on the form themselves: its chip is in the field, or the plain field
- * holds it. An automatic run waits for exactly this after a step that needed the user's choice.
- */
-export function isStepDone(doc: Document, item: QueueItem): boolean {
-  const form = findForm(doc);
-  if (!form) return false;
-  const [kind, value] = item;
-  const has = (box: Element | undefined): boolean =>
-    box !== undefined && chipTexts(box).some((c) => sameName(c, value));
+/** The field a step goes into: a combobox's box (where chosen values show as chips), or a plain input. */
+function stepField(
+  form: HTMLFormElement,
+  kind: QueueKind,
+): { box?: Element | undefined; input?: HTMLInputElement | undefined } {
   switch (kind) {
     case "written_by":
     case "produced_by": {
       const input = comboboxByLabel(form, kind === "written_by" ? WRITER_LABEL : PRODUCER_LABEL);
-      return input ? has(boxOf(input)) : false;
+      return input ? { box: boxOf(input) } : {};
     }
     case "role":
     case "copyright_role":
-      return has(lastRow(form)?.roleBox);
+      return { box: lastRow(form)?.roleBox };
     case "artist":
     case "phonographic_copyright":
     case "copyright_notice":
-      return has(lastRow(form)?.artistsBox);
+      return { box: lastRow(form)?.artistsBox };
     case "youtube_url":
-      return plainInput(form, YOUTUBE_INPUT_NAME)?.value === value;
+      return { input: plainInput(form, YOUTUBE_INPUT_NAME) ?? undefined };
     case "cover_art":
-      return plainInput(form, COVER_ART_INPUT_NAME)?.value === value;
+      return { input: plainInput(form, COVER_ART_INPUT_NAME) ?? undefined };
   }
+}
+
+/** What a step's field holds right now: its chips, or its value. The user's choice is what changes this afterwards. */
+export function stepSnapshot(doc: Document, item: QueueItem): string[] {
+  const form = findForm(doc);
+  if (!form) return [];
+  const { box, input } = stepField(form, item[0]);
+  if (box) return chipTexts(box);
+  return input ? [input.value] : [];
+}
+
+/**
+ * Whether the user has resolved a step that needed their choice. They usually pick what Genius calls the person or
+ * the label, which is not spelled as Apple spells it, so waiting for Apple's exact name would wait for ever: the step
+ * is done once something new is in its field since `before` (a chip, or a changed value), or the exact name is.
+ */
+export function isStepDone(doc: Document, item: QueueItem, before: readonly string[]): boolean {
+  const form = findForm(doc);
+  if (!form) return false;
+  const value = item[1];
+  const { box, input } = stepField(form, item[0]);
+  if (box) {
+    const chips = chipTexts(box);
+    return chips.some((chip) => sameName(chip, value)) || chips.length > before.length;
+  }
+  if (input) return input.value === value || (input.value.trim() !== "" && input.value !== (before[0] ?? ""));
+  return false;
 }
 
 export async function fillStep(item: QueueItem, ctx: FillContext): Promise<StepOutcome> {

@@ -15,7 +15,7 @@ import {
   type PasteStatus,
 } from "../shared/messages";
 import type { ComboboxTiming } from "./combobox";
-import { fillStep, isStepDone } from "./fill";
+import { fillStep, isStepDone, stepSnapshot } from "./fill";
 import { findForm } from "./selectors";
 
 export interface PageEnv {
@@ -73,11 +73,15 @@ export class GeniusPage {
   private pausing: Promise<void> = Promise.resolve();
   /** True while a run waits for the user to choose a suggestion: then the user acting on the form is expected. */
   private awaitingChoice = false;
+  /** What each step awaiting a choice held when the wait began, by position, for as long as the choice is awaited. */
+  private readonly baselines = new Map<number, string[]>();
 
   constructor(private readonly env: PageEnv) {}
 
   setActive(active: boolean): void {
     this.active = active;
+    // A new or ended session: positions start again from the first step, so no old baseline may be reused.
+    this.baselines.clear();
   }
 
   setHotkeys(next: string, back: string): void {
@@ -90,6 +94,7 @@ export class GeniusPage {
    */
   setAuto(mode: AutoMode): void {
     this.auto = mode;
+    if (mode === "off") this.baselines.clear();
     if (mode !== "running" || this.looping) return;
     this.looping = true;
     this.loop = this.runAuto().finally(() => {
@@ -260,11 +265,16 @@ export class GeniusPage {
   private async waitForChoice(item: [string, string], position: number): Promise<boolean> {
     if (!KINDS.has(item[0])) return false;
     const step = [item[0] as QueueKind, item[1]] satisfies QueueItem;
+    // What the field held when the wait began. It is kept across a pause, so a choice made while paused still counts
+    // when the user turns the run back on; a page loaded fresh has none and takes it as it finds the field.
+    const before = this.baselines.get(position) ?? stepSnapshot(this.env.doc, step);
+    this.baselines.set(position, before);
     this.awaitingChoice = true;
     try {
       let polls = 0;
       while (this.auto === "running") {
-        if (isStepDone(this.env.doc, step)) {
+        if (isStepDone(this.env.doc, step, before)) {
+          this.baselines.delete(position);
           const state = this.stateOf(await this.env.send({ type: "paste-confirm" }).catch(() => null));
           if (!state) return false;
           this.auto = state.auto;
@@ -276,7 +286,10 @@ export class GeniusPage {
         if (!status) return false;
         this.auto = status.auto;
         if (status.auto !== "running") return false;
-        if (!status.awaiting || status.position !== position) return true;
+        if (!status.awaiting || status.position !== position) {
+          this.baselines.delete(position); // skipped from the panel: that choice is no longer waited for
+          return true;
+        }
       }
       return false;
     } finally {
