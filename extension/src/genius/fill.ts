@@ -120,11 +120,13 @@ function rowForArtist(form: HTMLFormElement, role: string | undefined): CreditRo
   return (role ? rowForRole(form, role) : undefined) ?? lastRow(form);
 }
 
-/** The row a role goes into: the last one if its role is still empty, otherwise a new one. */
+/** The row a role goes into: an empty one if the form has any, otherwise a new one. */
 async function rowForNewRole(form: HTMLFormElement, ctx: FillContext): Promise<CreditRow | null> {
   await openCredits(form, ctx);
-  const last = lastRow(form);
-  if (last && chipTexts(last.roleBox).length === 0) return last;
+  // An empty row is used before a new one is added, wherever it is: a role that was skipped leaves its row empty, and
+  // the next run (or the next role) would otherwise add another beside it. The last empty row goes first, as before.
+  const empty = [...creditRows(form)].reverse().find((row) => chipTexts(row.roleBox).length === 0);
+  if (empty) return empty;
 
   const add = addCreditsButton(form);
   if (!add) return null;

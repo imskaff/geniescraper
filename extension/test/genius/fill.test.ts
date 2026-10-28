@@ -3,6 +3,7 @@ import { typedQueue, type QueueItem } from "../../src/core/models";
 import { clearTyped, fillStep, type FillContext, type StepOutcome } from "../../src/genius/fill";
 import { songFromVector } from "../parity/helpers";
 import { chipsIn, loadFakeGenius, rowChips, type FakeGenius, type FakeOptions } from "./fakeGenius";
+import { addCreditsButton } from "../../src/genius/selectors";
 
 const TIMING = { suggestionMs: 400, settleMs: 60, selectMs: 300, pollMs: 5 };
 
@@ -390,6 +391,19 @@ describe("roles the form already has", () => {
       ["Mastering Engineer"],
       ["Lead Vocals"],
     ]);
+  });
+
+  it("reuses an empty row a skipped role left behind, wherever it is, instead of adding another", async () => {
+    const { fake, ctx, run } = setup();
+    // A role typed and skipped leaves its row empty; a later role fills the next row, so the empty one is not last.
+    await fillStep(["role", "Mixing Engineer"], { ...ctx, autoConfirm: false });
+    clearTyped(fake.doc, ["role", "Mixing Engineer"]);
+    addCreditsButton(fake.form)?.click();
+    await run(["role", "Lead Vocals"]);
+    expect(rowChips(fake.form).map((r) => r.role)).toEqual([[], ["Lead Vocals"]]);
+
+    await run(["role", "Mixing Engineer"]);
+    expect(rowChips(fake.form).map((r) => r.role)).toEqual([["Mixing Engineer"], ["Lead Vocals"]]);
   });
 });
 
