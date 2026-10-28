@@ -454,6 +454,25 @@ try {
     )) === true,
   );
   await shot("9j-settings-lookups");
+  await panel.evaluate("document.querySelector('[data-key=\"details-youtube-key-steps\"]').click()");
+  await panel.evaluate(
+    "document.querySelector('[data-key=\"details-youtube-key-steps\"]').scrollIntoView({ block: 'start' })",
+  );
+  await sleep(200);
+  check(
+    "the YouTube key help opens with its five steps and three Google links",
+    (await panel.evaluate(
+      "document.querySelectorAll('.how-to > li').length === 5 && document.querySelectorAll('.how-to a').length === 3",
+    )) === true,
+  );
+  await shot("9k-youtube-key-steps-dark");
+  await panel.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "light" }] });
+  await sleep(300);
+  await shot("9l-youtube-key-steps-light");
+  await panel.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "dark" }] });
+  await panel.evaluate("document.querySelector('#youtube-key').scrollIntoView({ block: 'center' })");
+  await sleep(200);
+  await shot("9m-youtube-key-box");
   const settingsOverflow = await horizontalOverflow();
   check("the settings screen has no horizontal scrollbar", settingsOverflow.scroll <= settingsOverflow.client);
   await clickButton("Back");

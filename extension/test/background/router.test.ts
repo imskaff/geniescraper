@@ -138,6 +138,7 @@ describe("the YouTube look-up", () => {
     createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS, {
       find: () => Promise.resolve(none),
       throttled: () => false,
+      keyProblem: () => "",
       ...service,
     });
 
@@ -149,13 +150,13 @@ describe("the YouTube look-up", () => {
         return Promise.resolve(LINK);
       },
     })({ type: "youtube-lookup", title: "Fortnight", artist: "Taylor Swift" });
-    expect(answer).toEqual({ ok: true, data: { ...LINK, throttled: false } });
+    expect(answer).toEqual({ ok: true, data: { ...LINK, throttled: false, keyProblem: "" } });
     expect(asked).toEqual(["Taylor Swift / Fortnight"]);
   });
 
   it("says when no link was found only because YouTube is limiting requests", async () => {
     const answer = await route({ throttled: () => true })({ type: "youtube-lookup", title: "x", artist: "y" });
-    expect(answer).toEqual({ ok: true, data: { url: "", isMusicVideo: false, throttled: true } });
+    expect(answer).toEqual({ ok: true, data: { url: "", isMusicVideo: false, throttled: true, keyProblem: "" } });
   });
 
   it("does not call a found link throttled", async () => {
@@ -173,7 +174,7 @@ describe("the YouTube look-up", () => {
       title: "x",
       artist: "y",
     });
-    expect(answer).toEqual({ ok: true, data: { url: "", isMusicVideo: false, throttled: false } });
+    expect(answer).toEqual({ ok: true, data: { url: "", isMusicVideo: false, throttled: false, keyProblem: "" } });
   });
 
   it.each([

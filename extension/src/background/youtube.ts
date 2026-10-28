@@ -1,5 +1,6 @@
 // The worker's YouTube lookup behind an interface, so the router can be tested without the network.
-import { fetchText, hostOrigin, type GetText } from "../lookups/http";
+import { fetchResult, fetchText, hostOrigin, type GetResult, type GetText } from "../lookups/http";
+import { apiPages } from "../lookups/youtubeApi";
 import { extractVar, findYoutube, type YoutubeLink, type YoutubePages } from "../lookups/youtube";
 import { Limiter } from "./serial";
 
@@ -8,11 +9,14 @@ export interface YoutubeService {
   find(title: string, artist: string): Promise<YoutubeLink>;
   /** True while YouTube is being left alone because it stopped answering. */
   throttled(): boolean;
+  /** Why the user's key could not be used in the most recent lookup, or "". */
+  keyProblem(): "" | "key" | "quota" | "not-enabled";
 }
 
 export const NO_YOUTUBE: YoutubeService = {
   find: () => Promise.resolve({ url: "", isMusicVideo: false }),
   throttled: () => false,
+  keyProblem: () => "",
 };
 
 /**
@@ -110,12 +114,53 @@ export function youtubePages(
 }
 
 const youtubeGranted = (): Promise<boolean> => chrome.permissions.contains({ origins: [hostOrigin("youtube")] });
+const apiGranted = (): Promise<boolean> => chrome.permissions.contains({ origins: [hostOrigin("youtubeApi")] });
 
-export function realYoutube(
-  getText: GetText = fetchText,
-  granted: () => Promise<boolean> = youtubeGranted,
-): YoutubeService {
+export interface YoutubeOptions {
+  getText?: GetText;
+  granted?: () => Promise<boolean>;
+  /** The user's own YouTube key; "" when they have none. */
+  getKey?: () => Promise<string>;
+  getResult?: GetResult;
+  apiGranted?: () => Promise<boolean>;
+}
+
+/**
+ * The lookup. With the user's key (and Chrome's permission for Google's API host) it asks Google's official service,
+ * which is not subject to the page-reading limit and is authoritative: no result there means no result. Without a
+ * key, or when the key could not be used (wrong, quota used up, service not switched on), it reads YouTube's pages
+ * as before, so a bad key never leaves the user worse off.
+ */
+export function realYoutube(options: YoutubeOptions = {}): YoutubeService {
+  const {
+    getText = fetchText,
+    granted = youtubeGranted,
+    getKey = () => Promise.resolve(""),
+    getResult = fetchResult,
+    apiGranted: apiAllowed = apiGranted,
+  } = options;
   const gate = new YoutubeGate();
   const pages = youtubePages(getText, gate, granted);
-  return { find: (title, artist) => findYoutube(pages, title, artist), throttled: () => gate.coolingDown };
+  const api = new Limiter(2);
+  let keyProblem: YoutubeService["keyProblem"] extends () => infer R ? R : never = "";
+  return {
+    async find(title, artist) {
+      keyProblem = "";
+      const key = await getKey().catch(() => "");
+      if (key && (await apiAllowed().catch(() => false))) {
+        const viaApi = apiPages(getResult, key);
+        const limited: YoutubePages = {
+          search: (query) => api.run(() => viaApi.search(query)),
+          watch: (id) => api.run(() => viaApi.watch(id)),
+        };
+        const link = await findYoutube(limited, title, artist);
+        const problem = viaApi.problem();
+        if (link.url || problem === "" || problem === "failed") return link;
+        keyProblem = problem;
+      }
+      return findYoutube(pages, title, artist);
+    },
+    throttled: () => gate.coolingDown,
+    keyProblem: () => keyProblem,
+  };
 }

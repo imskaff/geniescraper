@@ -27,6 +27,11 @@ const env: Env = {
   api: createWorkerApi(chromeSend),
   hosts,
   stores: chromeStores(),
+  // The YouTube key stays in this browser: local storage, never the synced area.
+  secrets: {
+    get: async (key) => (await chrome.storage.local.get(key))[key],
+    set: (key, value) => chrome.storage.local.set({ [key]: value }),
+  },
   async activeTab() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     return tab?.id !== undefined && tab.url ? { tabId: tab.id, url: tab.url } : null;

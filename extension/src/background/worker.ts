@@ -4,6 +4,9 @@ import { isGeniusRequest, type Result } from "../shared/messages";
 import { chromeStores } from "../shared/storage";
 import { REAL_CLIENT_TIMING } from "./appleClient";
 import { realCovers } from "./covers";
+import { checkKey } from "../lookups/youtubeApi";
+import { fetchResult } from "../lookups/http";
+import { loadYoutubeKey } from "../shared/secrets";
 import { realYoutube } from "./youtube";
 import { PasteService } from "./paste";
 import { chromePorts } from "./ports";
@@ -11,7 +14,19 @@ import { createRouter } from "./router";
 
 const ports = chromePorts();
 const paste = new PasteService(ports, chromeStores());
-const route = createRouter(ports, REAL_CLIENT_TIMING, paste, realCovers(), realYoutube());
+// The user's YouTube key sits in this browser's local storage (never the synced area).
+const secrets = {
+  get: async (key: string): Promise<unknown> => (await chrome.storage.local.get(key))[key],
+  set: (key: string, value: unknown): Promise<void> => chrome.storage.local.set({ [key]: value }),
+};
+const route = createRouter(
+  ports,
+  REAL_CLIENT_TIMING,
+  paste,
+  realCovers(),
+  realYoutube({ getKey: () => loadYoutubeKey(secrets) }),
+  (key) => checkKey(fetchResult, key),
+);
 
 // The toolbar button opens the side panel. The setting persists, so this is harmless on every worker start.
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => undefined);

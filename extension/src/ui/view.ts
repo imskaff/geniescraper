@@ -52,6 +52,8 @@ export class PanelView {
   /** Which collapsible lists the user has opened; re-rendering rebuilds them, so the choice is kept here. */
   private shownErrorSeq = 0;
   private readonly expanded = new Map<string, boolean>();
+  /** What the user has typed into the key box, kept across re-renders and never stored by the view. */
+  private keyDraft = "";
 
   constructor(
     private readonly root: HTMLElement,
@@ -686,6 +688,7 @@ export class PanelView {
       this.pastingSettings(state),
       this.readingSettings(state),
       this.lookupSettings(state),
+      this.youtubeKeySettings(state),
     ];
   }
 
@@ -856,6 +859,156 @@ export class PanelView {
         "Searches www.youtube.com's pages for the song, as the desktop app does. Off until you allow it, and it needs the YouTube link ticked above to be pasted. Chrome asks first; take the permission back here or in chrome://extensions.",
       ),
     );
+  }
+
+  /**
+   * The optional YouTube key, with everything a first-time user needs on the page: what it is for, every step to get
+   * one with a link to the exact Google page for each, and a way to paste and check it. The links open Google's own
+   * pages in a new tab; the extension never reads those pages, so nothing here needs another permission.
+   */
+  private youtubeKeySettings(state: PanelState): HTMLElement {
+    const link = (text: string, href: string): HTMLElement =>
+      el("a", {
+        class: "button quiet link-button",
+        text,
+        attrs: { href, target: "_blank", rel: "noopener noreferrer" },
+      });
+    const step = (title: string, detail: string, action?: HTMLElement): HTMLElement =>
+      el(
+        "li",
+        {},
+        el("strong", { text: title }),
+        el("span", { class: "step-detail", text: detail }),
+        ...(action ? [action] : []),
+      );
+
+    const steps = el(
+      "ol",
+      { class: "how-to" },
+      step(
+        "Create a project.",
+        "Sign in with your Google account when asked. Type any name, for example Geniescraper, then press Create. If Google asks you to accept its terms, tick the box and continue. You should not need to add a payment card; if Google asks for one, skip it.",
+        link("Open step 1 in Google", "https://console.cloud.google.com/projectcreate"),
+      ),
+      step(
+        "Switch on the YouTube service.",
+        "Check that your new project is named at the top of the page, then press the blue Enable button. Wait until the page changes.",
+        link("Open step 2 in Google", "https://console.cloud.google.com/apis/library/youtube.googleapis.com"),
+      ),
+      step(
+        "Create your key.",
+        "Press + Create credentials, then choose API key. A box shows your key: a long text that starts with AIza. Press the copy icon next to it.",
+        link("Open step 3 in Google", "https://console.cloud.google.com/apis/credentials"),
+      ),
+      step(
+        "Paste it here.",
+        "Come back to this panel, click the box below and press Ctrl+V (Cmd+V on a Mac), or press Paste from clipboard. Then press Save and check key. You will see whether Google accepted it.",
+      ),
+      step(
+        "Optional, for safety.",
+        "On Google's key page you can press Restrict key and choose YouTube Data API v3, so the key cannot be used for anything else. Never share your key with anyone.",
+      ),
+    );
+
+    const input = el("input", {
+      class: "field",
+      attrs: {
+        id: "youtube-key",
+        "data-key": "youtube-key",
+        type: "password",
+        autocomplete: "off",
+        spellcheck: "false",
+        placeholder: "AIza…",
+        "aria-describedby": "youtube-key-help",
+      },
+      on: {
+        input: (event) => {
+          this.keyDraft = (event.target as HTMLInputElement).value;
+        },
+      },
+    });
+    input.value = this.keyDraft;
+    const show = el("input", {
+      attrs: { type: "checkbox", "data-key": "youtube-key-show" },
+      on: {
+        change: (event) => {
+          input.type = (event.target as HTMLInputElement).checked ? "text" : "password";
+        },
+      },
+    });
+
+    const busy = state.youtubeKey.busy;
+    const message = state.youtubeKey.message;
+    return el(
+      "fieldset",
+      { class: "stack" },
+      el("legend", { text: "Better YouTube links (optional)" }),
+      el("p", {
+        class: "help",
+        text: "The free YouTube search can be blocked by Google, and then no link is found. For reliable links you can use Google's official YouTube service with your own free key. It is free for roughly 25 songs a day, and the key stays in this browser: it is not synced and it is sent only to Google.",
+        attrs: { id: "youtube-key-help" },
+      }),
+      this.disclosure("youtube-key-steps", "How do I get a key? Step by step (about 3 minutes)", steps),
+      el("label", { text: "Your YouTube key", attrs: { for: "youtube-key" } }),
+      input,
+      el("label", { class: "check" }, show, el("span", { text: "Show the key" })),
+      el(
+        "div",
+        { class: "row" },
+        this.button(
+          "Save and check key",
+          "primary",
+          "youtube-key-save",
+          () => void this.panel.saveYoutubeKey(input.value),
+          busy,
+        ),
+        this.button(
+          "Paste from clipboard",
+          "quiet",
+          "youtube-key-paste",
+          () => {
+            void this.pasteKey(input);
+          },
+          busy,
+        ),
+        state.youtubeKey.saved
+          ? this.button("Remove my key", "quiet", "youtube-key-remove", () => void this.panel.removeYoutubeKey(), busy)
+          : null,
+      ),
+      el("p", {
+        class: "help",
+        text: state.youtubeKey.saved ? "A key is saved in this browser." : "No key is saved.",
+        attrs: { "data-key": "youtube-key-state" },
+      }),
+      el("p", {
+        class: message ? "help key-message" : "help",
+        text: message,
+        attrs: { id: "youtube-key-message", "aria-live": "polite" },
+      }),
+      el(
+        "p",
+        { class: "help" },
+        link("Google's own guide to API keys", "https://developers.google.com/youtube/v3/getting-started"),
+      ),
+    );
+  }
+
+  /** Fill the key box from the clipboard; Chrome may ask first, or refuse, and then typing it in works as well. */
+  private async pasteKey(input: HTMLInputElement): Promise<void> {
+    try {
+      const text = (await navigator.clipboard.readText()).trim();
+      if (text) {
+        input.value = text;
+        this.keyDraft = text;
+        input.focus();
+        return;
+      }
+      this.panel.noteKeyMessage("The clipboard is empty. Copy the key from Google's page first.");
+    } catch {
+      this.panel.noteKeyMessage(
+        "Chrome did not let the extension read the clipboard. Click in the box and press Ctrl+V (Cmd+V on a Mac) instead.",
+      );
+    }
   }
 
   // ── pieces ──────────────────────────────────────────────────────────

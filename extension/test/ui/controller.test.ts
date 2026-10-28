@@ -488,7 +488,7 @@ describe("describeError", () => {
 describe("optional hosts", () => {
   it("starts from what Chrome reports, not from anything saved", async () => {
     const { panel } = await open({ hosts: { deezer: true } });
-    expect(panel.state.hosts).toEqual({ deezer: true, youtube: false });
+    expect(panel.state.hosts).toEqual({ deezer: true, youtube: false, youtubeApi: false });
   });
 
   it("asks Chrome before it waits for anything, because the prompt needs the click", async () => {
@@ -539,9 +539,18 @@ describe("optional hosts", () => {
 
 describe("the YouTube link of a track", () => {
   const LINK = "https://www.youtube.com/watch?v=abcDEF_-123";
-  const FOUND = { ok: true as const, data: { url: LINK, isMusicVideo: true, throttled: false } };
-  const NOTHING = { ok: true as const, data: { url: "", isMusicVideo: false, throttled: false } };
-  const THROTTLED = { ok: true as const, data: { url: "", isMusicVideo: false, throttled: true } };
+  const FOUND = {
+    ok: true as const,
+    data: { url: LINK, isMusicVideo: true, throttled: false, keyProblem: "" as const },
+  };
+  const NOTHING = {
+    ok: true as const,
+    data: { url: "", isMusicVideo: false, throttled: false, keyProblem: "" as const },
+  };
+  const THROTTLED = {
+    ok: true as const,
+    data: { url: "", isMusicVideo: false, throttled: true, keyProblem: "" as const },
+  };
 
   async function ready(options: Parameters<typeof fakeEnv>[0] = {}) {
     const ui = await open({ hosts: { youtube: true }, ...options });
@@ -650,5 +659,158 @@ describe("the YouTube link of a track", () => {
     gate.resolve(FOUND);
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(panel.state.session.results).toEqual([]);
+  });
+});
+
+describe("the user's own YouTube key", () => {
+  const KEY = "AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q";
+  const found = {
+    ok: true as const,
+    data: {
+      url: "https://www.youtube.com/watch?v=abcDEF_-123",
+      isMusicVideo: false,
+      throttled: false,
+      keyProblem: "" as const,
+    },
+  };
+
+  it("starts with no key saved, and knows about one that is", async () => {
+    expect((await open()).panel.state.youtubeKey.saved).toBe(false);
+    expect((await open({ youtubeKey: KEY })).panel.state.youtubeKey.saved).toBe(true);
+  });
+
+  it("asks Chrome for Google's permission before waiting for anything, once the key has the right shape", async () => {
+    const { env, panel } = await open();
+    void panel.saveYoutubeKey(KEY);
+    expect(env.hosts.log).toEqual(["request:youtubeApi"]);
+  });
+
+  it("does not bother Chrome with something that is not a key, and says what a key looks like", async () => {
+    const { env, panel } = await open();
+    await panel.saveYoutubeKey("hello");
+    expect(env.hosts.log).toEqual([]);
+    expect(panel.state.youtubeKey.message).toContain("starts with AIza");
+    await panel.saveYoutubeKey("   ");
+    expect(panel.state.youtubeKey.message).toBe("Paste your key into the box first.");
+    expect(env.api.calls).not.toContain("key-check");
+  });
+
+  it("cleans quotes and spaces from a pasted key", async () => {
+    const { env, panel } = await open();
+    await panel.saveYoutubeKey(`  "${KEY}" \n`);
+    expect(env.secretsStore.data.get("youtubeApiKey")).toBe(KEY);
+  });
+
+  it("keeps a key that Google accepts, and says so", async () => {
+    const { env, panel } = await open();
+    await panel.saveYoutubeKey(KEY);
+    expect(env.secretsStore.data.get("youtubeApiKey")).toBe(KEY);
+    expect(panel.state.youtubeKey).toMatchObject({ saved: true, busy: false });
+    expect(panel.state.youtubeKey.message).toContain("Key saved and working");
+    expect(panel.state.hosts.youtubeApi).toBe(true);
+  });
+
+  it("keeps nothing when Google rejects the key, and says what to do", async () => {
+    const { env, panel } = await open({ api: { checkYoutubeKey: () => Promise.resolve({ ok: true, data: "key" }) } });
+    await panel.saveYoutubeKey(KEY);
+    expect(env.secretsStore.data.get("youtubeApiKey")).toBeUndefined();
+    expect(panel.state.youtubeKey.saved).toBe(false);
+    expect(panel.state.youtubeKey.message).toContain("did not accept this key");
+  });
+
+  it.each([
+    ["quota", "allowance for today is used up"],
+    ["not-enabled", "not switched on yet"],
+  ] as const)("keeps a right key that cannot be used yet (%s), and explains", async (outcome, words) => {
+    const { env, panel } = await open({ api: { checkYoutubeKey: () => Promise.resolve({ ok: true, data: outcome }) } });
+    await panel.saveYoutubeKey(KEY);
+    expect(env.secretsStore.data.get("youtubeApiKey")).toBe(KEY);
+    expect(panel.state.youtubeKey.saved).toBe(true);
+    expect(panel.state.youtubeKey.message).toContain(words);
+  });
+
+  it("keeps nothing and says so when Google cannot be reached", async () => {
+    const { env, panel } = await open({
+      api: { checkYoutubeKey: () => Promise.resolve({ ok: false, error: { code: "internal", message: "x" } }) },
+    });
+    await panel.saveYoutubeKey(KEY);
+    expect(env.secretsStore.data.get("youtubeApiKey")).toBeUndefined();
+    expect(panel.state.youtubeKey.message).toContain("Could not reach Google");
+  });
+
+  it("does not check the key when the user declines Chrome's prompt, and asks them to try again", async () => {
+    const { env, panel } = await open();
+    env.hosts.allow = false;
+    await panel.saveYoutubeKey(KEY);
+    expect(env.api.calls).not.toContain("key-check");
+    expect(panel.state.youtubeKey).toMatchObject({ saved: false, busy: false });
+    expect(panel.state.youtubeKey.message).toContain("Press Save again and choose Allow");
+  });
+
+  it("ignores a second press while one is being checked", async () => {
+    const gate = deferred<{ ok: true; data: "ok" }>();
+    const { env, panel } = await open({ api: { checkYoutubeKey: () => gate.promise } });
+    const first = panel.saveYoutubeKey(KEY);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await panel.saveYoutubeKey(KEY);
+    gate.resolve({ ok: true, data: "ok" });
+    await first;
+    expect(env.api.calls.filter((c) => c === "key-check")).toHaveLength(1);
+  });
+
+  it("forgets the key and takes back the permission when removed", async () => {
+    const { env, panel } = await open({ youtubeKey: KEY, hosts: { youtubeApi: true } });
+    await panel.removeYoutubeKey();
+    expect(env.secretsStore.data.get("youtubeApiKey")).toBe("");
+    expect(panel.state.youtubeKey).toMatchObject({ saved: false });
+    expect(env.hosts.log).toEqual(["remove:youtubeApi"]);
+    expect(panel.state.hosts.youtubeApi).toBe(false);
+  });
+
+  it("never puts the key itself into the panel's state", async () => {
+    const { panel } = await open();
+    await panel.saveYoutubeKey(KEY);
+    expect(JSON.stringify(panel.state)).not.toContain(KEY);
+  });
+
+  it("looks up YouTube links with a saved key even when the page-reading permission is off", async () => {
+    const { env, panel } = await open({
+      youtubeKey: KEY,
+      hosts: { youtubeApi: true },
+      api: { lookupYoutube: () => Promise.resolve(found) },
+    });
+    await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
+    await panel.getCredits();
+    expect(env.api.calls.some((c) => c.startsWith("youtube:"))).toBe(true);
+    expect(panel.state.session.results[0]?.song?.youtubeUrl).toContain("abcDEF_-123");
+  });
+
+  it("does not look up with a saved key when Chrome's permission for Google's service is gone", async () => {
+    const { env, panel } = await open({ youtubeKey: KEY });
+    await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
+    await panel.getCredits();
+    expect(env.api.calls.some((c) => c.startsWith("youtube:"))).toBe(false);
+  });
+
+  it.each([
+    ["key", "did not accept your YouTube key"],
+    ["quota", "allowance for today is used up"],
+    ["not-enabled", "not switched on"],
+  ] as const)("tells the user when a lookup could not use the key (%s)", async (problem, words) => {
+    const { panel } = await open({
+      youtubeKey: KEY,
+      hosts: { youtubeApi: true },
+      api: {
+        lookupYoutube: () =>
+          Promise.resolve({ ok: true, data: { url: "", isMusicVideo: false, throttled: false, keyProblem: problem } }),
+      },
+    });
+    await panel.detect(ALBUM_URL);
+    await panel.setAllSelected(true);
+    await panel.getCredits();
+    await panel.ensureYoutube(2);
+    expect(panel.state.status).toContain(words);
   });
 });

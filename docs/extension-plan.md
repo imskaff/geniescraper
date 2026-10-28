@@ -464,3 +464,26 @@ The desktop lookup (`scraper.youtube.fetch_youtube_url`, run for six tracks of t
 So from the development machine, after hundreds of test requests, the desktop app is limited in the same way: the limit looks like a state of this address and its connections, not something the extension's fetch causes by itself.
 The earlier measurements (sections 18 and 20) are therefore pessimistic: they were taken after heavy testing from one address.
 Not yet measured: the one-track lookup on a clean address with a normal user's pace, which is the owner's to try (reload the extension, tick the YouTube box, paste an album track by track).
+
+## 21. An optional YouTube Data API key
+
+Why: the page-reading lookup is limited by Google (sections 18 and 20), and the owner's album got no links.
+A user who enters their own free key gets links from Google's official service, which does not have that limit.
+
+- **New host.** `www.googleapis.com` joins the optional hosts (a "Save and check key" click asks Chrome for it, inside the click, like the other two).
+- **Where the key lives.** `chrome.storage.local`: this browser only, never the synced area.
+  The panel's state holds only whether a key is saved, never the key; it is sent only to Google's API host, in the `X-Goog-Api-Key` header (never in a URL), and is never logged.
+  The key box is a password field with a "Show the key" box.
+- **How it picks a video.** `lookups/youtubeApi.ts` rewrites the API's search and video answers into the shape the page-reading scorer already reads, so both ways choose by the same golden-tested rules.
+  What the API does not give is absent: the verified-channel badges (so the Official Artist and label-channel shortcuts do not fire) and the Topic "Provided to YouTube" text is only the short snippet.
+- **Order.** With a key and the permission, Google's service is asked first and is authoritative: no result there means no result, and YouTube's pages are not read.
+  If the key cannot be used (wrong, daily allowance used up, the YouTube Data API not switched on) the page-reading lookup runs as before, and the panel says why in plain words.
+- **Quota.** A search costs 100 units of the free 10,000 a day, so about 25 to 50 songs a day depending on how many searches each song needs.
+  Two requests at a time at most.
+- **Help for a first-time user.** Settings has "Better YouTube links (optional)": a plain-language explanation, a collapsed "How do I get a key? Step by step" with five numbered steps, each with a button that opens the exact Google page in a new tab (create a project, enable the service, create the key), and a link to Google's own guide.
+  The extension does not read those pages, so no extra permission is needed.
+  It cannot copy the key for the user: the key is shown on Google's site, which the extension cannot read.
+  Instead "Paste from clipboard" fills the box after the user presses Google's copy icon (Ctrl+V works too), "Save and check key" tries it with the cheapest call (1 unit) and says what Google answered, and a right key that cannot be used yet is kept with an explanation.
+  A mistyped key is caught before any request, with what a key looks like.
+- **Verified.** Offline: problem classification, entity decoding, the rewriting, the choice of videos through the API (Topic upload, official video, an apostrophe in a title), the header-not-URL rule, the permission gate, the service's order and fallbacks, the concurrency limit, the stored key, the messages, the panel flow (including that the permission is requested before anything is awaited) and the Settings help; live: the Settings screen renders the steps and links in both themes.
+  **Not verified:** a real Google key (none is available here), so the exact answers of Google's API are as its documentation describes and the first real try is the check; and Chrome's permission prompt.

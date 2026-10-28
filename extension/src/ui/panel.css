@@ -552,3 +552,40 @@ legend {
 .button.wide {
   width: 100%;
 }
+
+/* The YouTube key steps */
+a.link-button {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 6px;
+  text-decoration: none;
+}
+
+.how-to {
+  margin: 8px 0 0;
+  padding-left: 24px;
+  list-style: decimal;
+}
+
+.how-to li {
+  display: list-item;
+  margin-bottom: 14px;
+  padding-left: 4px;
+}
+
+.how-to li::marker {
+  font-weight: 700;
+}
+
+.how-to li > strong,
+.how-to li > .step-detail {
+  display: block;
+}
+
+.step-detail {
+  color: var(--muted);
+}
+
+.key-message {
+  color: var(--text);
+}

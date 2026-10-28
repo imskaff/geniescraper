@@ -2,10 +2,12 @@
 import { normalisePaste, type PasteState } from "../core/paste";
 import {
   isAlbumInfo,
+  isKeyCheck,
   isPageScrape,
   isYoutubeAnswer,
   isResult,
   type AlbumInfo,
+  type KeyCheck,
   type PageScrape,
   type PasteCommand,
   type Result,
@@ -19,6 +21,8 @@ export interface WorkerApi {
   scrapeTrack(url: string, trackTitle: string): Promise<Result<PageScrape>>;
   /** The YouTube link of one song; the worker asks YouTube only while the user has allowed it. */
   lookupYoutube(title: string, artist: string): Promise<Result<YoutubeAnswer>>;
+  /** Try a YouTube key with one cheap call to Google; the key is checked, not stored, by the worker. */
+  checkYoutubeKey(key: string): Promise<Result<KeyCheck>>;
   /** Change the paste session. The worker is its only writer; the answer is the state afterwards. */
   paste(command: PasteCommand): Promise<Result<PasteState>>;
 }
@@ -50,6 +54,7 @@ export function createWorkerApi(send: Send): WorkerApi {
     detect: (url, tabId) =>
       ask(send, tabId === undefined ? { type: "detect", url } : { type: "detect", url, tabId }, isAlbumInfo),
     scrapeTrack: (url, trackTitle) => ask(send, { type: "scrape-track", url, trackTitle }, isPageScrape),
+    checkYoutubeKey: (key) => ask(send, { type: "youtube-key-check", key }, isKeyCheck),
     lookupYoutube: (title, artist) => ask(send, { type: "youtube-lookup", title, artist }, isYoutubeAnswer),
     async paste(command) {
       const answer = await ask(send, command, isRecord);

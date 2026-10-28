@@ -5,6 +5,7 @@ import { isPasteCommand, isWorkerRequest, type AlbumInfo, type Result } from "..
 import { detectAlbum, scrapeTrack, type ClientTiming } from "./appleClient";
 import type { CoverService } from "./covers";
 import { NO_YOUTUBE, type YoutubeService } from "./youtube";
+import type { KeyCheck } from "../shared/messages";
 import type { PasteService } from "./paste";
 import type { BrowserPorts } from "./ports";
 import { Limiter, Serial } from "./serial";
@@ -32,6 +33,7 @@ export function createRouter(
   paste: PasteService,
   covers: CoverService,
   youtube: YoutubeService = NO_YOUTUBE,
+  checkKey: (key: string) => Promise<KeyCheck> = () => Promise.resolve("failed"),
 ): Router {
   const serial = new Serial();
   const reads = new Limiter(MAX_OPEN_TABS);
@@ -45,7 +47,7 @@ export function createRouter(
     if (isPasteCommand(raw)) return paste.command(raw);
 
     // YouTube look-ups wait in no queue of tabs: the gate inside the service paces them.
-    const queue = raw.type === "detect" ? serial : raw.type === "youtube-lookup" ? direct : reads;
+    const queue = raw.type === "detect" ? serial : raw.type === "scrape-track" ? reads : direct;
     return queue.run(async () => {
       const stopKeepAlive = ports.keepAlive();
       try {
@@ -59,8 +61,12 @@ export function createRouter(
         }
         if (raw.type === "youtube-lookup") {
           const link = await youtube.find(raw.title, raw.artist).catch(() => NO_LINK);
-          return { ok: true, data: { ...link, throttled: !link.url && youtube.throttled() } };
+          return {
+            ok: true,
+            data: { ...link, throttled: !link.url && youtube.throttled(), keyProblem: youtube.keyProblem() },
+          };
         }
+        if (raw.type === "youtube-key-check") return { ok: true, data: await checkKey(raw.key) };
         const result = await scrapeTrack(ports, raw.url, raw.trackTitle, timing);
         if (!result.ok || result.data.coverArtUrl) return result;
         // As in the desktop app, a track with no cover of its own is searched by its title, which finds a cover

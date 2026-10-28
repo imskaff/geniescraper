@@ -22,7 +22,11 @@
   },
   "permissions": ["scripting", "sidePanel", "storage"],
   "host_permissions": ["https://genius.com/*", "https://itunes.apple.com/*", "https://music.apple.com/*"],
-  "optional_host_permissions": ["https://api.deezer.com/*", "https://www.youtube.com/*"],
+  "optional_host_permissions": [
+    "https://api.deezer.com/*",
+    "https://www.googleapis.com/*",
+    "https://www.youtube.com/*"
+  ],
   "content_scripts": [
     {
       "matches": ["https://genius.com/*"],

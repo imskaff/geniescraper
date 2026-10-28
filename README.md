@@ -190,6 +190,8 @@ When Genius has no exact match for a name or role the text stays typed and nothi
 Keys, auto-confirm, the suggestion wait and how many tracks are read at once (3 by default) are in the panel's Settings.
 A Deezer cover fallback and the YouTube link look-up are off until you tick them in Settings; Chrome then asks for permission to contact api.deezer.com or www.youtube.com, and you can take it back there or in chrome://extensions.
 The YouTube look-up reads YouTube's own pages (it has no API for this), which its terms do not allow for automated use: it is optional for that reason.
+For reliable YouTube links you can add your own free YouTube Data API key in Settings ("Better YouTube links"): the panel walks you through getting one, step by step, with a link to each Google page.
+The key stays in this browser, is sent only to Google, and is not synced.
 
 `npm run live:panel -- --chrome <path to Chromium> --screenshots <folder>` drives the real panel with real key presses against the real service worker and live Apple Music (a whole 10-track album), checks the result against the golden file, and saves screenshots in both color schemes and at 320 px.
 `npm run live:sidepanel -- --chrome <path to Chromium>` checks the way the extension is really used: a genuine side panel next to a visible album tab, reading that tab in place.

@@ -35,7 +35,12 @@ export interface YoutubeAnswer {
   isMusicVideo: boolean;
   /** True when YouTube is limiting requests, so "no link" does not mean the song has none. */
   throttled: boolean;
+  /** When the user's YouTube key could not be used: why. "" when no key was involved or it worked. */
+  keyProblem: "" | "key" | "quota" | "not-enabled";
 }
+
+/** The outcome of trying a YouTube key. */
+export type KeyCheck = "ok" | "key" | "quota" | "not-enabled" | "failed";
 
 export type ErrorCode = "bad-request" | "invalid-url" | "not-found" | "timeout" | "tab-failed" | "internal";
 
@@ -65,6 +70,8 @@ export type WorkerRequest =
   | { type: "scrape-track"; url: string; trackTitle: string }
   /** One track's YouTube link, looked up when the user is about to paste it, never for a whole album at once. */
   | { type: "youtube-lookup"; title: string; artist: string }
+  /** Try a YouTube key the user typed, with one cheap call. The key is checked, not stored, by the worker. */
+  | { type: "youtube-key-check"; key: string }
   | PasteCommand;
 
 /** What the Genius content script asks the worker. The worker also checks that it really came from genius.com. */
@@ -137,6 +144,7 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
   if (!isRecord(value)) return false;
   if (value["type"] === "youtube-lookup")
     return typeof value["title"] === "string" && typeof value["artist"] === "string";
+  if (value["type"] === "youtube-key-check") return typeof value["key"] === "string" && value["key"].length < 200;
   if (!hasUrl(value)) return false;
   if (value["type"] === "detect") return value["tabId"] === undefined || Number.isInteger(value["tabId"]);
   return value["type"] === "scrape-track" && typeof value["trackTitle"] === "string";
@@ -221,6 +229,11 @@ export function isYoutubeAnswer(value: unknown): value is YoutubeAnswer {
     isRecord(value) &&
     typeof value["url"] === "string" &&
     typeof value["isMusicVideo"] === "boolean" &&
-    typeof value["throttled"] === "boolean"
+    typeof value["throttled"] === "boolean" &&
+    ["", "key", "quota", "not-enabled"].includes(value["keyProblem"] as string)
   );
+}
+
+export function isKeyCheck(value: unknown): value is KeyCheck {
+  return typeof value === "string" && ["ok", "key", "quota", "not-enabled", "failed"].includes(value);
 }

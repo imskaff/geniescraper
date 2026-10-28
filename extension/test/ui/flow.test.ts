@@ -344,7 +344,10 @@ describe("the YouTube link in the credits list", () => {
     hosts: { youtube: true },
     api: {
       lookupYoutube: () =>
-        Promise.resolve({ ok: true as const, data: { url: LINK, isMusicVideo: isMv, throttled: false } }),
+        Promise.resolve({
+          ok: true as const,
+          data: { url: LINK, isMusicVideo: isMv, throttled: false, keyProblem: "" as const },
+        }),
     },
   });
 

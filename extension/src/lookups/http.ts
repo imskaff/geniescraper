@@ -7,7 +7,12 @@ import type { GetJson } from "./itunes";
 export const REQUIRED_LOOKUP_HOSTS: ReadonlySet<string> = new Set(["itunes.apple.com"]);
 
 /** Lookup hosts the user turns on in Settings; Chrome asks for each one, and the user can take it back. */
-export const OPTIONAL_LOOKUP_HOSTS = { deezer: "api.deezer.com", youtube: "www.youtube.com" } as const;
+export const OPTIONAL_LOOKUP_HOSTS = {
+  deezer: "api.deezer.com",
+  youtube: "www.youtube.com",
+  /** Google's official YouTube service, used only when the user has entered their own key. */
+  youtubeApi: "www.googleapis.com",
+} as const;
 
 export type OptionalHost = keyof typeof OPTIONAL_LOOKUP_HOSTS;
 
@@ -39,11 +44,12 @@ const MAX_TEXT_CHARS = 8_000_000;
 function createFetcher<T>(
   granted: Granted,
   read: (response: Response) => Promise<T | null>,
-): (url: string) => Promise<T | null> {
+  readErrors = false,
+): (url: string, headers?: Record<string, string>) => Promise<T | null> {
   const optional = new Map<string, OptionalHost>(
     (Object.keys(OPTIONAL_LOOKUP_HOSTS) as OptionalHost[]).map((key) => [OPTIONAL_LOOKUP_HOSTS[key], key]),
   );
-  return async (url) => {
+  return async (url, headers) => {
     try {
       const target = new URL(url);
       if (target.protocol !== "https:") return null;
@@ -56,8 +62,9 @@ function createFetcher<T>(
         referrerPolicy: "no-referrer",
         redirect: "error",
         signal: AbortSignal.timeout(TIMEOUT_MS),
+        ...(headers ? { headers } : {}),
       });
-      if (!response.ok) return null;
+      if (!response.ok && !readErrors) return null;
       return await read(response);
     } catch {
       return null;
@@ -74,7 +81,26 @@ export const createFetchText = (granted: Granted): GetText =>
     return text.length <= MAX_TEXT_CHARS ? text : null;
   });
 
+/** An answer with its status, for a service whose error bodies say what went wrong (a bad key, a used-up quota). */
+export interface FetchResult {
+  status: number;
+  body: unknown;
+}
+
+export type GetResult = (url: string, headers?: Record<string, string>) => Promise<FetchResult | null>;
+
+export const createFetchResult = (granted: Granted): GetResult =>
+  createFetcher<FetchResult>(
+    granted,
+    async (response) => {
+      const body = (await response.json().catch(() => null)) as unknown;
+      return { status: response.status, body };
+    },
+    true,
+  );
+
 const chromeGranted: Granted = (origin) => chrome.permissions.contains({ origins: [origin] });
 
 export const fetchJson: GetJson = createFetchJson(chromeGranted);
 export const fetchText: GetText = createFetchText(chromeGranted);
+export const fetchResult: GetResult = createFetchResult(chromeGranted);

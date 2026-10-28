@@ -343,6 +343,7 @@ describe("settings screen", () => {
       "Go back to the main menu 10 seconds after the last step",
       "Search Deezer for a cover when Apple has none",
       "Find a YouTube link for each track",
+      "Show the key",
     ]);
     // Selects and the number box are named by their labels too (expectAccessible checks every control).
     expect([...root.querySelectorAll<HTMLElement>("select, input[type=number]")].map(accessibleName)).toEqual([
@@ -455,5 +456,115 @@ describe("the YouTube look-up box", () => {
     expect(env.hosts.log).toEqual(["request:youtube"]);
     await flush();
     expect(root.querySelector<HTMLInputElement>('[data-key="host-youtube"]')?.checked).toBe(true);
+  });
+});
+
+describe("the YouTube key help in Settings", () => {
+  const KEY = "AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q";
+  const openSettings = async (options: Parameters<typeof fakeEnv>[0] = {}) => {
+    const ui = await mount(options);
+    byText(ui.root, "button", "Settings").click();
+    await flush();
+    return ui;
+  };
+  const input = (root: HTMLElement) => root.querySelector<HTMLInputElement>("#youtube-key") as HTMLInputElement;
+  const stepsDetails = (root: HTMLElement) =>
+    [...root.querySelectorAll("details")].find((d) => d.textContent.startsWith("How do I get a key?"));
+
+  it("explains what the key is for, and why it is safe, in plain words", async () => {
+    const { root } = await openSettings();
+    const text = root.querySelector("#youtube-key-help")?.textContent ?? "";
+    expect(text).toContain("official YouTube service");
+    expect(text).toContain("free");
+    expect(text).toContain("stays in this browser");
+  });
+
+  it("has every step to get a key, each with a link that opens Google's own page safely", async () => {
+    const { root } = await openSettings();
+    expect(root.querySelectorAll(".how-to > li")).toHaveLength(5);
+    const links = [...root.querySelectorAll<HTMLAnchorElement>(".how-to a")];
+    expect(links.map((a) => a.href)).toEqual([
+      "https://console.cloud.google.com/projectcreate",
+      "https://console.cloud.google.com/apis/library/youtube.googleapis.com",
+      "https://console.cloud.google.com/apis/credentials",
+    ]);
+    for (const a of links) {
+      expect(a.target).toBe("_blank");
+      expect(a.rel).toBe("noopener noreferrer");
+    }
+    expect(root.textContent).toContain("starts with AIza");
+    expect(root.querySelector('a[href^="https://developers.google.com/youtube/v3/"]')).not.toBeNull();
+  });
+
+  it("keeps the steps closed until opened, then remembers", async () => {
+    const { root, panel } = await openSettings();
+    const steps = stepsDetails(root);
+    expect(steps?.open).toBe(false);
+    if (steps) {
+      steps.open = true;
+      steps.dispatchEvent(new Event("toggle"));
+    }
+    panel.noteKeyMessage("x");
+    await flush();
+    expect(stepsDetails(root)?.open).toBe(true);
+  });
+
+  it("hides the key as it is typed, and shows it on request", async () => {
+    const { root } = await openSettings();
+    expect(input(root).type).toBe("password");
+    const show = root.querySelector<HTMLInputElement>('[data-key="youtube-key-show"]') as HTMLInputElement;
+    show.checked = true;
+    show.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(input(root).type).toBe("text");
+  });
+
+  it("asks Chrome inside the click on Save, and keeps what was typed across redraws", async () => {
+    const { root, env } = await openSettings();
+    const box = input(root);
+    box.value = KEY;
+    box.dispatchEvent(new Event("input", { bubbles: true }));
+    byText(root, "button", "Save and check key").click();
+    expect(env.hosts.log).toEqual(["request:youtubeApi"]);
+    await flush();
+    expect(input(root).value).toBe(KEY);
+    expect(root.querySelector("#youtube-key-message")?.textContent).toContain("Key saved and working");
+    expect(root.querySelector('[data-key="youtube-key-state"]')?.textContent).toBe("A key is saved in this browser.");
+  });
+
+  it("says to paste a key first when the box is empty", async () => {
+    const { root } = await openSettings();
+    byText(root, "button", "Save and check key").click();
+    await flush();
+    expect(root.querySelector("#youtube-key-message")?.textContent).toBe("Paste your key into the box first.");
+  });
+
+  it("offers Remove only when a key is saved, and removing it says so", async () => {
+    const without = await openSettings();
+    expect(without.root.querySelector('[data-key="youtube-key-remove"]')).toBeNull();
+    document.body.replaceChildren();
+    const withKey = await openSettings({ youtubeKey: KEY, hosts: { youtubeApi: true } });
+    byText(withKey.root, "button", "Remove my key").click();
+    await flush();
+    expect(withKey.root.querySelector('[data-key="youtube-key-remove"]')).toBeNull();
+    expect(withKey.root.querySelector("#youtube-key-message")?.textContent).toContain("removed");
+  });
+
+  it("fills the box from the clipboard, or explains when Chrome does not allow it", async () => {
+    const { root } = await openSettings();
+    Object.defineProperty(navigator, "clipboard", {
+      value: { readText: () => Promise.resolve(` ${KEY}\n`) },
+      configurable: true,
+    });
+    byText(root, "button", "Paste from clipboard").click();
+    await flush();
+    expect(input(root).value).toBe(KEY);
+    input(root).value = "";
+    Object.defineProperty(navigator, "clipboard", {
+      value: { readText: () => Promise.reject(new Error("denied")) },
+      configurable: true,
+    });
+    byText(root, "button", "Paste from clipboard").click();
+    await flush();
+    expect(root.querySelector("#youtube-key-message")?.textContent).toContain("Ctrl+V");
   });
 });

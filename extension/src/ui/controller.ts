@@ -9,9 +9,19 @@ import { IDLE_PASTE, type PasteState } from "../core/paste";
 import type { AlbumInfo, AppError, PageScrape } from "../shared/messages";
 import { EMPTY_SESSION, type Session, type TrackResult } from "../shared/session";
 import { normaliseSettings, queueOptions, type Settings } from "../shared/settings";
-import { loadPaste, loadSession, loadSettings, saveSession, saveSettings, type Stores } from "../shared/storage";
+import {
+  loadPaste,
+  loadSession,
+  loadSettings,
+  saveSession,
+  saveSettings,
+  type KeyValueStore,
+  type Stores,
+} from "../shared/storage";
 import type { WorkerApi } from "./api";
 import type { OptionalHost } from "../lookups/http";
+import { cleanKey, loadYoutubeKey, looksLikeApiKey, saveYoutubeKey } from "../shared/secrets";
+import type { KeyCheck } from "../shared/messages";
 
 export interface ActiveTab {
   tabId: number;
@@ -32,6 +42,8 @@ export interface Env {
   api: WorkerApi;
   hosts: HostPermissions;
   stores: Stores;
+  /** Where the user's YouTube key is kept: this browser only, never synced. */
+  secrets: KeyValueStore;
   /** The tab the user is looking at, or null when there is none to read. */
   activeTab(): Promise<ActiveTab | null>;
 }
@@ -46,6 +58,8 @@ export interface PanelState {
   pasteIndex: number | null;
   /** Which optional hosts the user has granted, as Chrome reports it. */
   hosts: Record<OptionalHost, boolean>;
+  /** The user's own YouTube key: whether one is saved (never the key itself), and how the last attempt went. */
+  youtubeKey: { saved: boolean; message: string; busy: boolean };
   /** Seconds left before the finished screen returns to the main menu, or null when no countdown runs. */
   doneCountdown: number | null;
   /** Counts every error shown, so the same message appearing again (a repeated attempt) can still be told apart. */
@@ -107,6 +121,28 @@ export function buildSong(album: AlbumInfo, result: Pick<TrackResult, "url">, sc
 /** Seconds the finished screen waits before returning to the main menu, as the desktop app does. */
 export const DONE_SECONDS = 10;
 
+const NO_HOSTS: Record<OptionalHost, boolean> = { deezer: false, youtube: false, youtubeApi: false };
+
+/** What the user is told when their YouTube key cannot be used, in their terms. */
+const KEY_MESSAGES = {
+  key: "Google did not accept your YouTube key, so the free search is used instead. Check the key in Settings.",
+  quota:
+    "Your free YouTube allowance for today is used up (it resets at midnight, Pacific time), so the free search is used instead.",
+  "not-enabled":
+    "Your key works, but the YouTube Data API is not switched on for it. Follow step 2 in Settings and press Enable.",
+} as const;
+
+const KEY_CHECK_MESSAGES: Record<KeyCheck, string> = {
+  ok: "Key saved and working. YouTube links will now come from Google's official service.",
+  key: "Google did not accept this key. Copy it again from the Credentials page, or create a new one. Nothing was saved.",
+  quota:
+    "Key saved. Your free YouTube allowance for today is used up, so it will start working after midnight (Pacific time).",
+  "not-enabled":
+    "Key saved, but the YouTube Data API is not switched on yet. Follow step 2 below and press Enable; it works a minute after that.",
+  failed:
+    "Could not reach Google to check the key. Check your internet connection and press Save again. Nothing was saved.",
+};
+
 const isFinished = (paste: PasteState): boolean =>
   paste.active && paste.queue.length > 0 && paste.position >= paste.queue.length;
 
@@ -124,7 +160,8 @@ export class PanelController {
     session: Session,
     pageUrl: string,
     paste: PasteState = { ...IDLE_PASTE },
-    hosts: Record<OptionalHost, boolean> = { deezer: false, youtube: false },
+    hosts: Record<OptionalHost, boolean> = { ...NO_HOSTS },
+    keySaved = false,
   ) {
     const pasteIndex = paste.active
       ? (session.results.find((r) => (r.song?.title || r.title) === paste.title)?.index ?? null)
@@ -135,6 +172,7 @@ export class PanelController {
       paste,
       pasteIndex,
       hosts,
+      youtubeKey: { saved: keySaved, message: "", busy: false },
       doneCountdown: null,
       errorSeq: 0,
       settingsOpen: false,
@@ -147,15 +185,16 @@ export class PanelController {
 
   /** Load settings, the stored session and the active tab, and build the controller from them. */
   static async create(env: Env): Promise<PanelController> {
-    const [settings, session, paste, tab, hosts] = await Promise.all([
+    const [settings, session, paste, tab, hosts, key] = await Promise.all([
       loadSettings(env.stores),
       loadSession(env.stores),
       loadPaste(env.stores),
       env.activeTab().catch(() => null),
-      env.hosts.granted().catch(() => ({ deezer: false, youtube: false })),
+      env.hosts.granted().catch(() => ({ ...NO_HOSTS })),
+      loadYoutubeKey(env.secrets),
     ]);
     const pageUrl = tab && parseAppleMusicUrl(tab.url) ? tab.url : "";
-    const controller = new PanelController(env, settings, session, pageUrl, paste, hosts);
+    const controller = new PanelController(env, settings, session, pageUrl, paste, hosts, key !== "");
     // A permission taken back in chrome://extensions, or granted elsewhere, changes the Settings box at once.
     env.hosts.subscribe(() => void controller.refreshHosts());
     // Tracks that were mid-read when the panel closed were restored as pending: carry on with them.
@@ -195,7 +234,8 @@ export class PanelController {
   /** Read the permissions again from Chrome, the only place that knows them. */
   async refreshHosts(): Promise<void> {
     const hosts = await this.env.hosts.granted().catch(() => this.current.hosts);
-    if (hosts.deezer !== this.current.hosts.deezer || hosts.youtube !== this.current.hosts.youtube) {
+    const now = this.current.hosts;
+    if (hosts.deezer !== now.deezer || hosts.youtube !== now.youtube || hosts.youtubeApi !== now.youtubeApi) {
       this.update({ hosts });
     }
   }
@@ -219,6 +259,67 @@ export class PanelController {
     await this.refreshHosts();
     // Redraw even when nothing changed, so a box the user ticked and Chrome refused goes back to unticked.
     this.update({ hosts: { ...this.current.hosts }, error: problem });
+  }
+
+  // ── the user's own YouTube key ──────────────────────────────────────
+
+  private setKeyState(patch: Partial<PanelState["youtubeKey"]>): void {
+    this.update({ youtubeKey: { ...this.current.youtubeKey, ...patch } });
+  }
+
+  /**
+   * Check and keep a YouTube key. Chrome's permission prompt for Google's service needs the user's click, so it is asked
+   * for first, before any wait (once the key has the right shape, which costs no request).
+   */
+  async saveYoutubeKey(raw: string): Promise<void> {
+    const key = cleanKey(raw);
+    if (this.current.youtubeKey.busy) return;
+    if (!looksLikeApiKey(key)) {
+      this.setKeyState({
+        message: key
+          ? "That does not look like a YouTube key. A key starts with AIza and is 39 letters, digits, dashes and underscores long. Copy it again from Google's page, using its copy button."
+          : "Paste your key into the box first.",
+      });
+      return;
+    }
+    const asked = this.env.hosts.request("youtubeApi");
+    this.setKeyState({ busy: true, message: "Checking your key with Google…" });
+    const granted = await asked.catch(() => false);
+    await this.refreshHosts();
+    if (!granted) {
+      this.setKeyState({
+        busy: false,
+        message:
+          "Chrome needs your OK before the extension can talk to Google's YouTube service. Press Save again and choose Allow.",
+      });
+      return;
+    }
+    const answer = await this.env.api.checkYoutubeKey(key);
+    const outcome: KeyCheck = answer.ok ? answer.data : "failed";
+    if (outcome === "ok" || outcome === "quota" || outcome === "not-enabled") {
+      // A key that is right but not usable yet (service not switched on, allowance used up today) is still kept:
+      // the user has done their part, and it starts working by itself.
+      await saveYoutubeKey(this.env.secrets, key).catch(() => undefined);
+    }
+    const kept = outcome === "ok" || outcome === "quota" || outcome === "not-enabled";
+    this.setKeyState({
+      saved: kept ? true : this.current.youtubeKey.saved,
+      busy: false,
+      message: KEY_CHECK_MESSAGES[outcome],
+    });
+  }
+
+  /** Show a message under the key box (the view uses it for things only it can know, such as a refused clipboard). */
+  noteKeyMessage(message: string): void {
+    this.setKeyState({ message });
+  }
+
+  /** Forget the key and take back the permission for Google's service. */
+  async removeYoutubeKey(): Promise<void> {
+    await saveYoutubeKey(this.env.secrets, "").catch(() => undefined);
+    this.setKeyState({ saved: false, message: "Your key was removed from this browser." });
+    await this.env.hosts.remove("youtubeApi").catch(() => false);
+    await this.refreshHosts();
   }
 
   /** Re-read which Apple Music page the user is on, after they switch tabs or navigate. */
@@ -464,9 +565,10 @@ export class PanelController {
     if (known) return known;
     const result = this.current.session.results.find((r) => r.index === index);
     const song = result?.song;
-    if (!result || !song || song.youtubeUrl || !this.current.settings.scrapeYoutube || !this.current.hosts.youtube) {
-      return Promise.resolve();
-    }
+    const { hosts, youtubeKey, settings } = this.current;
+    // Either way of asking will do: reading YouTube's pages (its permission) or Google's service with the user's key.
+    const canAsk = hosts.youtube || (youtubeKey.saved && hosts.youtubeApi);
+    if (!result || !song || song.youtubeUrl || !settings.scrapeYoutube || !canAsk) return Promise.resolve();
     const lookup = this.lookupYoutube(index, song);
     this.youtubeLookups.set(index, lookup);
     return lookup;
@@ -481,17 +583,20 @@ export class PanelController {
     const current = this.current.session.results.find((r) => r.index === index);
     // The panel may have moved on (another album, the main menu) while YouTube was being asked.
     if (current?.song?.title !== title) return;
+    const keyMessage = answer.ok && answer.data.keyProblem ? KEY_MESSAGES[answer.data.keyProblem] : "";
     if (answer.ok && answer.data.url) {
       await this.setResult(index, {
         song: { ...current.song, youtubeUrl: answer.data.url, youtubeIsMv: answer.data.isMusicVideo },
       });
-      this.update({ status: "" });
+      this.update({ status: keyMessage });
       return;
     }
     // A failed lookup may be tried again later; a clean "nothing found" is not asked twice.
     if (!answer.ok || answer.data.throttled) this.youtubeLookups.delete(index);
     this.update({
-      status: answer.ok && answer.data.throttled ? MESSAGES.youtubeThrottled : answer.ok ? MESSAGES.noYoutube : "",
+      status:
+        keyMessage ||
+        (answer.ok && answer.data.throttled ? MESSAGES.youtubeThrottled : answer.ok ? MESSAGES.noYoutube : ""),
     });
   }
 

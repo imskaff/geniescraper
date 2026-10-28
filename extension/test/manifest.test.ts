@@ -36,8 +36,13 @@ const ALLOWED_HOSTS = new Set([
   "https://itunes.apple.com/*",
   "https://api.deezer.com/*",
   "https://www.youtube.com/*",
+  "https://www.googleapis.com/*",
 ]);
-const ALLOWED_OPTIONAL_HOSTS = new Set(["https://api.deezer.com/*", "https://www.youtube.com/*"]);
+const ALLOWED_OPTIONAL_HOSTS = new Set([
+  "https://api.deezer.com/*",
+  "https://www.youtube.com/*",
+  "https://www.googleapis.com/*",
+]);
 
 describe("manifest", () => {
   it("is Manifest V3", () => {
