@@ -47,6 +47,15 @@ const check = (name, ok, detail = "") => {
   if (!ok) failures.push(name);
 };
 
+// The same renames as src/core/geniusRoles.ts, which Genius's own role list needs: keep the two in step.
+const geniusName = (role) => {
+  const explicit = { "additional producer": "Additional Production", "vocal recording engineer": "Vocal Engineer" };
+  const key = role.trim().toLowerCase();
+  if (explicit[key]) return explicit[key];
+  const match = /^(?:(.*\S)\s+)?programming$/i.exec(role.trim());
+  return match ? (match[1] ? `${match[1]} Programmer` : "Programmer") : role;
+};
+
 const words = (text) =>
   (
     text
@@ -392,6 +401,8 @@ try {
   for (const { role, artists } of golden.credits) {
     for (const artist of artists) {
       wanted.add(pair(role, artist));
+      // The extension types the role under the name Genius uses (src/core/geniusRoles.ts), so that is expected too.
+      wanted.add(pair(geniusName(role), artist));
       if (["songwriter", "lyricist", "lyrics", "co-writer", "writer"].includes(role.toLowerCase()))
         writers.add(words(artist));
       if (["producer", "co-producer"].includes(role.toLowerCase())) producers.add(words(artist));

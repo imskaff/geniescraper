@@ -820,7 +820,21 @@ Each is tested first and committable on its own.
    With step by step as the main way, Start pasting is the plain glowing yellow button for the Next key and "Auto-paste" is the glowing gradient button beside it; either way the other is one button away.
    Changing the setting applies at once to the next Start pasting; after that a track started the other way sets how the next track goes, as before.
    The first-time set-up does not ask about it: automatic is the default and the choice is in Settings.
-5. A live run on a Genius song the owner created (`npm run live:genius` with the scratch profile), then docs and the privacy and listing text if anything they say changes.
+5. Done (below). A live run on a Genius song the owner created (`npm run live:genius` with the scratch profile), then docs and the privacy and listing text if anything they say changes.
+
+### The live run (slice 5)
+
+`node scripts/live-genius.mjs --mode auto` (signed-in scratch profile, the owner's own song, never Save) ran an automatic paste of a whole track on the real Genius form.
+Result: 28 of 29 checks passed. Seen on the real form: the run starts by itself and fills fields without a key press; Pause, Esc and a real click in the form each pause it, with the click's message saying why; Resume carries on after each; closing the panel pauses it with reason `panel-closed` (so the worker does see the panel's connection end), nothing is filled while the panel is closed, and the reopened panel shows the paused run; the run finishes the track by itself; a name Genius has no exact match for is waited on and skipped; nothing that could be a save was sent; F7 goes back one step.
+The one failure was the check's own: it compared the form with Apple's raw role names, while the extension deliberately types Genius's ("Vocal Recording Engineer" is "Vocal Engineer"). The script now maps them the same way; that fix has not been run live again.
+
+The run also found and fixed a real bug, independent of automatic pasting: a song that already has additional roles shows them collapsed behind "N additional roles" and an Expand button, and while collapsed the rows and the Add button are not in the page, so the role step stopped with "no Add additional credits button".
+The fill now presses that button, but only when it reads Expand (once open it reads Hide, and pressing it would close the section again).
+The captured fake form is open ("Hide"); `collapsedRoles` in the fake covers the collapsed one.
+
+Two traps for the live scripts, both now handled:
+- Branded Chrome ignores `--load-extension` in recent versions, so the live scripts need the Playwright Chromium (`%LOCALAPPDATA%\ms-playwright\chromium-*\chrome-win64\chrome.exe`).
+- A profile that has run the extension before keeps its service worker cached under the same version, so a rebuilt extension can run the old worker ("Unrecognised request" for a new command). `live-genius.mjs` loads a throwaway copy of the build with a unique version instead of deleting anything in the profile.
 
 ### Open risks
 
