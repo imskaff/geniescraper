@@ -198,6 +198,11 @@ label {
   color: var(--muted);
 }
 
+/* Room for three lines, whichever of the link screen's two messages shows, so the detector below stays put. */
+#link-help {
+  min-height: 4.5em;
+}
+
 h2 + .help {
   margin-bottom: var(--space-3);
 }

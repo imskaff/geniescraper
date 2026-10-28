@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import type { OpenTab } from "../../src/core/appleTabs";
 import { PanelController } from "../../src/ui/controller";
@@ -165,5 +167,12 @@ describe("the open Apple Music pages on the link screen", () => {
     await panel.detect(ALBUM.url);
     await flush();
     expect(root.querySelector('[data-key="open-pages"]')).toBeNull();
+  });
+});
+
+describe("the link screen layout", () => {
+  it("reserves room for the help text, so the detector below it does not move when the text changes length", () => {
+    const css = readFileSync(join(import.meta.dirname, "..", "..", "src", "ui", "panel.css"), "utf-8");
+    expect(css).toMatch(/#link-help\s*\{[^}]*min-height:\s*4\.5em/);
   });
 });
