@@ -761,4 +761,3 @@ The seconds before the finished screen goes back to the main menu (`returnSecond
 The extension can be used without the Chrome Web Store: a tag named `extension-v<version>` runs `.github/workflows/extension-release.yml`, which checks the tag against the version, runs the checks and the package step, and publishes a GitHub release with the zip and a checksum file.
 Users download the zip, unzip it into a folder they keep, and use Load unpacked (Chrome and Edge); the steps are in the main README and `extension/README.md`.
 An unpacked extension does not update itself, so an update is a new zip unzipped over the same folder plus the reload icon.
-The branch was renamed from the app's auto-generated `claude/...` name to `feat/chrome-extension`; renaming a pull request's head branch closed the pull request, so a new one was opened.
