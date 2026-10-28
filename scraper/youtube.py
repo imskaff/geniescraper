@@ -74,13 +74,15 @@ _MV_DESC_INDICATORS = (
 
 
 def _sig_present(video_title: str, song_title: str) -> bool:
-    """True if at least one significant word (>=3 chars) from the song title appears in
-    the video title. Falls back to a collapsed-string check for very short/special-char
-    titles like 'FE!N'."""
+    """True if at least one significant word (>=3 chars) from the song title is a whole
+    word of the video title. Falls back to a collapsed-string check for very short/special-char
+    titles like 'FE!N'. Whole words, not substrings: "the" is inside "feather", which let
+    "THE GREATEST" match a video of "BIRDS OF A FEATHER"."""
     t = video_title.lower()
     sig = [w for w in re.split(r"\W+", song_title.lower()) if len(w) >= 3]
     if sig:
-        return any(w in t for w in sig)
+        present = set(re.split(r"\W+", t))
+        return any(w in present for w in sig)
     # e.g. "FE!N" -> collapsed "fen"; check against collapsed video title
     ct = re.sub(r"[^a-z0-9]", "", song_title.lower())
     cv = re.sub(r"[^a-z0-9]", "", t)
@@ -255,8 +257,34 @@ def _extract_data(html: str) -> dict | None:
         return None
 
 
+# YouTube's own website asks these JSON endpoints for a search and for a video's details. They answer in the shape of
+# the page data below (videoRenderer, ownerBadges, videoDetails) at about a third of the size of the HTML page, and
+# were not refused after a few requests the way the HTML page is. Unofficial: when one gives nothing, the HTML page
+# is used instead.
+_INNERTUBE = "https://www.youtube.com/youtubei/v1"
+_INNERTUBE_CONTEXT = {"client": {"clientName": "WEB", "clientVersion": "2.20250101.00.00", "hl": "en", "gl": "US"}}
+
+
+async def _innertube(client: httpx.AsyncClient, endpoint: str, body: dict) -> dict | None:
+    """The JSON answer of one InnerTube endpoint, or None when it did not give one."""
+    try:
+        r = await client.post(
+            f"{_INNERTUBE}/{endpoint}",
+            params={"prettyPrint": "false"},
+            json={"context": _INNERTUBE_CONTEXT, **body},
+        )
+        r.raise_for_status()
+        data = r.json()
+    except Exception:
+        return None
+    return data if isinstance(data, dict) else None
+
+
 async def _fetch_description(client: httpx.AsyncClient, video_id: str) -> str:
     """Return the description text of a YouTube video, or '' on failure."""
+    data = await _innertube(client, "player", {"videoId": video_id})
+    if data and isinstance(data.get("videoDetails"), dict):
+        return data["videoDetails"].get("shortDescription", "")
     try:
         r = await client.get("https://www.youtube.com/watch", params={"v": video_id})
         r.raise_for_status()
@@ -351,6 +379,9 @@ def _video_id(url: str) -> str:
 
 async def _search(client: httpx.AsyncClient, query: str) -> list[_Video]:
     """Top 10 videos of a YouTube search, or [] on failure."""
+    data = await _innertube(client, "search", {"query": query})
+    if data is not None and "contents" in data:
+        return list(_iter_videos(data))[:10]
     try:
         r = await client.get("https://www.youtube.com/results", params={"search_query": query})
         r.raise_for_status()

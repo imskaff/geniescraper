@@ -647,3 +647,11 @@ Consequences:
 - Ways to run the request as the website itself (making it from a youtube.com page, or rewriting the origin header) were not tried: they amount to presenting the extension as a different client to get past YouTube's refusal, which this project does not do.
 - What still works in the extension: the official Data API with the user's own key (first choice), and the HTML pages for the first few lookups of a session, one track at a time.
 - The whole-word title match fix is real and stays.
+
+### The desktop app now asks YouTube's JSON endpoints too
+
+`scraper/youtube.py` asks `youtubei/v1/search` and `youtubei/v1/player` first (a Python client has no browser origin, so YouTube answers it) and uses the HTML pages only when those give nothing, and its title check matches whole words (the "the" in "feather" bug).
+Offline: the saved captures are served through both paths, so all 15 golden songs are checked through the JSON endpoints, through the HTML fallback when the endpoints answer 403, and a case where neither answers gives no link.
+Live (`uv run python -m bench.lookups --only youtube`, the 15 golden songs one after another): accuracy 1.0 and music-video flag accuracy 1.0, median 1.74 s and 24.9 s in total per song set, from an address where the HTML pages had been refused.
+No clean before-number exists: the HTML path was already being refused from this address (2 of 6 album tracks found), and it was not run again to avoid hammering Google.
+Payload per search is about 535 KB against about 1.4 MB for the HTML page.
