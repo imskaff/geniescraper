@@ -761,3 +761,50 @@ The seconds before the finished screen goes back to the main menu (`returnSecond
 The extension can be used without the Chrome Web Store: a tag named `extension-v<version>` runs `.github/workflows/extension-release.yml`, which checks the tag against the version, runs the checks and the package step, and publishes a GitHub release with the zip and a checksum file.
 Users download the zip, unzip it into a folder they keep, and use Load unpacked (Chrome and Edge); the steps are in the main README and `extension/README.md`.
 An unpacked extension does not update itself, so an update is a new zip unzipped over the same folder plus the reload icon.
+
+## 38. Auto-paste (planned)
+
+Today every field needs a press of F8.
+Auto-paste fills the whole track by itself once the user starts it.
+Decisions from the owner:
+- **Default.** Start pasting begins automatic pasting, and a smaller "Step by step (F8)" button gives the manual mode.
+  F8 keeps its manual meaning, one step per press.
+  A setting can make step by step the main button.
+- **Pace.** A short pause per field, 0.6 seconds by default and adjustable in Settings.
+  The user always starts it; it never starts by itself.
+- **No exact match.** It pauses with the text typed and says so.
+  The user picks the suggestion, it notices the choice, confirms the step and carries on by itself.
+- **Stop triggers.** Esc, a Pause button, the panel closing, and the user clicking or typing in the form, except while it waits for a choice (then the user is expected to act).
+  Switching to another tab does not pause it.
+- **Next song.** After a track the next-track countdown starts, and auto resumes by itself when the next song's edit form is open and focused.
+  The user only navigates.
+- **Never** presses Save.
+- **Later, not now.** Opening the next song's Genius page for the user, and eventually navigating Genius by itself, as its own feature with a Genius guidelines check first.
+
+### Design
+
+- The paste state gains an auto mode (off, running, paused with a reason, waiting for a choice).
+  The step logic (`begin`, `report`, `back`, `skip`) is unchanged, and the worker stays the only writer of the position.
+- The loop runs in the Genius content script, which already does the filling: after a "filled" it waits the pause, asks the worker for the next step and repeats.
+- The page tells the user from itself by `isTrusted`: the extension's own events are synthetic, the user's clicks and keys are not.
+  A trusted click or key in the form pauses it, unless the state is waiting for a choice.
+- Resuming after a choice reuses the page's wait for the chosen suggestion to appear (`waitForChip`), then confirms the step as an F8 press would.
+- The panel keeps a connection to the worker, and its disconnect pauses auto.
+- Problems pause with a plain message and never skip silently: the field is not on the form, there is no form, Genius did not keep the text, a fill is still unreported after the 20 second limit, or the tab navigates, reloads or closes.
+  A reload comes back paused and never resumes by itself.
+
+### Slices
+
+Each is tested first and committable on its own.
+1. The pure state: auto mode and pause reasons, with a test for every transition.
+2. The page driver: the loop, the pace, the pause on the user's input, and the choice wait and resume, against a fake form.
+3. The worker messages, the panel buttons (Start, Step by step, Pause, Resume) and the status wording.
+4. The pace setting and the default.
+5. A live run on a Genius song the owner created (`npm run live:genius` with the scratch profile), then docs and the privacy and listing text if anything they say changes.
+
+### Open risks
+
+- Genius's guidelines: per-press filling was chosen to stay inside them, and full automation is more automation.
+  The pace, the opt-in start and the pauses are the mitigations; check the guidelines again before release.
+- Genius may change its form markup; the existing live check is the guard.
+- The pause on the user's input must not fire on the extension's own typing; the `isTrusted` test and a live run cover this.
