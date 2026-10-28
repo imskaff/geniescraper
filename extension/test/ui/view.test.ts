@@ -501,6 +501,13 @@ describe("the YouTube key help in Settings", () => {
     expect(root.querySelector('a[href^="https://developers.google.com/youtube/v3/"]')).not.toBeNull();
   });
 
+  it("highlights the Keep it private step, and only it, for the stylesheet to fill yellow", async () => {
+    const { root } = await openSettings();
+    const marked = root.querySelectorAll(".how-to li.highlight");
+    expect(marked).toHaveLength(1);
+    expect(marked[0]?.textContent).toContain("Keep it private.");
+  });
+
   it("keeps the steps closed until opened, then remembers", async () => {
     const { root, panel } = await openSettings();
     const steps = stepsDetails(root);

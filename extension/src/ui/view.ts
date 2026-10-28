@@ -873,10 +873,10 @@ export class PanelView {
         text,
         attrs: { href, target: "_blank", rel: "noopener noreferrer" },
       });
-    const step = (title: string, detail: string, action?: HTMLElement): HTMLElement =>
+    const step = (title: string, detail: string, action?: HTMLElement, highlight = false): HTMLElement =>
       el(
         "li",
-        {},
+        highlight ? { class: "highlight" } : {},
         el("strong", { text: title }),
         el("span", { class: "step-detail", text: detail }),
         ...(action ? [action] : []),
@@ -907,6 +907,8 @@ export class PanelView {
       step(
         "Keep it private.",
         "Never share your key or post it online. If it ever leaks, delete it on Google's Credentials page and create a new one.",
+        undefined,
+        true,
       ),
     );
 

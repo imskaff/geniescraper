@@ -589,3 +589,15 @@ a.link-button {
 .key-message {
   color: var(--text);
 }
+
+/* The step that must not be skipped is filled yellow, like the primary buttons. */
+.how-to li.highlight {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-radius: 6px;
+  padding: 8px 10px 8px 6px;
+}
+
+.how-to li.highlight .step-detail {
+  color: var(--accent-ink);
+}
