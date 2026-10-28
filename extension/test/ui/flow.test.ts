@@ -464,3 +464,25 @@ describe("returning to the main menu after the last step", () => {
     expect(panel.state.doneCountdown).toBe(10);
   });
 });
+
+describe("the YouTube note in the credits list", () => {
+  it("says why a track has no link, in its credits", async () => {
+    const { root } = await toReview({
+      hosts: { youtube: true },
+      api: {
+        lookupYoutube: () =>
+          Promise.resolve({
+            ok: true as const,
+            data: { url: "", isMusicVideo: false, throttled: true, keyProblem: "" as const },
+          }),
+      },
+    });
+    const dt = [...root.querySelectorAll("dl.credits dt")].find((d) => d.textContent === "YouTube");
+    expect(dt?.nextElementSibling?.textContent).toContain("limiting requests");
+  });
+
+  it("shows nothing when no look-up was made", async () => {
+    const { root } = await toReview();
+    expect([...root.querySelectorAll("dl.credits dt")].some((d) => d.textContent === "YouTube")).toBe(false);
+  });
+});

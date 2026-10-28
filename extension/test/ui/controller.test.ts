@@ -834,3 +834,73 @@ describe("the user's own YouTube key", () => {
     expect(panel.state.status).toContain(words);
   });
 });
+
+describe("what became of each track's YouTube look-up", () => {
+  const LINK = "https://www.youtube.com/watch?v=abcDEF_-123";
+  const answer = (
+    url: string,
+    extra: Partial<{ throttled: boolean; keyProblem: "" | "key" | "quota" | "not-enabled" }> = {},
+  ) =>
+    Promise.resolve({
+      ok: true as const,
+      data: { url, isMusicVideo: false, throttled: false, keyProblem: "" as const, ...extra },
+    });
+  const KEY = "AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q";
+
+  async function readAlbum(options: Parameters<typeof open>[0]) {
+    const ui = await open({ youtubeKey: KEY, hosts: { youtubeApi: true }, ...options });
+    await ui.panel.detect(ALBUM_URL);
+    await ui.panel.setAllSelected(true);
+    await ui.panel.getCredits();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    return ui;
+  }
+
+  it("has no note for a track that got its link", async () => {
+    const { panel } = await readAlbum({ api: { lookupYoutube: () => answer(LINK) } });
+    expect(panel.state.youtubeNotes).toEqual({});
+  });
+
+  it("says plainly that no link was found, for each track that has none", async () => {
+    const { panel } = await readAlbum({ api: { lookupYoutube: () => answer("") } });
+    expect(panel.state.youtubeNotes).toEqual({
+      0: "No link found for this track.",
+      2: "No link found for this track.",
+    });
+  });
+
+  it("says YouTube is limiting requests, or that the key is the problem, when that is why", async () => {
+    const limited = await readAlbum({ api: { lookupYoutube: () => answer("", { throttled: true }) } });
+    expect(limited.panel.state.youtubeNotes[0]).toContain("limiting requests");
+    const quota = await readAlbum({ api: { lookupYoutube: () => answer("", { keyProblem: "quota" }) } });
+    expect(quota.panel.state.youtubeNotes[0]).toContain("allowance for today is used up");
+  });
+
+  it("says the look-up did not finish when the worker failed to answer", async () => {
+    const { panel } = await readAlbum({
+      api: { lookupYoutube: () => Promise.resolve({ ok: false, error: { code: "internal", message: "x" } }) },
+    });
+    expect(panel.state.youtubeNotes[0]).toBe("The look-up did not finish.");
+  });
+
+  it("shows that it is looking while it is", async () => {
+    const gate = deferred<Awaited<ReturnType<typeof answer>>>();
+    const { panel } = await readAlbum({ api: { lookupYoutube: () => gate.promise } });
+    expect(panel.state.youtubeNotes[0]).toBe("Looking for it…");
+    gate.resolve(await answer(LINK));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(panel.state.youtubeNotes[0]).toBeUndefined();
+  });
+
+  it("starts afresh for another album: its tracks are asked about again, whatever the first album's were", async () => {
+    const ui = await readAlbum({ api: { lookupYoutube: () => answer(LINK) } });
+    const before = ui.env.api.calls.filter((c) => c.startsWith("youtube:")).length;
+    await ui.panel.newAlbum();
+    await ui.panel.detect(ALBUM_URL);
+    await ui.panel.setAllSelected(true);
+    await ui.panel.getCredits();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(ui.env.api.calls.filter((c) => c.startsWith("youtube:")).length).toBe(before * 2);
+    expect(ui.panel.state.youtubeNotes).toEqual({});
+  });
+});

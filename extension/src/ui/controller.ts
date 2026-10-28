@@ -60,6 +60,8 @@ export interface PanelState {
   hosts: Record<OptionalHost, boolean>;
   /** The user's own YouTube key: whether one is saved (never the key itself), and how the last attempt went. */
   youtubeKey: { saved: boolean; message: string; busy: boolean };
+  /** What became of each track's YouTube look-up, shown in its credits so a missing link is never a mystery. */
+  youtubeNotes: Record<number, string>;
   /** Seconds left before the finished screen returns to the main menu, or null when no countdown runs. */
   doneCountdown: number | null;
   /** Counts every error shown, so the same message appearing again (a repeated attempt) can still be told apart. */
@@ -79,6 +81,9 @@ export const MESSAGES = {
   noTracks: "Pick at least one track.",
   noPage: "Apple Music has no page for this track, so its credits cannot be read.",
   lookingForYoutube: "Looking for the YouTube link…",
+  lookingForYoutubeShort: "Looking for it…",
+  noYoutubeShort: "No link found for this track.",
+  youtubeFailedShort: "The look-up did not finish.",
   noYoutube: "No YouTube link was found for this track.",
   youtubeThrottled: "YouTube is limiting requests right now, so this track has no YouTube link. Try again in a minute.",
   allDone: "All credits entered. Check the Genius page, then press Save there.",
@@ -173,6 +178,7 @@ export class PanelController {
       pasteIndex,
       hosts,
       youtubeKey: { saved: keySaved, message: "", busy: false },
+      youtubeNotes: {},
       doneCountdown: null,
       errorSeq: 0,
       settingsOpen: false,
@@ -390,6 +396,8 @@ export class PanelController {
       this.update({ error: MESSAGES.noTracks });
       return;
     }
+    // Track numbers belong to this album: what was asked about another album's tracks must not carry over.
+    this.forgetYoutube();
     const results: TrackResult[] = selected.map((index) => ({
       index,
       title: album.trackTitles[index] ?? "",
@@ -479,6 +487,7 @@ export class PanelController {
   /** Start over with another link. */
   async newAlbum(): Promise<void> {
     this.run++;
+    this.forgetYoutube();
     await this.updateSession({ ...EMPTY_SESSION });
     this.update({ busy: null, error: "", status: "" });
   }
@@ -581,10 +590,24 @@ export class PanelController {
     return lookup;
   }
 
+  private forgetYoutube(): void {
+    this.youtubeLookups.clear();
+    this.keyNote = "";
+    if (Object.keys(this.current.youtubeNotes).length > 0) this.update({ youtubeNotes: {} });
+  }
+
+  private note(index: number, text: string): void {
+    const others = Object.entries(this.current.youtubeNotes).filter(([key]) => Number(key) !== index);
+    const notes: Record<number, string> = Object.fromEntries(others);
+    if (text) notes[index] = text;
+    this.update({ youtubeNotes: notes });
+  }
+
   private async lookupYoutube(index: number, song: SongCredits): Promise<void> {
     const artist = song.artist || this.current.session.album?.artist || "";
     const title = song.title;
     if (!title || !artist) return;
+    this.note(index, MESSAGES.lookingForYoutubeShort);
     this.update({ status: MESSAGES.lookingForYoutube });
     const answer = await this.env.api.lookupYoutube(title, artist);
     const current = this.current.session.results.find((r) => r.index === index);
@@ -596,11 +619,21 @@ export class PanelController {
       await this.setResult(index, {
         song: { ...current.song, youtubeUrl: answer.data.url, youtubeIsMv: answer.data.isMusicVideo },
       });
+      this.note(index, "");
       this.update({ status: keyMessage });
       return;
     }
     // A failed lookup may be tried again later; a clean "nothing found" is not asked twice.
     if (!answer.ok || answer.data.throttled) this.youtubeLookups.delete(index);
+    this.note(
+      index,
+      keyMessage ||
+        (answer.ok && answer.data.throttled
+          ? MESSAGES.youtubeThrottled
+          : answer.ok
+            ? MESSAGES.noYoutubeShort
+            : MESSAGES.youtubeFailedShort),
+    );
     this.update({
       status:
         keyMessage ||

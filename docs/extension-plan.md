@@ -495,3 +495,8 @@ Without a key a track's link is looked up only for the track in front of the use
 With a saved key and Google's permission, every track is looked up as its credits arrive (Google's service has no such burst limit; the worker still asks it two requests at a time), so the whole album gets its links.
 That spends the free daily allowance on tracks that may never be pasted: roughly 25 to 50 songs a day.
 A problem with the key found while reading (wrong key, allowance used up, service not enabled) stays in the status line after the "Got credits" summary.
+
+### No more silent gaps, and a fixed memo
+
+Each track's credits now say what became of its YouTube look-up: "Looking for it…", "No link found for this track.", that YouTube is limiting requests, or what is wrong with the key, so a missing link always has a visible reason.
+Also fixed: the record of which tracks had been asked about was keyed by track number and survived a change of album, so a second album's tracks could be skipped as already asked; it is now cleared when a new album is read or the user returns to the main menu.

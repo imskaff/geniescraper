@@ -488,6 +488,9 @@ export class PanelView {
       );
     }
 
+    const note = state.youtubeNotes[result.index];
+    if (note && !song.youtubeUrl) groups.append(el("dt", { text: "YouTube" }), el("dd", { class: "help", text: note }));
+
     const queue = this.panel.queueFor(result.index);
     section.append(
       song.credits.length === 0 ? el("p", { class: "problem", text: "No credits were found for this track." }) : groups,
