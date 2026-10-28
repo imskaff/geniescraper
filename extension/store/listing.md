@@ -79,12 +79,26 @@ Suggested answers (check them against the dashboard's current wording at submiss
 
 ## Privacy policy
 
-Link to `extension/PRIVACY.md` in the project's repository (any public URL for that file will do).
+https://github.com/imskaff/geniescraper/blob/main/extension/PRIVACY.md
 
-## Assets still to prepare by hand
+The repository is public, and the address is stable once the file is on the `main` branch.
 
-- Screenshots (1280x800) and the promotional tile (440x280) are made by `node scripts/store-assets.mjs --chrome <chrome.exe>` into `store/assets/` (not committed).
-  They show the real panel with sample data; look at each one before uploading.
-- The store icon (128x128) is already in `icons/`.
-- Do not use Apple or Genius logos.
-- Still by hand: a support contact (the repository's issue page is the default) and the public address of `PRIVACY.md`.
+## Support
+
+- Support site and contact: https://github.com/imskaff/geniescraper/issues
+- Questions and fixes for common problems: https://github.com/imskaff/geniescraper/blob/main/extension/FAQ.md
+- The issue form tells people not to paste their YouTube key, cookies or account details.
+
+## Images
+
+Made by `node scripts/store-assets.mjs --chrome <chrome.exe>` into `store/assets/` (not committed); look at each one before uploading.
+They show the real panel with sample data, and no Apple or Genius logos.
+The store icon (128x128) is already in `icons/`.
+
+| File                   | Alt text to enter                                                                                                                   |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 1-credits-list.png     | The side panel listing two tracks, each marked with whether all its credits were found.                                             |
+| 2-track-credits.png    | One track's credits opened: songwriters, producers, copyright lines, cover art and a YouTube link, and the paste queue.             |
+| 3-paste.png            | The paste screen showing step 1 of 11, the value to fill, and the Fill next, Back and Skip buttons.                                 |
+| 4-settings.png         | The settings screen: checkboxes for what to paste, the keys that fill the next step and go back, and the Genius suggestion options. |
+| promo-tile-440x280.png | The Géniescraper icon and the words "Apple Music credits, into the Genius form".                                                    |
