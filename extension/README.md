@@ -7,7 +7,20 @@ It never presses Save on Genius: you check the form and save it yourself.
 The desktop app in the repository root does the same job; this folder is the extension only.
 The design, the decisions and the findings behind it are in [docs/extension-plan.md](../docs/extension-plan.md).
 
-## Requirements
+## Install it (no store needed)
+
+You do not need the Chrome Web Store, a command line or Node.js to use the extension.
+
+1. Download `geniescraper-extension-<version>.zip` from the [Releases page](https://github.com/imskaff/geniescraper/releases).
+2. Unzip it into a folder you will keep (Chrome runs the extension from there, so do not delete or move it).
+3. In Chrome open `chrome://extensions` (Edge: `edge://extensions`), switch on Developer mode, click Load unpacked, and pick the folder that contains `manifest.json`.
+4. Pin Géniescraper from the toolbar's puzzle-piece menu and click it to open the side panel.
+
+To update, unzip the newest zip over the same folder and press the reload icon on the extension's card.
+Chrome may show "Disable developer mode extensions" at start-up for any extension that is not from the store; keep it enabled.
+The same steps are in the [main README](../README.md#install-the-browser-extension).
+
+## Requirements (to build it yourself)
 
 - Node.js 20 or newer (CI uses 24) and npm.
 - Chrome or another Chromium browser with the side panel, to run it.

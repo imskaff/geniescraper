@@ -1,7 +1,7 @@
 # Géniescraper browser extension: requirements, architecture and plan
 
 Status: draft for review.
-Branch: `claude/advisor-opus-698934`.
+Branch: `feat/chrome-extension`.
 Reference implementation: the Python app at v0.5 (`scraper/`, `assistant/flow.py`).
 
 ## 1. Goal
@@ -755,3 +755,10 @@ The seconds before the finished screen goes back to the main menu (`returnSecond
 - **Releasing.** `extension/RELEASING.md`: version, checks, a manual pass for Chrome and Edge on Windows and macOS, the live checks kept apart, upload, and what to do after.
   There is no changelog file: release notes go in the GitHub release.
 - **Store images.** `node scripts/store-assets.mjs --chrome <chrome.exe>` renders four 1280x800 screenshots and the 440x280 tile from the real panel with sample data into `store/assets/` (not committed).
+
+## 37. Installing without the store
+
+The extension can be used without the Chrome Web Store: a tag named `extension-v<version>` runs `.github/workflows/extension-release.yml`, which checks the tag against the version, runs the checks and the package step, and publishes a GitHub release with the zip and a checksum file.
+Users download the zip, unzip it into a folder they keep, and use Load unpacked (Chrome and Edge); the steps are in the main README and `extension/README.md`.
+An unpacked extension does not update itself, so an update is a new zip unzipped over the same folder plus the reload icon.
+The branch was renamed from the app's auto-generated `claude/...` name to `feat/chrome-extension`; renaming a pull request's head branch closed the pull request, so a new one was opened.

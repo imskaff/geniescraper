@@ -1,7 +1,7 @@
 <div align="center">
 <img src="img/geniescraper.png" alt="Géniescraper logo" width="400">
 
-🧩 **A browser extension is in development:** Géniescraper for Chrome, Edge and Safari, on Windows and macOS.
+🧩 **Prefer the browser?** Géniescraper also comes as a Chrome and Edge extension for Windows and macOS: see [Install the browser extension](#install-the-browser-extension).
 
 # Géniescraper
 
@@ -21,12 +21,36 @@
 
 ## Installation
 
-### Prerequisites
+Géniescraper comes in two forms, and you only need one: the **browser extension** (nothing to install but the extension itself) or the **desktop app** (Windows, Python).
+
+### Install the browser extension
+
+No store and no command line needed.
+
+1. **Download.** Open the [Releases page](https://github.com/imskaff/geniescraper/releases), pick the newest **Géniescraper extension**, and download `geniescraper-extension-<version>.zip`.
+2. **Unzip it into a folder you will keep**, for example `Documents\Geniescraper-extension` (right-click the zip, then Extract All).
+   Chrome runs the extension from that folder, so do not delete or move it afterwards.
+3. **Add it to your browser.**
+   - Chrome: open `chrome://extensions`, switch on **Developer mode** (top right), click **Load unpacked**, and choose the folder from step 2 (the one that contains `manifest.json`).
+   - Edge: open `edge://extensions`, switch on **Developer mode** (left side), click **Load unpacked**, and choose the same folder.
+4. **Open it.** Click the puzzle-piece icon in the toolbar and pin Géniescraper, then click it: the side panel opens, and a short set-up walks you through the options.
+
+Good to know:
+
+- Chrome may show "Disable developer mode extensions" when it starts; choose to keep them. This is Chrome's standard notice for any extension that is not from the store.
+- **To update**, download the newest zip, unzip it over the same folder (replace the files), then press the reload icon on the extension's card in `chrome://extensions`. The extension does not update itself.
+- To check a download, compare its SHA-256 with `SHA256SUMS.txt` from the same release.
+- If there is no release yet, build it yourself: `cd extension`, `npm ci`, `npm run build`, and load the `extension/dist` folder in step 3.
+- Questions and fixes: [extension/FAQ.md](extension/FAQ.md). What the extension sends where: [extension/PRIVACY.md](extension/PRIVACY.md).
+
+### Install the desktop app
+
+#### Prerequisites
 - **Windows**
 - **Python 3.10+**
 - **[uv](https://docs.astral.sh/uv/)** (`pip install uv`)
 
-### Setup
+#### Setup
 
 1. **Clone the repository:**
    ```bash

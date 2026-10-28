@@ -64,7 +64,24 @@ These send real traffic to Apple Music, Genius and YouTube, so run them sparingl
 See the [README](README.md) for what each does and how to point it at Chrome.
 CI also runs the repository's live Apple Music tests weekly, apart from pushes, so markup changes show up without blocking work.
 
-## 4. Upload
+## 4. Publish a GitHub release (installable without the store)
+
+Pushing a tag named `extension-v<version>` runs `.github/workflows/extension-release.yml`: it checks the tag matches the version, runs `npm run check` and `npm run package`, and publishes a release with the zip and `SHA256SUMS.txt` attached, with generated notes.
+The workflow stops with a message if the tag and the version differ.
+
+```bash
+git tag extension-v0.5.0
+```
+
+```bash
+git push origin extension-v0.5.0
+```
+
+Do this from the commit you tested, after it is on `main`.
+Edit the release's notes on GitHub afterwards to say, in plain words, what changed for users: that is where release notes live.
+Users install from that release with the steps in the [README](README.md#install-it-no-store-needed).
+
+## 5. Upload to the Chrome Web Store (optional)
 
 1. Chrome Web Store developer dashboard: upload the zip as a new version.
 2. Fill the listing from `store/listing.md`: short and detailed description, category, single purpose, permission justifications and the data-use answers.
@@ -72,7 +89,7 @@ CI also runs the repository's live Apple Music tests weekly, apart from pushes, 
 4. Add the screenshots and the promotional tile.
 5. Submit for review, and wait for the result before telling anyone it is live.
 
-## 5. After it is live
+## 6. After it is live
 
 - Tag the commit that was uploaded with the version, and publish a GitHub release whose notes list what changed for users, in plain words.
   The notes live in the release, not in a changelog file in the repository.
