@@ -457,3 +457,10 @@ From the real extension, looking up tracks 4 seconds apart still got links for o
 That is Google's automated-traffic protection.
 This project does not try to get around it (for example by spreading requests over other hostnames or forcing new connections), so the lookup stays best-effort: the first tracks of a session usually get a link, later ones may not until the block lifts, and the panel says when YouTube is limiting requests.
 If links on whole albums matter more than staying inside that protection, the options are the user pasting the link by hand, a YouTube Data API key (an official quota, but a credential the user must create), or dropping the lookup.
+
+### Check against the desktop app (same machine, after the testing above)
+
+The desktop lookup (`scraper.youtube.fetch_youtube_url`, run for six tracks of the same album in a row) found links for 2 of the 6 and answered the others in about 2 seconds each, the same quick empty answers the extension got while blocked.
+So from the development machine, after hundreds of test requests, the desktop app is limited in the same way: the limit looks like a state of this address and its connections, not something the extension's fetch causes by itself.
+The earlier measurements (sections 18 and 20) are therefore pessimistic: they were taken after heavy testing from one address.
+Not yet measured: the one-track lookup on a clean address with a normal user's pace, which is the owner's to try (reload the extension, tick the YouTube box, paste an album track by track).
