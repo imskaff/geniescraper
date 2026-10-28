@@ -34,6 +34,17 @@ const GENIUS_MATCH = "https://genius.com/*";
 export function chromePorts(): BrowserPorts {
   return {
     async createTab(url, active) {
+      if (!active) {
+        // A background read gets a window of its own, minimized, so no tab appears in the user's tab strip. The
+        // window closes with its only tab. If the browser will not make one, a background tab does the same job.
+        try {
+          const win = await chrome.windows.create({ url, state: "minimized", focused: false });
+          const id = win?.tabs?.[0]?.id;
+          if (id !== undefined) return id;
+        } catch {
+          // fall through to a tab
+        }
+      }
       const tab = await chrome.tabs.create({ url, active });
       if (tab.id === undefined) throw new Error("The browser did not return a tab id.");
       return tab.id;

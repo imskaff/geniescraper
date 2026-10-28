@@ -595,3 +595,12 @@ The green and red are checked for contrast in both themes.
   The countdown (which still holds while the panel is in use and can be turned off in Settings) starts only when the track just finished is the last one of the list that has anything to paste; after any other track the finished screen stays until the user chooses, so nobody is moved away from the next track.
   If it is not known which track was pasted (a restored panel that cannot tell), no countdown starts.
 - **Programming roles in the desktop app.** See section 15: `scraper/roles.py` now types Programmer.
+
+### Reading without tabs in the tab strip
+
+A background read now opens its page in a minimized window of its own (`chrome.windows.create` with `state: "minimized"`, `focused: false`), which closes with its only tab, so nothing joins the user's tab strip.
+If the browser will not make a window, a background tab does the same job as before.
+Measured live (`npm run live:panel`, 10 tracks read three at a time): the tab count of the user's window stayed at 2 for the whole read and the credits matched the golden file, where before the strip showed up to 2 extra tabs.
+Up to four windows exist at once (the user's and three minimized readers); they do not take focus.
+Not observed: how the operating system shows a minimized window (on Windows a taskbar button may appear briefly), and the history entry for each song page, which is unchanged.
+`live:sidepanel` now marks the first-time set-up as done first, since a fresh profile starts with it.

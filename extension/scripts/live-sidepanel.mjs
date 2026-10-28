@@ -34,6 +34,8 @@ try {
   const workerTarget = await findServiceWorker(browser);
   worker = await connect(workerTarget.webSocketDebuggerUrl);
   await waitUntilReady(worker);
+  // A fresh profile starts with the first-time set-up; this check is about the side panel, so mark it as done.
+  await worker.evaluate("chrome.storage.sync.set({ settings: { onboarded: true } })");
   const extensionId = new URL(workerTarget.url).host;
   const panelUrl = `chrome-extension://${extensionId}/ui/panel.html`;
 

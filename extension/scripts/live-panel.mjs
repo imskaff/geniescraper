@@ -236,6 +236,15 @@ try {
     (await text('[data-key="go"]')) === "Get credits for 10 tracks",
   );
   await shot("2b-focus-ring-on-button");
+  // Watch this window's tab strip while the album is read: the reads must not add tabs to it.
+  await panel.evaluate(`(async () => {
+    const win = await chrome.windows.getCurrent();
+    window.__strip = { windowId: win.id, counts: [], windows: 1 };
+    window.__stripTimer = setInterval(async () => {
+      window.__strip.counts.push((await chrome.tabs.query({ windowId: win.id })).length);
+      window.__strip.windows = Math.max(window.__strip.windows, (await chrome.windows.getAll()).length);
+    }, 80);
+  })()`);
   await press("Enter");
 
   await until("document.querySelector('h2')?.textContent === 'Credits'", "the review screen");
@@ -249,6 +258,15 @@ try {
     "all ten tracks were read, one after another",
     (await text("#status")) === "Got credits for 10 tracks.",
     String(await text("#status")),
+  );
+  const strip = await panel.evaluate(
+    "(() => { clearInterval(window.__stripTimer); return { counts: window.__strip.counts, windows: window.__strip.windows }; })()",
+  );
+  const stripSizes = [...new Set(strip.counts)];
+  check(
+    "reading the album adds no tab to the user's tab strip",
+    strip.counts.length >= 3 && stripSizes.length === 1,
+    `tab counts seen: ${stripSizes.join(",")} over ${String(strip.counts.length)} samples; most windows at once: ${String(strip.windows)}`,
   );
   await shot("3-review-first-track");
 
