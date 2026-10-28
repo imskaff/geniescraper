@@ -47,6 +47,10 @@ describe("the messages automatic pasting adds", () => {
     [{ action: "await", item: ["written_by", "X"], position: 2, paceMs: "fast" }, false],
     [{ action: "fill", item: ["written_by", "X"], position: 0, autoConfirm: true, settleMs: 5, paceMs: 600 }, true],
     [{ action: "fill", item: ["written_by", "X"], position: 0, autoConfirm: true, settleMs: 5, paceMs: "x" }, false],
+    [{ action: "fill", item: ["artist", "X"], position: 0, autoConfirm: true, settleMs: 5, role: "Vocals" }, true],
+    [{ action: "fill", item: ["artist", "X"], position: 0, autoConfirm: true, settleMs: 5, role: 7 }, false],
+    [{ action: "await", item: ["artist", "X"], position: 2, role: "Vocals" }, true],
+    [{ action: "await", item: ["artist", "X"], position: 2, role: 7 }, false],
   ])("checks the reply %j: %s", (reply, ok) => {
     expect(isBeginReply(reply)).toBe(ok);
   });
@@ -63,5 +67,13 @@ describe("the messages automatic pasting adds", () => {
       expect(isGeniusNotice({ type: "genius/auto-state", auto })).toBe(true);
     expect(isGeniusNotice({ type: "genius/auto-state", auto: "turbo" })).toBe(false);
     expect(isGeniusNotice({ type: "genius/auto-state" })).toBe(false);
+  });
+
+  it("checks the notice that asks the page to clear a skipped step", () => {
+    expect(isGeniusNotice({ type: "genius/clear", item: ["written_by", "X"] })).toBe(true);
+    expect(isGeniusNotice({ type: "genius/clear", item: ["artist", "X"], role: "Vocals" })).toBe(true);
+    expect(isGeniusNotice({ type: "genius/clear", item: ["artist"] })).toBe(false);
+    expect(isGeniusNotice({ type: "genius/clear", item: ["artist", "X"], role: 7 })).toBe(false);
+    expect(isGeniusNotice({ type: "genius/clear" })).toBe(false);
   });
 });

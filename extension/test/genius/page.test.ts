@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PasteService } from "../../src/background/paste";
 import { PASTE_KEY, normalisePaste } from "../../src/core/paste";
+import { fillStep } from "../../src/genius/fill";
 import { GeniusPage } from "../../src/genius/page";
 import { SETTINGS_KEY } from "../../src/shared/settings";
 import { fakeBrowser } from "../background/fakePorts";
@@ -250,5 +251,37 @@ describe("settings from the worker", () => {
     expect(stored()).toMatchObject({ position: 0, awaiting: true });
     expect(chipsIn(labelled(fake.form, "Writer"))).toEqual([]);
     expect(fake.enters).toEqual([]);
+  });
+});
+
+describe("a song that already has additional roles", () => {
+  const ROLES_QUEUE: [string, string][] = [
+    ["role", "Mixing Engineer"],
+    ["artist", "Billie Eilish"],
+    ["role", "Lead Vocals"],
+    ["artist", "FINNEAS"],
+  ];
+
+  it("joins the rows it has instead of adding the same roles again", async () => {
+    const { fake, page, service } = setup();
+    const ctx = { doc: fake.doc, timing: TIMING, autoConfirm: true };
+    // Pasted before: a mixing row and a vocals row, each with someone in it.
+    await fillStep(["role", "Mixing Engineer"], ctx);
+    await fillStep(["artist", "Taylor Swift"], ctx);
+    await fillStep(["role", "Lead Vocals"], ctx);
+    await fillStep(["artist", "FINNEAS"], ctx);
+
+    await service.command({ type: "paste-start", title: "Song", queue: ROLES_QUEUE });
+    page.setActive(true);
+    for (let i = 0; i < ROLES_QUEUE.length; i++) {
+      page.onKeyDown(new KeyboardEvent("keydown", { key: "F8", cancelable: true, bubbles: true }));
+      await page.whenIdle();
+    }
+
+    const rows = rowChips(fake.form).map((r) => ({ role: r.role, artists: [...r.artists].sort() }));
+    expect(rows).toEqual([
+      { role: ["Mixing Engineer"], artists: ["Billie Eilish", "Taylor Swift"] },
+      { role: ["Lead Vocals"], artists: ["FINNEAS"] },
+    ]);
   });
 });

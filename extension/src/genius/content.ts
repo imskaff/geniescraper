@@ -61,6 +61,7 @@ if (!window.__geniescraperGenius) {
     if (sender.id !== chrome.runtime.id || !isGeniusNotice(message)) return false;
     if (message.type === "genius/paste-active") page.setActive(message.active);
     else if (message.type === "genius/auto-state") page.setAuto(message.auto);
+    else if (message.type === "genius/clear") page.clearStep(message.item, message.role);
     else void page.next();
     sendResponse({ ok: true });
     return false;

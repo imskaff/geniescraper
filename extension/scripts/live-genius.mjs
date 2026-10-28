@@ -103,6 +103,19 @@ try {
   };
 
   await gUntil("!!document.querySelector('button')", "the Genius page");
+  // The privacy dialog (Google's consent manager) dims the page and swallows clicks when it shows. The most
+  // privacy-preserving answer is the only one this script ever gives: "Do not consent".
+  await sleep(1500);
+  const declined = await gEval(`(() => {
+    const decline = document.querySelector('.fc-cta-do-not-consent');
+    if (!decline) return false;
+    decline.click();
+    return true;
+  })()`).catch(() => false);
+  if (declined) {
+    console.log("      declined the privacy dialog (do not consent)");
+    await sleep(1000);
+  }
   const hasEdit = await gUntil(
     "[...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Edit Metadata')",
     "the Edit Metadata button",
@@ -130,8 +143,29 @@ try {
   })()`);
 
   await gEval("[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Edit Metadata').click()");
-  await gUntil("!!document.querySelector('form[aria-label=\"Edit Song Metadata Form\"]')", "the edit form");
-  check("the edit form is open", true);
+  const formOpen = await gUntil(
+    "!!document.querySelector('form[aria-label=\"Edit Song Metadata Form\"]')",
+    "the edit form",
+    40000,
+  );
+  check("the edit form is open", formOpen);
+  if (!formOpen) {
+    // Say what the page shows instead, so one run is enough to understand why the form did not open.
+    const seen = await gEval(`JSON.stringify({
+      url: location.href,
+      forms: [...document.querySelectorAll('form')].map((f) => f.getAttribute('aria-label') || f.id || '(unnamed)'),
+      dialogs: [...document.querySelectorAll('[role="dialog"]')].map((d) => d.innerText.slice(0, 200)),
+      dialogButtons: [...document.querySelectorAll('[role="dialog"] button')].map((b) => b.className + ' : ' + b.textContent.trim()).slice(0, 12),
+      buttons: [...document.querySelectorAll('button')].map((b) => b.textContent.trim()).filter(Boolean).slice(0, 25),
+    })`).catch(() => "(page not readable)");
+    console.log(`      the page shows: ${seen}`);
+    if (shotsDir) {
+      mkdirSync(shotsDir, { recursive: true });
+      const { data } = await genius.send("Page.captureScreenshot", { format: "png" });
+      writeFileSync(join(shotsDir, "genius-0-no-edit-form.png"), Buffer.from(data, "base64"));
+    }
+    throw new Error("The song's edit form did not open.");
+  }
 
   // A real song already has credits; they are not the run's doing, so note them before it starts.
   const before = await gEval(`(() => {
@@ -221,6 +255,12 @@ try {
   };
 
   const skipped = [];
+  // Text left typed in a combobox after a Skip: the extension has to take it back, or Genius may save a new artist.
+  const leftovers = [];
+  const typedLeftovers = () =>
+    gEval(
+      `[...document.querySelectorAll('form[aria-label="Edit Song Metadata Form"] input[role="combobox"]')].map((i) => i.value).filter((v) => v !== '')`,
+    );
   const problems = [];
   const filled = [];
   let presses = 0;
@@ -256,9 +296,13 @@ try {
       }
       if (((await pText("#alert")) ?? "").length > 0 || ((await pText(".step + p")) ?? "").includes("Choose ")) {
         // Genius had no exact match: the run waits for the user, who here skips the field.
-        skipped.push((await pText(".step .value")) ?? "");
+        const skippedValue = (await pText(".step .value")) ?? "";
+        skipped.push(skippedValue);
         await pClick("Skip");
-        await sleep(400);
+        await sleep(900);
+        // The run goes on by itself after a Skip and may already be typing the next field: only the skipped
+        // step's own text counts as left behind.
+        leftovers.push(...(await typedLeftovers()).filter((typed) => words(typed) === words(skippedValue)));
       }
       await sleep(300);
     }
@@ -310,7 +354,9 @@ try {
     await resume();
     check("it carries on after Esc", await runFor(1));
 
-    // A real click in the form: the page sees a trusted event and pauses the run.
+    // A real click in the form: the page sees a trusted event and pauses the run. (While a step waits for the user's
+    // choice a click is the user choosing, and does not pause: wait for a moment when nothing is awaited.)
+    for (let i = 0; i < 60 && (await stateInStorage())?.awaiting; i++) await sleep(300);
     const point = await gEval(`(() => {
       const r = document.querySelector('form[aria-label="Edit Song Metadata Form"]').getBoundingClientRect();
       return { x: Math.round(r.left + 6), y: Math.round(Math.max(r.top, 0) + 6) };
@@ -358,6 +404,40 @@ try {
     check("the reopened panel shows the paused run", await isPaused());
     await resume();
     check("it finishes the track by itself", await runFor(total, 180000));
+
+    // A second run over the same track: the form has every row by now, so none may be added again.
+    const rowRoles = () =>
+      gEval(
+        `[...document.querySelectorAll('[id^="custom_performances-"][id$="-label"]')].map((l) => [...l.querySelectorAll('[class*="multiValue"]')].map((c) => c.textContent.trim()).join('|'))`,
+      );
+    const firstRows = await rowRoles();
+    await pClick("Back to the credits");
+    await pUntil(
+      "[...document.querySelectorAll('button')].some((b) => b.textContent === 'Start pasting')",
+      "the credits again",
+    );
+    await pClick("Start pasting");
+    await pUntil("document.querySelector('h2')?.textContent === 'Paste into Genius'", "the paste screen again");
+    check("it finishes a second run over the same track", await runFor(total, 240000));
+    const secondRows = await rowRoles();
+    // A role Genius has no exact match for is typed into a row and skipped, which can leave one blank row behind;
+    // what must not happen is a second row for a role the form already has.
+    const named = (rows) => rows.filter((role) => role !== "");
+    check(
+      "a second run adds no role row the form already has",
+      named(secondRows).length === named(firstRows).length,
+      `${String(named(firstRows).length)} named rows, then ${String(named(secondRows).length)}`,
+    );
+    console.log(
+      `      blank rows: ${String(firstRows.length - named(firstRows).length)} after the first run, ${String(secondRows.length - named(secondRows).length)} after the second`,
+    );
+    if (secondRows.length !== firstRows.length) {
+      // Name the rows that were added, so one run is enough to see which role did it.
+      console.log(`      rows after the first run:  ${JSON.stringify(firstRows)}`);
+      console.log(`      rows after the second run: ${JSON.stringify(secondRows)}`);
+    }
+    const repeated = secondRows.filter((role, i) => role !== "" && secondRows.indexOf(role) !== i);
+    check("no role has two rows after the second run", repeated.length === 0, repeated.join(", "));
   };
 
   if (mode === "auto") await runAuto();
@@ -385,6 +465,7 @@ try {
     `      filled ${String(filled.length)}, left for the user ${String(skipped.length)}: ${skipped.join(" | ")}`,
   );
   check("no step stopped the run as a problem", problems.length === 0, problems.join(" | "));
+  check("skipping a step leaves no typed text in the form", leftovers.length === 0, leftovers.join(" | "));
   check("the panel ends on All steps done", (await position()) >= total);
   await shot(genius, "genius-2-filled-form");
 

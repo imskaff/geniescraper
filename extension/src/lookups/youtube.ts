@@ -37,6 +37,9 @@ const SKIP_KEYWORDS = [
   "teaser",
   "trailer",
 ];
+/** A lyric video's own words; every other skip word still rules a lyric video out. */
+const LYRIC_KEYWORDS = ["lyric video", "lyrics video", "official lyric", "lyrics", "lyric"];
+const LYRIC_FILLER = ["lyric", "lyrics"];
 const AUDIO_INDICATORS = ["official audio", "(audio)", "audio only", "audio stream"];
 
 const MV_CREW_KEYWORDS = [
@@ -119,11 +122,16 @@ const PLAIN_TITLE_FILLER = new Set([
 ]);
 
 /** True when the video title is just this song, as a plain upload titles it; any extra word rejects it. */
-export function titleMatchesSong(videoTitle: string, songTitle: string, artist: string): boolean {
+export function titleMatchesSong(
+  videoTitle: string,
+  songTitle: string,
+  artist: string,
+  extraFiller: readonly string[] = [],
+): boolean {
   const core = coreTitleWords(songTitle);
   if (core.length === 0) return false;
   const title = words(videoTitle);
-  const allowed = new Set([...words(songTitle), ...words(artist), ...PLAIN_TITLE_FILLER]);
+  const allowed = new Set([...words(songTitle), ...words(artist), ...PLAIN_TITLE_FILLER, ...extraFiller]);
   const present = new Set(title);
   return core.every((w) => present.has(w)) && title.every((w) => allowed.has(w));
 }
@@ -169,9 +177,10 @@ function isTopicUpload(channel: string, snippet: string, artist: string, trusted
 // ── per-phase scorers ─────────────────────────────────────────────────────────
 
 /**
- * Phase 1, the canonical song upload: 2 for a Topic upload, 1 for the artist's own channel with a plain title,
- * -1 to skip. `officialArtist` is YouTube's Official Artist Channel badge, which identifies the artist's channel
- * when its name differs from the credit, provided the video title names the artist.
+ * Phase 1, the song's audio, in Genius's order (music video, lyric video, official audio, auto-generated): 2 for the
+ * artist's own channel with a plain title (the official audio), 1 for the auto-generated Topic upload, -1 to skip.
+ * `officialArtist` is YouTube's Official Artist Channel badge, which identifies the artist's channel when its name
+ * differs from the credit, provided the video title names the artist.
  */
 export function scoreAudio(
   videoTitle: string,
@@ -189,12 +198,33 @@ export function scoreAudio(
 
   const artistCh = isArtistChannel(channel, artist);
   if (isTopicUpload(channel, snippet, artist, artistCh || officialArtist)) {
-    return titleMatchesSong(videoTitle, songTitle, artist) ? 2 : -1;
-  }
-  if (artistCh || (officialArtist && namesArtist(videoTitle, artist))) {
     return titleMatchesSong(videoTitle, songTitle, artist) ? 1 : -1;
   }
+  if (artistCh || (officialArtist && namesArtist(videoTitle, artist))) {
+    return titleMatchesSong(videoTitle, songTitle, artist) ? 2 : -1;
+  }
   return -1;
+}
+
+/**
+ * A lyric video, which Genius ranks just below a music video: 3 when the artist's own channel (or one with the Official
+ * Artist badge, if the title names the artist) uploaded the song with "lyric" or "lyrics" in the title, -1 otherwise.
+ * Lyric uploads by anyone else, remixes, live versions and other songs never count.
+ */
+export function scoreLyric(
+  videoTitle: string,
+  channel: string,
+  artist: string,
+  songTitle: string,
+  officialArtist = false,
+): number {
+  const t = videoTitle.toLowerCase();
+  if (!LYRIC_KEYWORDS.some((kw) => t.includes(kw))) return -1;
+  if (SKIP_KEYWORDS.some((kw) => !LYRIC_KEYWORDS.includes(kw) && t.includes(kw))) return -1;
+  if (!sigPresent(videoTitle, songTitle)) return -1;
+  const ownChannel = isArtistChannel(channel, artist) || (officialArtist && namesArtist(videoTitle, artist));
+  if (!ownChannel) return -1;
+  return titleMatchesSong(videoTitle, songTitle, artist, LYRIC_FILLER) ? 3 : -1;
 }
 
 /**
@@ -360,7 +390,7 @@ async function top10(pages: YoutubePages, query: string): Promise<Video[]> {
   return listVideos(await pages.search(query)).slice(0, 10);
 }
 
-/** Phase 1: the canonical audio, from a Topic channel or the artist's own channel. */
+/** Phase 1: a lyric video (3), the artist's own audio (2) or the Topic upload (1), as scored candidates. */
 async function audioPhase(
   pages: YoutubePages,
   title: string,
@@ -374,10 +404,12 @@ async function audioPhase(
     for (const [rank, video] of (await top10(pages, query)).entries()) {
       if (seen.has(video.id)) continue;
       seen.add(video.id);
-      const score = scoreAudio(video.title, video.channel, artist, title, video.officialArtist, video.snippet);
+      const lyric = scoreLyric(video.title, video.channel, artist, title, video.officialArtist);
+      const score =
+        lyric > 0 ? lyric : scoreAudio(video.title, video.channel, artist, title, video.officialArtist, video.snippet);
       if (score > 0) candidates.push([score, rank, watchUrl(video.id)]);
     }
-    // A Topic upload is definitive: skip the remaining queries.
+    // The artist's own audio or a lyric video outranks the Topic upload: a Topic upload alone is not the last word.
     if (candidates.some(([s]) => s >= 2)) break;
   }
   return candidates;
@@ -465,7 +497,7 @@ export async function findYoutube(
       ...label.slice(0, MAX_LABEL_DESCRIPTIONS).map(([, , u]) => videoId(u)),
       ...audio
         .slice(0, MAX_AUDIO_DESCRIPTIONS)
-        .filter(([s, , u]) => s === 1 && !mvIds.has(videoId(u)))
+        .filter(([s, , u]) => s === 2 && !mvIds.has(videoId(u)))
         .map(([, , u]) => videoId(u)),
     ];
     const unique = [...new Set(wanted)];
@@ -492,9 +524,10 @@ export async function findYoutube(
     // An artist-channel audio hit may be absent from phase 2's results: check its description and reclassify.
     const nowMv = new Set(mv.map(([, , u]) => videoId(u)));
     for (const [score, rank, url] of audio.slice(0, MAX_AUDIO_DESCRIPTIONS)) {
-      if (score !== 1 || nowMv.has(videoId(url)) || !descriptions.has(videoId(url))) continue;
+      if (score !== 2 || nowMv.has(videoId(url)) || !descriptions.has(videoId(url))) continue;
       const bonus = descriptionBonus(described(url));
-      if (bonus) mv.push([score + bonus, rank, url]);
+      // Scored as it was before audio moved up a point, so a music video it turns out to be ranks the same.
+      if (bonus) mv.push([score - 1 + bonus, rank, url]);
     }
 
     const bestMv = [...mv].sort(byScoreThenRank)[0];

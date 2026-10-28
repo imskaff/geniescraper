@@ -10,6 +10,7 @@ import {
   isFinished,
   normalisePaste,
   report,
+  roleOfStep,
   skip,
   startPaste,
   stop,
@@ -254,5 +255,35 @@ describe("normalisePaste", () => {
   it("is not active with an empty queue and ignores an unknown tone", () => {
     expect(normalisePaste({ active: true, queue: [], position: 0 }).active).toBe(false);
     expect(normalisePaste({ ...started(), tone: "loud" }).tone).toBe("info");
+  });
+});
+
+describe("the role a step belongs to", () => {
+  const queue: QueueItem[] = [
+    ["written_by", "W"],
+    ["role", "Mixing Engineer"],
+    ["artist", "M1"],
+    ["artist", "M2"],
+    ["role", "Vocals"],
+    ["artist", "V1"],
+    ["copyright_role", "Phonographic Copyright"],
+    ["phonographic_copyright", "Label"],
+    ["copyright_role", "Copyright"],
+    ["copyright_notice", "Label"],
+    ["youtube_url", "u"],
+  ];
+
+  it.each([
+    [2, "Mixing Engineer"],
+    [3, "Mixing Engineer"],
+    [5, "Vocals"],
+    [7, "Phonographic Copyright"],
+    [9, "Copyright"],
+  ])("gives the role of the artist step at %i: %s", (position, role) => {
+    expect(roleOfStep(queue, position)).toBe(role);
+  });
+
+  it.each([0, 1, 4, 6, 8, 10, 99])("gives nothing for step %i, which is not an artist under a role", (position) => {
+    expect(roleOfStep(queue, position)).toBeUndefined();
   });
 });

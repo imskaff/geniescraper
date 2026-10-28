@@ -106,7 +106,7 @@ export type BeginReply =
   | { action: "none" }
   | { action: "advanced" }
   /** An automatic run resumed while a step still awaits the user's choice: wait for it, do not fill again. */
-  | { action: "await"; item: [string, string]; position: number; paceMs?: number }
+  | { action: "await"; item: [string, string]; position: number; paceMs?: number; role?: string }
   | {
       action: "fill";
       item: [string, string];
@@ -116,6 +116,8 @@ export type BeginReply =
       settleMs: number;
       /** The pause an automatic run makes after each field; absent for a key press. */
       paceMs?: number;
+      /** For an artist or label step: the additional role it goes under. */
+      role?: string;
     };
 
 export function isOutcome(value: unknown): value is Outcome {
@@ -132,7 +134,9 @@ export type GeniusNotice =
   /** The paste session started or ended, so the page knows whether the hotkeys are live. */
   | { type: "genius/paste-active"; active: boolean }
   /** An automatic run started, paused, resumed or ended, so the page loop knows whether to go on. */
-  | { type: "genius/auto-state"; auto: AutoMode };
+  | { type: "genius/auto-state"; auto: AutoMode }
+  /** A step was skipped: whatever was typed for it and not chosen has to go from the field. */
+  | { type: "genius/clear"; item: [string, string]; role?: string };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -206,7 +210,8 @@ export function isBeginReply(value: unknown): value is BeginReply {
     return (
       isPair(value["item"]) &&
       typeof value["position"] === "number" &&
-      (value["paceMs"] === undefined || typeof value["paceMs"] === "number")
+      (value["paceMs"] === undefined || typeof value["paceMs"] === "number") &&
+      (value["role"] === undefined || typeof value["role"] === "string")
     );
   }
   return (
@@ -218,7 +223,8 @@ export function isBeginReply(value: unknown): value is BeginReply {
     typeof value["position"] === "number" &&
     typeof value["autoConfirm"] === "boolean" &&
     typeof value["settleMs"] === "number" &&
-    (value["paceMs"] === undefined || typeof value["paceMs"] === "number")
+    (value["paceMs"] === undefined || typeof value["paceMs"] === "number") &&
+    (value["role"] === undefined || typeof value["role"] === "string")
   );
 }
 
@@ -238,6 +244,9 @@ export function isGeniusNotice(value: unknown): value is GeniusNotice {
   if (!isRecord(value)) return false;
   if (value["type"] === "genius/fill-now") return true;
   if (value["type"] === "genius/auto-state") return AUTO_MODES.has(value["auto"]);
+  if (value["type"] === "genius/clear") {
+    return isPair(value["item"]) && (value["role"] === undefined || typeof value["role"] === "string");
+  }
   return value["type"] === "genius/paste-active" && typeof value["active"] === "boolean";
 }
 

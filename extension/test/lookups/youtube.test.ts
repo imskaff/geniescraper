@@ -12,6 +12,7 @@ import {
   mvQueries,
   namesArtist,
   scoreAudio,
+  scoreLyric,
   scoreMv,
   sigPresent,
   titleMatchesSong,
@@ -184,9 +185,28 @@ describe("channels", () => {
 });
 
 describe("scoring", () => {
-  it("scores a Topic upload 2 and an artist-channel plain title 1 in phase 1", () => {
-    expect(scoreAudio("SOS", "SZA - Topic", "SZA", "SOS")).toBe(2);
-    expect(scoreAudio("SZA - SOS (Audio)", "SZA", "SZA", "SOS")).toBe(1);
+  it("scores an artist's own audio 2 and the auto-generated Topic upload 1, which Genius ranks last", () => {
+    expect(scoreAudio("SZA - SOS (Audio)", "SZA", "SZA", "SOS")).toBe(2);
+    expect(scoreAudio("SZA - SOS (Official Audio)", "SZA", "SZA", "SOS")).toBe(2);
+    expect(scoreAudio("SOS", "SZA - Topic", "SZA", "SOS")).toBe(1);
+  });
+
+  it("scores a lyric video on the artist's own channel 3, above any audio", () => {
+    expect(scoreLyric("SZA - SOS (Lyric Video)", "SZA", "SZA", "SOS")).toBe(3);
+    expect(scoreLyric("SZA - SOS (Official Lyric Video)", "SZAVEVO", "SZA", "SOS")).toBe(3);
+    expect(scoreLyric("SZA - SOS (Lyrics)", "SZA", "SZA", "SOS")).toBe(3);
+    expect(scoreLyric("SOS (Lyric Video)", "Blonded", "SZA", "SOS", true)).toBe(-1);
+    expect(scoreLyric("SZA - SOS (Lyric Video)", "Blonded", "SZA", "SOS", true)).toBe(3);
+  });
+
+  it("does not take a lyric video from another channel, a different song, a remix or a live version", () => {
+    expect(scoreLyric("SZA - SOS (Lyrics)", "Lyrics Daily", "SZA", "SOS")).toBe(-1);
+    expect(scoreLyric("SZA - SOS (Lyric Video)", "Blonded", "SZA", "SOS")).toBe(-1);
+    expect(scoreLyric("SZA - Kill Bill (Lyric Video)", "SZA", "SZA", "SOS")).toBe(-1);
+    expect(scoreLyric("SZA - SOS (Lyrics) [Remix]", "SZA", "SZA", "SOS")).toBe(-1);
+    expect(scoreLyric("SZA - SOS (Live) (Lyrics)", "SZA", "SZA", "SOS")).toBe(-1);
+    expect(scoreLyric("SZA - SOS (Official Audio)", "SZA", "SZA", "SOS")).toBe(-1);
+    expect(scoreLyric("SZA - SOS (Official Video)", "SZA", "SZA", "SOS")).toBe(-1);
   });
 
   it("skips what phase 1 must not take: music videos, lyric videos, other songs, other channels", () => {
@@ -198,13 +218,13 @@ describe("scoring", () => {
   });
 
   it("accepts the Official Artist Channel badge when the title names the artist", () => {
-    expect(scoreAudio("Frank Ocean - Pink + White", "Blonded", "Frank Ocean", "Pink + White", true)).toBe(1);
+    expect(scoreAudio("Frank Ocean - Pink + White", "Blonded", "Frank Ocean", "Pink + White", true)).toBe(2);
     expect(scoreAudio("Pink + White", "Blonded", "Frank Ocean", "Pink + White", true)).toBe(-1);
   });
 
   it("counts a 'Provided to YouTube by' snippet only on a trusted channel", () => {
     const snippet = "Provided to YouTube by RCA Records · SOS · SZA";
-    expect(scoreAudio("SOS", "SZA", "SZA", "SOS", false, snippet)).toBe(2);
+    expect(scoreAudio("SOS", "SZA", "SZA", "SOS", false, snippet)).toBe(1);
     expect(scoreAudio("SOS", "Reuploader", "SZA", "SOS", false, snippet)).toBe(-1);
   });
 
@@ -367,5 +387,84 @@ describe("the cheaper lookup for a metered service (one query for the video, one
       const searches = (log: string[]) => log.filter((l) => l.startsWith("search:")).length;
       expect(searches(cheap), g.id).toBeLessThanOrEqual(searches(full));
     }
+  });
+});
+
+/** A results page the way YouTube's own data shapes it, with the videos given. */
+function resultsOf(videos: { id: string; title: string; channel: string; badge?: boolean }[]): unknown {
+  return {
+    contents: {
+      twoColumnSearchResultsRenderer: {
+        primaryContents: {
+          sectionListRenderer: {
+            contents: [
+              {
+                itemSectionRenderer: {
+                  contents: videos.map((v) => ({
+                    videoRenderer: {
+                      videoId: v.id,
+                      title: { runs: [{ text: v.title }] },
+                      ownerText: { runs: [{ text: v.channel }] },
+                      ownerBadges: v.badge
+                        ? [{ metadataBadgeRenderer: { style: "BADGE_STYLE_TYPE_VERIFIED_ARTIST" } }]
+                        : [],
+                    },
+                  })),
+                },
+              },
+            ],
+          },
+        },
+      },
+    },
+  };
+}
+
+const MV_VIDEO = { id: "mvvideo0001", title: "SZA - SOS (Official Music Video)", channel: "SZA" };
+const LYRIC_VIDEO = { id: "lyricvid001", title: "SZA - SOS (Official Lyric Video)", channel: "SZA" };
+const OFFICIAL_AUDIO = { id: "offaudio001", title: "SZA - SOS (Official Audio)", channel: "SZA" };
+const TOPIC_UPLOAD = { id: "topicupl001", title: "SOS", channel: "SZA - Topic" };
+
+/** Every search answers with the same results, and no watch page has a description. */
+const pagesWith = (videos: Parameters<typeof resultsOf>[0]): YoutubePages => ({
+  search: () => Promise.resolve(resultsOf(videos)),
+  watch: () => Promise.resolve(null),
+});
+
+describe("which video wins, by Genius's order: music video, lyric video, official audio, auto-generated", () => {
+  const pick = async (videos: Parameters<typeof resultsOf>[0]) => {
+    const link = await findYoutube(pagesWith(videos), "SOS", "SZA");
+    return { id: link.url.split("=").pop(), mv: link.isMusicVideo };
+  };
+
+  it("takes the music video over everything else", async () => {
+    expect(await pick([TOPIC_UPLOAD, OFFICIAL_AUDIO, LYRIC_VIDEO, MV_VIDEO])).toEqual({ id: MV_VIDEO.id, mv: true });
+  });
+
+  it("takes the lyric video over the official audio and the Topic upload", async () => {
+    expect(await pick([TOPIC_UPLOAD, OFFICIAL_AUDIO, LYRIC_VIDEO])).toEqual({ id: LYRIC_VIDEO.id, mv: false });
+  });
+
+  it("takes the official audio over the Topic upload, even when the Topic upload is listed first", async () => {
+    expect(await pick([TOPIC_UPLOAD, OFFICIAL_AUDIO])).toEqual({ id: OFFICIAL_AUDIO.id, mv: false });
+  });
+
+  it("takes the Topic upload only when nothing better exists", async () => {
+    expect(await pick([TOPIC_UPLOAD])).toEqual({ id: TOPIC_UPLOAD.id, mv: false });
+  });
+
+  it("still looks past a Topic upload in the first search for something better", async () => {
+    const searches: string[] = [];
+    const pages: YoutubePages = {
+      search: (query) => {
+        searches.push(query);
+        // The Topic-targeted search sees only the Topic upload; the plain search also sees the official audio.
+        return Promise.resolve(resultsOf(query.includes("Topic") ? [TOPIC_UPLOAD] : [TOPIC_UPLOAD, OFFICIAL_AUDIO]));
+      },
+      watch: () => Promise.resolve(null),
+    };
+    const link = await findYoutube(pages, "SOS", "SZA");
+    expect(link.url).toBe(`https://www.youtube.com/watch?v=${OFFICIAL_AUDIO.id}`);
+    expect(searches.length).toBeGreaterThan(audioQueries("SOS", "SZA").slice(0, 1).length);
   });
 });

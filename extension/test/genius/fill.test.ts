@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { typedQueue, type QueueItem } from "../../src/core/models";
-import { fillStep, type FillContext, type StepOutcome } from "../../src/genius/fill";
+import {
+  clearTyped,
+  fillStep,
+  isStepDone,
+  stepSnapshot,
+  type FillContext,
+  type StepOutcome,
+} from "../../src/genius/fill";
 import { songFromVector } from "../parity/helpers";
 import { chipsIn, loadFakeGenius, rowChips, type FakeGenius, type FakeOptions } from "./fakeGenius";
+import { addCreditsButton } from "../../src/genius/selectors";
 
 const TIMING = { suggestionMs: 400, settleMs: 60, selectMs: 300, pollMs: 5 };
 
@@ -334,5 +342,152 @@ describe("a whole song", () => {
       song.coverArtUrl,
     );
     expectSafe(fake);
+  });
+});
+
+describe("roles the form already has", () => {
+  async function formWithRoles() {
+    const { fake, ctx, run } = setup();
+    await run(["role", "Mixing Engineer"]);
+    await run(["artist", "Billie Eilish"]);
+    await run(["role", "Mastering Engineer"]);
+    await run(["artist", "Taylor Swift"]);
+    return { fake, ctx, run };
+  }
+
+  it("does not add a second row for a role that is already there", async () => {
+    const { fake, run } = await formWithRoles();
+    const outcome = await run(["role", "Mixing Engineer"]);
+    expect(outcome).toEqual({ status: "filled", message: "Mixing Engineer was already there." });
+    expect(rowChips(fake.form)).toHaveLength(2);
+    expectSafe(fake);
+  });
+
+  it("recognises the role however Genius spells it, such as the symbol it adds to a copyright role", async () => {
+    const { fake, run } = setup();
+    await run(["copyright_role", "Phonographic Copyright"]);
+    const rows = rowChips(fake.form).length;
+    const outcome = await run(["copyright_role", "Phonographic Copyright"]);
+    expect(outcome).toMatchObject({ status: "filled" });
+    expect(outcome.message).toMatch(/already there/);
+    expect(rowChips(fake.form)).toHaveLength(rows);
+  });
+
+  it("puts an artist under the row of its own role, not under the last row", async () => {
+    const { fake, ctx } = await formWithRoles();
+    const outcome = await fillStep(["artist", "FINNEAS"], { ...ctx, role: "Mixing Engineer" });
+    expect(outcome).toMatchObject({ status: "filled" });
+    expect(rowChips(fake.form).map((r) => ({ role: r.role, artists: [...r.artists].sort() }))).toEqual([
+      { role: ["Mixing Engineer"], artists: ["Billie Eilish", "FINNEAS"] },
+      { role: ["Mastering Engineer"], artists: ["Taylor Swift"] },
+    ]);
+  });
+
+  it("leaves an artist alone that is already under that role", async () => {
+    const { fake, ctx } = await formWithRoles();
+    const outcome = await fillStep(["artist", "Billie Eilish"], { ...ctx, role: "Mixing Engineer" });
+    expect(outcome.message).toMatch(/already there/);
+    expect(rowChips(fake.form)[0]).toEqual({ role: ["Mixing Engineer"], artists: ["Billie Eilish"] });
+  });
+
+  it("still adds a row for a role the form does not have yet", async () => {
+    const { fake, run } = await formWithRoles();
+    await run(["role", "Lead Vocals"]);
+    expect(rowChips(fake.form).map((r) => r.role)).toEqual([
+      ["Mixing Engineer"],
+      ["Mastering Engineer"],
+      ["Lead Vocals"],
+    ]);
+  });
+
+  it("reuses an empty row a skipped role left behind, wherever it is, instead of adding another", async () => {
+    const { fake, ctx, run } = setup();
+    // A role typed and skipped leaves its row empty; a later role fills the next row, so the empty one is not last.
+    await fillStep(["role", "Mixing Engineer"], { ...ctx, autoConfirm: false });
+    clearTyped(fake.doc, ["role", "Mixing Engineer"]);
+    addCreditsButton(fake.form)?.click();
+    await run(["role", "Lead Vocals"]);
+    expect(rowChips(fake.form).map((r) => r.role)).toEqual([[], ["Lead Vocals"]]);
+
+    await run(["role", "Mixing Engineer"]);
+    expect(rowChips(fake.form).map((r) => r.role)).toEqual([["Mixing Engineer"], ["Lead Vocals"]]);
+  });
+
+  /** A form whose first row is empty (a skipped role) and whose last row is filled. */
+  async function emptyThenFilled() {
+    const { fake, ctx, run } = setup();
+    await fillStep(["role", "Mixing Engineer"], { ...ctx, autoConfirm: false });
+    clearTyped(fake.doc, ["role", "Mixing Engineer"]);
+    addCreditsButton(fake.form)?.click();
+    await run(["role", "Lead Vocals"]);
+    return { fake, ctx, run };
+  }
+
+  it("clears the text typed for a role in the empty row it used, not in the last row", async () => {
+    const { fake, ctx } = await emptyThenFilled();
+    await fillStep(["role", "Mastering Engineer"], { ...ctx, autoConfirm: false });
+    const input = fake.form.querySelector<HTMLInputElement>("#custom_performances-0-label input");
+    expect(input?.value).not.toBe("");
+    clearTyped(fake.doc, ["role", "Mastering Engineer"]);
+    expect(input?.value).toBe("");
+  });
+
+  it("sees the role the user chose in an empty row that is not the last, so a run is not left waiting", async () => {
+    const { fake, ctx } = await emptyThenFilled();
+    const item = ["role", "Mastering Engineer"] as const;
+    await fillStep(item, { ...ctx, autoConfirm: false });
+    const before = stepSnapshot(fake.doc, item);
+    expect(isStepDone(fake.doc, item, before)).toBe(false);
+    await fillStep(item, ctx);
+    expect(isStepDone(fake.doc, item, before)).toBe(true);
+  });
+});
+
+describe("skipping a step leaves nothing of it in the field", () => {
+  const inputOf = (box: Element | null): HTMLInputElement | null => box?.querySelector("input") ?? null;
+
+  it("clears a name that was typed and not chosen, so it cannot become a new artist page", async () => {
+    const { fake, run } = setup({}, false);
+    await run(["written_by", "zzqxv nobody 99"]);
+    expect(inputOf(writerBox(fake))?.value).toBe("zzqxv nobody 99");
+    clearTyped(fake.doc, ["written_by", "zzqxv nobody 99"]);
+    expect(inputOf(writerBox(fake))?.value).toBe("");
+    expect(chipsIn(writerBox(fake))).toEqual([]);
+    expectSafe(fake);
+  });
+
+  it("keeps what is already chosen in the field", async () => {
+    const { fake, ctx } = setup();
+    await fillStep(["written_by", "Billie Eilish"], ctx);
+    await fillStep(["written_by", "zzqxv nobody 99"], { ...ctx, autoConfirm: false });
+    clearTyped(fake.doc, ["written_by", "zzqxv nobody 99"]);
+    expect(chipsIn(writerBox(fake))).toEqual(["Billie Eilish"]);
+    expect(inputOf(writerBox(fake))?.value).toBe("");
+  });
+
+  it("clears the producer field, a role, and an artist under its own role", async () => {
+    const { fake, ctx } = setup({}, false);
+    await fillStep(["produced_by", "zzqxv nobody 99"], ctx);
+    clearTyped(fake.doc, ["produced_by", "zzqxv nobody 99"]);
+    expect(inputOf(producerBox(fake))?.value).toBe("");
+
+    await fillStep(["role", "Mixing Engineer"], ctx);
+    const roleInput = fake.form.querySelector<HTMLInputElement>("#custom_performances-0-label input");
+    expect(roleInput?.value).not.toBe("");
+    clearTyped(fake.doc, ["role", "Mixing Engineer"]);
+    expect(roleInput?.value).toBe("");
+  });
+
+  it("leaves other fields alone, and does nothing when nothing was typed", async () => {
+    const { fake, ctx } = setup();
+    await fillStep(["youtube_url", "https://www.youtube.com/watch?v=abc"], ctx);
+    clearTyped(fake.doc, ["youtube_url", "https://www.youtube.com/watch?v=abc"]);
+    expect(fake.form.querySelector<HTMLInputElement>('input[name="youtube_url"]')?.value).toBe(
+      "https://www.youtube.com/watch?v=abc",
+    );
+    expect(() => {
+      clearTyped(fake.doc, ["artist", "Nobody"], "No Such Role");
+    }).not.toThrow();
+    expect(fake.chosen).toEqual([]);
   });
 });

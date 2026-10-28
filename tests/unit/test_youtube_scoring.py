@@ -62,13 +62,17 @@ class TestArtistChannel:
 
 
 class TestScoring:
-    def test_topic_channel_audio_is_best(self):
-        assert yt._score_audio("Not Like Us", "Kendrick Lamar - Topic", "Kendrick Lamar", "Not Like Us") == 2
+    def test_topic_channel_audio_ranks_last_of_the_audio(self):
+        # Genius ranks the auto-generated upload below the artist's own official audio.
+        assert yt._score_audio("Not Like Us", "Kendrick Lamar - Topic", "Kendrick Lamar", "Not Like Us") == 1
 
-    def test_topic_upload_shown_under_artist_name_is_best(self):
+    def test_artists_own_audio_outranks_the_topic_upload(self):
+        assert yt._score_audio("SZA - SOS (Official Audio)", "SZA", "SZA", "SOS") == 2
+
+    def test_topic_upload_shown_under_artist_name_is_still_auto_generated(self):
         # Search results now label Topic uploads with the artist's channel name.
         snippet = "Provided to YouTube by Top Dawg Entertainment/RCA Records SOS · SZA SOS ℗ 2022 Top Dawg"
-        assert yt._score_audio("SOS", "SZA", "SZA", "SOS", official_artist=True, snippet=snippet) == 2
+        assert yt._score_audio("SOS", "SZA", "SZA", "SOS", official_artist=True, snippet=snippet) == 1
 
     def test_copied_topic_description_on_untrusted_channel_is_ignored(self):
         snippet = "Provided to YouTube by Top Dawg Entertainment/RCA Records SOS · SZA"
@@ -77,7 +81,7 @@ class TestScoring:
     def test_official_artist_channel_under_another_name(self):
         args = ("Frank Ocean - Pink + White", "Blonded", "Frank Ocean", "Pink + White")
         assert yt._score_audio(*args) == -1
-        assert yt._score_audio(*args, official_artist=True) == 1
+        assert yt._score_audio(*args, official_artist=True) == 2
 
     def test_official_artist_badge_needs_artist_in_title(self):
         assert (
@@ -87,6 +91,32 @@ class TestScoring:
 
     def test_lyric_video_skipped(self):
         assert yt._score_audio("Not Like Us (Lyrics)", "Lyrics Hub", "Kendrick Lamar", "Not Like Us") == -1
+
+    @pytest.mark.parametrize(
+        "title", ["SZA - SOS (Lyric Video)", "SZA - SOS (Official Lyric Video)", "SZA - SOS (Lyrics)"]
+    )
+    def test_lyric_video_on_the_artists_channel_outranks_any_audio(self, title):
+        assert yt._score_lyric(title, "SZA", "SZA", "SOS") == 3
+
+    def test_lyric_video_through_the_official_artist_badge(self):
+        title = "SZA - SOS (Lyric Video)"
+        assert yt._score_lyric(title, "Blonded", "SZA", "SOS") == -1
+        assert yt._score_lyric(title, "Blonded", "SZA", "SOS", official_artist=True) == 3
+        assert yt._score_lyric("SOS (Lyric Video)", "Blonded", "SZA", "SOS", official_artist=True) == -1
+
+    @pytest.mark.parametrize(
+        ("title", "channel"),
+        [
+            ("SZA - SOS (Lyrics)", "Lyrics Daily"),
+            ("SZA - Kill Bill (Lyric Video)", "SZA"),
+            ("SZA - SOS (Lyrics) [Remix]", "SZA"),
+            ("SZA - SOS (Live) (Lyrics)", "SZA"),
+            ("SZA - SOS (Official Audio)", "SZA"),
+            ("SZA - SOS (Official Video)", "SZA"),
+        ],
+    )
+    def test_not_a_lyric_video_of_the_song(self, title, channel):
+        assert yt._score_lyric(title, channel, "SZA", "SOS") == -1
 
     def test_vevo_music_video_confirmed(self):
         title = "Kendrick Lamar - Not Like Us (Official Video)"
@@ -139,3 +169,43 @@ class TestScoring:
     def test_extract_data(self):
         assert yt._extract_data('xx var ytInitialData = {"a": 1}; more') == {"a": 1}
         assert yt._extract_data("nothing") is None
+
+
+class TestGeniusOrder:
+    """Music video, then lyric video, then official audio, then the auto-generated upload."""
+
+    MV = ("mvvideo0001", "SZA - SOS (Official Music Video)", "SZA")
+    LYRIC = ("lyricvid001", "SZA - SOS (Official Lyric Video)", "SZA")
+    AUDIO = ("offaudio001", "SZA - SOS (Official Audio)", "SZA")
+    TOPIC = ("topicupl001", "SOS", "SZA - Topic")
+
+    @staticmethod
+    async def pick(monkeypatch, *videos):
+        results = [yt._Video(v[0], v[1], v[2], False, False, "") for v in videos]
+
+        async def search(client, query):
+            return results
+
+        async def description(client, video_id):
+            return ""
+
+        monkeypatch.setattr(yt, "_search", search)
+        monkeypatch.setattr(yt, "_fetch_description", description)
+        url, is_mv = await yt.fetch_youtube_url("SOS", "SZA")
+        return url.split("=")[-1], is_mv
+
+    async def test_music_video_first(self, monkeypatch):
+        got = await self.pick(monkeypatch, self.TOPIC, self.AUDIO, self.LYRIC, self.MV)
+        assert got == (self.MV[0], True)
+
+    async def test_lyric_video_over_audio_and_topic(self, monkeypatch):
+        got = await self.pick(monkeypatch, self.TOPIC, self.AUDIO, self.LYRIC)
+        assert got == (self.LYRIC[0], False)
+
+    async def test_official_audio_over_topic_even_when_listed_after_it(self, monkeypatch):
+        got = await self.pick(monkeypatch, self.TOPIC, self.AUDIO)
+        assert got == (self.AUDIO[0], False)
+
+    async def test_topic_only_when_nothing_better(self, monkeypatch):
+        got = await self.pick(monkeypatch, self.TOPIC)
+        assert got == (self.TOPIC[0], False)

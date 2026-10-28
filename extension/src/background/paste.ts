@@ -15,12 +15,14 @@ import {
   stop,
   type AutoMode,
   type PasteState,
+  roleOfStep,
 } from "../core/paste";
 import type { QueueItem, QueueKind } from "../core/models";
 import {
   isOutcome,
   type BeginReply,
   type ErrorCode,
+  type GeniusNotice,
   type GeniusRequest,
   type PasteCommand,
   type PasteStatus,
@@ -69,6 +71,13 @@ export class PasteService {
     await Promise.all(tabs.map((tab) => this.ports.notifyGenius(tab, { type: "genius/paste-active", active })));
   }
 
+  /** Ask every Genius tab to take back what was typed for a skipped step. */
+  private async clearTyped(item: [string, string], role: string | undefined): Promise<void> {
+    const tabs = await this.ports.geniusTabIds().catch(() => []);
+    const notice: GeniusNotice = { type: "genius/clear", item, ...(role === undefined ? {} : { role }) };
+    await Promise.all(tabs.map((tab) => this.ports.notifyGenius(tab, notice)));
+  }
+
   /** Tell every Genius tab how an automatic run stands, so the page loop knows whether to go on. */
   private async announceAuto(auto: AutoMode): Promise<number> {
     const tabs = await this.ports.geniusTabIds().catch(() => []);
@@ -101,8 +110,14 @@ export class PasteService {
         }
         case "paste-back":
           return this.apply(state, back(state));
-        case "paste-skip":
-          return this.apply(state, skip(state));
+        case "paste-skip": {
+          const skipped = state.active ? state.queue[state.position] : undefined;
+          const role = skipped ? roleOfStep(state.queue, state.position) : undefined;
+          const result = await this.apply(state, skip(state));
+          // The step's typed text must not stay in the field: every Genius tab is told which step it was.
+          if (skipped) await this.clearTyped([skipped[0], skipped[1]], role);
+          return result;
+        }
         case "paste-auto-start": {
           const next = startAuto(state);
           if (next === state) return { ok: true, data: state };
@@ -176,6 +191,7 @@ export class PasteService {
           const waiting = next.queue[next.position];
           let reply: BeginReply;
           if (result.action === "fill") {
+            const role = roleOfStep(next.queue, result.position);
             reply = {
               action: "fill",
               item: [result.item[0], result.item[1]],
@@ -183,10 +199,18 @@ export class PasteService {
               autoConfirm: settings.autoConfirm,
               settleMs: Math.round(settings.autocompleteWaitSeconds * 1000),
               ...paceMs,
+              ...(role === undefined ? {} : { role }),
             };
           } else if (request.source === "auto" && next.auto === "running" && next.awaiting && waiting) {
             // A run resumed while a step still waits for the user's choice: tell it what to wait for.
-            reply = { action: "await", item: [waiting[0], waiting[1]], position: next.position, ...paceMs };
+            const role = roleOfStep(next.queue, next.position);
+            reply = {
+              action: "await",
+              item: [waiting[0], waiting[1]],
+              position: next.position,
+              ...paceMs,
+              ...(role === undefined ? {} : { role }),
+            };
           } else {
             reply = { action: result.action };
           }
