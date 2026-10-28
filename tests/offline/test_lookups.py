@@ -8,6 +8,7 @@ Refresh the captures with `uv run python -m bench.capture_lookups`.
 
 import asyncio
 
+import httpx
 import pytest
 
 from bench.cases import load_cases, load_golden
@@ -55,6 +56,44 @@ async def test_youtube_requests_overlap_but_stay_polite(monkeypatch, case_id):
     await youtube.fetch_youtube_url(entry["title"], entry["artist"])
 
     assert 2 <= peak <= 3
+
+
+@pytest.mark.parametrize("entry", YOUTUBE_ENTRIES, ids=lambda e: e["id"])
+async def test_youtube_asks_the_json_endpoints_first_and_never_the_pages(monkeypatch, entry):
+    log = []
+    lf.route_clients(monkeypatch, youtube, lf.youtube_handler(lf.load(lf.YOUTUBE_DIR, entry["id"]), log))
+
+    url, is_mv = await youtube.fetch_youtube_url(entry["title"], entry["artist"])
+
+    assert (video_id(url), is_mv) in {(v, entry["is_music_video"]) for v in entry["accept"]}
+    assert log
+    assert all(r.method == "POST" and r.url.path.startswith("/youtubei/v1/") for r in log)
+
+
+@pytest.mark.parametrize("case_id", ["sza-sos-t1", "eilish-hmhas-t3"])
+async def test_youtube_falls_back_to_the_pages_when_the_json_endpoints_refuse(monkeypatch, case_id):
+    sync_handler = lf.youtube_handler(lf.load(lf.YOUTUBE_DIR, case_id))
+    paths = []
+
+    def handler(request):
+        paths.append(request.url.path)
+        if request.url.path.startswith("/youtubei/"):
+            return httpx.Response(403, text="<html>Sorry</html>")
+        return sync_handler(request)
+
+    lf.route_clients(monkeypatch, youtube, handler)
+    entry = YOUTUBE_BY_ID[case_id]
+
+    url, is_mv = await youtube.fetch_youtube_url(entry["title"], entry["artist"])
+
+    assert (video_id(url), is_mv) in {(v, entry["is_music_video"]) for v in entry["accept"]}
+    assert "/results" in paths
+
+
+async def test_youtube_gives_nothing_when_neither_the_endpoints_nor_the_pages_answer(monkeypatch):
+    lf.route_clients(monkeypatch, youtube, lambda request: httpx.Response(403, text="<html>Sorry</html>"))
+
+    assert await youtube.fetch_youtube_url("SOS", "SZA") == ("", False)
 
 
 @pytest.mark.parametrize("case", [_param(c, c.id, KNOWN_COVER_BUGS) for c in load_cases()])

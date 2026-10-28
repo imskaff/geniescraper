@@ -36,6 +36,13 @@ class TestTitleMatching:
     def test_short_special_char_title(self):
         assert yt._sig_present("Travis Scott - FE!N ft. Playboi Carti", "FE!N")
 
+    def test_matches_whole_words_not_pieces_of_words(self):
+        # "the" is inside "feather": THE GREATEST must not match a video of BIRDS OF A FEATHER.
+        video = "Billie Eilish - BIRDS OF A FEATHER (Official Music Video)"
+        assert not yt._sig_present(video, "THE GREATEST")
+        assert yt._sig_present(video, "BIRDS OF A FEATHER")
+        assert yt._score_mv(video, "BillieEilishVEVO", "Billie Eilish", "THE GREATEST") == -1
+
 
 class TestArtistChannel:
     @pytest.mark.parametrize(

@@ -23,6 +23,13 @@ def youtube_handler(fixture: dict, log: list[httpx.Request] | None = None):
     def handle(request: httpx.Request) -> httpx.Response:
         if log is not None:
             log.append(request)
+        # YouTube's JSON endpoints (what the lookup asks first): the same captured data, as JSON.
+        if request.method == "POST" and request.url.path == "/youtubei/v1/search":
+            data = fixture["searches"].get(json.loads(request.content).get("query", ""))
+            return httpx.Response(404) if data is None else httpx.Response(200, json=data)
+        if request.method == "POST" and request.url.path == "/youtubei/v1/player":
+            player = fixture["watch"].get(json.loads(request.content).get("videoId", ""))
+            return httpx.Response(404) if player is None else httpx.Response(200, json=player)
         if request.url.path == "/results":
             data = fixture["searches"].get(request.url.params.get("search_query", ""))
             if data is None:

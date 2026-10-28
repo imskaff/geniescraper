@@ -138,3 +138,21 @@ class TestSmallHelpers:
     def test_normalise_role_maps_aliases(self):
         assert am._normalise_role(" written by: ") == "Writer"
         assert am._normalise_role("Unmapped Role:") == "Unmapped Role"
+
+    @pytest.mark.parametrize(
+        ("apple_role", "genius_role"),
+        [
+            ("Programming", "Programmer"),
+            (" programming: ", "Programmer"),
+            ("Drum Programming", "Drum Programmer"),
+            ("Assistant Programming", "Assistant Programmer"),
+            ("Rhythm Programming", "Rhythm Programmer"),
+            ("Synthesizer Programming", "Synthesizer Programmer"),
+            ("Vocal Programming", "Vocal Programmer"),
+            ("Percussion Programming", "Percussion Programmer"),
+            ("Bass Programming:", "Bass Programmer"),
+        ],
+    )
+    def test_programming_roles_are_typed_as_genius_names_them(self, apple_role, genius_role):
+        # Genius has "Programmer" and "Drum Programmer" and no "Programming": typing the Apple name finds nothing.
+        assert am._normalise_role(apple_role) == genius_role

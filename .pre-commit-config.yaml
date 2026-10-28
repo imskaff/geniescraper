@@ -28,3 +28,9 @@ repos:
         # Fixtures, golden files and config changes can break tests too, so always run the offline suite.
         always_run: true
         pass_filenames: false
+      - id: extension-check
+        name: extension (prettier, eslint, tsc, vitest, build)
+        entry: npm --prefix extension run check
+        language: system
+        files: ^extension/
+        pass_filenames: false

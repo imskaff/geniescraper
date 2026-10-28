@@ -29,3 +29,9 @@ Thumbs.db
 .claude/
 tests/golden/*.candidate.json
 bench/results/
+
+# Browser extension build output and dependencies
+extension/node_modules/
+extension/dist/
+extension/release/
+extension/store/assets/

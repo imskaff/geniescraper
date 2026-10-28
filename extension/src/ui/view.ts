@@ -1,0 +1,1264 @@
+// Renders the controller's state. The structure follows the accessibility basics rather than decoration:
+// real headings, labelled controls, a status and an alert region that are never rebuilt (so announcements
+// fire), focus moved to the new screen's heading, and focus kept where it was across a re-render.
+import type { QueueKind, SongCredits } from "../core/models";
+import type { AlbumInfo } from "../shared/messages";
+import { shownTrack, type TrackResult } from "../shared/session";
+import { trackHealth, type Health, type HealthLevel } from "../core/trackHealth";
+import { STEP_LABELS, instruction } from "../core/paste";
+import type { OptionalHost } from "../lookups/http";
+import { COUNTDOWN_RANGE, HOTKEY_CHOICES, PARALLEL_CHOICES, WAIT_RANGE } from "../shared/settings";
+import { youtubeSearchUrl } from "../core/youtubeLink";
+import { el } from "./dom";
+import { renderSetup } from "./setup";
+import { MESSAGES, type PanelController, type PanelState } from "./controller";
+
+export const FIELD_LABELS: Readonly<Record<QueueKind, string>> = {
+  written_by: "Written By",
+  produced_by: "Produced By",
+  role: "Additional role",
+  artist: "Artist in this role",
+  copyright_role: "Copyright role",
+  phonographic_copyright: "℗ label",
+  copyright_notice: "© label",
+  youtube_url: "YouTube URL",
+  cover_art: "Cover art URL",
+};
+
+type ScrapeKey = "scrapeCore" | "scrapeAdditional" | "scrapeCopyright" | "scrapeYoutube" | "scrapeCoverArt";
+
+const SETTING_LABELS: readonly (readonly [ScrapeKey, string])[] = [
+  ["scrapeCore", "Songwriters and producers"],
+  ["scrapeAdditional", "Additional credits"],
+  ["scrapeCopyright", "Copyright lines (℗ and ©)"],
+  ["scrapeYoutube", "YouTube link"],
+  ["scrapeCoverArt", "PNG cover art link"],
+];
+
+/** The mark in front of a track in the list; it repeats what the words say, so it is hidden from screen readers. */
+const HEALTH_MARKS: Readonly<Record<HealthLevel, string>> = {
+  waiting: "·",
+  working: "…",
+  ok: "✓",
+  attention: "!",
+  error: "✕",
+  none: "–",
+};
+
+/** Only https links are made clickable; the value shown is always the text. */
+function isHttps(value: string): boolean {
+  return URL.canParse(value) && new URL(value).protocol === "https:";
+}
+
+export class PanelView {
+  private screenKey = "";
+  /** What the user typed into the link box; kept across re-renders, which would otherwise reset it. */
+  private draft: string | null = null;
+  /** Which collapsible lists the user has opened; re-rendering rebuilds them, so the choice is kept here. */
+  private shownErrorSeq = 0;
+  private readonly expanded = new Map<string, boolean>();
+  /** What the user has typed into the key box, kept across re-renders and never stored by the view. */
+  private keyDraft = "";
+  /** What the user typed into the YouTube link box, and for which track; a draft is not carried to another track. */
+  private linkDraft: { index: number; text: string } | null = null;
+
+  private keyBusy(): boolean {
+    return this.panel.state.youtubeKey.busy;
+  }
+  /** The welcome's intro has played; later redraws show it still. */
+  private welcomePlayed = false;
+
+  constructor(
+    private readonly root: HTMLElement,
+    private readonly panel: PanelController,
+  ) {
+    this.buildFrame();
+    panel.subscribe(() => {
+      this.render();
+    });
+    this.render();
+  }
+
+  // ── frame: parts that live as long as the panel ─────────────────────
+
+  private buildFrame(): void {
+    this.root.replaceChildren(
+      el(
+        "header",
+        { class: "bar" },
+        el(
+          "div",
+          { class: "bar-row" },
+          el("h1", { text: "Géniescraper" }),
+          el(
+            "div",
+            { class: "bar-actions" },
+            el("button", {
+              class: "button quiet",
+              text: "Settings",
+              attrs: { type: "button", id: "settings-toggle", "data-key": "settings-toggle" },
+              on: {
+                click: () => {
+                  if (this.panel.state.settingsOpen) this.panel.closeSettings();
+                  else this.panel.openSettings();
+                },
+              },
+            }),
+          ),
+        ),
+      ),
+      // Both regions exist from the start and only their text changes, so screen readers announce updates.
+      el("div", { class: "alert", attrs: { id: "alert", role: "alert" } }),
+      el("div", { class: "status", attrs: { id: "status", role: "status", "aria-live": "polite" } }),
+      el("main", { attrs: { id: "screen" } }),
+    );
+    this.root.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && this.panel.state.settingsOpen) this.panel.closeSettings();
+    });
+    // The countdown to the main menu waits while the user is using the panel: the pointer over it, or a button focused.
+    let pointerInside = false;
+    let buttonFocused = false;
+    const hold = (): void => {
+      this.panel.pauseCountdown(pointerInside || buttonFocused);
+    };
+    this.root.addEventListener("mouseenter", () => {
+      pointerInside = true;
+      hold();
+    });
+    this.root.addEventListener("mouseleave", () => {
+      pointerInside = false;
+      hold();
+    });
+    this.root.addEventListener("focusin", (event) => {
+      buttonFocused = event.target instanceof HTMLButtonElement;
+      hold();
+    });
+    this.root.addEventListener("focusout", () => {
+      buttonFocused = false;
+      hold();
+    });
+  }
+
+  /** True once: the first time the welcome is drawn. */
+  private playWelcome(): boolean {
+    const first = !this.welcomePlayed;
+    this.welcomePlayed = true;
+    return first;
+  }
+
+  private region(id: string): HTMLElement {
+    const node = this.root.querySelector<HTMLElement>(`#${id}`);
+    if (!node) throw new Error(`missing #${id}`);
+    return node;
+  }
+
+  // ── rendering ───────────────────────────────────────────────────────
+
+  render(): void {
+    const state = this.panel.state;
+    const main = this.region("screen");
+    const focusKey = document.activeElement?.getAttribute("data-key") ?? null;
+    // Rebuilding replaces the heading, so a heading that held focus has to be given it again.
+    const headingHadFocus = document.activeElement?.tagName === "H2";
+
+    this.region("alert").textContent = state.error;
+    this.region("alert").classList.toggle("quiet-visual", state.paste.active && !state.settingsOpen);
+    this.region("status").textContent = state.status;
+    const toggle = this.region("settings-toggle");
+    toggle.textContent = state.settingsOpen ? "Back" : "Settings";
+    // The set-up is the whole screen: no Settings button over it (its steps are the settings that matter).
+    toggle.hidden = state.setup.open;
+
+    const finished =
+      state.paste.active && state.paste.queue.length > 0 && state.paste.position >= state.paste.queue.length;
+    const key = state.setup.open
+      ? `setup-${String(state.setup.step)}`
+      : state.settingsOpen
+        ? "settings"
+        : finished
+          ? "done"
+          : state.paste.active
+            ? "paste"
+            : state.session.screen;
+    // Starting over with a new link forgets the old one; opening and closing settings does not.
+    if (key === "link" && (this.screenKey === "tracks" || this.screenKey === "review")) this.draft = null;
+    main.setAttribute("aria-busy", String(state.busy !== null));
+    main.replaceChildren(
+      ...(state.setup.open
+        ? renderSetup(state, this.panel, {
+            button: (text, variant, key, onClick, disabled, wide) =>
+              this.button(text, variant, key, onClick, disabled, wide),
+            heading: (text) => this.heading(text),
+            lookupFieldset: () => this.lookupSettings(state),
+            keyFieldset: () => this.youtubeKeySettings(state),
+            animateWelcome: () => this.playWelcome(),
+          })
+        : state.settingsOpen
+          ? this.settings(state)
+          : finished
+            ? this.doneScreen(state)
+            : state.paste.active
+              ? this.pasteScreen(state)
+              : this.screen(state)),
+    );
+
+    if (key !== this.screenKey) {
+      // A new screen starts at its heading, so the reader hears where they are.
+      this.screenKey = key;
+      main.querySelector<HTMLElement>("h2")?.focus();
+    } else if (headingHadFocus) {
+      main.querySelector<HTMLElement>("h2")?.focus();
+    } else if (focusKey) {
+      const target = this.root.querySelector<HTMLElement>(`[data-key="${focusKey}"]`);
+      // A button that has just become disabled cannot hold focus: hand it to the key box next to it.
+      if (target instanceof HTMLButtonElement && target.disabled && focusKey === "youtube-key-save") {
+        this.root.querySelector<HTMLElement>("#youtube-key")?.focus();
+      } else target?.focus();
+    }
+  }
+
+  private screen(state: PanelState): Node[] {
+    switch (state.session.screen) {
+      case "link":
+        return this.linkScreen(state);
+      case "tracks":
+        return this.tracksScreen(state);
+      case "review":
+        return this.reviewScreen(state);
+    }
+  }
+
+  private heading(text: string): HTMLElement {
+    return el("h2", { text, attrs: { tabindex: "-1" } });
+  }
+
+  /** The Start pasting button for the track on screen, or nothing when there is nothing to paste yet. */
+  private startButton(state: PanelState, busy: boolean): HTMLElement | null {
+    const index = this.startableIndex(state);
+    if (index === null) return null;
+    const button = this.button("Start pasting", "primary", "start", () => void this.panel.startPaste(index), busy);
+    // It glows while it is the thing to do next, not while it cannot be pressed.
+    if (!busy) button.classList.add("glow");
+    const title = state.session.results.find((r) => r.index === index)?.song?.title;
+    if (title) button.setAttribute("aria-label", `Start pasting ${title}`);
+    return button;
+  }
+
+  /** The track whose credits are on screen and can be pasted now, or null. */
+  private startableIndex(state: PanelState): number | null {
+    if (state.setup.open || state.settingsOpen || state.paste.active || state.session.screen !== "review") return null;
+    const shown = shownTrack(state.session);
+    // With no track open it starts the first one that is ready, so Start pasting never needs a choice first.
+    if (!shown) return this.panel.firstPastable();
+    return shown.song && this.panel.queueFor(shown.index).length > 0 ? shown.index : null;
+  }
+
+  /** A section the user can open and close, closed until they do unless it opens by default. Its state survives re-rendering. */
+  private disclosure(id: string, summary: string, body: Node, openByDefault = false): HTMLElement {
+    const details = el(
+      "details",
+      { class: "disclosure" },
+      el("summary", { text: summary, attrs: { "data-key": `details-${id}` } }),
+      body,
+    );
+    details.open = this.expanded.get(id) ?? openByDefault;
+    details.addEventListener("toggle", () => {
+      this.expanded.set(id, details.open);
+    });
+    return details;
+  }
+
+  // ── link ────────────────────────────────────────────────────────────
+
+  private linkScreen(state: PanelState): Node[] {
+    const busy = state.busy === "detect";
+    const input = el("input", {
+      class: "field",
+      attrs: {
+        id: "link",
+        "data-key": "link",
+        type: "url",
+        name: "link",
+        autocomplete: "off",
+        spellcheck: "false",
+        placeholder: "https://music.apple.com/…",
+        "aria-describedby": "link-help",
+        ...(state.error ? { "aria-invalid": "true" } : {}),
+      },
+      on: {
+        input: (event) => {
+          this.draft = (event.target as HTMLInputElement).value;
+        },
+      },
+    });
+    input.value = this.draft ?? state.pageUrl;
+
+    const form = el(
+      "form",
+      {
+        class: "stack",
+        attrs: { novalidate: "" },
+        on: {
+          submit: (event) => {
+            event.preventDefault();
+            this.draft = input.value;
+            void this.panel.detect(input.value);
+          },
+        },
+      },
+      el("label", { text: "Apple Music album or song link", attrs: { for: "link" } }),
+      input,
+      el("p", {
+        class: "help",
+        text: state.pageUrl
+          ? "You are on an Apple Music page, so its link is filled in. Paste another to use a different one."
+          : "Open an album or song on Apple Music and paste its link.",
+        attrs: { id: "link-help" },
+      }),
+      el("button", {
+        class: "button primary",
+        text: busy ? "Reading…" : "Get credits",
+        attrs: { type: "submit", "data-key": "go", ...(busy ? { disabled: "" } : {}) },
+      }),
+    );
+    return [this.heading("Get credits from Apple Music"), form];
+  }
+
+  // ── tracks ──────────────────────────────────────────────────────────
+
+  private tracksScreen(state: PanelState): Node[] {
+    const { album, selected } = state.session;
+    if (!album) return this.linkScreen(state);
+    const available = album.trackUrls.filter(Boolean).length;
+    const busy = state.busy !== null;
+
+    const list = el(
+      "ul",
+      { class: "tracks" },
+      ...album.trackTitles.map((title, index) => this.trackRow(album, title, index, selected.includes(index))),
+    );
+    return [
+      this.heading(album.albumTitle || "Tracks"),
+      el("p", {
+        class: "help",
+        text: `${album.artist}: ${String(album.trackCount)} ${album.trackCount === 1 ? "track" : "tracks"}`,
+      }),
+      el(
+        "fieldset",
+        { class: "stack" },
+        el("legend", { text: "Tracks to get credits for" }),
+        el(
+          "div",
+          { class: "row" },
+          // Nothing is picked to begin with, so the first move is highlighted, like the button it leads to.
+          // Neither button disables itself after it is used: a disabled button drops keyboard focus.
+          this.button("Select all", "primary", "all", () => void this.panel.setAllSelected(true), available === 0),
+          this.button("Select none", "quiet", "none", () => void this.panel.setAllSelected(false), available === 0),
+        ),
+        list,
+      ),
+      el(
+        "div",
+        { class: "row" },
+        this.button(
+          `Get credits for ${String(selected.length)} ${selected.length === 1 ? "track" : "tracks"}`,
+          "primary",
+          "go",
+          () => void this.panel.getCredits(),
+          busy || selected.length === 0,
+        ),
+        this.button("Back to main menu", "nav", "menu", () => void this.panel.newAlbum(), false),
+      ),
+    ];
+  }
+
+  private trackRow(album: AlbumInfo, title: string, index: number, checked: boolean): HTMLElement {
+    const unavailable = !album.trackUrls[index];
+    const box = el("input", {
+      attrs: {
+        type: "checkbox",
+        "data-key": `track-${String(index)}`,
+        ...(unavailable ? { disabled: "" } : {}),
+      },
+      on: {
+        change: (event) => {
+          void this.panel.setTrackSelected(index, (event.target as HTMLInputElement).checked);
+        },
+      },
+    });
+    box.checked = checked && !unavailable;
+    return el(
+      "li",
+      {},
+      el(
+        "label",
+        { class: unavailable ? "check muted" : "check" },
+        box,
+        el("span", { text: `${String(index + 1)}. ${title}` }),
+        unavailable ? el("span", { class: "tag", text: "No Apple Music page" }) : null,
+      ),
+    );
+  }
+
+  // ── review ──────────────────────────────────────────────────────────
+
+  private reviewScreen(state: PanelState): Node[] {
+    const { session } = state;
+    const shown = shownTrack(session);
+    const busy = state.busy === "scrape";
+
+    const nav = el(
+      "nav",
+      { attrs: { "aria-label": "Tracks" } },
+      el(
+        "ul",
+        { class: "tracks" },
+        ...session.results.map((result) =>
+          el("li", {}, this.trackButton(state, result, result.index === shown?.index)),
+        ),
+      ),
+    );
+
+    return [
+      this.heading("Credits"),
+      // One track needs no list to choose from.
+      session.results.length > 1 ? nav : null,
+      shown
+        ? this.trackDetail(state, shown)
+        : el("p", { class: "help", text: "Choose a track to see its credits, or fix its YouTube link." }),
+      el(
+        "div",
+        { class: "row" },
+        busy ? this.button("Stop", "quiet", "stop", () => void this.panel.stop(), false) : null,
+        // Start pasting sits with the other ways on and off this screen, so there is one row to look at.
+        this.startButton(state, busy),
+        // One song has no list to go back to.
+        (session.album?.trackCount ?? 0) > 1
+          ? this.button("Back to tracks", "quiet", "back", () => void this.panel.backToTracks(), busy)
+          : null,
+        this.button("Back to main menu", "nav", "menu", () => void this.panel.newAlbum(), false),
+      ),
+    ].filter((node): node is HTMLElement => node !== null);
+  }
+
+  /** How a track is doing under the user's settings; a missing YouTube link counts once a look-up came back empty. */
+  private healthOf(state: PanelState, result: TrackResult): Health {
+    const note = state.youtubeNotes[result.index];
+    const { settings } = state;
+    return trackHealth({
+      status: result.status,
+      song: result.song,
+      wants: {
+        copyright: settings.scrapeCopyright,
+        coverArt: settings.scrapeCoverArt,
+        // A link that cannot be asked for (no permission, or the step is off) is the user's choice, not a miss.
+        youtube: this.panel.youtubeAskable(),
+      },
+      youtubeSearching: note === MESSAGES.lookingForYoutubeShort,
+    });
+  }
+
+  /** A track in the list: a mark and words for how its read went, so the state never rests on colour alone. */
+  private trackButton(state: PanelState, result: TrackResult, open: boolean): HTMLElement {
+    const health = this.healthOf(state, result);
+    const name = `${String(result.index + 1)}. ${result.title}`;
+    return el(
+      "button",
+      {
+        class: `${open ? "button track current" : "button track"} health-${health.level}`,
+        attrs: {
+          type: "button",
+          "aria-label": `${name}: ${health.label}`,
+          "data-key": `show-${String(result.index)}`,
+          "data-health": health.level,
+          "aria-expanded": open ? "true" : "false",
+          ...(open ? { "aria-current": "true" } : {}),
+        },
+        on: {
+          click: () => {
+            void this.panel.showTrack(result.index);
+          },
+        },
+      },
+      el("span", { class: "mark", text: HEALTH_MARKS[health.level], attrs: { "aria-hidden": "true" } }),
+      el(
+        "span",
+        { class: "body" },
+        el("span", { class: "name", text: name }),
+        el("span", { class: "state", text: health.label }),
+      ),
+    );
+  }
+
+  private trackDetail(state: PanelState, result: TrackResult): HTMLElement {
+    const section = el("section", { class: "stack", attrs: { "aria-labelledby": "track-heading" } });
+    section.append(el("h3", { text: result.song?.title || result.title, attrs: { id: "track-heading" } }));
+
+    if (result.status === "error") {
+      section.append(
+        el("p", { class: "problem", text: result.error }),
+        this.button("Try again", "primary", "retry", () => void this.panel.retry(result.index), state.busy !== null),
+      );
+      return section;
+    }
+    const song = result.song;
+    if (!song) {
+      section.append(
+        el("p", { class: "help", text: result.status === "loading" ? "Reading credits…" : "Waiting for its turn." }),
+      );
+      return section;
+    }
+
+    const groups = el("dl", { class: "credits" });
+    for (const credit of song.credits) {
+      groups.append(el("dt", { text: credit.role }), el("dd", { text: credit.artists.join(", ") }));
+    }
+    const { missing } = this.healthOf(state, result);
+    // What the read should have found and did not is spelled out in the list, in the colour of the "Needs a look" mark.
+    const notFound = (label: string, words = "Not found"): void => {
+      groups.append(el("dt", { class: "attn", text: label }), el("dd", { class: "attn", text: words }));
+    };
+    if (song.phonographicCopyright)
+      groups.append(el("dt", { text: "Phonographic copyright" }), el("dd", { text: song.phonographicCopyright }));
+    if (song.copyrightNotice) groups.append(el("dt", { text: "Copyright" }), el("dd", { text: song.copyrightNotice }));
+    if (missing.includes("copyright")) notFound("Copyright");
+    if (!song.coverArtUrl && missing.includes("cover art")) notFound("Cover art");
+    if (song.coverArtUrl) {
+      groups.append(
+        el("dt", { text: "Cover art" }),
+        el(
+          "dd",
+          {},
+          isHttps(song.coverArtUrl)
+            ? el("a", {
+                text: song.coverArtUrl,
+                attrs: { href: song.coverArtUrl, target: "_blank", rel: "noopener noreferrer" },
+              })
+            : song.coverArtUrl,
+        ),
+      );
+    }
+
+    if (song.youtubeUrl) {
+      groups.append(
+        el("dt", {
+          text: song.youtubeByUser
+            ? "YouTube (your link)"
+            : song.youtubeIsMv
+              ? "YouTube (music video)"
+              : "YouTube (audio)",
+        }),
+        el(
+          "dd",
+          {},
+          isHttps(song.youtubeUrl)
+            ? el("a", {
+                text: song.youtubeUrl,
+                attrs: { href: song.youtubeUrl, target: "_blank", rel: "noopener noreferrer" },
+              })
+            : song.youtubeUrl,
+        ),
+      );
+    }
+
+    const note = state.youtubeNotes[result.index];
+    if (missing.includes("YouTube link")) notFound("YouTube", note || "Not found");
+    else if (note && !song.youtubeUrl)
+      groups.append(el("dt", { text: "YouTube" }), el("dd", { class: "help", text: note }));
+
+    // The link box is for a link the program did not find (or one the user gave, which they may take off again).
+    const searching = note === MESSAGES.lookingForYoutubeShort;
+    const needsOwnLink = song.youtubeByUser === true || (!song.youtubeUrl && !searching);
+
+    const queue = this.panel.queueFor(result.index);
+    section.append(
+      song.credits.length === 0
+        ? el("p", { class: "problem attn", text: "No credits were found for this track." })
+        : groups,
+      ...(needsOwnLink ? [this.youtubeLinkSection(state, result.index, song)] : []),
+      queue.length === 0
+        ? el("p", { class: "help", text: "Nothing to paste with the current settings." })
+        : this.disclosure(
+            "queue",
+            `Paste queue (${String(queue.length)} ${queue.length === 1 ? "step" : "steps"})`,
+            el(
+              "ol",
+              { class: "queue", attrs: { "aria-label": "Paste queue" } },
+              ...queue.map(([kind, value]) =>
+                el("li", {}, el("span", { class: "tag", text: FIELD_LABELS[kind] }), el("span", { text: value })),
+              ),
+            ),
+          ),
+    );
+    return section;
+  }
+
+  /**
+   * The way to a YouTube link that needs no look-up: a button that opens YouTube's own search for the song in a new tab,
+   * and a box to paste the link chosen there. The look-up may find nothing, or the wrong video; this always works.
+   */
+  private youtubeLinkSection(state: PanelState, index: number, song: SongCredits): HTMLElement {
+    const artist = song.artist || state.session.album?.artist || "";
+    const draft = this.linkDraft?.index === index ? this.linkDraft.text : "";
+    const input = el("input", {
+      class: "field",
+      attrs: {
+        id: "youtube-link",
+        "data-key": "youtube-link",
+        type: "text",
+        autocomplete: "off",
+        spellcheck: "false",
+        placeholder: "https://www.youtube.com/watch?v=…",
+        "aria-describedby": "youtube-link-help",
+        ...(state.youtubeLinkError ? { "aria-invalid": "true" } : {}),
+      },
+      on: {
+        input: (event) => {
+          this.linkDraft = { index, text: (event.target as HTMLInputElement).value };
+        },
+      },
+    });
+    input.value = draft;
+    const use = (): void => {
+      void this.panel.setYoutubeLink(index, input.value).then((ok) => {
+        if (ok) {
+          this.linkDraft = null;
+          this.render();
+        }
+      });
+    };
+    const form = el(
+      "form",
+      {
+        class: "stack",
+        attrs: { novalidate: "" },
+        on: {
+          submit: (event) => {
+            event.preventDefault();
+            use();
+          },
+        },
+      },
+      el("label", { class: "sr-only", text: "YouTube link for this track", attrs: { for: "youtube-link" } }),
+      input,
+      this.button("Use this link", "quiet", "youtube-use", use, false),
+    );
+    // The YouTube step is a setting like the other fields: with it off, a link has nowhere to go.
+    const off = !state.settings.scrapeYoutube;
+    return el(
+      "section",
+      { class: "stack youtube-link", attrs: { "aria-label": "YouTube link" } },
+      el("h4", { text: "YouTube link" }),
+      el("a", {
+        class: "button quiet link-button",
+        text: "Find on YouTube",
+        attrs: {
+          href: youtubeSearchUrl(song.title, artist),
+          target: "_blank",
+          rel: "noopener noreferrer",
+          "data-key": "youtube-find",
+        },
+      }),
+      form,
+      el("p", {
+        class: state.youtubeLinkError ? "help problem" : "help",
+        text: state.youtubeLinkError
+          ? state.youtubeLinkError
+          : off
+            ? "The YouTube link step is turned off in Settings, so a link is not pasted."
+            : "Search for the video on YouTube, copy its address, and paste it here.",
+        attrs: { id: "youtube-link-help", "aria-live": "polite" },
+      }),
+      song.youtubeByUser && song.youtubeUrl
+        ? this.button("Remove my link", "quiet", "youtube-remove", () => void this.panel.clearYoutubeLink(index), false)
+        : null,
+    );
+  }
+
+  // ── pasting ─────────────────────────────────────────────────────────
+
+  private pasteScreen(state: PanelState): Node[] {
+    const { paste, settings } = state;
+    const total = paste.queue.length;
+    const finished = paste.position >= total;
+    const current = paste.queue[paste.position];
+    const progress = finished ? "All steps done" : `Step ${String(paste.position + 1)} of ${String(total)}`;
+
+    // A finished step moves into the closed "Steps done" list; going back moves it out again.
+    const item = ([kind, value]: readonly [QueueKind, string], index: number): HTMLElement => {
+      const done = index < paste.position;
+      const here = index === paste.position;
+      const mark = done ? "Done" : here ? (paste.awaiting ? "Waiting for you" : "Next") : "";
+      return el(
+        "li",
+        { class: done ? "done" : here ? "here" : "", attrs: here ? { "aria-current": "step" } : {} },
+        el("span", { class: "tag", text: mark ? `${STEP_LABELS[kind]}: ${mark}` : STEP_LABELS[kind] }),
+        el("span", { text: value }),
+      );
+    };
+    const doneCount = Math.min(paste.position, total);
+    const doneSteps = el(
+      "ol",
+      { class: "queue steps", attrs: { "aria-label": "Steps done" } },
+      ...paste.queue.slice(0, doneCount).map(item),
+    );
+    const steps = el(
+      "ol",
+      { class: "queue steps", attrs: { "aria-label": "Steps left" } },
+      ...paste.queue.slice(doneCount).map((entry, offset) => item(entry, doneCount + offset)),
+    );
+
+    return [
+      this.heading("Paste into Genius"),
+      el("p", { class: "help", text: paste.title }),
+      this.pasteError(state),
+      el("p", { class: "progress", text: progress }),
+      current
+        ? el(
+            "div",
+            { class: "step" },
+            el("span", { class: "tag", text: STEP_LABELS[current[0]] }),
+            el("p", { class: "value", text: current[1] }),
+          )
+        : null,
+      el("p", { text: instruction(paste, settings.nextHotkey) }),
+      el(
+        "div",
+        { class: "row" },
+        this.button(
+          `Fill next (${settings.nextHotkey})`,
+          "primary",
+          "fill",
+          () => void this.panel.fillNext(),
+          finished || paste.busy,
+        ),
+        this.button(
+          `Back (${settings.backHotkey})`,
+          "quiet",
+          "pback",
+          () => void this.panel.pasteBack(),
+          paste.position === 0,
+        ),
+        this.button("Skip", "quiet", "pskip", () => void this.panel.pasteSkip(), finished),
+        // Leaving a paste in progress looks like the other ways out, so it is easy to tell from the step buttons.
+        this.button("Back to credits", "nav", "pstop", () => void this.panel.stopPaste(), false),
+      ),
+      el("p", {
+        class: "help",
+        text: "Keep the song's Edit Metadata form open on Genius. Nothing is saved for you: check the form, then save it there.",
+      }),
+      // While pasting the steps are the map of what is left, so they start open.
+      doneCount > 0 ? this.disclosure("stepsdone", `Steps done (${String(doneCount)})`, doneSteps) : null,
+      total - doneCount > 0 ? this.disclosure("steps", `Steps left (${String(total - doneCount)})`, steps, true) : null,
+    ].filter((node): node is HTMLElement => node !== null);
+  }
+
+  /** The error above the step counter. A new error, or the same one on a new attempt, plays the attention animation once. */
+  private pasteError(state: PanelState): HTMLElement | null {
+    if (!state.error) return null;
+    const fresh = state.errorSeq !== this.shownErrorSeq;
+    this.shownErrorSeq = state.errorSeq;
+    return el(
+      "div",
+      { class: `paste-error${fresh ? " fresh" : ""}`, attrs: { "aria-hidden": "true" } },
+      el("span", { class: "paste-error-mark", text: "!" }),
+      el("span", { text: state.error }),
+    );
+  }
+
+  // ── done ────────────────────────────────────────────────────────────
+
+  /** The screen in front of the finished paste, as in the desktop app: a clear success and the ways on. */
+  private doneScreen(state: PanelState): Node[] {
+    const next = this.panel.nextPastable();
+    const nextTitle = state.session.results.find((r) => r.index === next)?.song?.title;
+    const tracks = (state.session.album?.trackCount ?? 0) > 1;
+    const nextLabel = nextTitle ? `Paste next track: ${nextTitle}` : "Paste next track";
+    return [
+      el(
+        "div",
+        { class: "finished" },
+        el("div", { class: "done-mark", text: "✓", attrs: { "aria-hidden": "true" } }),
+        this.heading("All credits entered"),
+        el("p", { class: "help", text: state.paste.title }),
+        el("p", { text: "Check the Genius page, then press Save there." }),
+      ),
+      el(
+        "div",
+        { class: "stack" },
+        next !== null
+          ? this.button(
+              state.nextCountdown === null ? nextLabel : `${nextLabel} (${String(state.nextCountdown)}s)`,
+              "primary",
+              "pnext",
+              () => void this.panel.startPaste(next),
+              false,
+              true,
+            )
+          : null,
+        this.button(
+          "Back to the credits",
+          "quiet",
+          "pcredits",
+          () => void this.panel.leavePasting("credits"),
+          false,
+          true,
+        ),
+        tracks
+          ? this.button(
+              "Back to the track list",
+              "quiet",
+              "ptracks",
+              () => void this.panel.leavePasting("tracks"),
+              false,
+              true,
+            )
+          : null,
+        this.button(
+          state.doneCountdown === null ? "Back to main menu" : `Back to main menu (${String(state.doneCountdown)}s)`,
+          "nav",
+          "pmenu",
+          () => void this.panel.leavePasting("menu"),
+          false,
+          true,
+        ),
+      ),
+    ];
+  }
+
+  // ── settings ────────────────────────────────────────────────────────
+
+  private settings(state: PanelState): Node[] {
+    return [
+      this.heading("Settings"),
+      el(
+        "fieldset",
+        { class: "stack" },
+        el("legend", { text: "What to paste" }),
+        el(
+          "ul",
+          { class: "tracks" },
+          ...SETTING_LABELS.map(([key, label]) => {
+            const box = el("input", {
+              attrs: { type: "checkbox", "data-key": `setting-${key}` },
+              on: {
+                change: (event) => {
+                  void this.panel.setSetting(key, (event.target as HTMLInputElement).checked);
+                },
+              },
+            });
+            box.checked = state.settings[key];
+            return el("li", {}, el("label", { class: "check" }, box, el("span", { text: label })));
+          }),
+        ),
+        el("p", { class: "help", text: "Changes apply to the paste queue at once and are saved to your browser." }),
+      ),
+      this.pastingSettings(state),
+      this.readingSettings(state),
+      this.lookupSettings(state),
+      this.youtubeKeySettings(state),
+    ];
+  }
+
+  private pastingSettings(state: PanelState): HTMLElement {
+    const { settings } = state;
+    const keySelect = (id: "nextHotkey" | "backHotkey", label: string): HTMLElement => {
+      const select = el(
+        "select",
+        {
+          class: "field",
+          attrs: { id: `setting-${id}`, "data-key": `setting-${id}` },
+          on: {
+            change: (event) => {
+              void this.panel.setSetting(id, (event.target as HTMLSelectElement).value);
+            },
+          },
+        },
+        ...HOTKEY_CHOICES.map((key) => el("option", { text: key, attrs: { value: key } })),
+      );
+      select.value = settings[id];
+      return el("div", { class: "stack" }, el("label", { text: label, attrs: { for: `setting-${id}` } }), select);
+    };
+
+    const confirm = el("input", {
+      attrs: { type: "checkbox", "data-key": "setting-autoConfirm" },
+      on: {
+        change: (event) => {
+          void this.panel.setSetting("autoConfirm", (event.target as HTMLInputElement).checked);
+        },
+      },
+    });
+    confirm.checked = settings.autoConfirm;
+
+    const autoReturn = el("input", {
+      attrs: { type: "checkbox", "data-key": "setting-autoReturn" },
+      on: {
+        change: (event) => {
+          void this.panel.setSetting("autoReturn", (event.target as HTMLInputElement).checked);
+        },
+      },
+    });
+    autoReturn.checked = settings.autoReturn;
+
+    // A whole number of seconds; the model keeps it in range, so an out-of-range entry snaps back on the next draw.
+    const seconds = (key: "returnSeconds" | "nextTrackSeconds", id: string, min: number): HTMLInputElement => {
+      const input = el("input", {
+        class: "field",
+        attrs: {
+          id,
+          "data-key": id,
+          type: "number",
+          min: String(min),
+          max: String(COUNTDOWN_RANGE.max),
+          step: "1",
+          "aria-describedby": `${id}-help`,
+        },
+        on: {
+          change: (event) => {
+            void this.panel.setSetting(key, Number((event.target as HTMLInputElement).value));
+          },
+        },
+      });
+      input.value = String(settings[key]);
+      return input;
+    };
+    const returnBox = seconds("returnSeconds", "setting-returnSeconds", COUNTDOWN_RANGE.min);
+    const nextBox = seconds("nextTrackSeconds", "setting-nextTrackSeconds", 0);
+
+    const wait = el("input", {
+      class: "field",
+      attrs: {
+        id: "setting-wait",
+        "data-key": "setting-wait",
+        type: "number",
+        min: String(WAIT_RANGE.min),
+        max: String(WAIT_RANGE.max),
+        step: "0.1",
+        "aria-describedby": "setting-wait-help",
+      },
+      on: {
+        change: (event) => {
+          void this.panel.setSetting("autocompleteWaitSeconds", Number((event.target as HTMLInputElement).value));
+        },
+      },
+    });
+    wait.value = String(settings.autocompleteWaitSeconds);
+
+    return el(
+      "fieldset",
+      { class: "stack" },
+      el("legend", { text: "Pasting on Genius" }),
+      keySelect("nextHotkey", "Key that fills the next step"),
+      keySelect("backHotkey", "Key that goes back one step"),
+      el(
+        "label",
+        { class: "check" },
+        confirm,
+        el("span", { text: "Choose the exact match in Genius's suggestions for me" }),
+      ),
+      el("p", {
+        class: "help",
+        text: "When Genius has no exact match, the text stays typed and you choose. A close match is never picked for you.",
+      }),
+      el(
+        "label",
+        { class: "check" },
+        autoReturn,
+        el("span", { text: "Go back to the main menu after the last track" }),
+      ),
+      el(
+        "div",
+        { class: "stack" },
+        el("label", { text: "Seconds before going back to the main menu", attrs: { for: "setting-returnSeconds" } }),
+        returnBox,
+      ),
+      el("p", {
+        class: "help",
+        text: `Between ${String(COUNTDOWN_RANGE.min)} and ${String(COUNTDOWN_RANGE.max)}. It waits while you are using the panel.`,
+        attrs: { id: "setting-returnSeconds-help" },
+      }),
+      el(
+        "div",
+        { class: "stack" },
+        el("label", { text: "Seconds before pasting the next track", attrs: { for: "setting-nextTrackSeconds" } }),
+        nextBox,
+      ),
+      el("p", {
+        class: "help",
+        text: `Between ${String(COUNTDOWN_RANGE.min)} and ${String(COUNTDOWN_RANGE.max)}, or 0 to wait for you to press the button.`,
+        attrs: { id: "setting-nextTrackSeconds-help" },
+      }),
+      el(
+        "div",
+        { class: "stack" },
+        el("label", { text: "Wait for suggestions to settle (seconds)", attrs: { for: "setting-wait" } }),
+        wait,
+      ),
+      el("p", {
+        class: "help",
+        text: "Raise this if Genius is slow to show suggestions.",
+        attrs: { id: "setting-wait-help" },
+      }),
+    );
+  }
+
+  private readingSettings(state: PanelState): HTMLElement {
+    const { settings } = state;
+    const reads = el(
+      "select",
+      {
+        class: "field",
+        attrs: {
+          id: "setting-parallelReads",
+          "data-key": "setting-parallelReads",
+          "aria-describedby": "setting-parallelReads-help",
+        },
+        on: {
+          change: (event) => {
+            void this.panel.setSetting("parallelReads", Number((event.target as HTMLSelectElement).value));
+          },
+        },
+      },
+      ...PARALLEL_CHOICES.map((n) =>
+        el("option", {
+          text: n === 0 ? "All at once" : n === 1 ? "1 (one by one)" : String(n),
+          attrs: { value: String(n) },
+        }),
+      ),
+    );
+    reads.value = String(settings.parallelReads);
+
+    return el(
+      "fieldset",
+      { class: "stack" },
+      el("legend", { text: "Reading credits" }),
+      el("label", { text: "Tracks read at the same time", attrs: { for: "setting-parallelReads" } }),
+      reads,
+      el("p", {
+        class: "help",
+        text: "More at once is faster for an album, but opens that many hidden tabs on Apple Music together. One by one is the gentlest; three is the default.",
+        attrs: { id: "setting-parallelReads-help" },
+      }),
+    );
+  }
+
+  private lookupSettings(state: PanelState): HTMLElement {
+    const box = (host: OptionalHost, label: string, help: string): HTMLElement[] => {
+      const input = el("input", {
+        attrs: { type: "checkbox", "data-key": `host-${host}`, "aria-describedby": `host-${host}-help` },
+        on: {
+          change: (event) => {
+            // Straight from the click: Chrome shows its permission prompt only for a call made in the gesture.
+            void this.panel.setHost(host, (event.target as HTMLInputElement).checked);
+          },
+        },
+      });
+      input.checked = state.hosts[host];
+      return [
+        el("label", { class: "check" }, input, el("span", { text: label })),
+        el("p", { class: "help", text: help, attrs: { id: `host-${host}-help` } }),
+      ];
+    };
+    return el(
+      "fieldset",
+      { class: "stack" },
+      el("legend", { text: "Look-ups on other sites" }),
+      ...box(
+        "deezer",
+        "Search Deezer for a cover when Apple has none",
+        "Chrome asks before this contacts api.deezer.com, and you can take the permission back here or in chrome://extensions.",
+      ),
+      ...box(
+        "youtube",
+        "Find a YouTube link for each track",
+        "Searches www.youtube.com's pages for the song, as the desktop app does. Off until you allow it, and it needs the YouTube link ticked above to be pasted. Chrome asks first; take the permission back here or in chrome://extensions.",
+      ),
+    );
+  }
+
+  /**
+   * The optional YouTube key, with everything a first-time user needs on the page: what it is for, every step to get
+   * one with a link to the exact Google page for each, and a way to paste and check it. The links open Google's own
+   * pages in a new tab; the extension never reads those pages, so nothing here needs another permission.
+   */
+  private youtubeKeySettings(state: PanelState): HTMLElement {
+    const link = (text: string, href: string): HTMLElement =>
+      el("a", {
+        class: "button quiet link-button",
+        text,
+        attrs: { href, target: "_blank", rel: "noopener noreferrer" },
+      });
+    const step = (title: string, detail: string, action?: HTMLElement, highlight = false): HTMLElement =>
+      el(
+        "li",
+        highlight ? { class: "highlight" } : {},
+        el("strong", { text: title }),
+        el("span", { class: "step-detail", text: detail }),
+        ...(action ? [action] : []),
+      );
+
+    const steps = el(
+      "ol",
+      { class: "how-to" },
+      step(
+        "Create a project.",
+        "Sign in with your Google account when asked. Type any name, for example Geniescraper, then press Create. If Google asks you to accept its terms, tick the box and continue. You should not need to add a payment card; if Google asks for one, skip it.",
+        link("Open step 1 in Google", "https://console.cloud.google.com/projectcreate"),
+      ),
+      step(
+        "Switch on the YouTube service.",
+        "Check that your new project is named at the top of the page, then press the blue Enable button. Wait until the page changes.",
+        link("Open step 2 in Google", "https://console.cloud.google.com/apis/library/youtube.googleapis.com"),
+      ),
+      step(
+        "Create your key.",
+        "Press + Create credentials, then choose API key. Under API restrictions choose Restrict key, open the list, and tick only YouTube Data API v3 (it is at the bottom of the list; you can also type YouTube in the list's search box). Press OK, then Create. If you are unsure, choosing Don't restrict key also works. A box then shows your key: a long text that starts with AIza. Press the copy icon next to it.",
+        link("Open step 3 in Google", "https://console.cloud.google.com/apis/credentials"),
+      ),
+      step(
+        "Paste it here.",
+        "Come back to this panel, click the box below and press Ctrl+V (Cmd+V on a Mac), or press Paste from clipboard. Then press Save and check key. You will see whether Google accepted it.",
+      ),
+      step(
+        "Keep it private.",
+        "Never share your key or post it online. If it ever leaks, delete it on Google's Credentials page and create a new one.",
+        undefined,
+        true,
+      ),
+    );
+
+    const input = el("input", {
+      class: "field",
+      attrs: {
+        id: "youtube-key",
+        "data-key": "youtube-key",
+        type: "password",
+        autocomplete: "off",
+        spellcheck: "false",
+        placeholder: "AIza…",
+        "aria-describedby": "youtube-key-help",
+      },
+      on: {
+        input: (event) => {
+          this.keyDraft = (event.target as HTMLInputElement).value;
+          // Pressing Save for a key that is already saved and working changes nothing, so it waits for a different one.
+          const save = this.root.querySelector<HTMLButtonElement>('[data-key="youtube-key-save"]');
+          if (save) save.disabled = this.keyBusy() || this.panel.keyIsCurrent(this.keyDraft);
+        },
+      },
+    });
+    input.value = this.keyDraft;
+    const show = el("input", {
+      attrs: { type: "checkbox", "data-key": "youtube-key-show" },
+      on: {
+        change: (event) => {
+          input.type = (event.target as HTMLInputElement).checked ? "text" : "password";
+        },
+      },
+    });
+
+    const busy = state.youtubeKey.busy;
+    const message = state.youtubeKey.message;
+    return el(
+      "fieldset",
+      { class: "stack" },
+      el("legend", { text: "Better YouTube links (optional)" }),
+      el("p", {
+        class: "help",
+        text: "The free YouTube search can be blocked by Google, and then no link is found. For reliable links you can use Google's official YouTube service with your own free key. It is free for roughly 25 songs a day, and the key stays in this browser: it is not synced and it is sent only to Google.",
+        attrs: { id: "youtube-key-help" },
+      }),
+      this.disclosure("youtube-key-steps", "How do I get a key? Step by step (about 3 minutes)", steps),
+      el("label", { text: "Your YouTube key", attrs: { for: "youtube-key" } }),
+      input,
+      el("label", { class: "check" }, show, el("span", { text: "Show the key" })),
+      el(
+        "div",
+        { class: "row" },
+        this.button(
+          "Save and check key",
+          "primary",
+          "youtube-key-save",
+          () => void this.panel.saveYoutubeKey(input.value),
+          busy || this.panel.keyIsCurrent(this.keyDraft),
+        ),
+        this.button(
+          "Paste from clipboard",
+          "quiet",
+          "youtube-key-paste",
+          () => {
+            void this.pasteKey(input);
+          },
+          busy,
+        ),
+        state.youtubeKey.saved
+          ? this.button("Remove my key", "quiet", "youtube-key-remove", () => void this.panel.removeYoutubeKey(), busy)
+          : null,
+      ),
+      el("p", {
+        class: "help",
+        text: state.youtubeKey.saved ? "A key is saved in this browser." : "No key is saved.",
+        attrs: { "data-key": "youtube-key-state" },
+      }),
+      el(
+        "p",
+        {
+          class: message ? `help key-message ${state.youtubeKey.tone}`.trim() : "help",
+          attrs: { id: "youtube-key-message", "aria-live": "polite", "data-tone": state.youtubeKey.tone },
+        },
+        // The mark is for sighted users; the words carry the meaning for everyone else.
+        ...(message && state.youtubeKey.tone
+          ? [
+              el("span", {
+                class: "tone-mark",
+                text: state.youtubeKey.tone === "ok" ? "✓ " : "✗ ",
+                attrs: { "aria-hidden": "true" },
+              }),
+            ]
+          : []),
+        message,
+      ),
+      el(
+        "p",
+        { class: "help" },
+        link("Google's own guide to API keys", "https://developers.google.com/youtube/v3/getting-started"),
+      ),
+    );
+  }
+
+  /** Fill the key box from the clipboard; Chrome may ask first, or refuse, and then typing it in works as well. */
+  private async pasteKey(input: HTMLInputElement): Promise<void> {
+    try {
+      const text = (await navigator.clipboard.readText()).trim();
+      if (text) {
+        input.value = text;
+        this.keyDraft = text;
+        input.focus();
+        return;
+      }
+      this.panel.noteKeyMessage("The clipboard is empty. Copy the key from Google's page first.");
+    } catch {
+      this.panel.noteKeyMessage(
+        "Chrome did not let the extension read the clipboard. Click in the box and press Ctrl+V (Cmd+V on a Mac) instead.",
+      );
+    }
+  }
+
+  // ── pieces ──────────────────────────────────────────────────────────
+
+  private button(
+    text: string,
+    variant: "primary" | "quiet" | "nav",
+    key: string,
+    onClick: () => void,
+    disabled: boolean,
+    wide = false,
+  ): HTMLElement {
+    return el("button", {
+      class: `button ${variant}${wide ? " wide" : ""}`,
+      text,
+      attrs: { type: "button", "data-key": key, ...(disabled ? { disabled: "" } : {}) },
+      on: { click: onClick },
+    });
+  }
+}

@@ -1,0 +1,64 @@
+name: Extension bug
+description: Something in the Chrome extension did not work as expected.
+labels: ["extension", "bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this.
+        **Please do not paste private data.**
+        Leave out your YouTube API key, cookies, anything from your Genius or Apple account, and screenshots that show your account name or email.
+        A song title and album link are fine: they are public.
+  - type: input
+    id: link
+    attributes:
+      label: Apple Music link
+      description: The album or song link the problem happened with.
+      placeholder: https://music.apple.com/...
+    validations:
+      required: true
+  - type: dropdown
+    id: step
+    attributes:
+      label: Where did it go wrong?
+      options:
+        - Reading the album or track list
+        - Reading a track's credits
+        - Finding the cover art
+        - Finding the YouTube link
+        - Filling the Genius form
+        - The side panel or settings
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+      description: Include the exact words of any message the panel showed.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Extension version
+      description: Shown on the extension's card in chrome://extensions.
+      placeholder: "0.5.0"
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser and system
+      options:
+        - Chrome on Windows
+        - Chrome on macOS
+        - Chrome on Linux
+        - Edge on Windows
+        - Edge on macOS
+        - Another Chromium browser
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Settings you changed, whether it happens every time, and which track numbers.

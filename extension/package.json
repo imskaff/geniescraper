@@ -1,0 +1,37 @@
+{
+  "name": "geniescraper-extension",
+  "version": "0.5.1",
+  "private": true,
+  "description": "Copy Apple Music credits into the Genius song edit form.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "live:hidden-tab": "node scripts/live-hidden-tab.mjs",
+    "live:panel": "node scripts/live-panel.mjs",
+    "live:sidepanel": "node scripts/live-sidepanel.mjs",
+    "live:genius": "node scripts/live-genius.mjs",
+    "live:parallel": "node scripts/live-parallel.mjs",
+    "package": "node scripts/package.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/chrome": "0.3.6",
+    "@types/node": "26.6.5",
+    "esbuild": "0.28.2",
+    "eslint": "10.13.0",
+    "happy-dom": "21.0.4",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.0.5"
+  }
+}

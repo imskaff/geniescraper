@@ -1,0 +1,21 @@
+name: Extension idea
+description: Suggest a change to the Chrome extension.
+labels: ["extension", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The extension is meant to stay small: no accounts, no analytics and no servers.
+        Ideas that need any of those are unlikely to be taken.
+        Please do not paste private data.
+  - type: textarea
+    id: need
+    attributes:
+      label: What are you trying to do?
+      description: Describe the job first, then your idea for it.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like it to do?

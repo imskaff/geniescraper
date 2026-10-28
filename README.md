@@ -1,7 +1,7 @@
 <div align="center">
 <img src="img/geniescraper.png" alt="Géniescraper logo" width="400">
 
-🧩 **A browser extension is in development:** Géniescraper for Chrome, Edge and Safari, on Windows and macOS.
+🧩 **Prefer the browser?** Géniescraper also comes as a Chrome and Edge extension for Windows and macOS: see [Install the browser extension](#install-the-browser-extension).
 
 # Géniescraper
 
@@ -21,12 +21,36 @@
 
 ## Installation
 
-### Prerequisites
+Géniescraper comes in two forms, and you only need one: the **browser extension** (nothing to install but the extension itself) or the **desktop app** (Windows, Python).
+
+### Install the browser extension
+
+No store and no command line needed.
+
+1. **Download.** Open the [Releases page](https://github.com/imskaff/geniescraper/releases), pick the newest **Géniescraper extension**, and download `geniescraper-extension-<version>.zip`.
+2. **Unzip it into a folder you will keep**, for example `Documents\Geniescraper-extension` (right-click the zip, then Extract All).
+   Chrome runs the extension from that folder, so do not delete or move it afterwards.
+3. **Add it to your browser.**
+   - Chrome: open `chrome://extensions`, switch on **Developer mode** (top right), click **Load unpacked**, and choose the folder from step 2 (the one that contains `manifest.json`).
+   - Edge: open `edge://extensions`, switch on **Developer mode** (left side), click **Load unpacked**, and choose the same folder.
+4. **Open it.** Click the puzzle-piece icon in the toolbar and pin Géniescraper, then click it: the side panel opens, and a short set-up walks you through the options.
+
+Good to know:
+
+- Chrome may show "Disable developer mode extensions" when it starts; choose to keep them. This is Chrome's standard notice for any extension that is not from the store.
+- **To update**, download the newest zip, unzip it over the same folder (replace the files), then press the reload icon on the extension's card in `chrome://extensions`. The extension does not update itself.
+- To check a download, compare its SHA-256 with `SHA256SUMS.txt` from the same release.
+- If there is no release yet, build it yourself: `cd extension`, `npm ci`, `npm run build`, and load the `extension/dist` folder in step 3.
+- Questions and fixes: [extension/FAQ.md](extension/FAQ.md). What the extension sends where: [extension/PRIVACY.md](extension/PRIVACY.md).
+
+### Install the desktop app
+
+#### Prerequisites
 - **Windows**
 - **Python 3.10+**
 - **[uv](https://docs.astral.sh/uv/)** (`pip install uv`)
 
-### Setup
+#### Setup
 
 1. **Clone the repository:**
    ```bash
@@ -127,7 +151,7 @@ Install the git hooks once per clone (all worktrees of a clone share them):
 uv run pre-commit install
 ```
 
-Every commit then runs ruff check, ruff format --check, basedpyright and the offline `pytest` suite, the same checks CI runs on each push and pull request.
+Every commit then runs ruff check, ruff format --check, basedpyright and the offline `pytest` suite, and for changes under `extension/` also its lint, type check, tests and build, the same checks CI runs on each push and pull request.
 The offline suite includes the fixture parsers, so run `uv run playwright install chromium` first.
 Never skip the hooks with `--no-verify`; fix the failure instead.
 CI (`.github/workflows/ci.yml`, `windows-latest`) runs the same checks on every push and pull request; the live tests run weekly and on manual dispatch, so Apple Music markup changes show up without blocking pushes.
@@ -161,6 +185,44 @@ uv run python -m bench.run
 - `uv run python -m bench.capture` refreshes fixtures when Apple changes its markup; it never overwrites a golden file.
 - `uv run python -m bench.lookups` measures the YouTube and cover art lookups alone: accuracy against the hand-verified videos in `tests/golden/youtube.json` and the golden cover artwork, plus latency.
 - `uv run python -m bench.capture_lookups` refreshes the saved YouTube, Deezer and iTunes responses in `tests/fixtures/lookups/` that the offline lookup tests replay.
+
+### Browser extension
+
+The Chrome extension lives in `extension/` (TypeScript, built with esbuild, tested with Vitest); see [docs/extension-plan.md](docs/extension-plan.md) for the design and slices.
+It needs Node 20 or newer and is installed from the lockfile:
+
+```bash
+cd extension && npm ci && npm run check
+```
+
+`npm run check` runs Prettier (`npm run format` fixes), ESLint, `tsc`, Vitest and the build; `dist/` is the unpacked extension.
+`extension/data/roles.json` and `extension/test/vectors.json` are generated from the Python code and must never be edited by hand:
+
+```bash
+uv run python -m tools.export_roles && uv run python -m tools.export_vectors
+```
+
+A Python test fails when either file is stale, so run both after changing `scraper/roles.py`, `scraper/models.py`, `scraper/apple_music.py`, `scraper/deezer.py`, `scraper/text.py` or `assistant/flow.py`.
+
+To try the extension, run `npm run build`, open `chrome://extensions`, switch on Developer mode, choose Load unpacked and pick `extension/dist`.
+The toolbar button opens the side panel: paste an Apple Music album or song link (or open one and the panel offers it), choose tracks with **Select all** or by ticking them (none are ticked for you), and review the credits and the paste queue (collapsed until you open it).
+**Start pasting** is in the header next to Settings, and **Back to main menu** returns to the start.
+The cover is Apple's exact 1000x1000 PNG for the album you opened, looked up by its catalog id on `itunes.apple.com`, and it is filled into Genius's Song Art field.
+Review the credits, click **Start pasting**, open the song's **Edit Metadata** form on Genius, and press **F8** once per field (**F7** goes back).
+The extension finds each field itself and fills one per press; it never clicks Save, so you check the form and save it yourself.
+When Genius has no exact match for a name or role the text stays typed and nothing is chosen for you: pick a suggestion yourself, or press Skip in the panel.
+The first time the panel opens, a short set-up walks you through what to paste, speed and keys, and the optional look-ups.
+Keys, auto-confirm, the suggestion wait and how many tracks are read at once (3 by default) are in the panel's Settings.
+A Deezer cover fallback and the YouTube link look-up are off until you tick them in Settings; Chrome then asks for permission to contact api.deezer.com or www.youtube.com, and you can take it back there or in chrome://extensions.
+The YouTube look-up reads YouTube's own pages (it has no API for this), which its terms do not allow for automated use: it is optional for that reason.
+For reliable YouTube links you can add your own free YouTube Data API key in Settings ("Better YouTube links"): the panel walks you through getting one, step by step, with a link to each Google page.
+The key stays in this browser, is sent only to Google, and is not synced.
+
+`npm run live:panel -- --chrome <path to Chromium> --screenshots <folder>` drives the real panel with real key presses against the real service worker and live Apple Music (a whole 10-track album), checks the result against the golden file, and saves screenshots in both color schemes and at 320 px.
+`npm run live:sidepanel -- --chrome <path to Chromium>` checks the way the extension is really used: a genuine side panel next to a visible album tab, reading that tab in place.
+
+`npm run live:genius -- --chrome <path to Chromium> --profile <folder>` drives the real extension through a whole paste into a live Genius edit form of a song you created, with a Chromium profile you signed in to by hand; it never presses Save.
+`npm run live:hidden-tab -- --chrome <path to Chromium>` is an opt-in live check against Apple Music that the extension can read song pages in a genuinely hidden tab; run `npm run build` first, and find a Chromium with `uv run python -c "from playwright.sync_api import sync_playwright as s; p = s().start(); print(p.chromium.executable_path); p.stop()"`.
 
 ## License
 

@@ -1,5 +1,7 @@
 # All Apple Music contributor roles. Edit directly to add/remove entries.
 
+import re
+
 ROLE_MAP: dict[str, str] = {
     '10-string bass guitar': '10-String Bass Guitar',
     '10-string guitar': '10-String Guitar',
@@ -72,7 +74,7 @@ ROLE_MAP: dict[str, str] = {
     'assistant mastering engineer': 'Assistant Mastering Engineer',
     'assistant mixing engineer': 'Assistant Mixing Engineer',
     'assistant producer': 'Assistant Producer',
-    'assistant programming': 'Assistant Programming',
+    'assistant programming': 'Assistant Programmer',
     'assistant recording engineer': 'Assistant Recording Engineer',
     'assistant strings engineer': 'Assistant Strings Engineer',
     'associate conductor': 'Associate Conductor',
@@ -338,7 +340,7 @@ ROLE_MAP: dict[str, str] = {
     'doumbek': 'Doumbek',
     'drawing': 'Drawing',
     'drum machine': 'Drum Machine',
-    'drum programming': 'Drum Programming',
+    'drum programming': 'Drum Programmer',
     'drum technician': 'Drum Technician',
     'drums': 'Drums',
     'duduk': 'Duduk',
@@ -677,7 +679,7 @@ ROLE_MAP: dict[str, str] = {
     'produced by': 'Producer',
     'producer': 'Producer',
     'producers': 'Producer',
-    'programming': 'Programming',
+    'programming': 'Programmer',
     'psaltery': 'Psaltery',
     'pump organ': 'Pump Organ',
     'rabab': 'Rabab',
@@ -715,7 +717,7 @@ ROLE_MAP: dict[str, str] = {
     'revision': 'Revision',
     'rhodes piano': 'Rhodes Piano',
     'rhythm guitar': 'Rhythm Guitar',
-    'rhythm programming': 'Rhythm Programming',
+    'rhythm programming': 'Rhythm Programmer',
     'romantic guitar': 'Romantic Guitar',
     'romantic music ensemble': 'Romantic Music Ensemble',
     'ruan': 'Ruan',
@@ -828,7 +830,7 @@ ROLE_MAP: dict[str, str] = {
     'synth percussion': 'Synth Percussion',
     'synth strings': 'Synth Strings',
     'synthesizer': 'Synthesizer',
-    'synthesizer programming': 'Synthesizer Programming',
+    'synthesizer programming': 'Synthesizer Programmer',
     'tabla': 'Tabla',
     'tabor': 'Tabor',
     'tafelklavier': 'Tafelklavier',
@@ -938,7 +940,7 @@ ROLE_MAP: dict[str, str] = {
     'vocal ensemble': 'Vocal Ensemble',
     'vocal mixing engineer': 'Vocal Mixing Engineer',
     'vocal producer': 'Vocal Producer',
-    'vocal programming': 'Vocal Programming',
+    'vocal programming': 'Vocal Programmer',
     'vocal quartet': 'Vocal Quartet',
     'vocal recording engineer': 'Vocal Recording Engineer',
     'vocal trio': 'Vocal Trio',
@@ -988,3 +990,15 @@ ROLE_MAP: dict[str, str] = {
 }
 
 ALL_ROLE_KEYS: frozenset[str] = frozenset(ROLE_MAP)
+
+
+_PROGRAMMING = re.compile(r"^(?:(.*\S)\s+)?programming$", re.IGNORECASE)
+
+
+def genius_role_name(role: str) -> str:
+    """Genius has "Programmer" and "Drum Programmer" and no "Programming": a role Apple lists as
+    "<X> Programming" that ROLE_MAP does not know is typed as "<X> Programmer" too."""
+    match = _PROGRAMMING.match(role.strip())
+    if not match:
+        return role
+    return f"{match.group(1)} Programmer" if match.group(1) else "Programmer"

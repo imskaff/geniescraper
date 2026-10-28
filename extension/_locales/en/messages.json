@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "Géniescraper",
+    "description": "Extension name shown in the Chrome Web Store and the toolbar."
+  },
+  "extDescription": {
+    "message": "Copy Apple Music song credits into the Genius song edit form, one field at a time.",
+    "description": "Short description; the Chrome Web Store allows at most 132 characters."
+  }
+}

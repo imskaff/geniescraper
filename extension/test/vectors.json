@@ -1,0 +1,9875 @@
+{
+ "songs": {
+  "empty": {
+   "title": "T",
+   "artist": "A",
+   "apple_music_url": "u",
+   "credits": [],
+   "phonographic_copyright": "",
+   "copyright_notice": "",
+   "cover_art_url": "",
+   "youtube_url": "",
+   "youtube_is_mv": false
+  },
+  "core_only": {
+   "title": "T",
+   "artist": "A",
+   "apple_music_url": "u",
+   "credits": [
+    {
+     "role": "Songwriter",
+     "artists": [
+      "W1",
+      "W2"
+     ]
+    },
+    {
+     "role": "Producer",
+     "artists": [
+      "P1"
+     ]
+    }
+   ],
+   "phonographic_copyright": "",
+   "copyright_notice": "",
+   "cover_art_url": "",
+   "youtube_url": "",
+   "youtube_is_mv": false
+  },
+  "full": {
+   "title": "T",
+   "artist": "A",
+   "apple_music_url": "u",
+   "credits": [
+    {
+     "role": "Mixing Engineer",
+     "artists": [
+      "M1"
+     ]
+    },
+    {
+     "role": "Lyricist",
+     "artists": [
+      "W1",
+      "W3"
+     ]
+    },
+    {
+     "role": "Songwriter",
+     "artists": [
+      "W1",
+      "W2"
+     ]
+    },
+    {
+     "role": "producer",
+     "artists": [
+      "P1",
+      "P2"
+     ]
+    },
+    {
+     "role": "Co-Producer",
+     "artists": [
+      "P2",
+      "P3"
+     ]
+    },
+    {
+     "role": "Background Vocals",
+     "artists": [
+      "V1",
+      "V2"
+     ]
+    },
+    {
+     "role": "Mixing Engineer",
+     "artists": [
+      "M2",
+      "M1"
+     ]
+    }
+   ],
+   "phonographic_copyright": "℗ 2022 Top Dawg Entertainment, under exclusive license to RCA Records",
+   "copyright_notice": "© 2022 Top Dawg Entertainment",
+   "cover_art_url": "https://example.com/cover.png",
+   "youtube_url": "https://www.youtube.com/watch?v=abc",
+   "youtube_is_mv": false
+  },
+  "padded_roles": {
+   "title": "T",
+   "artist": "A",
+   "apple_music_url": "u",
+   "credits": [
+    {
+     "role": " Songwriter ",
+     "artists": [
+      "W1"
+     ]
+    },
+    {
+     "role": "songwriter",
+     "artists": [
+      "W2"
+     ]
+    },
+    {
+     "role": "Producer",
+     "artists": [
+      "P1"
+     ]
+    }
+   ],
+   "phonographic_copyright": "",
+   "copyright_notice": "",
+   "cover_art_url": "",
+   "youtube_url": "",
+   "youtube_is_mv": false
+  },
+  "phono_only": {
+   "title": "T",
+   "artist": "A",
+   "apple_music_url": "u",
+   "credits": [
+    {
+     "role": "Songwriter",
+     "artists": [
+      "W1"
+     ]
+    }
+   ],
+   "phonographic_copyright": "℗ 2021 Label A",
+   "copyright_notice": "",
+   "cover_art_url": "",
+   "youtube_url": "",
+   "youtube_is_mv": false
+  },
+  "media_only": {
+   "title": "T",
+   "artist": "A",
+   "apple_music_url": "u",
+   "credits": [],
+   "phonographic_copyright": "",
+   "copyright_notice": "",
+   "cover_art_url": "https://example.com/c.png",
+   "youtube_url": "https://www.youtube.com/watch?v=abc",
+   "youtube_is_mv": false
+  }
+ },
+ "typed_queue": [
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "empty",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "core_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ]
+  },
+  {
+   "song": "full",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "produced_by",
+     "P1"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "role",
+     " Songwriter "
+    ],
+    [
+     "artist",
+     "W1"
+    ],
+    [
+     "artist",
+     "W2"
+    ]
+   ]
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Label A"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Label A"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Label A"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Label A"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Label A"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Label A"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Label A"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Label A"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Label A"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Label A"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Label A"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Label A"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Label A"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Label A"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Label A"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Label A"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Label A"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Label A"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Label A"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Label A"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Label A"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Label A"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Label A"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Label A"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Label A"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Label A"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Label A"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Label A"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Label A"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Label A"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Label A"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Label A"
+    ]
+   ]
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": []
+  },
+  {
+   "song": "phono_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/c.png"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "cover_art",
+     "https://example.com/c.png"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/c.png"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "cover_art",
+     "https://example.com/c.png"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/c.png"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "cover_art",
+     "https://example.com/c.png"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/c.png"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "cover_art",
+     "https://example.com/c.png"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/c.png"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "cover_art",
+     "https://example.com/c.png"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/c.png"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "cover_art",
+     "https://example.com/c.png"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/c.png"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "cover_art",
+     "https://example.com/c.png"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/c.png"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false
+   },
+   "queue": [
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true
+   },
+   "queue": [
+    [
+     "cover_art",
+     "https://example.com/c.png"
+    ]
+   ]
+  },
+  {
+   "song": "media_only",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false
+   },
+   "queue": []
+  }
+ ],
+ "extract_labels": [
+  {
+   "input": "℗ 2024 Taylor Swift",
+   "output": [
+    "Taylor Swift"
+   ]
+  },
+  {
+   "input": "℗ 2022 Top Dawg Entertainment, under exclusive license to RCA Records",
+   "output": [
+    "Top Dawg Entertainment",
+    "RCA Records"
+   ]
+  },
+  {
+   "input": "℗ 2019 Columbia Records, a Division of Sony Music Entertainment",
+   "output": [
+    "Columbia Records",
+    "Sony Music Entertainment"
+   ]
+  },
+  {
+   "input": "© 2023 Big Label",
+   "output": [
+    "Big Label"
+   ]
+  },
+  {
+   "input": "℗ 2024",
+   "output": []
+  },
+  {
+   "input": "",
+   "output": []
+  },
+  {
+   "input": "℗ 2021 Label A, distributed by Label B, released by Label C",
+   "output": [
+    "Label A",
+    "Label B",
+    "Label C"
+   ]
+  }
+ ],
+ "split_copyright": [
+  {
+   "input": "℗ 2024 A Label\n© 2024 B Label\n12 songs, 45 minutes",
+   "output": [
+    "℗ 2024 A Label",
+    "© 2024 B Label"
+   ]
+  },
+  {
+   "input": "© 2020 Only Copyright",
+   "output": [
+    "",
+    "© 2020 Only Copyright"
+   ]
+  },
+  {
+   "input": "℗ 2020 Only Phono © 2020 Same Line Copyright",
+   "output": [
+    "℗ 2020 Only Phono",
+    "© 2020 Same Line Copyright"
+   ]
+  },
+  {
+   "input": "",
+   "output": [
+    "",
+    ""
+   ]
+  }
+ ],
+ "track_count_from_footer": [
+  {
+   "input": "℗ 2024 A Label\n© 2024 B Label\n12 songs, 45 minutes",
+   "output": 12
+  },
+  {
+   "input": "© 2020 Only Copyright",
+   "output": 1
+  },
+  {
+   "input": "℗ 2020 Only Phono © 2020 Same Line Copyright",
+   "output": 1
+  },
+  {
+   "input": "",
+   "output": 1
+  }
+ ],
+ "autotab_steps": [
+  {
+   "kind": "written_by",
+   "next_kind": "written_by",
+   "steps": []
+  },
+  {
+   "kind": "written_by",
+   "next_kind": "produced_by",
+   "steps": [
+    [
+     "tab",
+     0.15
+    ]
+   ]
+  },
+  {
+   "kind": "written_by",
+   "next_kind": "role",
+   "steps": [
+    [
+     "tab",
+     0.15
+    ],
+    [
+     "tab",
+     0.1
+    ],
+    [
+     "enter",
+     0.1
+    ]
+   ]
+  },
+  {
+   "kind": "written_by",
+   "next_kind": "artist",
+   "steps": []
+  },
+  {
+   "kind": "written_by",
+   "next_kind": "copyright_role",
+   "steps": [
+    [
+     "tab",
+     0.15
+    ],
+    [
+     "tab",
+     0.1
+    ],
+    [
+     "enter",
+     0.1
+    ]
+   ]
+  },
+  {
+   "kind": "written_by",
+   "next_kind": "phonographic_copyright",
+   "steps": []
+  },
+  {
+   "kind": "written_by",
+   "next_kind": "copyright_notice",
+   "steps": []
+  },
+  {
+   "kind": "written_by",
+   "next_kind": "youtube_url",
+   "steps": []
+  },
+  {
+   "kind": "written_by",
+   "next_kind": "cover_art",
+   "steps": []
+  },
+  {
+   "kind": "written_by",
+   "next_kind": null,
+   "steps": []
+  },
+  {
+   "kind": "produced_by",
+   "next_kind": "written_by",
+   "steps": []
+  },
+  {
+   "kind": "produced_by",
+   "next_kind": "produced_by",
+   "steps": []
+  },
+  {
+   "kind": "produced_by",
+   "next_kind": "role",
+   "steps": [
+    [
+     "tab",
+     0.15
+    ],
+    [
+     "enter",
+     0.1
+    ]
+   ]
+  },
+  {
+   "kind": "produced_by",
+   "next_kind": "artist",
+   "steps": []
+  },
+  {
+   "kind": "produced_by",
+   "next_kind": "copyright_role",
+   "steps": [
+    [
+     "tab",
+     0.15
+    ],
+    [
+     "enter",
+     0.1
+    ]
+   ]
+  },
+  {
+   "kind": "produced_by",
+   "next_kind": "phonographic_copyright",
+   "steps": []
+  },
+  {
+   "kind": "produced_by",
+   "next_kind": "copyright_notice",
+   "steps": []
+  },
+  {
+   "kind": "produced_by",
+   "next_kind": "youtube_url",
+   "steps": []
+  },
+  {
+   "kind": "produced_by",
+   "next_kind": "cover_art",
+   "steps": []
+  },
+  {
+   "kind": "produced_by",
+   "next_kind": null,
+   "steps": []
+  },
+  {
+   "kind": "role",
+   "next_kind": "written_by",
+   "steps": []
+  },
+  {
+   "kind": "role",
+   "next_kind": "produced_by",
+   "steps": []
+  },
+  {
+   "kind": "role",
+   "next_kind": "role",
+   "steps": []
+  },
+  {
+   "kind": "role",
+   "next_kind": "artist",
+   "steps": []
+  },
+  {
+   "kind": "role",
+   "next_kind": "copyright_role",
+   "steps": []
+  },
+  {
+   "kind": "role",
+   "next_kind": "phonographic_copyright",
+   "steps": []
+  },
+  {
+   "kind": "role",
+   "next_kind": "copyright_notice",
+   "steps": []
+  },
+  {
+   "kind": "role",
+   "next_kind": "youtube_url",
+   "steps": []
+  },
+  {
+   "kind": "role",
+   "next_kind": "cover_art",
+   "steps": []
+  },
+  {
+   "kind": "role",
+   "next_kind": null,
+   "steps": []
+  },
+  {
+   "kind": "artist",
+   "next_kind": "written_by",
+   "steps": []
+  },
+  {
+   "kind": "artist",
+   "next_kind": "produced_by",
+   "steps": []
+  },
+  {
+   "kind": "artist",
+   "next_kind": "role",
+   "steps": [
+    [
+     "tab",
+     0.15
+    ],
+    [
+     "enter",
+     0.1
+    ]
+   ]
+  },
+  {
+   "kind": "artist",
+   "next_kind": "artist",
+   "steps": []
+  },
+  {
+   "kind": "artist",
+   "next_kind": "copyright_role",
+   "steps": [
+    [
+     "tab",
+     0.15
+    ],
+    [
+     "enter",
+     0.1
+    ]
+   ]
+  },
+  {
+   "kind": "artist",
+   "next_kind": "phonographic_copyright",
+   "steps": []
+  },
+  {
+   "kind": "artist",
+   "next_kind": "copyright_notice",
+   "steps": []
+  },
+  {
+   "kind": "artist",
+   "next_kind": "youtube_url",
+   "steps": [
+    [
+     "tab",
+     0.15
+    ],
+    [
+     "tab",
+     0.05
+    ],
+    [
+     "tab",
+     0.05
+    ]
+   ]
+  },
+  {
+   "kind": "artist",
+   "next_kind": "cover_art",
+   "steps": [
+    [
+     "tab",
+     0.15
+    ],
+    [
+     "tab",
+     0.05
+    ],
+    [
+     "tab",
+     0.05
+    ],
+    [
+     "tab",
+     0.05
+    ],
+    [
+     "tab",
+     0.05
+    ],
+    [
+     "tab",
+     0.05
+    ]
+   ]
+  },
+  {
+   "kind": "artist",
+   "next_kind": null,
+   "steps": []
+  },
+  {
+   "kind": "copyright_role",
+   "next_kind": "written_by",
+   "steps": []
+  },
+  {
+   "kind": "copyright_role",
+   "next_kind": "produced_by",
+   "steps": []
+  },
+  {
+   "kind": "copyright_role",
+   "next_kind": "role",
+   "steps": []
+  },
+  {
+   "kind": "copyright_role",
+   "next_kind": "artist",
+   "steps": []
+  },
+  {
+   "kind": "copyright_role",
+   "next_kind": "copyright_role",
+   "steps": []
+  },
+  {
+   "kind": "copyright_role",
+   "next_kind": "phonographic_copyright",
+   "steps": []
+  },
+  {
+   "kind": "copyright_role",
+   "next_kind": "copyright_notice",
+   "steps": []
+  },
+  {
+   "kind": "copyright_role",
+   "next_kind": "youtube_url",
+   "steps": []
+  },
+  {
+   "kind": "copyright_role",
+   "next_kind": "cover_art",
+   "steps": []
+  },
+  {
+   "kind": "copyright_role",
+   "next_kind": null,
+   "steps": []
+  },
+  {
+   "kind": "phonographic_copyright",
+   "next_kind": "written_by",
+   "steps": []
+  },
+  {
+   "kind": "phonographic_copyright",
+   "next_kind": "produced_by",
+   "steps": []
+  },
+  {
+   "kind": "phonographic_copyright",
+   "next_kind": "role",
+   "steps": []
+  },
+  {
+   "kind": "phonographic_copyright",
+   "next_kind": "artist",
+   "steps": []
+  },
+  {
+   "kind": "phonographic_copyright",
+   "next_kind": "copyright_role",
+   "steps": [
+    [
+     "tab",
+     0.15
+    ],
+    [
+     "enter",
+     0.1
+    ]
+   ]
+  },
+  {
+   "kind": "phonographic_copyright",
+   "next_kind": "phonographic_copyright",
+   "steps": []
+  },
+  {
+   "kind": "phonographic_copyright",
+   "next_kind": "copyright_notice",
+   "steps": []
+  },
+  {
+   "kind": "phonographic_copyright",
+   "next_kind": "youtube_url",
+   "steps": []
+  },
+  {
+   "kind": "phonographic_copyright",
+   "next_kind": "cover_art",
+   "steps": []
+  },
+  {
+   "kind": "phonographic_copyright",
+   "next_kind": null,
+   "steps": []
+  },
+  {
+   "kind": "copyright_notice",
+   "next_kind": "written_by",
+   "steps": []
+  },
+  {
+   "kind": "copyright_notice",
+   "next_kind": "produced_by",
+   "steps": []
+  },
+  {
+   "kind": "copyright_notice",
+   "next_kind": "role",
+   "steps": []
+  },
+  {
+   "kind": "copyright_notice",
+   "next_kind": "artist",
+   "steps": []
+  },
+  {
+   "kind": "copyright_notice",
+   "next_kind": "copyright_role",
+   "steps": [
+    [
+     "tab",
+     0.15
+    ],
+    [
+     "enter",
+     0.1
+    ]
+   ]
+  },
+  {
+   "kind": "copyright_notice",
+   "next_kind": "phonographic_copyright",
+   "steps": []
+  },
+  {
+   "kind": "copyright_notice",
+   "next_kind": "copyright_notice",
+   "steps": []
+  },
+  {
+   "kind": "copyright_notice",
+   "next_kind": "youtube_url",
+   "steps": [
+    [
+     "tab",
+     0.15
+    ],
+    [
+     "tab",
+     0.05
+    ],
+    [
+     "tab",
+     0.05
+    ]
+   ]
+  },
+  {
+   "kind": "copyright_notice",
+   "next_kind": "cover_art",
+   "steps": [
+    [
+     "tab",
+     0.15
+    ],
+    [
+     "tab",
+     0.05
+    ],
+    [
+     "tab",
+     0.05
+    ],
+    [
+     "tab",
+     0.05
+    ],
+    [
+     "tab",
+     0.05
+    ],
+    [
+     "tab",
+     0.05
+    ]
+   ]
+  },
+  {
+   "kind": "copyright_notice",
+   "next_kind": null,
+   "steps": []
+  },
+  {
+   "kind": "youtube_url",
+   "next_kind": "written_by",
+   "steps": []
+  },
+  {
+   "kind": "youtube_url",
+   "next_kind": "produced_by",
+   "steps": []
+  },
+  {
+   "kind": "youtube_url",
+   "next_kind": "role",
+   "steps": []
+  },
+  {
+   "kind": "youtube_url",
+   "next_kind": "artist",
+   "steps": []
+  },
+  {
+   "kind": "youtube_url",
+   "next_kind": "copyright_role",
+   "steps": []
+  },
+  {
+   "kind": "youtube_url",
+   "next_kind": "phonographic_copyright",
+   "steps": []
+  },
+  {
+   "kind": "youtube_url",
+   "next_kind": "copyright_notice",
+   "steps": []
+  },
+  {
+   "kind": "youtube_url",
+   "next_kind": "youtube_url",
+   "steps": []
+  },
+  {
+   "kind": "youtube_url",
+   "next_kind": "cover_art",
+   "steps": [
+    [
+     "tab",
+     0.15
+    ],
+    [
+     "tab",
+     0.05
+    ],
+    [
+     "tab",
+     0.05
+    ]
+   ]
+  },
+  {
+   "kind": "youtube_url",
+   "next_kind": null,
+   "steps": []
+  },
+  {
+   "kind": "cover_art",
+   "next_kind": "written_by",
+   "steps": []
+  },
+  {
+   "kind": "cover_art",
+   "next_kind": "produced_by",
+   "steps": []
+  },
+  {
+   "kind": "cover_art",
+   "next_kind": "role",
+   "steps": []
+  },
+  {
+   "kind": "cover_art",
+   "next_kind": "artist",
+   "steps": []
+  },
+  {
+   "kind": "cover_art",
+   "next_kind": "copyright_role",
+   "steps": []
+  },
+  {
+   "kind": "cover_art",
+   "next_kind": "phonographic_copyright",
+   "steps": []
+  },
+  {
+   "kind": "cover_art",
+   "next_kind": "copyright_notice",
+   "steps": []
+  },
+  {
+   "kind": "cover_art",
+   "next_kind": "youtube_url",
+   "steps": []
+  },
+  {
+   "kind": "cover_art",
+   "next_kind": "cover_art",
+   "steps": []
+  },
+  {
+   "kind": "cover_art",
+   "next_kind": null,
+   "steps": []
+  }
+ ],
+ "instruction_text": [
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 0,
+   "hotkey": "f8",
+   "text": "Click the Written By field, then press F8"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 0,
+   "hotkey": "F9",
+   "text": "Click the Written By field, then press F9"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 1,
+   "hotkey": "f8",
+   "text": "Field is ready. Press F8 to add the next songwriter"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 1,
+   "hotkey": "F9",
+   "text": "Field is ready. Press F9 to add the next songwriter"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 2,
+   "hotkey": "f8",
+   "text": "Field is ready. Press F8 to add the next songwriter"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 2,
+   "hotkey": "F9",
+   "text": "Field is ready. Press F9 to add the next songwriter"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 3,
+   "hotkey": "f8",
+   "text": "Field is ready. Press F8 to add the next songwriter"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 3,
+   "hotkey": "F9",
+   "text": "Field is ready. Press F9 to add the next songwriter"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 4,
+   "hotkey": "f8",
+   "text": "Click the Produced By field, then press F8"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 4,
+   "hotkey": "F9",
+   "text": "Click the Produced By field, then press F9"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 5,
+   "hotkey": "f8",
+   "text": "Field is ready. Press F8 to add the next producer"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 5,
+   "hotkey": "F9",
+   "text": "Field is ready. Press F9 to add the next producer"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 6,
+   "hotkey": "f8",
+   "text": "Field is ready. Press F8 to add the next producer"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 6,
+   "hotkey": "F9",
+   "text": "Field is ready. Press F9 to add the next producer"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 7,
+   "hotkey": "f8",
+   "text": "Field is ready. Press F8 to add the next producer"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 7,
+   "hotkey": "F9",
+   "text": "Field is ready. Press F9 to add the next producer"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 8,
+   "hotkey": "f8",
+   "text": "1. Click Add additional credits\n2. Click inside the Additional role field\n3. Press F8"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 8,
+   "hotkey": "F9",
+   "text": "1. Click Add additional credits\n2. Click inside the Additional role field\n3. Press F9"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 9,
+   "hotkey": "f8",
+   "text": "Tab to Artists in this role, then press F8"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 9,
+   "hotkey": "F9",
+   "text": "Tab to Artists in this role, then press F9"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 10,
+   "hotkey": "f8",
+   "text": "Field is ready. Press F8 to add the next artist"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 10,
+   "hotkey": "F9",
+   "text": "Field is ready. Press F9 to add the next artist"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 11,
+   "hotkey": "f8",
+   "text": "1. Click Add additional credits\n2. Click inside the Additional role field\n3. Press F8"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 11,
+   "hotkey": "F9",
+   "text": "1. Click Add additional credits\n2. Click inside the Additional role field\n3. Press F9"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 12,
+   "hotkey": "f8",
+   "text": "Tab to Artists in this role, then press F8"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 12,
+   "hotkey": "F9",
+   "text": "Tab to Artists in this role, then press F9"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 13,
+   "hotkey": "f8",
+   "text": "Field is ready. Press F8 to add the next artist"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 13,
+   "hotkey": "F9",
+   "text": "Field is ready. Press F9 to add the next artist"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 14,
+   "hotkey": "f8",
+   "text": "1. Click Add additional credits\n2. Click inside the Additional role field\n3. Press F8"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 14,
+   "hotkey": "F9",
+   "text": "1. Click Add additional credits\n2. Click inside the Additional role field\n3. Press F9"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 15,
+   "hotkey": "f8",
+   "text": "Field is ready. Press F8 to add the label"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 15,
+   "hotkey": "F9",
+   "text": "Field is ready. Press F9 to add the label"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 16,
+   "hotkey": "f8",
+   "text": "Field is ready. Press F8 to add the next label"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 16,
+   "hotkey": "F9",
+   "text": "Field is ready. Press F9 to add the next label"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 17,
+   "hotkey": "f8",
+   "text": "1. Click Add additional credits\n2. Click inside the Additional role field\n3. Press F8"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 17,
+   "hotkey": "F9",
+   "text": "1. Click Add additional credits\n2. Click inside the Additional role field\n3. Press F9"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 18,
+   "hotkey": "f8",
+   "text": "Field is ready. Press F8 to add the label"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 18,
+   "hotkey": "F9",
+   "text": "Field is ready. Press F9 to add the label"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 19,
+   "hotkey": "f8",
+   "text": "Press F8 to copy the YouTube video URL to clipboard"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 19,
+   "hotkey": "F9",
+   "text": "Press F9 to copy the YouTube video URL to clipboard"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 20,
+   "hotkey": "f8",
+   "text": "Press F8 to copy the 1000×1000 PNG cover art URL to clipboard"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 20,
+   "hotkey": "F9",
+   "text": "Press F9 to copy the 1000×1000 PNG cover art URL to clipboard"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 21,
+   "hotkey": "f8",
+   "text": "All done. Save the page on Genius."
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ]
+   ],
+   "pos": 21,
+   "hotkey": "F9",
+   "text": "All done. Save the page on Genius."
+  }
+ ],
+ "normalise_cover_url": [
+  {
+   "input": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/ab/cd/ef/x.jpg/600x600bb.jpg",
+   "output": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/ab/cd/ef/x.jpg/1000x1000bb.png"
+  },
+  {
+   "input": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/ab/cd/ef/x.jpg/1200x630wp-60.jpg?x=1",
+   "output": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/ab/cd/ef/x.jpg/1000x1000bb.png"
+  },
+  {
+   "input": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/ab/cd/ef/x.jpg/296x296.webp",
+   "output": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/ab/cd/ef/x.jpg/1000x1000bb.png"
+  },
+  {
+   "input": "https://example.com/no-size-suffix",
+   "output": "https://example.com/no-size-suffix"
+  }
+ ],
+ "pick_cover_url": [
+  {
+   "input": [],
+   "output": ""
+  },
+  {
+   "input": [
+    "https://x/image/thumb/Video126/v4/a/b.jpg/300x300.jpg"
+   ],
+   "output": ""
+  },
+  {
+   "input": [
+    "https://x/image/thumb/Features126/v4/a/b.jpg/300x300.jpg",
+    "https://x/image/thumb/Music126/v4/a/b.jpg/300x300bb.jpg"
+   ],
+   "output": "https://x/image/thumb/Music126/v4/a/b.jpg/1000x1000bb.png"
+  }
+ ],
+ "catalog_id": [
+  {
+   "input": "https://music.apple.com/us/album/the-tortured-poets-department/1736268215",
+   "output": [
+    "1736268215",
+    "us"
+   ]
+  },
+  {
+   "input": "https://music.apple.com/us/album/the-tortured-poets-department/1736268215?i=1736268220",
+   "output": [
+    "1736268215",
+    "us"
+   ]
+  },
+  {
+   "input": "https://music.apple.com/gb/song/fortnight/1736268220",
+   "output": [
+    "1736268220",
+    "gb"
+   ]
+  },
+  {
+   "input": "https://music.apple.com/us/album/1736268215",
+   "output": [
+    "1736268215",
+    "us"
+   ]
+  },
+  {
+   "input": "https://music.apple.com/us/playlist/x/pl.123",
+   "output": [
+    "",
+    ""
+   ]
+  },
+  {
+   "input": "https://example.com/album/1",
+   "output": [
+    "",
+    ""
+   ]
+  }
+ ],
+ "catalog_ref": [
+  {
+   "input": "https://music.apple.com/us/album/the-tortured-poets-department/1736268215",
+   "output": [
+    "us",
+    "1736268215"
+   ]
+  },
+  {
+   "input": "https://music.apple.com/us/album/the-tortured-poets-department/1736268215?i=1736268220",
+   "output": [
+    "us",
+    "1736268220"
+   ]
+  },
+  {
+   "input": "https://music.apple.com/gb/song/fortnight/1736268220",
+   "output": [
+    "gb",
+    "1736268220"
+   ]
+  },
+  {
+   "input": "https://music.apple.com/us/album/1736268215",
+   "output": [
+    "us",
+    "1736268215"
+   ]
+  },
+  {
+   "input": "https://music.apple.com/us/playlist/x/pl.123",
+   "output": null
+  },
+  {
+   "input": "https://example.com/album/1",
+   "output": null
+  }
+ ],
+ "normalise_role": [
+  {
+   "input": "songwriter",
+   "output": "Songwriter"
+  },
+  {
+   "input": "Producer:",
+   "output": "Producer"
+  },
+  {
+   "input": "  LEAD VOCALS ",
+   "output": "Lead Vocals"
+  },
+  {
+   "input": "Unknown Role",
+   "output": "Unknown Role"
+  },
+  {
+   "input": "mixing engineer",
+   "output": "Mixing Engineer"
+  },
+  {
+   "input": "",
+   "output": ""
+  }
+ ],
+ "credits_from_cards": [
+  {
+   "names": [],
+   "roles": [],
+   "output": []
+  },
+  {
+   "names": [
+    "A",
+    "B"
+   ],
+   "roles": [
+    "Songwriter"
+   ],
+   "output": []
+  },
+  {
+   "names": [
+    "Taylor Swift",
+    "Jack Antonoff",
+    "  ",
+    "Jack Antonoff"
+   ],
+   "roles": [
+    "Songwriter, Producer",
+    "Producer, Drums",
+    "Performer",
+    "Drums"
+   ],
+   "output": [
+    {
+     "role": "Songwriter",
+     "artists": [
+      "Taylor Swift"
+     ]
+    },
+    {
+     "role": "Producer",
+     "artists": [
+      "Taylor Swift",
+      "Jack Antonoff"
+     ]
+    },
+    {
+     "role": "Drums",
+     "artists": [
+      "Jack Antonoff"
+     ]
+    }
+   ]
+  },
+  {
+   "names": [
+    "X"
+   ],
+   "roles": [
+    "Mixed Artist, Lead Vocals"
+   ],
+   "output": [
+    {
+     "role": "Lead Vocals",
+     "artists": [
+      "X"
+     ]
+    }
+   ]
+  }
+ ],
+ "credits_from_text": [
+  {
+   "input": "",
+   "output": []
+  },
+  {
+   "input": "Songwriter\nTaylor Swift, Jack Antonoff\nProducer\nJack Antonoff\n© 2024 Label\n",
+   "output": [
+    {
+     "role": "Songwriter",
+     "artists": [
+      "Taylor Swift",
+      "Jack Antonoff"
+     ]
+    },
+    {
+     "role": "Producer",
+     "artists": [
+      "Jack Antonoff"
+     ]
+    }
+   ]
+  },
+  {
+   "input": "Composition, Lyrics\nSongwriter:\nA & B\nMore by A\nPerformer\nC\nDrums\nD • E\n",
+   "output": [
+    {
+     "role": "Songwriter",
+     "artists": [
+      "A",
+      "B",
+      "Performer",
+      "C"
+     ]
+    },
+    {
+     "role": "Drums",
+     "artists": [
+      "D",
+      "E"
+     ]
+    }
+   ]
+  }
+ ],
+ "extract_title_artist": [
+  {
+   "input": "Shabang – Single – Drake – Apple Music",
+   "output": [
+    "Shabang",
+    "Drake"
+   ]
+  },
+  {
+   "input": "‎UTOPIA - Album by Travis Scott - Apple Music",
+   "output": [
+    "UTOPIA",
+    "Travis Scott"
+   ]
+  },
+  {
+   "input": "Slime You Out (feat. SZA) - Single by Drake on Apple Music",
+   "output": [
+    "Slime You Out (feat. SZA)",
+    "Drake"
+   ]
+  },
+  {
+   "input": "SOS - Album by SZA - Apple Music",
+   "output": [
+    "SOS",
+    "SZA"
+   ]
+  },
+  {
+   "input": "Not Like Us - Single by Kendrick Lamar - Apple Music",
+   "output": [
+    "Not Like Us",
+    "Kendrick Lamar"
+   ]
+  },
+  {
+   "input": "Not Like Us - Song by Kendrick Lamar - Apple Music",
+   "output": [
+    "Not Like Us",
+    "Kendrick Lamar"
+   ]
+  },
+  {
+   "input": "Not Like Us – Song with Lyrics by Kendrick Lamar – Apple Music",
+   "output": [
+    "Not Like Us",
+    "Kendrick Lamar"
+   ]
+  },
+  {
+   "input": "Good 4 U – Olivia Rodrigo – Apple Music",
+   "output": [
+    "Good 4 U",
+    "Olivia Rodrigo"
+   ]
+  },
+  {
+   "input": "Fortnight - Remix - Taylor Swift – Apple Music",
+   "output": [
+    "Fortnight",
+    "Remix"
+   ]
+  },
+  {
+   "input": "Heat Wave - Deluxe – Artist – Apple Music",
+   "output": [
+    "Heat Wave",
+    "Artist"
+   ]
+  },
+  {
+   "input": "Title by Someone",
+   "output": [
+    "Title",
+    "Someone"
+   ]
+  },
+  {
+   "input": "No separators here",
+   "output": [
+    "",
+    ""
+   ]
+  },
+  {
+   "input": "",
+   "output": [
+    "",
+    ""
+   ]
+  }
+ ],
+ "itunes_png": [
+  {
+   "input": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/100x100bb.jpg",
+   "output": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/1000x1000bb.png"
+  },
+  {
+   "input": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/600x600bb.webp",
+   "output": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/1000x1000bb.png"
+  },
+  {
+   "input": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/1000x1000bb.png",
+   "output": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/x.rgb.jpg/1000x1000bb.png"
+  },
+  {
+   "input": "https://example.com/art.jpg",
+   "output": "https://example.com/art.jpg"
+  },
+  {
+   "input": "",
+   "output": ""
+  }
+ ],
+ "same_track": [
+  {
+   "result_title": "Fortnight",
+   "result_artist": "Taylor Swift",
+   "title": "Fortnight (feat. Post Malone)",
+   "artist": "Taylor Swift",
+   "output": true
+  },
+  {
+   "result_title": "Fortnight (feat. Post Malone)",
+   "result_artist": "Taylor Swift",
+   "title": "Fortnight",
+   "artist": "Taylor Swift",
+   "output": true
+  },
+  {
+   "result_title": "Kill Bill",
+   "result_artist": "SZA",
+   "title": "SOS",
+   "artist": "SZA",
+   "output": false
+  },
+  {
+   "result_title": "DÁKITI",
+   "result_artist": "Bad Bunny",
+   "title": "Dakiti",
+   "artist": "Bad Bunny & Jhay Cortez",
+   "output": true
+  },
+  {
+   "result_title": "Fortnight",
+   "result_artist": "The Lullabeats",
+   "title": "Fortnight",
+   "artist": "Taylor Swift",
+   "output": false
+  },
+  {
+   "result_title": "SOS",
+   "result_artist": "Sza",
+   "title": "sos",
+   "artist": "SZA",
+   "output": true
+  },
+  {
+   "result_title": "X",
+   "result_artist": "Someone",
+   "title": "X",
+   "artist": "Ed",
+   "output": true
+  },
+  {
+   "result_title": "Water (Remix)",
+   "result_artist": "Tyla",
+   "title": "Water",
+   "artist": "Tyla",
+   "output": false
+  }
+ ],
+ "words": [
+  {
+   "input": "Fortnight (feat. Post Malone)",
+   "output": [
+    "fortnight",
+    "feat",
+    "post",
+    "malone"
+   ]
+  },
+  {
+   "input": "BAD BUNNY x DÁKITI (Audio)",
+   "output": [
+    "bad",
+    "bunny",
+    "x",
+    "dakiti",
+    "audio"
+   ]
+  },
+  {
+   "input": "SOS",
+   "output": [
+    "sos"
+   ]
+  },
+  {
+   "input": "FE!N",
+   "output": [
+    "fe",
+    "n"
+   ]
+  },
+  {
+   "input": "Water ft. Someone [Remix]",
+   "output": [
+    "water",
+    "ft",
+    "someone",
+    "remix"
+   ]
+  },
+  {
+   "input": "",
+   "output": []
+  }
+ ],
+ "core_title_words": [
+  {
+   "input": "Fortnight (feat. Post Malone)",
+   "output": [
+    "fortnight"
+   ]
+  },
+  {
+   "input": "BAD BUNNY x DÁKITI (Audio)",
+   "output": [
+    "bad",
+    "bunny",
+    "x",
+    "dakiti",
+    "audio"
+   ]
+  },
+  {
+   "input": "SOS",
+   "output": [
+    "sos"
+   ]
+  },
+  {
+   "input": "FE!N",
+   "output": [
+    "fe",
+    "n"
+   ]
+  },
+  {
+   "input": "Water ft. Someone [Remix]",
+   "output": [
+    "water"
+   ]
+  },
+  {
+   "input": "",
+   "output": []
+  }
+ ]
+}

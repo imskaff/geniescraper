@@ -21,7 +21,7 @@ from playwright.async_api import TimeoutError as PWTimeout
 from playwright_stealth import Stealth
 
 from scraper.models import Credit, SongCredits
-from scraper.roles import ALL_ROLE_KEYS, ROLE_MAP
+from scraper.roles import ALL_ROLE_KEYS, ROLE_MAP, genius_role_name
 
 
 @dataclass
@@ -36,7 +36,7 @@ class AlbumTrackInfo:
 
 def _normalise_role(raw: str) -> str:
     key = raw.strip().lower().rstrip(":").strip()
-    return ROLE_MAP.get(key, raw.strip().rstrip(":").strip())
+    return genius_role_name(ROLE_MAP.get(key, raw.strip().rstrip(":").strip()))
 
 
 def _parse_artists(raw: str) -> list[str]:
