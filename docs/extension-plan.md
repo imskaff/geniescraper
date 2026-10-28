@@ -706,3 +706,11 @@ Hands-on finding: with YouTube links looked up only for the track the user opene
 - **No "All found" while a link is still being looked for:** the track says "Finding YouTube link". A link that cannot be asked for (no permission, or the step is off) is the user's choice and is not counted missing.
 - **Missing things are flagged in the credits too:** a row for the copyright, cover art or YouTube link that was not found, in amber on a tinted band with "Not found" (or the look-up's own words), so it is visible without reading the list.
 - **The YouTube link section appears only when the program did not find the link** (and while it is still looking it stays hidden). A link the user gave keeps the section, so it can be taken off.
+
+## 32. One spacing scale
+
+Margins, paddings and gaps had drifted (6, 10, 14, 20 and 22 px next to the 4, 8, 12, 16 ones) and nested blocks added their margins together, so gaps between blocks varied from 8 to 24 px.
+- `panel.css` now has five tokens, `--space-1` to `--space-5` (4, 8, 12, 16, 24 px), and every margin, padding and gap uses them; `test/ui/spacing.test.ts` fails on any raw length (the clipped screen-reader text and the 18 px checkbox the option help lines up with are the only exceptions).
+- Controls (buttons, fields, summaries, queue items) are all 8 px by 12 px; cards (credits, the step to paste) 12 px; gaps inside a control 8 or 12 px.
+- A block spaces itself from the block before it only once: a stack or row inside a stack, a title or a disclosure inside a stack, and the list under a help line no longer add a second margin, and the doubled gap in the track picker is gone.
+Checked in a browser at 400 px wide on the credits, track picker, paste and settings screens (a throwaway preview built from the real view with sample data), not in the real side panel.
