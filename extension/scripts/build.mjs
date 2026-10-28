@@ -1,7 +1,7 @@
 // Bundles the extension into dist/, which is what gets loaded unpacked or zipped for the store.
 // Output stays unminified and the CSP stays at the MV3 default: reviewers must be able to read what ships.
 import { build } from "esbuild";
-import { cp, mkdir, rm } from "node:fs/promises";
+import { cp, mkdir, readdir, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -21,8 +21,10 @@ const STATIC_FILES = {
   "src/ui/panel.css": "ui/panel.css",
 };
 
-await rm(dist, { recursive: true, force: true });
+// Empty the folder instead of removing it: on Windows a browser that has the unpacked extension loaded holds the
+// folder itself open, so removing it fails with EBUSY while its contents can still be replaced.
 await mkdir(dist, { recursive: true });
+for (const name of await readdir(dist)) await rm(join(dist, name), { recursive: true, force: true });
 
 await build({
   absWorkingDir: root,
