@@ -1,5 +1,5 @@
 import { IDLE_PASTE, back, skip, startPaste, stop, type PasteState } from "../../src/core/paste";
-import type { AlbumInfo, PageScrape, PasteCommand, Result } from "../../src/shared/messages";
+import type { AlbumInfo, PageScrape, PasteCommand, Result, YoutubeAnswer } from "../../src/shared/messages";
 import type { KeyValueStore, Stores } from "../../src/shared/storage";
 import type { WorkerApi } from "../../src/ui/api";
 import type { OptionalHost } from "../../src/lookups/http";
@@ -61,9 +61,12 @@ export interface FakeApi extends WorkerApi {
   pasteState: PasteState;
 }
 
+const NO_LINK: YoutubeAnswer = { url: "", isMusicVideo: false, throttled: false };
+
 export interface ApiScript {
   detect?: (url: string, tabId?: number) => Promise<Result<AlbumInfo>>;
-  scrapeTrack?: (url: string, title: string, artist?: string) => Promise<Result<PageScrape>>;
+  scrapeTrack?: (url: string, title: string) => Promise<Result<PageScrape>>;
+  lookupYoutube?: (title: string, artist: string) => Promise<Result<YoutubeAnswer>>;
   paste?: (command: PasteCommand) => Promise<Result<PasteState>>;
 }
 
@@ -97,12 +100,15 @@ export function fakeApi(script: ApiScript = {}): FakeApi {
       calls.push(`detect:${url}:${String(tabId)}`);
       return (script.detect ?? (() => Promise.resolve({ ok: true, data: ALBUM } as const)))(url, tabId);
     },
-    scrapeTrack(url, title, artist) {
+    lookupYoutube(title, artist) {
+      calls.push(`youtube:${artist} / ${title}`);
+      return (script.lookupYoutube ?? (() => Promise.resolve({ ok: true, data: NO_LINK } as const)))(title, artist);
+    },
+    scrapeTrack(url, title) {
       calls.push(`scrape:${url}`);
       return (script.scrapeTrack ?? ((_url, t) => Promise.resolve({ ok: true, data: scrapeFor(t) } as const)))(
         url,
         title,
-        artist,
       );
     },
   };

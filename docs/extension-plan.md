@@ -441,3 +441,19 @@ It stops when the user chooses a way out, goes back a step, or starts the next t
 Because an automatic change of screen is a timing problem for some users (WCAG 2.2.1), Settings has "Go back to the main menu 10 seconds after the last step", on by default as in the desktop app; turning it off cancels a running countdown.
 The countdown is not announced each second; the screen's own message is.
 Not verified live: the redirect itself after ten real seconds (unit tests drive it with fake timers; the live check confirms the countdown label).
+
+## 20. The YouTube look-up moves to one track at a time
+
+The album read no longer asks YouTube anything.
+A track's link is looked up when the user is about to paste it (Start pasting, or Paste next track), and once for the track in front of the user as soon as its credits are in, so Start pasting does not wait.
+The answer is kept on the track and shown in the credits list; a track is asked about once (again only after a failure or a throttle), and nothing is asked while the permission or the "YouTube link" setting is off.
+If YouTube is limiting requests the panel says so; if no link is found it says that.
+
+The lookup also asks for far less than the desktop app's: the music-video phase runs first, the audio phase only when no confirmed video was found, and at most 2 + 2 + 1 + 2 descriptions are read.
+Over the golden set that is 2 to 6 requests per song (average under 4), against up to 18; the 15 golden cases still pick an accepted video with the right flag.
+
+Finding: a cookieless client is blocked by Google ("sorry" redirect) after roughly 5 to 7 requests on one reused connection, whatever the spacing; the same requests on fresh connections were not blocked.
+From the real extension, looking up tracks 4 seconds apart still got links for only the first two tracks of an album before the block, because a block lasts minutes and every request on that connection after it fails.
+That is Google's automated-traffic protection.
+This project does not try to get around it (for example by spreading requests over other hostnames or forcing new connections), so the lookup stays best-effort: the first tracks of a session usually get a link, later ones may not until the block lifts, and the panel says when YouTube is limiting requests.
+If links on whole albums matter more than staying inside that protection, the options are the user pasting the link by hand, a YouTube Data API key (an official quota, but a credential the user must create), or dropping the lookup.

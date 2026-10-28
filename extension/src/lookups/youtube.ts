@@ -403,31 +403,38 @@ export function descriptionBonus(description: string): number {
   return 0;
 }
 
+/** Descriptions read per kind of candidate (the desktop app reads 3, 3, 2 and 5). */
+const MAX_MV_DESCRIPTIONS = 2;
+const MAX_PROVISIONAL_DESCRIPTIONS = 2;
+const MAX_LABEL_DESCRIPTIONS = 1;
+const MAX_AUDIO_DESCRIPTIONS = 2;
+
 const byScoreThenRank = (a: Candidate, b: Candidate): number => b[0] - a[0] || a[1] - b[1];
 
 /**
  * The link for a song: the official music video when phase 2 finds one, otherwise the canonical audio, otherwise
- * nothing. Phase 1 and 2 run together, then the descriptions that need confirming are read together.
+ * nothing. Unlike the desktop app, which runs both phases and reads a dozen descriptions for every song, this asks
+ * for as little as it can: phase 1 runs only when phase 2 found no confirmed video (a music video wins over audio
+ * anyway), and only the best few candidates have their descriptions read. Google answers a burst of requests with
+ * its "sorry" page, and a song's lookup has to fit well inside what it tolerates.
  */
 export async function findYoutube(pages: YoutubePages, title: string, artist: string): Promise<YoutubeLink> {
   if (!title || !artist) return NONE;
   try {
-    const [audio, [mv, provisional, label]] = await Promise.all([
-      audioPhase(pages, title, artist),
-      mvPhase(pages, title, artist),
-    ]);
+    const [mv, provisional, label] = await mvPhase(pages, title, artist);
+    const audio = mv.length > 0 ? [] : await audioPhase(pages, title, artist);
 
     // Every description the checks below may read, each fetched once.
     const mvIds = new Set(mv.map(([, , u]) => videoId(u)));
     const wanted = [
-      ...mv.slice(0, 3).map(([, , u]) => videoId(u)),
+      ...mv.slice(0, MAX_MV_DESCRIPTIONS).map(([, , u]) => videoId(u)),
       ...provisional
-        .slice(0, 3)
+        .slice(0, MAX_PROVISIONAL_DESCRIPTIONS)
         .map(([, , u]) => videoId(u))
         .filter((id) => !mvIds.has(id)),
-      ...label.slice(0, 2).map(([, , u]) => videoId(u)),
+      ...label.slice(0, MAX_LABEL_DESCRIPTIONS).map(([, , u]) => videoId(u)),
       ...audio
-        .slice(0, 5)
+        .slice(0, MAX_AUDIO_DESCRIPTIONS)
         .filter(([s, , u]) => s === 1 && !mvIds.has(videoId(u)))
         .map(([, , u]) => videoId(u)),
     ];
@@ -437,24 +444,24 @@ export async function findYoutube(pages: YoutubePages, title: string, artist: st
     const described = (url: string): string => descriptions.get(videoId(url)) ?? "";
 
     // The top 3 MV candidates get a bonus when the description confirms a real music video.
-    for (const [i, [score, rank, url]] of mv.slice(0, 3).entries())
+    for (const [i, [score, rank, url]] of mv.slice(0, MAX_MV_DESCRIPTIONS).entries())
       mv[i] = [score + descriptionBonus(described(url)), rank, url];
 
     // Artist-channel videos with plain titles count only when the description confirms a music video.
-    for (const [score, rank, url] of provisional.slice(0, 3)) {
+    for (const [score, rank, url] of provisional.slice(0, MAX_PROVISIONAL_DESCRIPTIONS)) {
       if (mvIds.has(videoId(url))) continue;
       const bonus = descriptionBonus(described(url));
       if (bonus) mv.push([score + bonus, rank, url]);
     }
 
     // Verified label-channel videos need a crew credit; they stay at 2 so a confirmed artist-channel video wins.
-    for (const [score, rank, url] of label.slice(0, 2)) {
+    for (const [score, rank, url] of label.slice(0, MAX_LABEL_DESCRIPTIONS)) {
       if (MV_CREW_KEYWORDS.some((kw) => described(url).includes(kw))) mv.push([score, rank, url]);
     }
 
     // An artist-channel audio hit may be absent from phase 2's results: check its description and reclassify.
     const nowMv = new Set(mv.map(([, , u]) => videoId(u)));
-    for (const [score, rank, url] of audio.slice(0, 5)) {
+    for (const [score, rank, url] of audio.slice(0, MAX_AUDIO_DESCRIPTIONS)) {
       if (score !== 1 || nowMv.has(videoId(url)) || !descriptions.has(videoId(url))) continue;
       const bonus = descriptionBonus(described(url));
       if (bonus) mv.push([score + bonus, rank, url]);

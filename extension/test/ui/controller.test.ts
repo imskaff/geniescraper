@@ -537,48 +537,118 @@ describe("optional hosts", () => {
   });
 });
 
-describe("the YouTube link on a track", () => {
-  it("sends the album's artist with each read, so the search can start early", async () => {
-    const seen: (string | undefined)[] = [];
-    const { panel } = await open({
-      api: {
-        scrapeTrack: (_url, title, artist) => {
-          seen.push(artist);
-          return Promise.resolve({ ok: true, data: scrapeFor(title) });
-        },
-      },
-    });
-    await panel.detect(ALBUM_URL);
-    await panel.setAllSelected(true);
-    await panel.getCredits();
-    expect(seen).toEqual([ALBUM.artist, ALBUM.artist]);
+describe("the YouTube link of a track", () => {
+  const LINK = "https://www.youtube.com/watch?v=abcDEF_-123";
+  const FOUND = { ok: true as const, data: { url: LINK, isMusicVideo: true, throttled: false } };
+  const NOTHING = { ok: true as const, data: { url: "", isMusicVideo: false, throttled: false } };
+  const THROTTLED = { ok: true as const, data: { url: "", isMusicVideo: false, throttled: true } };
+
+  async function ready(options: Parameters<typeof fakeEnv>[0] = {}) {
+    const ui = await open({ hosts: { youtube: true }, ...options });
+    await ui.panel.detect(ALBUM_URL);
+    await ui.panel.setAllSelected(true);
+    await ui.panel.getCredits();
+    return ui;
+  }
+  const lookups = (env: Awaited<ReturnType<typeof ready>>["env"]) =>
+    env.api.calls.filter((c) => c.startsWith("youtube:"));
+
+  it("is not looked up while an album is read, except for the track in front of the user", async () => {
+    const { env } = await ready({ api: { lookupYoutube: () => Promise.resolve(FOUND) } });
+    expect(lookups(env)).toHaveLength(1);
   });
 
-  it("keeps the link the worker found on the song, and queues it for pasting", async () => {
-    const link = "https://www.youtube.com/watch?v=abc";
-    const { panel } = await open({
-      api: {
-        scrapeTrack: (_url, title) =>
-          Promise.resolve({ ok: true, data: { ...scrapeFor(title), youtubeUrl: link, youtubeIsMv: true } }),
-      },
-    });
-    await panel.detect(ALBUM_URL);
-    await panel.setAllSelected(true);
-    await panel.getCredits();
-    const song = panel.state.session.results[0]?.song;
-    expect(song).toMatchObject({ youtubeUrl: link, youtubeIsMv: true });
-    expect(panel.queueFor(0).some(([kind, value]) => kind === "youtube_url" && value === link)).toBe(true);
+  it("is looked up for the track in front of the user once its credits are in, so Start pasting does not wait", async () => {
+    const { panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(FOUND) } });
+    expect(panel.state.session.results[0]?.song).toMatchObject({ youtubeUrl: LINK, youtubeIsMv: true });
+    expect(panel.state.session.results[1]?.song?.youtubeUrl).toBe("");
   });
 
-  it("leaves the YouTube step out of the queue when the setting is off", async () => {
-    const link = "https://www.youtube.com/watch?v=abc";
-    const { panel } = await open({
-      api: { scrapeTrack: (_u, t) => Promise.resolve({ ok: true, data: { ...scrapeFor(t), youtubeUrl: link } }) },
+  it("is looked up for another track when the user starts pasting it, with the song's own artist", async () => {
+    const { env, panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(FOUND) } });
+    await panel.startPaste(2);
+    expect(lookups(env)).toHaveLength(2);
+    expect(lookups(env)[1]).toBe("youtube:Demo Artist / Three");
+    expect(panel.state.session.results[1]?.song?.youtubeUrl).toBe(LINK);
+    expect(env.api.pasteState.queue.some(([kind, value]) => kind === "youtube_url" && value === LINK)).toBe(true);
+  });
+
+  it("is asked once per track, however often pasting starts", async () => {
+    const { env, panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(FOUND) } });
+    await panel.startPaste(0);
+    await panel.startPaste(0);
+    expect(lookups(env)).toHaveLength(1);
+  });
+
+  it("waits for a look-up already running instead of asking again", async () => {
+    const gate = deferred<typeof FOUND>();
+    const { env, panel } = await ready({ api: { lookupYoutube: () => gate.promise } });
+    const started = panel.startPaste(0);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(env.api.pasteState.active).toBe(false);
+    gate.resolve(FOUND);
+    await started;
+    expect(env.api.pasteState.active).toBe(true);
+    expect(lookups(env)).toHaveLength(1);
+  });
+
+  it("is not asked at all while the permission is off or the YouTube link setting is off", async () => {
+    const off = await ready({ hosts: { youtube: false }, api: { lookupYoutube: () => Promise.resolve(FOUND) } });
+    await off.panel.startPaste(0);
+    expect(lookups(off.env)).toEqual([]);
+    const unticked = await ready({ api: { lookupYoutube: () => Promise.resolve(FOUND) } });
+    expect(lookups(unticked.env)).toHaveLength(1);
+    const fresh = await open({ hosts: { youtube: true }, settings: { scrapeYoutube: false } });
+    await fresh.panel.detect(ALBUM_URL);
+    await fresh.panel.setAllSelected(true);
+    await fresh.panel.getCredits();
+    await fresh.panel.startPaste(0);
+    expect(lookups(fresh.env)).toEqual([]);
+  });
+
+  it("still pastes when none is found, without asking for that track again", async () => {
+    const { env, panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(NOTHING) } });
+    await panel.startPaste(0);
+    expect(env.api.pasteState.active).toBe(true);
+    expect(env.api.pasteState.queue.some(([kind]) => kind === "youtube_url")).toBe(false);
+    expect(lookups(env)).toHaveLength(1);
+  });
+
+  it("says no link was found, right after the look-up", async () => {
+    const { panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(NOTHING) } });
+    await panel.ensureYoutube(2);
+    expect(panel.state.status).toBe(MESSAGES.noYoutube);
+  });
+
+  it("says YouTube is limiting requests when it is, and asks again next time", async () => {
+    const { env, panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(THROTTLED) } });
+    await panel.ensureYoutube(0);
+    expect(panel.state.status).toBe(MESSAGES.youtubeThrottled);
+    await panel.startPaste(0);
+    expect(lookups(env)).toHaveLength(3);
+  });
+
+  it("pastes without the link when the look-up fails outright", async () => {
+    const { env, panel } = await ready({
+      api: { lookupYoutube: () => Promise.resolve({ ok: false, error: { code: "internal", message: "x" } }) },
     });
-    await panel.detect(ALBUM_URL);
-    await panel.setAllSelected(true);
-    await panel.getCredits();
+    await panel.startPaste(0);
+    expect(env.api.pasteState.active).toBe(true);
+    expect(panel.state.session.results[0]?.song?.youtubeUrl).toBe("");
+  });
+
+  it("leaves the YouTube step out of the queue when the setting is turned off afterwards", async () => {
+    const { panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(FOUND) } });
     await panel.setSetting("scrapeYoutube", false);
     expect(panel.queueFor(0).some(([kind]) => kind === "youtube_url")).toBe(false);
+  });
+
+  it("drops an answer that arrives after the panel moved to another album", async () => {
+    const gate = deferred<typeof FOUND>();
+    const { panel } = await ready({ api: { lookupYoutube: () => gate.promise } });
+    await panel.newAlbum();
+    gate.resolve(FOUND);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(panel.state.session.results).toEqual([]);
   });
 });

@@ -341,12 +341,10 @@ describe("the finished screen", () => {
 describe("the YouTube link in the credits list", () => {
   const LINK = "https://www.youtube.com/watch?v=abcDEF_-123";
   const withLink = (isMv: boolean) => ({
+    hosts: { youtube: true },
     api: {
-      scrapeTrack: (_url: string, title: string) =>
-        Promise.resolve({
-          ok: true as const,
-          data: { ...scrapeFor(title), youtubeUrl: LINK, youtubeIsMv: isMv },
-        }),
+      lookupYoutube: () =>
+        Promise.resolve({ ok: true as const, data: { url: LINK, isMusicVideo: isMv, throttled: false } }),
     },
   });
 

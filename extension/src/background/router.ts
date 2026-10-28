@@ -35,6 +35,7 @@ export function createRouter(
 ): Router {
   const serial = new Serial();
   const reads = new Limiter(MAX_OPEN_TABS);
+  const direct = { run: <T>(job: () => Promise<T>): Promise<T> => job() };
 
   return (raw) => {
     if (!isWorkerRequest(raw)) {
@@ -43,7 +44,8 @@ export function createRouter(
     // Pasting must stay responsive while an album is being read, so it does not wait in the reads' queue.
     if (isPasteCommand(raw)) return paste.command(raw);
 
-    const queue = raw.type === "detect" ? serial : reads;
+    // YouTube look-ups wait in no queue of tabs: the gate inside the service paces them.
+    const queue = raw.type === "detect" ? serial : raw.type === "youtube-lookup" ? direct : reads;
     return queue.run(async () => {
       const stopKeepAlive = ports.keepAlive();
       try {
@@ -55,33 +57,17 @@ export function createRouter(
           if (!result.ok) return result;
           return { ok: true, data: await withCover(result.data, await exact, covers) };
         }
-        // The YouTube search starts with the page read, as in the desktop app, when the album's artist is known.
-        const hintArtist = raw.artist ?? "";
-        const early =
-          raw.trackTitle && hintArtist ? youtube.find(raw.trackTitle, hintArtist).catch(() => NO_LINK) : null;
-        const result = await scrapeTrack(ports, raw.url, raw.trackTitle, timing);
-        if (!result.ok) return result;
-        const title = raw.trackTitle || result.data.title;
-        const artist = result.data.artist;
-        // As in the desktop app, a track with no cover of its own is searched by its title, which finds a cover
-        // when the album's lookup missed and the song page showed none. It runs beside the YouTube search, not after.
-        const coverSearch = result.data.coverArtUrl
-          ? Promise.resolve(result.data.coverArtUrl)
-          : title && artist
-            ? covers.search(title, artist).catch(() => "")
-            : Promise.resolve("");
-        let link = (await early) ?? NO_LINK;
-        // The song page's own title and artist are the second try, only when they differ from the first: asking the
-        // same question again would double the traffic for nothing.
-        const differs = title !== raw.trackTitle || artist !== hintArtist;
-        if (!link.url && title && artist && (early === null || differs)) {
-          link = await youtube.find(title, artist).catch(() => NO_LINK);
+        if (raw.type === "youtube-lookup") {
+          const link = await youtube.find(raw.title, raw.artist).catch(() => NO_LINK);
+          return { ok: true, data: { ...link, throttled: !link.url && youtube.throttled() } };
         }
-        const cover = await coverSearch;
-        return {
-          ok: true,
-          data: { ...result.data, coverArtUrl: cover, youtubeUrl: link.url, youtubeIsMv: link.isMusicVideo },
-        };
+        const result = await scrapeTrack(ports, raw.url, raw.trackTitle, timing);
+        if (!result.ok || result.data.coverArtUrl) return result;
+        // As in the desktop app, a track with no cover of its own is searched by its title, which finds a cover
+        // when the album's lookup missed and the song page showed none.
+        const title = raw.trackTitle || result.data.title;
+        const found = title && result.data.artist ? await covers.search(title, result.data.artist).catch(() => "") : "";
+        return { ok: true, data: { ...result.data, coverArtUrl: found } };
       } finally {
         stopKeepAlive();
       }

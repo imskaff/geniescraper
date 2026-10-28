@@ -37,7 +37,7 @@ describe("router", () => {
     const route = createRouter(fakeBrowser().ports, FAST_CLIENT, pasteFor(fakeBrowser()), NO_COVERS);
     expect(await route({ type: "scrape-track", url: SONG_URL, trackTitle: "Fortnight" })).toEqual({
       ok: true,
-      data: { ...PAGE_SCRAPE, youtubeUrl: "", youtubeIsMv: false },
+      data: PAGE_SCRAPE,
     });
   });
 
@@ -130,128 +130,81 @@ describe("Limiter", () => {
   });
 });
 
-describe("the YouTube link of a scraped track", () => {
-  const LINK = { url: "https://www.youtube.com/watch?v=abc", isMusicVideo: true };
+describe("the YouTube look-up", () => {
+  const LINK = { url: "https://www.youtube.com/watch?v=abcDEF_-123", isMusicVideo: true };
+  const none = { url: "", isMusicVideo: false };
 
-  function setup(find: YoutubeService["find"], scrape: Partial<typeof PAGE_SCRAPE> = {}) {
-    const browser = fakeBrowser({ answer: () => Promise.resolve({ ok: true, data: { ...PAGE_SCRAPE, ...scrape } }) });
-    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS, { find });
-    return (artist?: string) =>
-      route({
-        type: "scrape-track",
-        url: SONG_URL,
-        trackTitle: "Fortnight",
-        ...(artist === undefined ? {} : { artist }),
-      });
-  }
-
-  it("is put on the scrape, with whether it is a music video", async () => {
-    const run = setup(() => Promise.resolve(LINK));
-    expect(await run("Taylor Swift")).toMatchObject({
-      ok: true,
-      data: { youtubeUrl: LINK.url, youtubeIsMv: true },
+  const route = (service: Partial<YoutubeService>, browser = fakeBrowser()) =>
+    createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS, {
+      find: () => Promise.resolve(none),
+      throttled: () => false,
+      ...service,
     });
-  });
 
-  it("starts the search before the page is read, when the album's artist is known", async () => {
-    const order: string[] = [];
-    const browser = fakeBrowser({
-      answer: () => {
-        order.push("page-read");
-        return Promise.resolve({ ok: true, data: PAGE_SCRAPE });
-      },
-    });
-    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS, {
-      find: () => {
-        order.push("youtube-started");
-        return Promise.resolve(LINK);
-      },
-    });
-    await route({ type: "scrape-track", url: SONG_URL, trackTitle: "Fortnight", artist: PAGE_SCRAPE.artist });
-    expect(order).toEqual(["youtube-started", "page-read"]);
-  });
-
-  it("asks once with the album's title and artist, and does not repeat a question that found nothing", async () => {
+  it("answers a youtube-lookup request with the link and whether it is a music video", async () => {
     const asked: string[] = [];
-    const run = setup(
-      (title, artist) => {
+    const answer = await route({
+      find: (title, artist) => {
         asked.push(`${artist} / ${title}`);
-        return Promise.resolve({ url: "", isMusicVideo: false });
-      },
-      { title: "Fortnight", artist: PAGE_SCRAPE.artist },
-    );
-    await run(PAGE_SCRAPE.artist);
-    expect(asked).toEqual([`${PAGE_SCRAPE.artist} / Fortnight`]);
-  });
-
-  it("tries again with the song page's own artist when that differs from the album's and the first found nothing", async () => {
-    const asked: string[] = [];
-    const run = setup((title, artist) => {
-      asked.push(`${artist} / ${title}`);
-      return Promise.resolve(artist === PAGE_SCRAPE.artist ? LINK : { url: "", isMusicVideo: false });
-    });
-    const result = await run("Various Artists");
-    expect(asked).toEqual(["Various Artists / Fortnight", `${PAGE_SCRAPE.artist} / Fortnight`]);
-    expect(result).toMatchObject({ ok: true, data: { youtubeUrl: LINK.url } });
-  });
-
-  it("searches after the page read, with the song page's artist, when the album's is not known", async () => {
-    const asked: string[] = [];
-    const run = setup((title, artist) => {
-      asked.push(`${artist} / ${title}`);
-      return Promise.resolve(LINK);
-    });
-    await run();
-    expect(asked).toEqual([`${PAGE_SCRAPE.artist} / Fortnight`]);
-  });
-
-  it("searches for the cover beside the YouTube search, not after it", async () => {
-    const order: string[] = [];
-    let release: () => void = () => undefined;
-    const held = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    const browser = fakeBrowser({
-      answer: () => Promise.resolve({ ok: true, data: { ...PAGE_SCRAPE, coverArtUrl: "" } }),
-    });
-    const covers: CoverService = {
-      exact: () => Promise.resolve(""),
-      search: () => {
-        order.push("cover-started");
-        return Promise.resolve("");
-      },
-    };
-    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), covers, {
-      find: async () => {
-        order.push("youtube-started");
-        await held;
-        return LINK;
-      },
-    });
-    const done = route({ type: "scrape-track", url: SONG_URL, trackTitle: "Fortnight", artist: PAGE_SCRAPE.artist });
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(order).toEqual(["youtube-started", "cover-started"]);
-    release();
-    expect(await done).toMatchObject({ ok: true, data: { youtubeUrl: LINK.url } });
-  });
-
-  it("is empty, and the read still succeeds, when the search throws", async () => {
-    const run = setup(() => Promise.reject(new Error("offline")));
-    expect(await run("Taylor Swift")).toMatchObject({ ok: true, data: { youtubeUrl: "", youtubeIsMv: false } });
-  });
-
-  it("is not searched for when the page read fails", async () => {
-    const asked: string[] = [];
-    const browser = fakeBrowser({
-      answer: () => Promise.resolve({ ok: false, error: { code: "not-found", message: "x" } }),
-    });
-    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS, {
-      find: (t) => {
-        asked.push(t);
         return Promise.resolve(LINK);
       },
+    })({ type: "youtube-lookup", title: "Fortnight", artist: "Taylor Swift" });
+    expect(answer).toEqual({ ok: true, data: { ...LINK, throttled: false } });
+    expect(asked).toEqual(["Taylor Swift / Fortnight"]);
+  });
+
+  it("says when no link was found only because YouTube is limiting requests", async () => {
+    const answer = await route({ throttled: () => true })({ type: "youtube-lookup", title: "x", artist: "y" });
+    expect(answer).toEqual({ ok: true, data: { url: "", isMusicVideo: false, throttled: true } });
+  });
+
+  it("does not call a found link throttled", async () => {
+    const answer = await route({ find: () => Promise.resolve(LINK), throttled: () => true })({
+      type: "youtube-lookup",
+      title: "x",
+      artist: "y",
     });
-    expect(await route({ type: "scrape-track", url: SONG_URL, trackTitle: "x" })).toMatchObject({ ok: false });
+    expect(answer).toMatchObject({ ok: true, data: { throttled: false } });
+  });
+
+  it("answers with no link, not an error, when the search throws", async () => {
+    const answer = await route({ find: () => Promise.reject(new Error("offline")) })({
+      type: "youtube-lookup",
+      title: "x",
+      artist: "y",
+    });
+    expect(answer).toEqual({ ok: true, data: { url: "", isMusicVideo: false, throttled: false } });
+  });
+
+  it.each([
+    { type: "youtube-lookup" },
+    { type: "youtube-lookup", title: "x" },
+    { type: "youtube-lookup", title: 1, artist: "y" },
+  ])("rejects the malformed request %j", async (raw) => {
+    expect(await route({})(raw)).toMatchObject({ ok: false, error: { code: "bad-request" } });
+  });
+
+  it("is not made while an album is read: a scrape never asks YouTube", async () => {
+    const asked: string[] = [];
+    const browser = fakeBrowser();
+    const result = await route(
+      {
+        find: (t) => {
+          asked.push(t);
+          return Promise.resolve(LINK);
+        },
+      },
+      browser,
+    )({ type: "scrape-track", url: SONG_URL, trackTitle: "Fortnight" });
+    expect(result).toMatchObject({ ok: true });
     expect(asked).toEqual([]);
+  });
+
+  it("is not held up by album reads waiting for tabs", async () => {
+    const browser = fakeBrowser({ neverLoads: true });
+    const r = route({ find: () => Promise.resolve(LINK) }, browser);
+    void r({ type: "scrape-track", url: SONG_URL, trackTitle: "x" });
+    const answer = await r({ type: "youtube-lookup", title: "x", artist: "y" });
+    expect(answer).toMatchObject({ ok: true, data: { url: LINK.url } });
   });
 });

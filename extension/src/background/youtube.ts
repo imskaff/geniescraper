@@ -6,9 +6,14 @@ import { Limiter } from "./serial";
 export interface YoutubeService {
   /** The link for this song, or an empty link when none is found or YouTube may not be contacted. */
   find(title: string, artist: string): Promise<YoutubeLink>;
+  /** True while YouTube is being left alone because it stopped answering. */
+  throttled(): boolean;
 }
 
-export const NO_YOUTUBE: YoutubeService = { find: () => Promise.resolve({ url: "", isMusicVideo: false }) };
+export const NO_YOUTUBE: YoutubeService = {
+  find: () => Promise.resolve({ url: "", isMusicVideo: false }),
+  throttled: () => false,
+};
 
 /**
  * How politely YouTube is asked. Google answers a burst of requests with a "sorry" interstitial (a redirect, which
@@ -110,6 +115,7 @@ export function realYoutube(
   getText: GetText = fetchText,
   granted: () => Promise<boolean> = youtubeGranted,
 ): YoutubeService {
-  const pages = youtubePages(getText, new YoutubeGate(), granted);
-  return { find: (title, artist) => findYoutube(pages, title, artist) };
+  const gate = new YoutubeGate();
+  const pages = youtubePages(getText, gate, granted);
+  return { find: (title, artist) => findYoutube(pages, title, artist), throttled: () => gate.coolingDown };
 }

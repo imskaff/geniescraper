@@ -38,8 +38,6 @@ if (grant) {
   delete manifest.optional_host_permissions;
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 }
-const golden = JSON.parse(readFileSync(join(root, "..", "tests", "golden", "youtube.json"), "utf-8"));
-const chihiro = golden.find((g) => g.id === "eilish-hmhas-t3");
 const browser = launchChromium({ chromePath, dist, port: 9336 });
 const runs = [];
 let reference = null;
@@ -99,14 +97,11 @@ try {
         "chrome.storage.session.get('session').then((r) => r.session.results.map((t) => ({ index: t.index, status: t.status, song: t.song })))",
       );
       const errors = results.filter((t) => t.status !== "done").length;
-      const withLink = results.filter((t) => t.song?.youtubeUrl).length;
-      const chihiroLink = results.find((t) => t.index === 2)?.song?.youtubeUrl ?? "";
-      const chihiroOk = chihiro.accept.includes(chihiroLink.split("=").pop() ?? "");
       const songs = JSON.stringify(results.map((t) => ({ ...t.song, youtubeUrl: undefined, youtubeIsMv: undefined })));
       reference ??= songs;
-      runs.push({ mode, seconds, peak, errors, status, same: songs === reference, withLink, chihiroOk });
+      runs.push({ mode, seconds, peak, errors, status, same: songs === reference });
       console.log(
-        `mode ${mode === 0 ? "all" : mode}: ${seconds.toFixed(1)} s, peak ${peak} reads at once, ${errors} not done, same credits as one-by-one: ${songs === reference}, YouTube links ${withLink}/${results.length}, CHIHIRO link accepted: ${chihiroOk}  (${status})`,
+        `mode ${mode === 0 ? "all" : mode}: ${seconds.toFixed(1)} s, peak ${peak} reads at once, ${errors} not done, same credits as one-by-one: ${songs === reference}  (${status})`,
       );
       await sleep(5000);
     }
@@ -120,7 +115,7 @@ try {
     console.log(
       `  ${mode === 0 ? "all at once" : `${mode} at a time`}: median ${median.toFixed(1)} s over ${mine.length} run(s), ` +
         `peak ${Math.max(...mine.map((r) => r.peak))}, failures ${mine.reduce((n, r) => n + r.errors, 0)}, ` +
-        `identical to one-by-one ${mine.every((r) => r.same)}, links ${mine.map((r) => r.withLink).join("/")}`,
+        `identical to one-by-one ${mine.every((r) => r.same)}`,
     );
   }
 } finally {

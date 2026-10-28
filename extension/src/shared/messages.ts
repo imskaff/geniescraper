@@ -26,9 +26,15 @@ export interface PageScrape {
   coverArtUrl: string;
   /** Non-fatal problems, for example that the page held no credits. */
   warnings: string[];
-  /** The song's YouTube link, found by the worker when the user has allowed that look-up. */
-  youtubeUrl?: string;
-  youtubeIsMv?: boolean;
+}
+
+/** The worker's answer to a YouTube look-up. */
+export interface YoutubeAnswer {
+  /** The link, or "" when none was found or YouTube may not be asked. */
+  url: string;
+  isMusicVideo: boolean;
+  /** True when YouTube is limiting requests, so "no link" does not mean the song has none. */
+  throttled: boolean;
 }
 
 export type ErrorCode = "bad-request" | "invalid-url" | "not-found" | "timeout" | "tab-failed" | "internal";
@@ -56,8 +62,9 @@ export type PasteCommand =
 /** Messages the extension's own pages send to the background worker. */
 export type WorkerRequest =
   | { type: "detect"; url: string; tabId?: number }
-  /** `artist` is the album's, so the YouTube search can start before the page has been read. */
-  | { type: "scrape-track"; url: string; trackTitle: string; artist?: string }
+  | { type: "scrape-track"; url: string; trackTitle: string }
+  /** One track's YouTube link, looked up when the user is about to paste it, never for a whole album at once. */
+  | { type: "youtube-lookup"; title: string; artist: string }
   | PasteCommand;
 
 /** What the Genius content script asks the worker. The worker also checks that it really came from genius.com. */
@@ -127,13 +134,12 @@ export function isPasteCommand(value: unknown): value is PasteCommand {
 
 export function isWorkerRequest(value: unknown): value is WorkerRequest {
   if (isPasteCommand(value)) return true;
-  if (!isRecord(value) || !hasUrl(value)) return false;
+  if (!isRecord(value)) return false;
+  if (value["type"] === "youtube-lookup")
+    return typeof value["title"] === "string" && typeof value["artist"] === "string";
+  if (!hasUrl(value)) return false;
   if (value["type"] === "detect") return value["tabId"] === undefined || Number.isInteger(value["tabId"]);
-  return (
-    value["type"] === "scrape-track" &&
-    typeof value["trackTitle"] === "string" &&
-    (value["artist"] === undefined || typeof value["artist"] === "string")
-  );
+  return value["type"] === "scrape-track" && typeof value["trackTitle"] === "string";
 }
 
 export function isGeniusRequest(value: unknown): value is GeniusRequest {
@@ -206,8 +212,15 @@ export function isPageScrape(value: unknown): value is PageScrape {
     Array.isArray(value["credits"]) &&
     value["credits"].every(isCredit) &&
     typeof value["coverArtUrl"] === "string" &&
-    isStringArray(value["warnings"]) &&
-    (value["youtubeUrl"] === undefined || typeof value["youtubeUrl"] === "string") &&
-    (value["youtubeIsMv"] === undefined || typeof value["youtubeIsMv"] === "boolean")
+    isStringArray(value["warnings"])
+  );
+}
+
+export function isYoutubeAnswer(value: unknown): value is YoutubeAnswer {
+  return (
+    isRecord(value) &&
+    typeof value["url"] === "string" &&
+    typeof value["isMusicVideo"] === "boolean" &&
+    typeof value["throttled"] === "boolean"
   );
 }

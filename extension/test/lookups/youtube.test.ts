@@ -18,6 +18,10 @@ import {
   type YoutubePages,
 } from "../../src/lookups/youtube";
 
+/** The most requests one song may cost, and the average over the golden set. The desktop algorithm needs up to 18. */
+const MAX_REQUESTS_PER_SONG = 6;
+const AVERAGE_REQUESTS_PER_SONG = 4.5;
+
 const TESTS = join(import.meta.dirname, "..", "..", "..", "tests");
 
 interface Golden {
@@ -76,6 +80,17 @@ describe("finding a link, replaying the saved YouTube pages", () => {
     );
     expect(watches.length).toBeLessThanOrEqual(3 + 3 + 2 + 5);
     expect(new Set(watches).size).toBe(watches.length);
+  });
+
+  it("keeps each song's requests low enough for Google to tolerate, across the whole golden set", async () => {
+    const counts: number[] = [];
+    for (const g of golden) {
+      const log: string[] = [];
+      await findYoutube(savedPages(g.id, log), g.title, g.artist);
+      counts.push(log.length);
+    }
+    expect(Math.max(...counts)).toBeLessThanOrEqual(MAX_REQUESTS_PER_SONG);
+    expect(counts.reduce((a, b) => a + b, 0) / counts.length).toBeLessThanOrEqual(AVERAGE_REQUESTS_PER_SONG);
   });
 
   it("gives nothing without a title or an artist, and asks for nothing", async () => {

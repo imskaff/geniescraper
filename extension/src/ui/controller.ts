@@ -64,6 +64,9 @@ export const MESSAGES = {
   invalidLink: "That is not an Apple Music album or song link.",
   noTracks: "Pick at least one track.",
   noPage: "Apple Music has no page for this track, so its credits cannot be read.",
+  lookingForYoutube: "Looking for the YouTube link…",
+  noYoutube: "No YouTube link was found for this track.",
+  youtubeThrottled: "YouTube is limiting requests right now, so this track has no YouTube link. Try again in a minute.",
   allDone: "All credits entered. Check the Genius page, then press Save there.",
 } as const;
 
@@ -96,8 +99,8 @@ export function buildSong(album: AlbumInfo, result: Pick<TrackResult, "url">, sc
     copyrightNotice: album.copyrightNotice,
     // The album's cover comes from Apple's catalog lookup, which is exact; the song page header is only a fallback.
     coverArtUrl: album.coverArtUrl || scrape.coverArtUrl,
-    youtubeUrl: scrape.youtubeUrl ?? "",
-    youtubeIsMv: scrape.youtubeIsMv ?? false,
+    youtubeUrl: "",
+    youtubeIsMv: false,
   };
 }
 
@@ -312,12 +315,14 @@ export class PanelController {
         const next = this.current.session.results.find((result) => result.status === "pending");
         if (!next || myRun !== this.run) return;
         const claimed = this.setResult(next.index, { status: "loading", error: "" });
-        const answer = await this.env.api.scrapeTrack(next.url, next.title, this.current.session.album?.artist);
+        const answer = await this.env.api.scrapeTrack(next.url, next.title);
         await claimed;
         if (myRun !== this.run) return; // stopped or replaced while waiting: drop the late answer
         const album = this.current.session.album;
         if (answer.ok && album) {
           await this.setResult(next.index, { status: "done", song: buildSong(album, next, answer.data), error: "" });
+          // The track in front of the user gets its link while the rest are read, so Start pasting does not wait.
+          if (next.index === this.current.session.current) void this.ensureYoutube(next.index);
         } else if (!answer.ok) {
           await this.setResult(next.index, { status: "error", error: describeError(answer.error) });
         }
@@ -444,8 +449,55 @@ export class PanelController {
     else this.update({ error: describeError(answer.error), status: "" });
   }
 
+  // ── the YouTube link, one track at a time ───────────────────────────
+
+  /** Each track is asked about once per panel session; a track in the map has been, or is being, looked up. */
+  private readonly youtubeLookups = new Map<number, Promise<void>>();
+
+  /**
+   * Look up this track's YouTube link if it needs one and the user has allowed it. Called when the user is about to
+   * paste the track, never for a whole album at once: Google blocks a burst of searches, which left most of an
+   * album without links. The answer is kept on the track, so it is not asked again.
+   */
+  ensureYoutube(index: number): Promise<void> {
+    const known = this.youtubeLookups.get(index);
+    if (known) return known;
+    const result = this.current.session.results.find((r) => r.index === index);
+    const song = result?.song;
+    if (!result || !song || song.youtubeUrl || !this.current.settings.scrapeYoutube || !this.current.hosts.youtube) {
+      return Promise.resolve();
+    }
+    const lookup = this.lookupYoutube(index, song);
+    this.youtubeLookups.set(index, lookup);
+    return lookup;
+  }
+
+  private async lookupYoutube(index: number, song: SongCredits): Promise<void> {
+    const artist = song.artist || this.current.session.album?.artist || "";
+    const title = song.title;
+    if (!title || !artist) return;
+    this.update({ status: MESSAGES.lookingForYoutube });
+    const answer = await this.env.api.lookupYoutube(title, artist);
+    const current = this.current.session.results.find((r) => r.index === index);
+    // The panel may have moved on (another album, the main menu) while YouTube was being asked.
+    if (current?.song?.title !== title) return;
+    if (answer.ok && answer.data.url) {
+      await this.setResult(index, {
+        song: { ...current.song, youtubeUrl: answer.data.url, youtubeIsMv: answer.data.isMusicVideo },
+      });
+      this.update({ status: "" });
+      return;
+    }
+    // A failed lookup may be tried again later; a clean "nothing found" is not asked twice.
+    if (!answer.ok || answer.data.throttled) this.youtubeLookups.delete(index);
+    this.update({
+      status: answer.ok && answer.data.throttled ? MESSAGES.youtubeThrottled : answer.ok ? MESSAGES.noYoutube : "",
+    });
+  }
+
   /** Begin pasting one track's queue into Genius. */
   async startPaste(index: number): Promise<void> {
+    await this.ensureYoutube(index);
     const result = this.current.session.results.find((r) => r.index === index);
     const queue = this.queueFor(index);
     if (!result?.song || queue.length === 0) return;
