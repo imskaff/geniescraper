@@ -103,6 +103,29 @@ try {
       console.log(
         `mode ${mode === 0 ? "all" : mode}: ${seconds.toFixed(1)} s, peak ${peak} reads at once, ${errors} not done, same credits as one-by-one: ${songs === reference}  (${status})`,
       );
+      // With the YouTube permission granted (--grant-optional) the links arrive after the credits: wait until the
+      // number of tracks with a link has stopped growing, and say how long that took.
+      if (grant) {
+        const linkCount = () =>
+          panel.evaluate(
+            "chrome.storage.session.get('session').then((r) => r.session.results.filter((t) => t.song?.youtubeUrl).length)",
+          );
+        let links = await linkCount();
+        let steady = 0;
+        const waitStart = Date.now();
+        while (steady < 6 && Date.now() - waitStart < 60000) {
+          await sleep(1000);
+          const now = await linkCount();
+          steady = now === links ? steady + 1 : 0;
+          links = now;
+        }
+        const notes = await panel.evaluate(
+          "document.body.textContent.includes('limiting requests') ? 'YouTube said it was limiting requests' : 'no throttle message'",
+        );
+        console.log(
+          `      YouTube links: ${String(links)} of ${String(results.length)} tracks, steady after ${((Date.now() - waitStart) / 1000 - 6).toFixed(0)} s more (${notes})`,
+        );
+      }
       await sleep(5000);
     }
   }

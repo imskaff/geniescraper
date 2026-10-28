@@ -1,13 +1,5 @@
 // The worker's YouTube lookup behind an interface, so the router can be tested without the network.
-import {
-  fetchPost,
-  fetchResult,
-  fetchText,
-  hostOrigin,
-  type GetResult,
-  type GetText,
-  type PostJson,
-} from "../lookups/http";
+import { fetchResult, fetchText, hostOrigin, type GetResult, type GetText, type PostJson } from "../lookups/http";
 import { innertubePages } from "../lookups/innertube";
 import { apiPages } from "../lookups/youtubeApi";
 import { extractVar, findYoutube, type YoutubeLink, type YoutubePages } from "../lookups/youtube";
@@ -140,7 +132,11 @@ const apiGranted = (): Promise<boolean> => chrome.permissions.contains({ origins
 
 export interface YoutubeOptions {
   getText?: GetText;
-  /** YouTube's JSON endpoints; when absent only the HTML pages are used. */
+  /**
+   * YouTube's JSON endpoints; when absent only the HTML pages are used. Off in the real extension: from an extension
+   * page the browser sends the extension's origin, which YouTube refuses at once (403), so the extra request would
+   * only count as a failure. See section 26 of docs/extension-plan.md.
+   */
   post?: PostJson;
   granted?: () => Promise<boolean>;
   /** The user's own YouTube key; "" when they have none. */
@@ -158,7 +154,7 @@ export interface YoutubeOptions {
 export function realYoutube(options: YoutubeOptions = {}): YoutubeService {
   const {
     getText = fetchText,
-    post = fetchPost,
+    post,
     granted = youtubeGranted,
     getKey = () => Promise.resolve(""),
     getResult = fetchResult,

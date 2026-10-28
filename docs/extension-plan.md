@@ -635,3 +635,15 @@ That technique is now in the extension (`lookups/innertube.ts`), written for thi
   It now matches whole words; the golden set still passes.
   The desktop app's `scraper/youtube.py` has the same check and the same bug (not changed here).
 - **What album results look like.** Most tracks of a pop album have only a lyric video, a live performance and fan uploads on YouTube; the lookup skips lyric and live videos on purpose (as the desktop app does) and finds a link only for a music video or an official audio upload, so 3 of 10 tracks of the sample album got one.
+
+### Correction: the JSON endpoints do not work from the extension
+
+Everything measured above was done from Node, where the request carries no `Origin` header.
+Inside the real extension the same `POST youtubei/v1/search` was refused with 403 on the very first request: a browser always sends the extension's own origin (`chrome-extension://...`) with a cross-origin POST, and a page script cannot change that header.
+The HTML page request from the same worker still answered 200, so the refusal is specific to the JSON POST.
+Consequences:
+- The JSON path is switched off by default in the extension (`realYoutube` takes it only as an option), because trying it first would only add one failed request, and one failure towards the cool-down, to every lookup. The adapter and its tests stay, since the idea works from anything that is not a browser page (the desktop app's Python is such a client).
+- Whole-album lookup without a key was not enabled: it would put 10 tracks' worth of page requests through the HTML path that Google blocks after a few. With a saved key it is still on.
+- Ways to run the request as the website itself (making it from a youtube.com page, or rewriting the origin header) were not tried: they amount to presenting the extension as a different client to get past YouTube's refusal, which this project does not do.
+- What still works in the extension: the official Data API with the user's own key (first choice), and the HTML pages for the first few lookups of a session, one track at a time.
+- The whole-word title match fix is real and stays.
