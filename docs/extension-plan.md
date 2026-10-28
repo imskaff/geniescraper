@@ -778,6 +778,9 @@ Decisions from the owner:
   Switching to another tab does not pause it.
 - **Next song.** After a track the next-track countdown starts, and auto resumes by itself when the next song's edit form is open and focused.
   The user only navigates.
+- **Look.** The automatic button should read as the app's premium "magic" feature: visibly glowing, with a flowing gradient and sparkles, clearly more special than the step-by-step button.
+  Rules it must keep: the glow and gradient have a static version that still shows when the system asks for reduced motion (only the movement and the sparkles are dropped, as the current glow button does), nothing flashes faster than a slow pulse, the label keeps contrast on every point of the gradient in both colour schemes (the contrast test gets the new colours), and it is still a real button with a clear name for screen readers (sparkles are decoration, hidden from them).
+  While a run is going the button turns into Pause, and it stays calm (no sparkles) so the panel is not distracting during the work.
 - **Never** presses Save.
 - **Later, not now.** Opening the next song's Genius page for the user, and eventually navigating Genius by itself, as its own feature with a Genius guidelines check first.
 
@@ -796,7 +799,8 @@ Decisions from the owner:
 ### Slices
 
 Each is tested first and committable on its own.
-1. The pure state: auto mode and pause reasons, with a test for every transition.
+1. The pure state: auto mode and pause reasons, with a test for every transition. Done in `core/paste.ts` (`startAuto`, `pauseAuto`, `confirmChoice`, `canAutoStep`, `pauseMessage`, and the `source` of `begin`), tested in `test/core/autoPaste.test.ts`.
+   A Next-key press while a run is going pauses it and fills nothing; Back pauses it; Skip on a field awaiting a choice lets it go on; a missing field pauses it with Genius's own words; a finished run switches itself off; a stored state is restored as it was.
 2. The page driver: the loop, the pace, the pause on the user's input, and the choice wait and resume, against a fake form.
 3. The worker messages, the panel buttons (Start, Step by step, Pause, Resume) and the status wording.
 4. The pace setting and the default.
