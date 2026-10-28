@@ -16,3 +16,4 @@ export class AppleError extends Error {
 }
 
 export const NOT_FOUND_MESSAGE = "Page not found. Check the URL and try again.";
+export const TIMEOUT_MESSAGE = "The Apple Music page did not finish loading in time.";

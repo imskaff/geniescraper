@@ -124,8 +124,18 @@ describe("waitForPage", () => {
     await expect(waitForPage(doc, { ...FAST, readyMs: 1000 })).resolves.toBeUndefined();
   });
 
-  it("gives up quietly at its timeout so the caller can read what rendered", async () => {
-    await expect(waitForPage(html("<body></body>"), { ...FAST, readyMs: 50 })).resolves.toBeUndefined();
+  it("throws a timeout when the page never renders, instead of letting an empty page be read", async () => {
+    await expect(waitForPage(html("<body></body>"), { ...FAST, readyMs: 50 })).rejects.toMatchObject({
+      name: "AppleError",
+      code: "timeout",
+    });
+  });
+
+  it("reports an album page that never hydrated as a timeout, not an empty album", async () => {
+    const doc = html("<body><p>Loading…</p></body>");
+    await expect(
+      detectAlbum(doc, "https://music.apple.com/us/album/x/1", { ...FAST, readyMs: 50 }),
+    ).rejects.toMatchObject({ code: "timeout" });
   });
 });
 

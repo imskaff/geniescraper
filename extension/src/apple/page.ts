@@ -74,14 +74,17 @@ export function readTrackTitle(doc: Document, trackIndex: number): string {
   return "";
 }
 
-/** Titles of every track of an album page, padded with "Track N" when Apple rendered fewer rows than songs. */
+/**
+ * Titles of every track of an album page, one per row so each stays level with its song link (readTrackUrls counts
+ * rows too). A blank title is named by its position, and "Track N" also pads when Apple rendered fewer rows than songs.
+ */
 export function readTrackTitles(doc: Document, trackCount: number): string[] {
   if (trackCount <= 1) return [];
   let titles = texts(doc, ".songs-list-row__song-name");
   if (titles.length === 0) titles = texts(doc, '[data-testid="song-name-value"]');
-  const cleaned = titles.map((title) => title.trim()).filter(Boolean);
-  while (cleaned.length < trackCount) cleaned.push(`Track ${String(cleaned.length + 1)}`);
-  return cleaned.slice(0, trackCount);
+  const named = titles.map((title, index) => title.trim() || `Track ${String(index + 1)}`);
+  while (named.length < trackCount) named.push(`Track ${String(named.length + 1)}`);
+  return named.slice(0, trackCount);
 }
 
 /**

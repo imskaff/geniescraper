@@ -28,6 +28,17 @@ describe("router", () => {
     expect(browser.log).toEqual([]);
   });
 
+  it("answers with an internal error, never a rejection, when a job throws unexpectedly", async () => {
+    const browser = fakeBrowser();
+    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS, undefined, () =>
+      Promise.reject(new Error("boom")),
+    );
+    const answer = await route({ type: "youtube-key-check", key: "AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q" });
+    expect(answer).toMatchObject({ ok: false, error: { code: "internal" } });
+    // Nothing of the failure's own text is passed on: it may name paths or keys.
+    expect(JSON.stringify(answer)).not.toContain("boom");
+  });
+
   it("routes a detect request", async () => {
     const route = createRouter(fakeBrowser().ports, FAST_CLIENT, pasteFor(fakeBrowser()), NO_COVERS);
     expect(await route({ type: "detect", url: ALBUM_URL })).toEqual({ ok: true, data: ALBUM_INFO });

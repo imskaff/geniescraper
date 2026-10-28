@@ -7,7 +7,7 @@
 // credit cards at once, hidden or not.
 import type { AlbumInfo, PageScrape } from "../shared/messages";
 import { CARD_NAME_SELECTOR, parseCreditsDocument } from "./credits";
-import { AppleError, NOT_FOUND_MESSAGE } from "./errors";
+import { AppleError, NOT_FOUND_MESSAGE, TIMEOUT_MESSAGE } from "./errors";
 import {
   NOT_FOUND_SELECTOR,
   READY_SELECTOR,
@@ -37,11 +37,16 @@ export const REAL_TIMING: Timing = { readyMs: 15_000, creditsMs: 10_000, settleM
 
 const SETTLE_CHECKS = 10;
 
-/** Wait for the hydrated page. Throws "not-found" as soon as Apple renders its error view. */
+/**
+ * Wait for the hydrated page. Throws "not-found" as soon as Apple renders its error view, and "timeout" when
+ * neither the page nor the error view appeared: a page that never rendered has nothing to read, and reading it
+ * anyway would report an empty album as if it were the answer.
+ */
 export async function waitForPage(doc: Document, timing: Timing): Promise<void> {
   const marker = () => doc.querySelector(READY_SELECTOR) ?? doc.querySelector(NOT_FOUND_SELECTOR);
-  await waitFor(doc, marker, timing.readyMs, timing.pollMs);
+  const found = await waitFor(doc, marker, timing.readyMs, timing.pollMs);
   if (isNotFound(doc)) throw new AppleError("not-found", NOT_FOUND_MESSAGE);
+  if (!found) throw new AppleError("timeout", TIMEOUT_MESSAGE);
 }
 
 /**

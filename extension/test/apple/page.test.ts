@@ -7,6 +7,7 @@ import {
   readCoverUrl,
   readTitleArtist,
   readTrackTitle,
+  readTrackTitles,
 } from "../../src/apple/page";
 import { extractTitleArtist } from "../../src/apple/title";
 import { normaliseCoverUrl, pickCoverUrl } from "../../src/core/cover";
@@ -18,6 +19,27 @@ const SONGS = CASES.filter((c) => c.url.includes("/song/"));
 
 // Albums whose page header shows only motion artwork and an editorial still, never the album artwork.
 const HEADER_WITHOUT_ARTWORK = new Set(["rodrigo-sour-t6"]);
+
+describe("readTrackTitles", () => {
+  const rows = (...names: string[]): Document =>
+    new DOMParser().parseFromString(
+      `<body>${names.map((n) => `<div data-testid="track-list-item"><span class="songs-list-row__song-name">${n}</span></div>`).join("")}</body>`,
+      "text/html",
+    );
+
+  it("keeps one title per row, so a blank title in the middle does not shift the later ones", () => {
+    expect(readTrackTitles(rows("One", "  ", "Three"), 3)).toEqual(["One", "Track 2", "Three"]);
+  });
+
+  it("names a blank first or last row by its position too", () => {
+    expect(readTrackTitles(rows("", "Two", ""), 3)).toEqual(["Track 1", "Two", "Track 3"]);
+  });
+
+  it("pads with Track N when fewer rows rendered than songs, and drops any extra rows", () => {
+    expect(readTrackTitles(rows("One", "Two"), 3)).toEqual(["One", "Two", "Track 3"]);
+    expect(readTrackTitles(rows("One", "Two", "Three"), 2)).toEqual(["One", "Two"]);
+  });
+});
 
 describe("album pages against the golden files", () => {
   it.each(ALBUMS)("$id copyright", ({ id }) => {

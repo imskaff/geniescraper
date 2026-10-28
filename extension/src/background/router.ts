@@ -15,6 +15,11 @@ export const MAX_OPEN_TABS = 24;
 
 const NO_LINK = { url: "", isMusicVideo: false, keyProblem: "" } as const;
 
+export const INTERNAL_ERROR: Result<never> = {
+  ok: false,
+  error: { code: "internal", message: "Something went wrong inside the extension." },
+};
+
 export type Router = (raw: unknown) => Promise<Result<unknown>>;
 
 /**
@@ -39,7 +44,11 @@ export function createRouter(
   const reads = new Limiter(MAX_OPEN_TABS);
   const direct = { run: <T>(job: () => Promise<T>): Promise<T> => job() };
 
-  return (raw) => {
+  // A job that throws something nobody planned for still has to answer: the panel waits on the reply, and a
+  // rejected promise in the worker's listener would leave it with a closed message channel and no explanation.
+  return (raw) => handle(raw).catch(() => INTERNAL_ERROR);
+
+  function handle(raw: unknown): Promise<Result<unknown>> {
     if (!isWorkerRequest(raw)) {
       return Promise.resolve({ ok: false, error: { code: "bad-request", message: "Unrecognised request." } });
     }
@@ -75,5 +84,5 @@ export function createRouter(
         stopKeepAlive();
       }
     });
-  };
+  }
 }

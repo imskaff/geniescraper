@@ -720,3 +720,11 @@ Checked in a browser at 400 px wide on the credits, track picker, paste and sett
 When a track has been pasted and another track with credits is waiting, the finished screen counts down from 15 on the "Paste next track" button and starts that track when it reaches zero, unless the user gets there first (a click, or leaving the screen, cancels it).
 It waits while the pointer is over the panel or a button has focus, like the menu countdown, and only one countdown runs at a time: after the last track the 30-second return to the main menu takes over.
 The countdown does not depend on the "Go back to the main menu" setting.
+
+## 34. Three fixes from an outside review
+
+An independent review of the extension suggested nine changes; each was checked against the code. Three were real and are done, with the failing test written first:
+- **A page that never renders is a timeout.** `waitForPage` ignored the result of its wait, so a page with neither the ready marker nor the not-found view was read as an empty album. It now throws a `timeout` error (the panel already words that). The test that pinned the old "give up quietly" behaviour now expects the error.
+- **Track titles stay level with their song links.** `readTrackTitles` dropped blank titles before padding, so a blank row in the middle shifted every later title onto the wrong link. It now keeps one title per row and names a blank one "Track N" by its position.
+- **Every request gets an answer.** A job that threw something unplanned (a rejected key check, a failed lookup) rejected the worker's promise, and the panel was left with a closed channel. The router, and the Genius path in the worker, now turn any rejection into an `internal` error result without passing on its text.
+Not done, on purpose: waiting for stable credit text, naming a bad locale file in the package validator, a slow-load warning, and an extension README (offered, not chosen); measuring the 24-tab ceiling (the default of 3 parallel reads already limits it); and extension CI, which already exists in `.github/workflows/ci.yml`.

@@ -10,7 +10,7 @@ import { loadYoutubeKey } from "../shared/secrets";
 import { realYoutube } from "./youtube";
 import { PasteService } from "./paste";
 import { chromePorts } from "./ports";
-import { createRouter } from "./router";
+import { INTERNAL_ERROR, createRouter } from "./router";
 
 const ports = chromePorts();
 const paste = new PasteService(ports, chromeStores());
@@ -45,7 +45,10 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse: (r
   // A Genius page may only drive the paste session, and only a content script of this extension on genius.com
   // (not a frame of another origin) counts as one.
   if (sender.origin === GENIUS_ORIGIN && sender.tab !== undefined && isGeniusRequest(message)) {
-    void paste.fromGenius(message).then(sendResponse);
+    void paste
+      .fromGenius(message)
+      .catch(() => INTERNAL_ERROR)
+      .then(sendResponse);
     return true;
   }
   // Anything else, including the Apple Music content script, gets no answer.
