@@ -320,13 +320,30 @@ export class PanelView {
           : "Open an album or song on Apple Music and paste its link.",
         attrs: { id: "link-help" },
       }),
-      el("button", {
-        class: "button primary",
-        text: busy ? "Reading…" : "Get credits",
-        attrs: { type: "submit", "data-key": "go", ...(busy ? { disabled: "" } : {}) },
-      }),
+      el(
+        "button",
+        {
+          class: "button primary",
+          attrs: {
+            type: "submit",
+            "data-key": "go",
+            ...(busy ? { disabled: "", "aria-label": "Reading the page…" } : {}),
+          },
+        },
+        "Get credits",
+        // Three dots that light up one after another while the page is read.
+        busy
+          ? el(
+              "span",
+              { class: "dots", attrs: { "aria-hidden": "true" } },
+              el("i", { text: "." }),
+              el("i", { text: "." }),
+              el("i", { text: "." }),
+            )
+          : null,
+      ),
     );
-    return [this.heading("Get credits from Apple Music"), ...this.openPages(state), form];
+    return [this.heading("Get credits from Apple Music"), form, ...this.openPages(state)];
   }
 
   /**

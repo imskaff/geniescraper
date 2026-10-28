@@ -136,7 +136,10 @@ describe("link screen", () => {
     await submitLink(root, ALBUM.url);
     const button = $button(root, '[data-key="go"]');
     expect(button.disabled).toBe(true);
-    expect(button.textContent).toBe("Reading…");
+    // The label stays and three dots appear one after another, so the press is seen to be working.
+    expect(button.textContent).toBe("Get credits...");
+    expect(button.querySelectorAll(".dots i")).toHaveLength(3);
+    expect(button.getAttribute("aria-label")).toBe("Reading the page…");
     expect($(root, "main").getAttribute("aria-busy")).toBe("true");
     expect($(root, "#status").textContent).toBe("Reading the page…");
     gate.resolve({ ok: true, data: ALBUM });
