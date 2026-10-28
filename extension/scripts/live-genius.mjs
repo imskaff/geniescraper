@@ -296,10 +296,13 @@ try {
       }
       if (((await pText("#alert")) ?? "").length > 0 || ((await pText(".step + p")) ?? "").includes("Choose ")) {
         // Genius had no exact match: the run waits for the user, who here skips the field.
-        skipped.push((await pText(".step .value")) ?? "");
+        const skippedValue = (await pText(".step .value")) ?? "";
+        skipped.push(skippedValue);
         await pClick("Skip");
         await sleep(900);
-        leftovers.push(...(await typedLeftovers()));
+        // The run goes on by itself after a Skip and may already be typing the next field: only the skipped
+        // step's own text counts as left behind.
+        leftovers.push(...(await typedLeftovers()).filter((typed) => words(typed) === words(skippedValue)));
       }
       await sleep(300);
     }
@@ -351,7 +354,9 @@ try {
     await resume();
     check("it carries on after Esc", await runFor(1));
 
-    // A real click in the form: the page sees a trusted event and pauses the run.
+    // A real click in the form: the page sees a trusted event and pauses the run. (While a step waits for the user's
+    // choice a click is the user choosing, and does not pause: wait for a moment when nothing is awaited.)
+    for (let i = 0; i < 60 && (await stateInStorage())?.awaiting; i++) await sleep(300);
     const point = await gEval(`(() => {
       const r = document.querySelector('form[aria-label="Edit Song Metadata Form"]').getBoundingClientRect();
       return { x: Math.round(r.left + 6), y: Math.round(Math.max(r.top, 0) + 6) };
@@ -415,10 +420,16 @@ try {
     await pUntil("document.querySelector('h2')?.textContent === 'Paste into Genius'", "the paste screen again");
     check("it finishes a second run over the same track", await runFor(total, 240000));
     const secondRows = await rowRoles();
+    // A role Genius has no exact match for is typed into a row and skipped, which can leave one blank row behind;
+    // what must not happen is a second row for a role the form already has.
+    const named = (rows) => rows.filter((role) => role !== "");
     check(
       "a second run adds no role row the form already has",
-      secondRows.length === firstRows.length,
-      `${String(firstRows.length)} rows, then ${String(secondRows.length)}`,
+      named(secondRows).length === named(firstRows).length,
+      `${String(named(firstRows).length)} named rows, then ${String(named(secondRows).length)}`,
+    );
+    console.log(
+      `      blank rows: ${String(firstRows.length - named(firstRows).length)} after the first run, ${String(secondRows.length - named(secondRows).length)} after the second`,
     );
     if (secondRows.length !== firstRows.length) {
       // Name the rows that were added, so one run is enough to see which role did it.
