@@ -3,7 +3,12 @@
 // from it is trusted to have the right shape.
 import type { QueueOptions } from "../core/models";
 
+/** How a track's paste is started: by itself, or one Next-key press per step. */
+export type PasteMode = "auto" | "manual";
+
 export interface Settings {
+  /** What the main Start pasting button does. */
+  pasteMode: PasteMode;
   /** Which parts of a track's credits go into the paste queue. */
   scrapeCore: boolean;
   scrapeAdditional: boolean;
@@ -17,6 +22,8 @@ export interface Settings {
   autoConfirm: boolean;
   /** How long Genius's suggestions must hold still before they are trusted, in seconds. */
   autocompleteWaitSeconds: number;
+  /** The pause between fields while pasting automatically, in seconds. */
+  autoPaceSeconds: number;
   /** How many tracks are read at once; 0 reads every picked track at the same time. */
   parallelReads: number;
   /** Go back to the main menu a few seconds after the last step, as the desktop app does. */
@@ -40,10 +47,14 @@ export const PARALLEL_CHOICES = [1, 2, 3, 5, 0] as const;
 
 export const WAIT_RANGE = { min: 0.2, max: 3 } as const;
 
+/** The pause between fields in an automatic run: short enough to feel quick, long enough not to hammer Genius. */
+export const PACE_RANGE = { min: 0.2, max: 5 } as const;
+
 /** Whole seconds a countdown may hold for: long enough to look at the Genius form, short enough to stay useful. */
 export const COUNTDOWN_RANGE = { min: 5, max: 120 } as const;
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = {
+  pasteMode: "auto",
   scrapeCore: true,
   scrapeAdditional: true,
   scrapeCopyright: true,
@@ -53,6 +64,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   backHotkey: "F7",
   autoConfirm: true,
   autocompleteWaitSeconds: 0.6,
+  autoPaceSeconds: 0.6,
   parallelReads: 3,
   autoReturn: true,
   returnSeconds: 30,
@@ -98,6 +110,15 @@ export function normaliseSettings(raw: unknown): Settings {
     return Math.min(COUNTDOWN_RANGE.max, Math.max(COUNTDOWN_RANGE.min, Math.round(value)));
   };
 
+  const mode = source["pasteMode"];
+  const pasteMode: PasteMode = mode === "manual" ? "manual" : DEFAULT_SETTINGS.pasteMode;
+
+  const pace = source["autoPaceSeconds"];
+  const autoPaceSeconds =
+    typeof pace === "number" && Number.isFinite(pace)
+      ? Math.min(PACE_RANGE.max, Math.max(PACE_RANGE.min, pace))
+      : DEFAULT_SETTINGS.autoPaceSeconds;
+
   const reads = source["parallelReads"];
   const parallelReads =
     typeof reads === "number" && (PARALLEL_CHOICES as readonly number[]).includes(reads)
@@ -112,6 +133,7 @@ export function normaliseSettings(raw: unknown): Settings {
     backHotkey = DEFAULT_SETTINGS.backHotkey;
   }
   return {
+    pasteMode,
     scrapeCore: flag("scrapeCore"),
     scrapeAdditional: flag("scrapeAdditional"),
     scrapeCopyright: flag("scrapeCopyright"),
@@ -121,6 +143,7 @@ export function normaliseSettings(raw: unknown): Settings {
     backHotkey,
     autoConfirm: flag("autoConfirm"),
     autocompleteWaitSeconds: waitSeconds,
+    autoPaceSeconds,
     parallelReads,
     autoReturn: flag("autoReturn"),
     returnSeconds: seconds("returnSeconds", false),

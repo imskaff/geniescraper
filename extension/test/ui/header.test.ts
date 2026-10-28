@@ -73,12 +73,12 @@ describe("Start pasting in the button row", () => {
     }
   });
 
-  it("is in the row with Back to tracks and Back to main menu, first, and glows", async () => {
+  it("is in the row with Back to tracks and Back to main menu, first, and has the automatic look", async () => {
     const { root } = await toReview();
     const start = startButton(root);
     expect(start?.textContent).toBe("Start pasting");
     expect(start?.classList.contains("primary")).toBe(true);
-    expect(start?.classList.contains("glow")).toBe(true);
+    expect(start?.classList.contains("magic")).toBe(true);
     const row = start?.parentElement;
     expect(row?.firstElementChild).toBe(start);
     expect(row?.contains($(root, '[data-key="back"]'))).toBe(true);
@@ -106,7 +106,7 @@ describe("Start pasting in the button row", () => {
     const { root } = await toReview();
     const start = startButton(root);
     const label = start?.getAttribute("aria-label") ?? "";
-    expect(label).toBe("Start pasting One");
+    expect(label).toBe("Start pasting One automatically");
     expect(label.startsWith(start?.textContent ?? "?")).toBe(true);
   });
 
@@ -114,7 +114,7 @@ describe("Start pasting in the button row", () => {
     const { root, env, panel } = await toReview();
     $(root, '[data-key="show-2"]').click();
     await flush();
-    expect(startButton(root)?.getAttribute("aria-label")).toBe("Start pasting Three");
+    expect(startButton(root)?.getAttribute("aria-label")).toBe("Start pasting Three automatically");
     startButton(root)?.click();
     await flush();
     expect(env.api.pasteState.title).toBe("Three");
@@ -123,7 +123,7 @@ describe("Start pasting in the button row", () => {
     expect(startButton(root)).toBeNull();
   });
 
-  it("is disabled, and stops glowing, while credits are still being read", async () => {
+  it("is disabled, and loses its glow, while credits are still being read", async () => {
     const gate = deferred<Result<PageScrape>>();
     const { root, panel } = await toTracks({ api: { scrapeTrack: () => gate.promise } });
     await panel.setAllSelected(true);
@@ -135,7 +135,7 @@ describe("Start pasting in the button row", () => {
     await flush();
     expect(panel.state.busy).toBeNull();
     expect(startButton(root)?.disabled).toBe(false);
-    expect(startButton(root)?.classList.contains("glow")).toBe(true);
+    expect(startButton(root)?.classList.contains("magic")).toBe(true);
   });
 
   it("is absent when the settings leave nothing to paste", async () => {

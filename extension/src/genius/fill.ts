@@ -7,7 +7,7 @@
 //   - when nothing matches exactly, the text stays typed and the user decides: a fuzzy first suggestion
 //     (measured: "99 Neighbors" for a made-up name) is never picked on their behalf;
 //   - plain inputs get a value and input/change events, never key presses.
-import type { QueueItem } from "../core/models";
+import type { QueueItem, QueueKind } from "../core/models";
 import { sleep } from "../apple/wait";
 import { chooseOption, sameName, setValue, suggestionsFor, waitForChip, type ComboboxTiming } from "./combobox";
 import {
@@ -16,6 +16,7 @@ import {
   WRITER_LABEL,
   YOUTUBE_INPUT_NAME,
   addCreditsButton,
+  creditsExpander,
   boxOf,
   chipTexts,
   comboboxByLabel,
@@ -38,6 +39,8 @@ export interface FillContext {
   timing: ComboboxTiming;
   /** Choose the exact match without asking. When false every combobox step is left for the user. */
   autoConfirm: boolean;
+  /** An automatic run is filling: the wording does not ask the user to press the Next key. */
+  auto?: boolean;
 }
 
 export const REAL_COMBOBOX_TIMING: ComboboxTiming = { suggestionMs: 4_000, settleMs: 600, selectMs: 1_500, pollMs: 50 };
@@ -63,7 +66,12 @@ async function fillCombobox(
   const options = await suggestionsFor(input, value, ctx.timing);
 
   if (!ctx.autoConfirm) {
-    return { status: "needs-choice", message: `Typed ${value}. Choose it from the suggestions, then press Next.` };
+    return {
+      status: "needs-choice",
+      message: ctx.auto
+        ? `Typed ${value}. Choose it from the suggestions and automatic pasting carries on.`
+        : `Typed ${value}. Choose it from the suggestions, then press Next.`,
+    };
   }
   const exact = options.find((option) => sameName(option.textContent, value));
   if (!exact) {
@@ -85,8 +93,24 @@ function lastRow(form: HTMLFormElement): CreditRow | undefined {
   return creditRows(form).at(-1);
 }
 
+/**
+ * Open the additional credits when the form shows them collapsed behind "N additional roles" and Expand. Pressing
+ * Expand only reveals what the song already has: it saves nothing. Resolves once the rows or the Add button are in
+ * the page, or the time is up; with nothing collapsed it does nothing.
+ */
+async function openCredits(form: HTMLFormElement, ctx: FillContext): Promise<void> {
+  const expander = creditsExpander(form);
+  if (!expander) return;
+  expander.click();
+  const deadline = Date.now() + ctx.timing.selectMs;
+  while (Date.now() < deadline && creditRows(form).length === 0 && !addCreditsButton(form)) {
+    await sleep(ctx.timing.pollMs);
+  }
+}
+
 /** The row a role goes into: the last one if its role is still empty, otherwise a new one. */
 async function rowForNewRole(form: HTMLFormElement, ctx: FillContext): Promise<CreditRow | null> {
+  await openCredits(form, ctx);
   const last = lastRow(form);
   if (last && chipTexts(last.roleBox).length === 0) return last;
 
@@ -111,6 +135,58 @@ function fillPlain(form: HTMLFormElement, name: string, value: string, label: st
     : { status: "needs-choice", message: `Genius did not keep the ${label}. Paste it yourself: ${value}` };
 }
 
+/** The field a step goes into: a combobox's box (where chosen values show as chips), or a plain input. */
+function stepField(
+  form: HTMLFormElement,
+  kind: QueueKind,
+): { box?: Element | undefined; input?: HTMLInputElement | undefined } {
+  switch (kind) {
+    case "written_by":
+    case "produced_by": {
+      const input = comboboxByLabel(form, kind === "written_by" ? WRITER_LABEL : PRODUCER_LABEL);
+      return input ? { box: boxOf(input) } : {};
+    }
+    case "role":
+    case "copyright_role":
+      return { box: lastRow(form)?.roleBox };
+    case "artist":
+    case "phonographic_copyright":
+    case "copyright_notice":
+      return { box: lastRow(form)?.artistsBox };
+    case "youtube_url":
+      return { input: plainInput(form, YOUTUBE_INPUT_NAME) ?? undefined };
+    case "cover_art":
+      return { input: plainInput(form, COVER_ART_INPUT_NAME) ?? undefined };
+  }
+}
+
+/** What a step's field holds right now: its chips, or its value. The user's choice is what changes this afterwards. */
+export function stepSnapshot(doc: Document, item: QueueItem): string[] {
+  const form = findForm(doc);
+  if (!form) return [];
+  const { box, input } = stepField(form, item[0]);
+  if (box) return chipTexts(box);
+  return input ? [input.value] : [];
+}
+
+/**
+ * Whether the user has resolved a step that needed their choice. They usually pick what Genius calls the person or
+ * the label, which is not spelled as Apple spells it, so waiting for Apple's exact name would wait for ever: the step
+ * is done once something new is in its field since `before` (a chip, or a changed value), or the exact name is.
+ */
+export function isStepDone(doc: Document, item: QueueItem, before: readonly string[]): boolean {
+  const form = findForm(doc);
+  if (!form) return false;
+  const value = item[1];
+  const { box, input } = stepField(form, item[0]);
+  if (box) {
+    const chips = chipTexts(box);
+    return chips.some((chip) => sameName(chip, value)) || chips.length > before.length;
+  }
+  if (input) return input.value === value || (input.value.trim() !== "" && input.value !== (before[0] ?? ""));
+  return false;
+}
+
 export async function fillStep(item: QueueItem, ctx: FillContext): Promise<StepOutcome> {
   const form = findForm(ctx.doc);
   if (!form) return { status: "unavailable", message: NO_FORM };
@@ -133,6 +209,8 @@ export async function fillStep(item: QueueItem, ctx: FillContext): Promise<StepO
     case "artist":
     case "phonographic_copyright":
     case "copyright_notice": {
+      // An artist step can come first when its role was skipped on a previous run: open the credits to look.
+      await openCredits(form, ctx);
       const row = lastRow(form);
       if (!row) {
         return { status: "unavailable", message: "Add the role first: there is no additional credit to put this in." };

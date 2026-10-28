@@ -111,7 +111,13 @@ export function fakeBrowser(behaviour: FakeBehaviour = {}): FakeBrowser {
     notifyGenius(tabId, notice: GeniusNotice) {
       if (behaviour.deaf?.includes(tabId)) return Promise.resolve(false);
       notices.push(
-        `${String(tabId)}:${notice.type}${notice.type === "genius/paste-active" ? `:${String(notice.active)}` : ""}`,
+        `${String(tabId)}:${notice.type}${
+          notice.type === "genius/paste-active"
+            ? `:${String(notice.active)}`
+            : notice.type === "genius/auto-state"
+              ? `:${notice.auto}`
+              : ""
+        }`,
       );
       return Promise.resolve(true);
     },

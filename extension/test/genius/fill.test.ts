@@ -128,6 +128,53 @@ describe("combobox fields (Writer, Producer)", () => {
   });
 });
 
+describe("additional credits behind an Expand button", () => {
+  // A song that already has additional roles shows "2 additional roles" and Expand; the rows and the Add button are
+  // not in the page until it is pressed. Found by running the extension on a real song.
+  it("opens them for the first role, then fills it like any other", async () => {
+    const { fake, run } = setup({ collapsedRoles: true });
+    expect(fake.form.querySelector("[data-testid='custom-performances-expander']")).not.toBeNull();
+    expect(await run(["role", "Mixing Engineer"])).toMatchObject({ status: "filled" });
+    expect(fake.expands).toBe(1);
+    expect(rowChips(fake.form)[0]).toEqual({ role: ["Mixing Engineer"], artists: [] });
+    expect(await run(["artist", "FINNEAS"])).toMatchObject({ status: "filled" });
+    expect(rowChips(fake.form)).toEqual([{ role: ["Mixing Engineer"], artists: ["FINNEAS"] }]);
+    expectSafe(fake);
+  });
+
+  it("never presses the button of a section that is already open, where it reads Hide", async () => {
+    const { fake, run } = setup();
+    expect(fake.form.querySelector("[data-testid='custom-performances-expander']")?.textContent.trim()).toBe("Hide");
+    await run(["role", "Mixing Engineer"]);
+    await run(["artist", "FINNEAS"]);
+    expect(fake.expands).toBe(0);
+    expect(rowChips(fake.form)).toEqual([{ role: ["Mixing Engineer"], artists: ["FINNEAS"] }]);
+  });
+
+  it("opens them only once, however many roles follow", async () => {
+    const { fake, run } = setup({ collapsedRoles: true });
+    await run(["role", "Mixing Engineer"]);
+    await run(["artist", "FINNEAS"]);
+    await run(["role", "Vocals"]);
+    expect(fake.expands).toBe(1);
+  });
+
+  it("opens them for an artist step when the role step was skipped and nothing is open yet", async () => {
+    const { fake, run } = setup({ collapsedRoles: true });
+    const outcome = await run(["artist", "FINNEAS"]);
+    // Opened, but there is no role to put the artist under: it still says so rather than guessing a row.
+    expect(fake.expands).toBe(1);
+    expect(outcome).toMatchObject({ status: "unavailable" });
+    expect(outcome.message).toMatch(/role/);
+  });
+
+  it("says plainly when the section will not open", async () => {
+    const { fake, run } = setup({ collapsedRoles: true });
+    fake.form.querySelector("[data-testid='custom-performances-expander']")?.remove();
+    expect(await run(["role", "Mixing Engineer"])).toMatchObject({ status: "unavailable" });
+  });
+});
+
 describe("additional credits", () => {
   it("uses the existing empty row for the first role, then puts artists in that row", async () => {
     const { fake, run } = setup();

@@ -115,6 +115,40 @@ describe("parallelReads setting", () => {
   });
 });
 
+describe("the paste mode setting", () => {
+  it("is automatic by default", () => {
+    expect(DEFAULT_SETTINGS.pasteMode).toBe("auto");
+  });
+
+  it.each(["auto", "manual"])("accepts %s", (mode) => {
+    expect(normaliseSettings({ pasteMode: mode }).pasteMode).toBe(mode);
+  });
+
+  it.each(["fast", "", null, undefined, 3, true])("falls back to automatic for %j", (mode) => {
+    expect(normaliseSettings({ pasteMode: mode }).pasteMode).toBe("auto");
+  });
+});
+
+describe("the automatic pasting pace", () => {
+  it("defaults to 0.6 seconds between fields", () => {
+    expect(DEFAULT_SETTINGS.autoPaceSeconds).toBe(0.6);
+  });
+
+  it.each([
+    [0.2, 0.2],
+    [1.5, 1.5],
+    [5, 5],
+    [0, 0.2],
+    [99, 5],
+  ])("keeps %j inside the range as %j", (value, expected) => {
+    expect(normaliseSettings({ autoPaceSeconds: value }).autoPaceSeconds).toBe(expected);
+  });
+
+  it.each(["1", null, undefined, Number.NaN, Number.POSITIVE_INFINITY])("falls back to the default for %j", (value) => {
+    expect(normaliseSettings({ autoPaceSeconds: value }).autoPaceSeconds).toBe(0.6);
+  });
+});
+
 describe("the countdown settings", () => {
   it("default to 30 seconds back to the menu and 15 to the next track", () => {
     expect(DEFAULT_SETTINGS.returnSeconds).toBe(30);

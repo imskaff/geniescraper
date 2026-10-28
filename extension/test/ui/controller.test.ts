@@ -255,7 +255,7 @@ describe("getting credits", () => {
       .map(([, value]) => value);
     expect(roles).toEqual(["Programmer", "Drum Programmer", "Mixing Engineer"]);
 
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     expect(env.api.pasteState.queue.filter(([kind]) => kind === "role").map(([, value]) => value)).toEqual(roles);
   });
 
@@ -574,7 +574,7 @@ describe("the YouTube link of a track", () => {
     const { panel, env } = await ready({ api: { lookupYoutube: () => Promise.resolve(FOUND) } });
     expect(panel.state.session.results[0]?.song).toMatchObject({ youtubeUrl: LINK, youtubeIsMv: true });
     expect(panel.state.session.results[1]?.song?.youtubeUrl).toBe(LINK);
-    await panel.startPaste(2);
+    await panel.startPaste(2, "manual");
     expect(env.api.pasteState.queue.some(([kind, value]) => kind === "youtube_url" && value === LINK)).toBe(true);
   });
 
@@ -624,15 +624,15 @@ describe("the YouTube link of a track", () => {
 
   it("is asked once per track, however often pasting starts", async () => {
     const { env, panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(FOUND) } });
-    await panel.startPaste(0);
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
+    await panel.startPaste(0, "manual");
     expect(lookups(env)).toHaveLength(2);
   });
 
   it("waits for a look-up already running instead of asking again", async () => {
     const gate = deferred<typeof FOUND>();
     const { env, panel } = await ready({ api: { lookupYoutube: () => gate.promise } });
-    const started = panel.startPaste(0);
+    const started = panel.startPaste(0, "manual");
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(env.api.pasteState.active).toBe(false);
     gate.resolve(FOUND);
@@ -643,7 +643,7 @@ describe("the YouTube link of a track", () => {
 
   it("is not asked at all while the permission is off or the YouTube link setting is off", async () => {
     const off = await ready({ hosts: { youtube: false }, api: { lookupYoutube: () => Promise.resolve(FOUND) } });
-    await off.panel.startPaste(0);
+    await off.panel.startPaste(0, "manual");
     expect(lookups(off.env)).toEqual([]);
     const unticked = await ready({ api: { lookupYoutube: () => Promise.resolve(FOUND) } });
     expect(lookups(unticked.env)).toHaveLength(2);
@@ -651,13 +651,13 @@ describe("the YouTube link of a track", () => {
     await fresh.panel.detect(ALBUM_URL);
     await fresh.panel.setAllSelected(true);
     await fresh.panel.getCredits();
-    await fresh.panel.startPaste(0);
+    await fresh.panel.startPaste(0, "manual");
     expect(lookups(fresh.env)).toEqual([]);
   });
 
   it("still pastes when none is found, without asking for that track again", async () => {
     const { env, panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(NOTHING) } });
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     expect(env.api.pasteState.active).toBe(true);
     expect(env.api.pasteState.queue.some(([kind]) => kind === "youtube_url")).toBe(false);
     expect(lookups(env)).toHaveLength(2);
@@ -683,7 +683,7 @@ describe("the YouTube link of a track", () => {
     const { env, panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(THROTTLED) } });
     await panel.ensureYoutube(0, true);
     expect(panel.state.status).toBe(MESSAGES.youtubeThrottled);
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     expect(lookups(env)).toHaveLength(4);
   });
 
@@ -691,7 +691,7 @@ describe("the YouTube link of a track", () => {
     const { env, panel } = await ready({
       api: { lookupYoutube: () => Promise.resolve({ ok: false, error: { code: "internal", message: "x" } }) },
     });
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     expect(env.api.pasteState.active).toBe(true);
     expect(panel.state.session.results[0]?.song?.youtubeUrl).toBe("");
   });
@@ -998,7 +998,7 @@ describe("YouTube look-ups and the status line", () => {
     const { env, panel } = await read({ api: { lookupYoutube: () => gate.promise } });
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     try {
-      const started = panel.startPaste(0);
+      const started = panel.startPaste(0, "manual");
       await vi.advanceTimersByTimeAsync(YOUTUBE_WAIT_MS - 1);
       expect(env.api.pasteState.active).toBe(false);
       await vi.advanceTimersByTimeAsync(2);
@@ -1012,7 +1012,7 @@ describe("YouTube look-ups and the status line", () => {
 
   it("starts at once when the look-up answers in time", async () => {
     const { env, panel } = await read({ api: { lookupYoutube: () => Promise.resolve(found) } });
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     expect(env.api.pasteState.active).toBe(true);
     expect(env.api.pasteState.queue.some(([kind]) => kind === "youtube_url")).toBe(true);
   });

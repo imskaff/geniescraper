@@ -208,8 +208,9 @@ To try the extension, run `npm run build`, open `chrome://extensions`, switch on
 The toolbar button opens the side panel: paste an Apple Music album or song link (or open one and the panel offers it), choose tracks with **Select all** or by ticking them (none are ticked for you), and review the credits and the paste queue (collapsed until you open it).
 **Start pasting** is in the header next to Settings, and **Back to main menu** returns to the start.
 The cover is Apple's exact 1000x1000 PNG for the album you opened, looked up by its catalog id on `itunes.apple.com`, and it is filled into Genius's Song Art field.
-Review the credits, click **Start pasting**, open the song's **Edit Metadata** form on Genius, and press **F8** once per field (**F7** goes back).
-The extension finds each field itself and fills one per press; it never clicks Save, so you check the form and save it yourself.
+Review the credits, open the song's **Edit Metadata** form on Genius, and click **Start pasting**: the extension fills the fields by itself, with a short pause between them (the pace is in Settings).
+**Step by step** is the other way: one field per press of **F8** (**F7** goes back); Settings can make it the main way instead.
+Automatic pasting pauses when you click or type in the form, press Esc or turn the **Auto-paste: ON** switch off, or close the panel, and turning it back on carries on from the same step; it never clicks Save, so you check the form and save it yourself.
 When Genius has no exact match for a name or role the text stays typed and nothing is chosen for you: pick a suggestion yourself, or press Skip in the panel.
 The first time the panel opens, a short set-up walks you through what to paste, speed and keys, and the optional look-ups.
 Keys, auto-confirm, the suggestion wait and how many tracks are read at once (3 by default) are in the panel's Settings.
@@ -221,7 +222,7 @@ The key stays in this browser, is sent only to Google, and is not synced.
 `npm run live:panel -- --chrome <path to Chromium> --screenshots <folder>` drives the real panel with real key presses against the real service worker and live Apple Music (a whole 10-track album), checks the result against the golden file, and saves screenshots in both color schemes and at 320 px.
 `npm run live:sidepanel -- --chrome <path to Chromium>` checks the way the extension is really used: a genuine side panel next to a visible album tab, reading that tab in place.
 
-`npm run live:genius -- --chrome <path to Chromium> --profile <folder>` drives the real extension through a whole paste into a live Genius edit form of a song you created, with a Chromium profile you signed in to by hand; it never presses Save.
+`npm run live:genius -- --chrome <path to Chromium> --profile <folder>` drives the real extension through a whole paste into a live Genius edit form of a song you created, with a Chromium profile you signed in to by hand; `--mode auto` starts the automatic run and checks that the Auto-paste switch, Esc, a real click in the form and the panel closing each pause it and that turning it back on carries on; it never presses Save.
 `npm run live:hidden-tab -- --chrome <path to Chromium>` is an opt-in live check against Apple Music that the extension can read song pages in a genuinely hidden tab; run `npm run build` first, and find a Chromium with `uv run python -c "from playwright.sync_api import sync_playwright as s; p = s().start(); print(p.chromium.executable_path); p.stop()"`.
 
 ## License

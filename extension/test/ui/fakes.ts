@@ -1,4 +1,4 @@
-import { IDLE_PASTE, back, skip, startPaste, stop, type PasteState } from "../../src/core/paste";
+import { IDLE_PASTE, back, pauseAuto, skip, startAuto, startPaste, stop, type PasteState } from "../../src/core/paste";
 import type { AlbumInfo, PageScrape, PasteCommand, KeyCheck, Result, YoutubeAnswer } from "../../src/shared/messages";
 import type { KeyValueStore, Stores } from "../../src/shared/storage";
 import type { WorkerApi } from "../../src/ui/api";
@@ -91,6 +91,12 @@ export function fakeApi(script: ApiScript = {}): FakeApi {
           break;
         case "paste-stop":
           api.pasteState = stop(api.pasteState);
+          break;
+        case "paste-auto-start":
+          api.pasteState = startAuto(api.pasteState);
+          break;
+        case "paste-auto-pause":
+          api.pasteState = pauseAuto(api.pasteState, "user");
           break;
         case "paste-fill":
           break;

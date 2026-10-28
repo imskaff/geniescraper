@@ -3,13 +3,20 @@
 //
 //   npm run build
 //   node scripts/live-genius.mjs --chrome <chrome.exe> --profile <folder with a Genius sign-in> [--screenshots <folder>]
+//        [--mode manual|auto] [--song <the edit page of a song you created>]
+//
+// --mode manual (the default) starts "Step by step" and presses a real F8 for every field.
+// --mode auto starts Start pasting, lets the run fill the form by itself, and on the way checks that it stops and
+// resumes for Pause, Esc, a real click in the form and the panel closing. Leave the mouse and keyboard alone while it
+// runs: a real click in the Genius window pauses an automatic run, which is the point of the check.
 //
 // You sign in to Genius yourself, once, in a Chromium window that uses that profile folder; this script never
 // handles a password. It NEVER presses Save: it only fills the open form, watches the network for anything that
 // could be a save, and discards the form by reloading the page at the end.
 //
 // The page used is a song you created (edit it freely); change SONG_URL to one of yours if you run this yourself.
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { connect, findServiceWorker, launchChromium, sleep, waitUntilReady } from "./lib/cdp.mjs";
@@ -22,6 +29,10 @@ const profileDir = option("--profile", "");
 const shotsDir = option("--screenshots", "");
 if (!chromePath || !profileDir)
   throw new Error("Pass --chrome <path to Chromium> and --profile <signed-in profile folder>.");
+
+// "manual" presses a real F8 per field; "auto" starts the automatic run and checks every way it must stop and resume.
+const mode = option("--mode", "manual");
+if (mode !== "manual" && mode !== "auto") throw new Error('--mode must be "manual" or "auto".');
 
 const SONG_URL = option("--song", "https://genius.com/Insane-shinobi-and-mike-pratt-float-indigo-lyrics");
 const ALBUM_URL = "https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134";
@@ -36,6 +47,15 @@ const check = (name, ok, detail = "") => {
   if (!ok) failures.push(name);
 };
 
+// The same renames as src/core/geniusRoles.ts, which Genius's own role list needs: keep the two in step.
+const geniusName = (role) => {
+  const explicit = { "additional producer": "Additional Production", "vocal recording engineer": "Vocal Engineer" };
+  const key = role.trim().toLowerCase();
+  if (explicit[key]) return explicit[key];
+  const match = /^(?:(.*\S)\s+)?programming$/i.exec(role.trim());
+  return match ? (match[1] ? `${match[1]} Programmer` : "Programmer") : role;
+};
+
 const words = (text) =>
   (
     text
@@ -45,7 +65,17 @@ const words = (text) =>
       .match(/[\p{L}\p{N}]+/gu) ?? []
   ).join(" ");
 
-const browser = launchChromium({ chromePath, dist: join(root, "dist"), port: 9337, profileDir });
+// A profile that has run this extension before keeps its service worker script cached under the same version, so a
+// rebuilt extension can silently run the old worker. A throwaway copy of the build with a version of its own forces a
+// fresh one, and nothing in the profile has to be deleted.
+const loaded = join(mkdtempSync(join(tmpdir(), "geniescraper-live-dist-")), "dist");
+cpSync(join(root, "dist"), loaded, { recursive: true });
+const manifestFile = join(loaded, "manifest.json");
+const manifest = JSON.parse(readFileSync(manifestFile, "utf-8"));
+manifest.version = `${String(manifest.version).split(".").slice(0, 3).join(".")}.${String(Math.floor(Date.now() / 60000) % 65535)}`;
+writeFileSync(manifestFile, JSON.stringify(manifest));
+
+const browser = launchChromium({ chromePath, dist: loaded, port: 9337, profileDir });
 let worker;
 let panel;
 let genius;
@@ -103,16 +133,36 @@ try {
   await gUntil("!!document.querySelector('form[aria-label=\"Edit Song Metadata Form\"]')", "the edit form");
   check("the edit form is open", true);
 
-  // ── the panel, in its own window so the Genius tab stays the one in front of the user ──
-  await worker.evaluate(
-    `chrome.windows.create({ url: ${JSON.stringify(panelUrl)}, focused: false, width: 440, height: 860 }).then((w) => w.id)`,
+  // A real song already has credits; they are not the run's doing, so note them before it starts.
+  const before = await gEval(`(() => {
+    const form = document.querySelector('form[aria-label="Edit Song Metadata Form"]');
+    const chips = (box) => [...box.querySelectorAll('[class*="multiValue"]')].map((c) => c.textContent.trim());
+    const field = (label) => [...form.querySelectorAll('label')].find((l) => (l.querySelector('span')?.textContent || '').replace(/\\s+/g, ' ').replace(/\\*$/, '').trim() === label);
+    const note = document.querySelector('[data-testid="custom-performances-expander"]')?.parentElement?.querySelector('p');
+    return {
+      writer: chips(field('Writer')),
+      producer: chips(field('Producer')),
+      roles: Number(note?.textContent.match(/\\d+/)?.[0] ?? 0),
+    };
+  })()`);
+  console.log(
+    `      already on the song: ${String(before.writer.length)} writers, ${String(before.producer.length)} producers, ${String(before.roles)} additional roles`,
   );
-  let panelTarget;
-  for (let i = 0; i < 100 && !panelTarget; i++) {
-    panelTarget = (await browser.targets()).find((t) => t.url === panelUrl && t.type === "page");
-    if (!panelTarget) await sleep(200);
-  }
-  panel = await connect(panelTarget.webSocketDebuggerUrl);
+
+  // ── the panel, in its own window so the Genius tab stays the one in front of the user ──
+  let panelWindowId = 0;
+  const openPanel = async () => {
+    panelWindowId = await worker.evaluate(
+      `chrome.windows.create({ url: ${JSON.stringify(panelUrl)}, focused: false, width: 440, height: 860 }).then((w) => w.id)`,
+    );
+    let panelTarget;
+    for (let i = 0; i < 100 && !panelTarget; i++) {
+      panelTarget = (await browser.targets()).find((t) => t.url === panelUrl && t.type === "page");
+      if (!panelTarget) await sleep(200);
+    }
+    panel = await connect(panelTarget.webSocketDebuggerUrl);
+  };
+  await openPanel();
   const pText = (selector) =>
     panel.evaluate(`document.querySelector(${JSON.stringify(selector)})?.textContent ?? null`);
   const pUntil = async (expression, what, ms = 60000) => {
@@ -150,7 +200,8 @@ try {
     "[...document.querySelectorAll('button')].some((b) => b.textContent === 'Start pasting')",
     "the credits",
   );
-  await pClick("Start pasting");
+  // Start pasting runs by itself; Step by step is the one-press-per-field flow the manual mode checks.
+  await pClick(mode === "auto" ? "Start pasting" : "Step by step");
   await pUntil("document.querySelector('h2')?.textContent === 'Paste into Genius'", "the paste screen");
   check("the paste screen opens", (await pText("h2")) === "Paste into Genius");
   const total = Number(((await pText(".progress")) ?? "").match(/of (\d+)/)?.[1] ?? 0);
@@ -164,14 +215,153 @@ try {
     }
   };
   const position = async () => {
+    if ((await pText("h2")) === "All credits entered") return total; // the finished screen replaces the step counter
     const text = (await pText(".progress")) ?? "";
     return text === "All steps done" ? total : Number(text.match(/Step (\d+) of/)?.[1] ?? 0) - 1;
   };
 
   const skipped = [];
+  const problems = [];
   const filled = [];
   let presses = 0;
-  for (; presses < MAX_PRESSES; presses++) {
+
+  // ── an automatic run, and every way it must stop and start again ──
+  const pHas = (selector) => panel.evaluate(`!!document.querySelector(${JSON.stringify(selector)})`);
+  const isPaused = () => pHas('[data-key="auto-toggle"][data-state="off"]');
+  const stateInStorage = () =>
+    worker.evaluate("chrome.storage.session.get('paste').then((items) => items.paste ?? null)");
+  const pausedWithin = async (ms) => {
+    const deadline = Date.now() + ms;
+    while (Date.now() < deadline) {
+      if (await isPaused().catch(() => false)) return true;
+      await sleep(150);
+    }
+    return false;
+  };
+  /** Run until the position has moved `by` steps (or the track is done); a step needing the user's choice is skipped. */
+  const runFor = async (by, limitMs = 90000) => {
+    const start = await position();
+    const deadline = Date.now() + limitMs;
+    while (Date.now() < deadline) {
+      const now = await position();
+      if (now >= total || now >= start + by) return true;
+      if (await isPaused().catch(() => false)) {
+        const problem = (await pText("#alert")) ?? "";
+        if (!problem) return false;
+        // A paused run with a problem message: record it, skip that step, and carry on, so the rest is still checked.
+        problems.push(`${(await pText(".step .value")) ?? ""}: ${problem}`);
+        await pClick("Skip");
+        await resume();
+        continue;
+      }
+      if (((await pText("#alert")) ?? "").length > 0 || ((await pText(".step + p")) ?? "").includes("Choose ")) {
+        // Genius had no exact match: the run waits for the user, who here skips the field.
+        skipped.push((await pText(".step .value")) ?? "");
+        await pClick("Skip");
+        await sleep(400);
+      }
+      await sleep(300);
+    }
+    return false;
+  };
+  const resume = async () => {
+    await pClick("Auto-paste: OFF");
+    await pUntil(
+      '!!document.querySelector(\'[data-key="auto-toggle"][data-state="on"]\')',
+      "the run to be going again",
+      15000,
+    );
+  };
+  const runAuto = async () => {
+    const started = await pUntil(
+      '!!document.querySelector(\'[data-key="auto-toggle"][data-state="on"]\')',
+      "Auto-paste: ON",
+      20000,
+    );
+    check("the run starts by itself, with Auto-paste: ON on screen", started);
+    if (!started) {
+      // Say what the panel and the worker hold, so a failure here can be understood without another run.
+      const text = await panel.evaluate("document.querySelector('main')?.innerText ?? document.body.innerText");
+      const held = await stateInStorage();
+      console.log(`      panel says: ${String(text).replace(/\s+/g, " ").slice(0, 700)}`);
+      console.log(
+        `      worker holds: ${JSON.stringify({ active: held?.active, auto: held?.auto, reason: held?.pauseReason, position: held?.position, awaiting: held?.awaiting, busy: held?.busy, message: held?.message })}`,
+      );
+      await shot(panel, "genius-auto-0-not-started");
+      throw new Error("the automatic run did not start");
+    }
+    check("it fills fields without a key press", await runFor(3));
+    await shot(panel, "genius-auto-1-running");
+
+    // Pause, from the panel: it stops after the step in progress and stays stopped.
+    await pClick("Auto-paste: ON");
+    check("turning Auto-paste off pauses the run", await pausedWithin(15000));
+    await sleep(1500);
+    const held = await position();
+    await sleep(3000);
+    check("a paused run fills nothing more", (await position()) === held, String(held));
+    await resume();
+    check("Resume carries on", await runFor(1));
+
+    // Esc, a real key press in the Genius window.
+    await genius.send("Page.bringToFront");
+    await press("Escape", "Escape", 27);
+    check("Esc pauses the run", await pausedWithin(10000));
+    await resume();
+    check("it carries on after Esc", await runFor(1));
+
+    // A real click in the form: the page sees a trusted event and pauses the run.
+    const point = await gEval(`(() => {
+      const r = document.querySelector('form[aria-label="Edit Song Metadata Form"]').getBoundingClientRect();
+      return { x: Math.round(r.left + 6), y: Math.round(Math.max(r.top, 0) + 6) };
+    })()`);
+    for (const type of ["mousePressed", "mouseReleased"]) {
+      await genius.send("Input.dispatchMouseEvent", { type, x: point.x, y: point.y, button: "left", clickCount: 1 });
+    }
+    const clickPaused = await pausedWithin(10000);
+    check("a real click in the form pauses the run", clickPaused);
+    if (clickPaused) {
+      check(
+        "it says it paused because of the form",
+        ((await pText("#status")) ?? "").includes("used the form"),
+        (await pText("#status")) ?? "",
+      );
+      await resume();
+    }
+    check("it carries on after the click", await runFor(1));
+
+    // The panel closing: the worker pauses the run, since nobody is watching it.
+    await panel.send("Page.close").catch(() => undefined);
+    await worker.evaluate(`chrome.windows.remove(${String(panelWindowId)})`).catch(() => undefined);
+    let stored = null;
+    for (let i = 0; i < 40; i++) {
+      await sleep(250);
+      stored = await stateInStorage();
+      if (stored?.auto === "paused") break;
+    }
+    check(
+      "closing the panel pauses the run",
+      stored?.auto === "paused" && stored?.pauseReason === "panel-closed",
+      JSON.stringify({ auto: stored?.auto, reason: stored?.pauseReason }),
+    );
+    const heldClosed = stored?.position;
+    await sleep(3000);
+    check("nothing is filled while the panel is closed", (await stateInStorage())?.position === heldClosed);
+
+    // Open the panel again: the session is restored, paused, and Resume finishes the track.
+    await openPanel();
+    await pUntil(
+      '!!document.querySelector(\'[data-key="auto-toggle"][data-state="off"]\')',
+      "the restored paste screen",
+      20000,
+    );
+    check("the reopened panel shows the paused run", await isPaused());
+    await resume();
+    check("it finishes the track by itself", await runFor(total, 180000));
+  };
+
+  if (mode === "auto") await runAuto();
+  for (; mode === "manual" && presses < MAX_PRESSES; presses++) {
     const before = await position();
     if (before >= total) break;
     const step = (await pText(".step .value")) ?? "";
@@ -194,7 +384,8 @@ try {
   console.log(
     `      filled ${String(filled.length)}, left for the user ${String(skipped.length)}: ${skipped.join(" | ")}`,
   );
-  check("the panel ends on All steps done", (await pText(".progress")) === "All steps done");
+  check("no step stopped the run as a problem", problems.length === 0, problems.join(" | "));
+  check("the panel ends on All steps done", (await position()) >= total);
   await shot(genius, "genius-2-filled-form");
 
   // ── what is on the form ──
@@ -222,6 +413,8 @@ try {
   for (const { role, artists } of golden.credits) {
     for (const artist of artists) {
       wanted.add(pair(role, artist));
+      // The extension types the role under the name Genius uses (src/core/geniusRoles.ts), so that is expected too.
+      wanted.add(pair(geniusName(role), artist));
       if (["songwriter", "lyricist", "lyrics", "co-writer", "writer"].includes(role.toLowerCase()))
         writers.add(words(artist));
       if (["producer", "co-producer"].includes(role.toLowerCase())) producers.add(words(artist));
@@ -239,7 +432,8 @@ try {
 
   // Every pair on the form must be a pair from the credits: an artist filed under the wrong role, or a fuzzy
   // pick, would show up here, which a check on names alone would miss.
-  const wrongPairs = state.rows.flatMap((row) =>
+  const newRows = state.rows.slice(before.roles);
+  const wrongPairs = newRows.flatMap((row) =>
     row.artists
       .filter((artist) => !wanted.has(pair(row.role[0] ?? "", artist)))
       .map((artist) => `${row.role[0] ?? "(no role)"} / ${artist}`),
@@ -249,11 +443,12 @@ try {
     wrongPairs.length === 0,
     wrongPairs.join("; "),
   );
-  const rowsWithoutRole = state.rows.filter((row) => row.artists.length > 0 && row.role.length === 0);
+  const rowsWithoutRole = newRows.filter((row) => row.artists.length > 0 && row.role.length === 0);
   check("no artist sits in a row without a role", rowsWithoutRole.length === 0, String(rowsWithoutRole.length));
+  const had = new Set([...before.writer, ...before.producer].map(words));
   const wrongPeople = [
-    ...state.writer.filter((name) => !writers.has(words(name))),
-    ...state.producer.filter((name) => !producers.has(words(name))),
+    ...state.writer.filter((name) => !had.has(words(name)) && !writers.has(words(name))),
+    ...state.producer.filter((name) => !had.has(words(name)) && !producers.has(words(name))),
   ];
   check("writers and producers are only people credited as such", wrongPeople.length === 0, wrongPeople.join(", "));
   check(
@@ -268,8 +463,8 @@ try {
   );
   check(
     "credit rows were created and filled",
-    state.rows.filter((r) => r.role.length > 0 && r.artists.length > 0).length >= 3,
-    String(state.rows.length),
+    newRows.filter((r) => r.role.length > 0 && r.artists.length > 0).length >= 3,
+    String(newRows.length),
   );
   check(
     "the copyright rows use Genius's own role names",
@@ -290,6 +485,7 @@ try {
   genius?.close();
   worker?.close();
   await browser.stop();
+  rmSync(dirname(loaded), { recursive: true, force: true });
 }
 
 console.log(failures.length === 0 ? "\nAll checks passed." : `\n${String(failures.length)} check(s) failed.`);

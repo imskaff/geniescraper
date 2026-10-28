@@ -1,7 +1,21 @@
 // The paste session's single writer. Every change to the stored state goes through here, one at a time:
 // the panel's buttons arrive as extension-page requests, the page's hotkey as content-script requests, and
 // neither can advance the position behind the other's back.
-import { PASTE_KEY, back, begin, normalisePaste, report, skip, startPaste, stop, type PasteState } from "../core/paste";
+import {
+  PASTE_KEY,
+  back,
+  begin,
+  confirmChoice,
+  normalisePaste,
+  pauseAuto,
+  report,
+  skip,
+  startAuto,
+  startPaste,
+  stop,
+  type AutoMode,
+  type PasteState,
+} from "../core/paste";
 import type { QueueItem, QueueKind } from "../core/models";
 import {
   isOutcome,
@@ -9,6 +23,7 @@ import {
   type ErrorCode,
   type GeniusRequest,
   type PasteCommand,
+  type PasteStatus,
   type Result,
 } from "../shared/messages";
 import { loadSettings, type Stores } from "../shared/storage";
@@ -54,6 +69,23 @@ export class PasteService {
     await Promise.all(tabs.map((tab) => this.ports.notifyGenius(tab, { type: "genius/paste-active", active })));
   }
 
+  /** Tell every Genius tab how an automatic run stands, so the page loop knows whether to go on. */
+  private async announceAuto(auto: AutoMode): Promise<number> {
+    const tabs = await this.ports.geniusTabIds().catch(() => []);
+    const heard = await Promise.all(
+      tabs.map((tab) => this.ports.notifyGenius(tab, { type: "genius/auto-state", auto })),
+    );
+    return heard.filter(Boolean).length;
+  }
+
+  /** The panel was closed: a run pauses, since nobody is watching it. A step awaiting the user's choice stays awaited. */
+  panelClosed(): Promise<void> {
+    return this.serial.run(async () => {
+      const state = await this.load();
+      await this.apply(state, pauseAuto(state, "panel-closed"));
+    });
+  }
+
   /** A request from the panel. */
   command(request: PasteCommand): Promise<Result<PasteState>> {
     return this.serial.run(async () => {
@@ -64,16 +96,37 @@ export class PasteService {
           const next = startPaste(request.title, queue);
           await this.save(next);
           await this.announce(next.active);
+          if (state.auto !== "off") await this.announceAuto("off");
           return { ok: true, data: next };
         }
         case "paste-back":
-          return this.apply(back(state));
+          return this.apply(state, back(state));
         case "paste-skip":
-          return this.apply(skip(state));
+          return this.apply(state, skip(state));
+        case "paste-auto-start": {
+          const next = startAuto(state);
+          if (next === state) return { ok: true, data: state };
+          // The page loop starts when it hears of the run, and asks for its first step from the saved state: save
+          // first, and take it back if no Genius page was there to hear.
+          await this.save(next);
+          const heard = await this.announceAuto("running");
+          if (heard > 0) return { ok: true, data: next };
+          await this.save(state);
+          const open = (await this.ports.geniusTabIds().catch(() => [])).length > 0;
+          return fail(
+            "tab-failed",
+            open
+              ? "Reload the Genius page, then try again."
+              : "Open the song's Edit Metadata form on Genius first, then start again.",
+          );
+        }
+        case "paste-auto-pause":
+          return this.apply(state, pauseAuto(state, "user"));
         case "paste-stop": {
           const next = stop(state);
           await this.save(next);
           await this.announce(false);
+          if (state.auto !== "off") await this.announceAuto("off");
           return { ok: true, data: next };
         }
         case "paste-fill": {
@@ -86,8 +139,10 @@ export class PasteService {
     });
   }
 
-  private async apply(next: PasteState): Promise<Result<PasteState>> {
-    await this.save(next);
+  /** Save a change, and tell the Genius tabs when it changed how an automatic run stands. */
+  private async apply(before: PasteState, next: PasteState): Promise<Result<PasteState>> {
+    if (next !== before) await this.save(next);
+    if (next.auto !== before.auto) await this.announceAuto(next.auto);
     return { ok: true, data: next };
   }
 
@@ -96,31 +151,50 @@ export class PasteService {
     return this.serial.run(async (): Promise<Result<unknown>> => {
       const state = await this.load();
       switch (request.type) {
-        case "paste-status":
-          return { ok: true, data: { active: state.active } };
+        case "paste-status": {
+          const status: PasteStatus = {
+            active: state.active,
+            auto: state.auto,
+            awaiting: state.awaiting,
+            position: state.position,
+          };
+          return { ok: true, data: status };
+        }
         case "paste-back":
-          return this.apply(back(state));
+          return this.apply(state, back(state));
+        case "paste-confirm":
+          return this.apply(state, confirmChoice(state));
+        case "paste-pause":
+          return this.apply(state, pauseAuto(state, request.reason));
         case "paste-begin": {
           const settings = await loadSettings(this.stores);
-          const { state: next, result } = begin(state, this.now());
+          const { state: next, result } = begin(state, this.now(), request.source === "auto" ? "auto" : "key");
           if (next !== state) await this.save(next);
-          const reply: BeginReply =
-            result.action === "fill"
-              ? {
-                  action: "fill",
-                  item: [result.item[0], result.item[1]],
-                  position: result.position,
-                  autoConfirm: settings.autoConfirm,
-                  settleMs: Math.round(settings.autocompleteWaitSeconds * 1000),
-                }
-              : { action: result.action };
+          // A key press can pause a run (it takes over from it): the page loop has to hear of that too.
+          if (next.auto !== state.auto) await this.announceAuto(next.auto);
+          const paceMs = request.source === "auto" ? { paceMs: Math.round(settings.autoPaceSeconds * 1000) } : {};
+          const waiting = next.queue[next.position];
+          let reply: BeginReply;
+          if (result.action === "fill") {
+            reply = {
+              action: "fill",
+              item: [result.item[0], result.item[1]],
+              position: result.position,
+              autoConfirm: settings.autoConfirm,
+              settleMs: Math.round(settings.autocompleteWaitSeconds * 1000),
+              ...paceMs,
+            };
+          } else if (request.source === "auto" && next.auto === "running" && next.awaiting && waiting) {
+            // A run resumed while a step still waits for the user's choice: tell it what to wait for.
+            reply = { action: "await", item: [waiting[0], waiting[1]], position: next.position, ...paceMs };
+          } else {
+            reply = { action: result.action };
+          }
           return { ok: true, data: reply };
         }
         case "paste-report": {
           if (!isOutcome(request.outcome)) return fail("bad-request", "Unrecognised outcome.");
-          const next = report(state, request.position, request.outcome);
-          if (next !== state) await this.save(next);
-          return { ok: true, data: next };
+          return this.apply(state, report(state, request.position, request.outcome));
         }
       }
     });

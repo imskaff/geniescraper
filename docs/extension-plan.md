@@ -761,3 +761,101 @@ The seconds before the finished screen goes back to the main menu (`returnSecond
 The extension can be used without the Chrome Web Store: a tag named `extension-v<version>` runs `.github/workflows/extension-release.yml`, which checks the tag against the version, runs the checks and the package step, and publishes a GitHub release with the zip and a checksum file.
 Users download the zip, unzip it into a folder they keep, and use Load unpacked (Chrome and Edge); the steps are in the main README and `extension/README.md`.
 An unpacked extension does not update itself, so an update is a new zip unzipped over the same folder plus the reload icon.
+
+## 38. Auto-paste (planned)
+
+Today every field needs a press of F8.
+Auto-paste fills the whole track by itself once the user starts it.
+Decisions from the owner:
+- **Default.** Start pasting begins automatic pasting, and a smaller "Step by step (F8)" button gives the manual mode.
+  F8 keeps its manual meaning, one step per press.
+  A setting can make step by step the main button.
+- **Pace.** A short pause per field, 0.6 seconds by default and adjustable in Settings.
+  The user always starts it; it never starts by itself.
+- **No exact match.** It pauses with the text typed and says so.
+  The user picks the suggestion, it notices the choice, confirms the step and carries on by itself.
+- **Stop triggers.** Esc, a Pause button, the panel closing, and the user clicking or typing in the form, except while it waits for a choice (then the user is expected to act).
+  Switching to another tab does not pause it.
+- **Next song.** After a track the next-track countdown starts, and auto resumes by itself when the next song's edit form is open and focused.
+  The user only navigates.
+- **Look.** The automatic button should read as the app's premium "magic" feature: visibly glowing, with a flowing gradient and sparkles, clearly more special than the step-by-step button.
+  Rules it must keep: the glow and gradient have a static version that still shows when the system asks for reduced motion (only the movement and the sparkles are dropped, as the current glow button does), nothing flashes faster than a slow pulse, the label keeps contrast on every point of the gradient in both colour schemes (the contrast test gets the new colours), and it is still a real button with a clear name for screen readers (sparkles are decoration, hidden from them).
+  While a run is going the button turns into Pause, and it stays calm (no sparkles) so the panel is not distracting during the work.
+- **Never** presses Save.
+- **Later, not now.** Opening the next song's Genius page for the user, and eventually navigating Genius by itself, as its own feature with a Genius guidelines check first.
+
+### Design
+
+- The paste state gains an auto mode (off, running, paused with a reason, waiting for a choice).
+  The step logic (`begin`, `report`, `back`, `skip`) is unchanged, and the worker stays the only writer of the position.
+- The loop runs in the Genius content script, which already does the filling: after a "filled" it waits the pause, asks the worker for the next step and repeats.
+- The page tells the user from itself by `isTrusted`: the extension's own events are synthetic, the user's clicks and keys are not.
+  A trusted click or key in the form pauses it, unless the state is waiting for a choice.
+- Resuming after a choice reuses the page's wait for the chosen suggestion to appear (`waitForChip`), then confirms the step as an F8 press would.
+- The panel keeps a connection to the worker, and its disconnect pauses auto.
+- Problems pause with a plain message and never skip silently: the field is not on the form, there is no form, Genius did not keep the text, a fill is still unreported after the 20 second limit, or the tab navigates, reloads or closes.
+  A reload comes back paused and never resumes by itself.
+
+### Slices
+
+Each is tested first and committable on its own.
+1. The pure state: auto mode and pause reasons, with a test for every transition. Done in `core/paste.ts` (`startAuto`, `pauseAuto`, `confirmChoice`, `canAutoStep`, `pauseMessage`, and the `source` of `begin`), tested in `test/core/autoPaste.test.ts`.
+   A Next-key press while a run is going pauses it and fills nothing; Back pauses it; Skip on a field awaiting a choice lets it go on; a missing field pauses it with Genius's own words; a finished run switches itself off; a stored state is restored as it was.
+2. The page driver: the loop, the pace, the pause on the user's input, and the choice wait and resume, against a fake form.
+   Done. The loop is `GeniusPage.runAuto` (`genius/page.ts`): it asks the worker for each step (`paste-begin` with `source: "auto"`), fills it, reports, waits the pace the worker hands out, and repeats; the worker alone moves the position.
+   After a step that needs the user's choice it waits (`isStepDone` in `genius/fill.ts` sees the chip or the plain value appear), asks the worker to count the step done (`paste-confirm`), and goes on; it notices a Skip from the panel by asking the worker how the run stands every half second.
+   The user's real clicks and keys in the form (`isTrusted`, so never the extension's own events) pause it with `paste-pause`, except while it waits for a choice; Esc always pauses it; a Next-key press pauses it and fills nothing; a page that loads under a running run reports `page-changed` and stays paused.
+   The worker (`background/paste.ts`) handles the new panel commands `paste-auto-start` and `paste-auto-pause`, tells every Genius tab how a run stands (`genius/auto-state`), and answers a resumed run that still awaits a choice with an `await` reply naming the item.
+   The pace is a setting (`autoPaceSeconds`, 0.6 by default, 0.2 to 5); its field in Settings comes in slice 4.
+   Tests: `test/genius/autoPage.test.ts` runs the real page driver, the real worker service and the fake Genius form together; `test/background/autoPaste.test.ts` and `test/shared/autoMessages.test.ts` cover the worker and the message checks. Not yet seen in a real browser: that is slice 5.
+3. The worker messages, the panel buttons (Start, Step by step, Pause, Resume) and the status wording.
+   Done. Start pasting is now the automatic button (class `magic`: a flowing yellow, orange, pink and violet gradient, a glow and four sparkles, all drawn by the stylesheet), with a quiet "Step by step" button beside it; the paste screen shows Pause (plain, no glow) while a run goes, Resume and a quiet Fill next while paused, and Fill next with an "Auto-paste" button in a step-by-step session.
+   The gradient colours are tokens, and the contrast test holds the button's ink to 4.5:1 on each; the sparkles are an empty `aria-hidden` span and pseudo-elements, so the button's text and name stay plain, and the reduced-motion rule removes only the movement.
+   A track started by the countdown or the next-track button goes the way the last one did (`PanelController.startPaste` remembers the mode).
+   A run only starts if a Genius page hears of it (otherwise the panel says to open the song's Edit Metadata form, or to reload the page), and a run started before the form is open waits for it.
+   The panel keeps a connection open to the worker; when it ends the worker pauses the run (`panel-closed`), and the panel reconnects if the worker was restarted meanwhile. This has not been seen in a real browser yet: slice 5 checks it.
+   A pause now shows its message as a polite status line, so the user is told why.
+4. The pace setting and the default.
+   Done. Settings, under "Pasting on Genius", has "Start pasting" (`pasteMode`: automatically, the default, or step by step) and "Seconds between fields when pasting automatically" (`autoPaceSeconds`, 0.2 to 5).
+   With step by step as the main way, Start pasting is the plain glowing yellow button for the Next key and "Auto-paste" is the glowing gradient button beside it; either way the other is one button away.
+   Changing the setting applies at once to the next Start pasting; after that a track started the other way sets how the next track goes, as before.
+   The first-time set-up does not ask about it: automatic is the default and the choice is in Settings.
+5. Done (below). A live run on a Genius song the owner created (`npm run live:genius` with the scratch profile), then docs and the privacy and listing text if anything they say changes.
+
+### Auto-paste is a switch (after the first hands-on test)
+
+Pause and Resume became one control, the first and primary button of the paste screen: "Auto-paste: ON" in the glowing gradient while a run goes (pressing it turns the run off and takes over), and "Auto-paste: OFF" in plain gray when it is off or paused, whatever the reason (pressing it turns the run on from the same step).
+Hovering or tabbing to the gray button lights it in light tints with sparkles, to show what turning it on does; the manual buttons (Fill next, Back, Skip) are secondary and quiet, and Fill next is only there while the run is off.
+The button is a plain button whose name says what pressing it does ("Auto-paste: OFF. Press to turn it on."); the light tints are tokens with their ink contrast tested, and the sparkles are decoration, with only their movement removed under reduced motion.
+The review screen keeps Start pasting as the first, glowing button, with Step by step quiet beside it.
+
+The hands-on test also showed "Something went wrong while reading the page: Unrecognised request." on Start pasting: the panel was newer than the extension's background worker, which the browser had kept from before the update, so it rejected the new `paste-auto-start`. The router accepts every paste command (a test pins that), so the panel now says what happened, to reload the extension on chrome://extensions, and that Step by step still works; a new version number also makes the browser take the new worker.
+
+### A choice that is not spelled as Apple spells it, and a clearer Settings screen (second hands-on round)
+
+- **The run stopped after the user chose.** When Genius had no exact match, the run waited for a chip spelled exactly as Apple spells the name. The user usually picks what Genius calls the person or the label, so that chip never came and the run waited for ever while the button said ON; only Skip got it going.
+  A step awaiting a choice is now done when anything new is in its field since the wait began (a chip, or a changed value), or the exact name is there.
+  What the field held is remembered per step across a pause, so choosing while paused and turning Auto-paste back on works; it is forgotten when the step is done, skipped, or the session changes (`stepSnapshot` and `isStepDone` in `genius/fill.ts`, `baselines` in `genius/page.ts`).
+- **Settings.** Every section is a card with a heading (24 apart; 16 inside a card; 4 between a setting's label, control and help), and "Pasting on Genius" has labelled groups (Keys, When Genius has no exact match, After a track).
+  Its first control is the same Auto-paste switch as on the paste screen, ON by default, with what ON and OFF mean below it and the one in force marked.
+
+### The live run (slice 5)
+
+`node scripts/live-genius.mjs --mode auto` (signed-in scratch profile, the owner's own song, never Save) ran an automatic paste of a whole track on the real Genius form.
+Result: 28 of 29 checks passed. Seen on the real form: the run starts by itself and fills fields without a key press; Pause, Esc and a real click in the form each pause it, with the click's message saying why; Resume carries on after each; closing the panel pauses it with reason `panel-closed` (so the worker does see the panel's connection end), nothing is filled while the panel is closed, and the reopened panel shows the paused run; the run finishes the track by itself; a name Genius has no exact match for is waited on and skipped; nothing that could be a save was sent; F7 goes back one step.
+The one failure was the check's own: it compared the form with Apple's raw role names, while the extension deliberately types Genius's ("Vocal Recording Engineer" is "Vocal Engineer"). The script now maps them the same way; that fix has not been run live again.
+
+The run also found and fixed a real bug, independent of automatic pasting: a song that already has additional roles shows them collapsed behind "N additional roles" and an Expand button, and while collapsed the rows and the Add button are not in the page, so the role step stopped with "no Add additional credits button".
+The fill now presses that button, but only when it reads Expand (once open it reads Hide, and pressing it would close the section again).
+The captured fake form is open ("Hide"); `collapsedRoles` in the fake covers the collapsed one.
+
+Two traps for the live scripts, both now handled:
+- Branded Chrome ignores `--load-extension` in recent versions, so the live scripts need the Playwright Chromium (`%LOCALAPPDATA%\ms-playwright\chromium-*\chrome-win64\chrome.exe`).
+- A profile that has run the extension before keeps its service worker cached under the same version, so a rebuilt extension can run the old worker ("Unrecognised request" for a new command). `live-genius.mjs` loads a throwaway copy of the build with a unique version instead of deleting anything in the profile.
+
+### Open risks
+
+- Genius's guidelines: per-press filling was chosen to stay inside them, and full automation is more automation.
+  The pace, the opt-in start and the pauses are the mitigations; check the guidelines again before release.
+- Genius may change its form markup; the existing live check is the guard.
+- The pause on the user's input must not fire on the extension's own typing; the `isTrusted` test and a live run cover this.

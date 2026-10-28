@@ -8,7 +8,7 @@ import type { PasteCommand } from "../shared/messages";
 import { IDLE_PASTE, type PasteState } from "../core/paste";
 import type { AlbumInfo, AppError, PageScrape } from "../shared/messages";
 import { EMPTY_SESSION, type Session, type TrackResult } from "../shared/session";
-import { normaliseSettings, queueOptions, type Settings } from "../shared/settings";
+import { normaliseSettings, queueOptions, type PasteMode, type Settings } from "../shared/settings";
 import {
   loadPaste,
   loadSession,
@@ -100,6 +100,8 @@ export const MESSAGES = {
   notAYoutubeLink:
     "That is not a link to one YouTube video. Open the video on YouTube and copy the address from the address bar, or use its Share button.",
   pasteYoutubeLink: "Paste the YouTube link into the box first.",
+  workerOutOfDate:
+    "The extension's background part is older than this panel, so it does not know that command. Open chrome://extensions, press Reload on Géniescraper, then try again. Step by step still works.",
   allDone: "All credits entered. Check the Genius page, then press Save there.",
 } as const;
 
@@ -580,6 +582,8 @@ export class PanelController {
       settings.nextHotkey = this.current.settings.backHotkey;
     }
     const normalised = normaliseSettings(settings);
+    // A new choice of how Start pasting works applies at once, ahead of however the last track was started.
+    if (key === "pasteMode") this.lastMode = null;
     this.update({ settings: normalised });
     // Each countdown stops when its own setting says so; the other one is none of this change's business.
     if (
@@ -633,7 +637,8 @@ export class PanelController {
         ? {
             paste,
             error: paste.tone === "attention" ? paste.message : "",
-            status: paste.tone === "ok" ? paste.message : "",
+            // Progress and information (a pause says why and how to carry on) are announced politely.
+            status: paste.tone === "attention" ? "" : paste.message,
           }
         : { paste },
     );
@@ -642,6 +647,9 @@ export class PanelController {
   private async pasteCommand(command: PasteCommand): Promise<void> {
     const answer = await this.env.api.paste(command);
     if (answer.ok) this.setPaste(answer.data);
+    // The worker refusing a paste command it should know means it is an older build than this panel: the browser
+    // kept the old background script after an update. Reloading the extension fixes it.
+    else if (answer.error.code === "bad-request") this.update({ error: MESSAGES.workerOutOfDate, status: "" });
     else this.update({ error: describeError(answer.error), status: "" });
   }
 
@@ -805,12 +813,23 @@ export class PanelController {
     await this.setResult(index, { song });
   }
 
-  /** Begin pasting one track's queue into Genius. */
-  async startPaste(index: number): Promise<void> {
+  /**
+   * How the last track was started, so the next one (the countdown, the next-track button) goes the same way. Until a
+   * track has been started, and after the user changes the setting, the setting decides.
+   */
+  private lastMode: PasteMode | null = null;
+
+  /**
+   * Begin pasting one track's queue into Genius: by itself ("auto") or one key press per step ("manual"). Without
+   * a mode it goes the way the last track did, or the way the settings say for the first one.
+   */
+  async startPaste(index: number, mode?: PasteMode): Promise<void> {
     await this.waitForYoutube(index);
     const result = this.current.session.results.find((r) => r.index === index);
     const queue = this.queueFor(index);
     if (!result?.song || queue.length === 0) return;
+    const way = mode ?? this.lastMode ?? this.current.settings.pasteMode;
+    this.lastMode = way;
     await this.pasteCommand({
       type: "paste-start",
       title: result.song.title || result.title,
@@ -819,6 +838,19 @@ export class PanelController {
     this.pasted.add(index);
     this.update({ pasteIndex: index });
     await this.updateSession({ current: index });
+    // The session is running by now. If no Genius page can take the run, the error says what to open, and the
+    // session stays as a step-by-step one that the user can start automatically from the paste screen.
+    if (way === "auto") await this.autoPaste();
+  }
+
+  /** Start automatic pasting, or resume it after a pause, from the step the session is at. */
+  autoPaste(): Promise<void> {
+    return this.pasteCommand({ type: "paste-auto-start" });
+  }
+
+  /** Pause automatic pasting; the user can resume it, or take over with the Next key. */
+  pauseAutoPaste(): Promise<void> {
+    return this.pasteCommand({ type: "paste-auto-pause" });
   }
 
   /** The next track after the one being pasted whose credits are in and give something to paste, or null. */

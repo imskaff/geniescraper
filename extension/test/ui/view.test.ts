@@ -330,7 +330,7 @@ describe("review screen", () => {
     it("has Start pasting right under the track list, ready for the first track", async () => {
       const { root } = await onReview();
       const start = root.querySelector<HTMLButtonElement>('main [data-key="start"]');
-      expect(start?.getAttribute("aria-label")).toBe("Start pasting One");
+      expect(start?.getAttribute("aria-label")).toBe("Start pasting One automatically");
       expect(start?.hasAttribute("disabled")).toBe(false);
       const list = $(root, "ul.tracks");
       expect(list.compareDocumentPosition(start as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -451,11 +451,12 @@ describe("settings screen", () => {
     ]);
     // Selects and the number box are named by their labels too (expectAccessible checks every control).
     expect([...root.querySelectorAll<HTMLElement>("select, input[type=number]")].map(accessibleName)).toEqual([
+      "Seconds between fields when pasting automatically",
       "Key that fills the next step",
       "Key that goes back one step",
+      "Wait for suggestions to settle (seconds)",
       "Seconds before going back to the main menu",
       "Seconds before pasting the next track",
-      "Wait for suggestions to settle (seconds)",
       "Tracks read at the same time",
     ]);
 

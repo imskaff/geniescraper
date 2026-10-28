@@ -68,8 +68,8 @@ async function toReviewOpen(options: Parameters<typeof fakeEnv>[0] = {}) {
 /** Start pasting the first track and walk every step, so the done screen is up. */
 async function toDone(options: Parameters<typeof fakeEnv>[0] = {}, index = 0, alsoPasted: number[] = []) {
   const ui = await toReview(options);
-  for (const earlier of alsoPasted) await ui.panel.startPaste(earlier);
-  await ui.panel.startPaste(index);
+  for (const earlier of alsoPasted) await ui.panel.startPaste(earlier, "manual");
+  await ui.panel.startPaste(index, "manual");
   // The fake worker holds the finished state too, so a Back from the done screen starts at the last step.
   ui.env.api.pasteState = { ...ui.env.api.pasteState, position: ui.env.api.pasteState.queue.length };
   ui.panel.setPaste(ui.env.api.pasteState);
@@ -150,7 +150,7 @@ describe("Back to tracks", () => {
 describe("the paste screen", () => {
   it("shows all steps open from the start, with their count", async () => {
     const { root, panel } = await toReview();
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     await flush();
     const steps = details(root, "Steps left");
     expect(steps.open).toBe(true);
@@ -159,7 +159,7 @@ describe("the paste screen", () => {
 
   it("keeps the steps as the user leaves them when they close them", async () => {
     const { root, panel } = await toReview();
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     await flush();
     const steps = details(root, "Steps left");
     steps.open = false;
@@ -171,7 +171,7 @@ describe("the paste screen", () => {
 
   it("does not share its open state with the paste queue", async () => {
     const { root, panel } = await toReview();
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     await flush();
     expect(details(root, "Steps left").open).toBe(true);
     await panel.stopPaste();
@@ -181,7 +181,7 @@ describe("the paste screen", () => {
 
   it("styles Back to credits like Back to main menu", async () => {
     const { root, panel } = await toReview();
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     await flush();
     const stop = button(root, "Back to credits");
     expect(stop.classList.contains("nav")).toBe(true);
@@ -190,7 +190,7 @@ describe("the paste screen", () => {
 
   it("marks the current step, and only it, for the stylesheet to fill yellow", async () => {
     const { root, panel } = await toReview();
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     await flush();
     const here = root.querySelectorAll("ol.steps li.here");
     expect(here).toHaveLength(1);
@@ -200,14 +200,14 @@ describe("the paste screen", () => {
 
   it("shows no Steps done list until a step is finished", async () => {
     const { root, panel } = await toReview();
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     await flush();
     expect(() => details(root, "Steps done")).toThrow();
   });
 
   it("moves a finished step into a closed Steps done list above the steps left", async () => {
     const { root, panel } = await toReview();
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     await flush();
     const total = root.querySelectorAll("ol.steps li").length;
     await panel.pasteSkip();
@@ -225,7 +225,7 @@ describe("the paste screen", () => {
 
   it("keeps the Steps done list as the user leaves it", async () => {
     const { root, panel } = await toReview();
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     await panel.pasteSkip();
     await flush();
     const done = details(root, "Steps done");
@@ -239,7 +239,7 @@ describe("the paste screen", () => {
 
   it("puts a step back into the steps left when the user goes back, and drops the empty list", async () => {
     const { root, panel } = await toReview();
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     await panel.pasteSkip();
     await flush();
     const total = root.querySelectorAll("ol.steps li").length;
@@ -299,7 +299,7 @@ describe("the finished screen", () => {
 
   it("offers no next track after the last one", async () => {
     const { root, panel, env } = await toReview();
-    await panel.startPaste(2);
+    await panel.startPaste(2, "manual");
     const { queue } = env.api.pasteState;
     panel.setPaste({ ...env.api.pasteState, position: queue.length });
     await flush();
@@ -331,7 +331,7 @@ describe("the finished screen", () => {
   it("does not offer the track list for a single song", async () => {
     const { root, panel } = await mount({ api: { detect: () => Promise.resolve({ ok: true, data: SINGLE }) } });
     await panel.detect(SINGLE.url);
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     const state = panel.state.paste;
     panel.setPaste({ ...state, position: state.queue.length });
     await flush();
@@ -560,8 +560,8 @@ describe("returning to the main menu after the last step", () => {
   it("keeps waiting when the pointer was already over the panel as the countdown started", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     const ui = await toReview();
-    await ui.panel.startPaste(0);
-    await ui.panel.startPaste(2);
+    await ui.panel.startPaste(0, "manual");
+    await ui.panel.startPaste(2, "manual");
     ui.root.dispatchEvent(new Event("mouseenter"));
     const state = ui.panel.state.paste;
     ui.panel.setPaste({ ...state, position: state.queue.length });

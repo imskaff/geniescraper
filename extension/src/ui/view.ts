@@ -7,7 +7,7 @@ import { shownTrack, type TrackResult } from "../shared/session";
 import { trackHealth, type Health, type HealthLevel } from "../core/trackHealth";
 import { STEP_LABELS, instruction } from "../core/paste";
 import type { OptionalHost } from "../lookups/http";
-import { COUNTDOWN_RANGE, HOTKEY_CHOICES, PARALLEL_CHOICES, WAIT_RANGE } from "../shared/settings";
+import { COUNTDOWN_RANGE, HOTKEY_CHOICES, PACE_RANGE, PARALLEL_CHOICES, WAIT_RANGE } from "../shared/settings";
 import { youtubeSearchUrl } from "../core/youtubeLink";
 import { el } from "./dom";
 import { renderSetup } from "./setup";
@@ -232,16 +232,56 @@ export class PanelView {
     return el("h2", { text, attrs: { tabindex: "-1" } });
   }
 
-  /** The Start pasting button for the track on screen, or nothing when there is nothing to paste yet. */
-  private startButton(state: PanelState, busy: boolean): HTMLElement | null {
-    const index = this.startableIndex(state);
-    if (index === null) return null;
-    const button = this.button("Start pasting", "primary", "start", () => void this.panel.startPaste(index), busy);
-    // It glows while it is the thing to do next, not while it cannot be pressed.
-    if (!busy) button.classList.add("glow");
-    const title = state.session.results.find((r) => r.index === index)?.song?.title;
-    if (title) button.setAttribute("aria-label", `Start pasting ${title}`);
+  /**
+   * The automatic button: it glows, with a flowing gradient and sparkles, so it reads as the special thing the app
+   * does. The look is all stylesheet (the sparkles are an empty decorative span), so its name and text stay plain.
+   */
+  private magicButton(text: string, key: string, onClick: () => void, disabled: boolean): HTMLElement {
+    const button = this.button(text, "primary", key, onClick, disabled);
+    button.classList.add("magic");
+    button.append(el("span", { class: "sparkles", attrs: { "aria-hidden": "true" } }));
     return button;
+  }
+
+  /**
+   * The ways to start pasting the track on screen, or nothing when there is nothing to paste yet: Start pasting does
+   * it by itself, Step by step is the Next key, one field per press.
+   */
+  private startButtons(state: PanelState, busy: boolean): HTMLElement[] {
+    const index = this.startableIndex(state);
+    if (index === null) return [];
+    const title = state.session.results.find((r) => r.index === index)?.song?.title;
+    if (state.settings.pasteMode === "manual") {
+      // The user chose step by step as the main way: Start pasting is the plain, glowing yellow button, and the
+      // automatic one is offered beside it.
+      const start = this.button(
+        "Start pasting",
+        "primary",
+        "start",
+        () => void this.panel.startPaste(index, "manual"),
+        busy,
+      );
+      if (!busy) start.classList.add("glow");
+      const auto = this.magicButton("Auto-paste", "start-auto", () => void this.panel.startPaste(index, "auto"), busy);
+      if (title) {
+        start.setAttribute("aria-label", `Start pasting ${title}, one key press per field`);
+        auto.setAttribute("aria-label", `Auto-paste ${title}, filling it by itself`);
+      }
+      return [start, auto];
+    }
+    const auto = this.magicButton("Start pasting", "start", () => void this.panel.startPaste(index, "auto"), busy);
+    const manual = this.button(
+      "Step by step",
+      "quiet",
+      "start-manual",
+      () => void this.panel.startPaste(index, "manual"),
+      busy,
+    );
+    if (title) {
+      auto.setAttribute("aria-label", `Start pasting ${title} automatically`);
+      manual.setAttribute("aria-label", `Step by step: ${title}, one key press per field`);
+    }
+    return [auto, manual];
   }
 
   /** The track whose credits are on screen and can be pasted now, or null. */
@@ -431,7 +471,7 @@ export class PanelView {
         { class: "row" },
         busy ? this.button("Stop", "quiet", "stop", () => void this.panel.stop(), false) : null,
         // Start pasting sits with the other ways on and off this screen, so there is one row to look at.
-        this.startButton(state, busy),
+        ...this.startButtons(state, busy),
         // One song has no list to go back to.
         (session.album?.trackCount ?? 0) > 1
           ? this.button("Back to tracks", "quiet", "back", () => void this.panel.backToTracks(), busy)
@@ -725,13 +765,7 @@ export class PanelView {
       el(
         "div",
         { class: "row" },
-        this.button(
-          `Fill next (${settings.nextHotkey})`,
-          "primary",
-          "fill",
-          () => void this.panel.fillNext(),
-          finished || paste.busy,
-        ),
+        ...this.pasteControls(state, finished),
         this.button(
           `Back (${settings.backHotkey})`,
           "quiet",
@@ -751,6 +785,53 @@ export class PanelView {
       doneCount > 0 ? this.disclosure("stepsdone", `Steps done (${String(doneCount)})`, doneSteps) : null,
       total - doneCount > 0 ? this.disclosure("steps", `Steps left (${String(total - doneCount)})`, steps, true) : null,
     ].filter((node): node is HTMLElement => node !== null);
+  }
+
+  /**
+   * The Auto-paste switch, the same button on the paste screen and in Settings: ON in the glowing gradient, OFF in
+   * gray (lit with sparkles when pointed at). Its text says the state and its name says what pressing it does.
+   */
+  private autoSwitch(on: boolean, onClick: () => void, disabled: boolean): HTMLElement {
+    const toggle = this.button(
+      on ? "Auto-paste: ON" : "Auto-paste: OFF",
+      on ? "primary" : "quiet",
+      "auto-toggle",
+      onClick,
+      disabled,
+    );
+    toggle.classList.add(on ? "magic" : "magic-off");
+    toggle.setAttribute("data-state", on ? "on" : "off");
+    toggle.setAttribute(
+      "aria-label",
+      on ? "Auto-paste: ON. Press to turn it off and take over." : "Auto-paste: OFF. Press to turn it on.",
+    );
+    toggle.append(el("span", { class: "sparkles", attrs: { "aria-hidden": "true" } }));
+    return toggle;
+  }
+
+  /**
+   * The main controls of the paste screen. Auto-paste is a switch and always the first, primary button: ON (the
+   * glowing gradient) while a run goes, OFF (gray, with the sparkles and light colours on hover) when it is off or
+   * paused, whatever the reason. Pressing it turns it the other way. Fill next, the manual way, is secondary, and
+   * only there while the run is off: while it is on, the Next key would only take over from it.
+   */
+  private pasteControls(state: PanelState, finished: boolean): HTMLElement[] {
+    const { paste, settings } = state;
+    const on = paste.auto === "running";
+    const toggle = this.autoSwitch(
+      on,
+      () => void (on ? this.panel.pauseAutoPaste() : this.panel.autoPaste()),
+      finished,
+    );
+    if (on) return [toggle];
+    const fill = this.button(
+      `Fill next (${settings.nextHotkey})`,
+      "quiet",
+      "fill",
+      () => void this.panel.fillNext(),
+      finished || paste.busy,
+    );
+    return [toggle, fill];
   }
 
   /** The error above the step counter. A new error, or the same one on a new attempt, plays the attention animation once. */
@@ -831,10 +912,9 @@ export class PanelView {
   private settings(state: PanelState): Node[] {
     return [
       this.heading("Settings"),
-      el(
-        "fieldset",
-        { class: "stack" },
-        el("legend", { text: "What to paste" }),
+      this.settingsCard(
+        "settings-paste",
+        "What to paste",
         el(
           "ul",
           { class: "tracks" },
@@ -858,6 +938,35 @@ export class PanelView {
       this.lookupSettings(state),
       this.youtubeKeySettings(state),
     ];
+  }
+
+  /**
+   * A section of the settings: a card with its own heading, so where one starts and ends is plain. The space between
+   * cards is larger than the space inside one, and inside a card the groups are told apart by `subgroup`.
+   */
+  private settingsCard(id: string, title: string, ...children: (Node | null)[]): HTMLElement {
+    return el(
+      "section",
+      { class: "settings-card", attrs: { "aria-labelledby": id } },
+      el("h3", { text: title, attrs: { id } }),
+      ...children,
+    );
+  }
+
+  /** A titled group inside a card, set off from the one before it by a line. */
+  private subgroup(title: string, ...children: Node[]): HTMLElement {
+    return el("div", { class: "subgroup" }, el("h4", { text: title }), ...children);
+  }
+
+  /** One setting: its label, its control and its help, close together, so they read as one thing. */
+  private setting(label: string, forId: string, control: Node, helpId: string, help: string): HTMLElement {
+    return el(
+      "div",
+      { class: "setting" },
+      el("label", { text: label, attrs: { for: forId } }),
+      control,
+      el("p", { class: "help", text: help, attrs: { id: helpId } }),
+    );
   }
 
   private pastingSettings(state: PanelState): HTMLElement {
@@ -944,61 +1053,119 @@ export class PanelView {
     });
     wait.value = String(settings.autocompleteWaitSeconds);
 
-    return el(
-      "fieldset",
-      { class: "stack" },
-      el("legend", { text: "Pasting on Genius" }),
-      keySelect("nextHotkey", "Key that fills the next step"),
-      keySelect("backHotkey", "Key that goes back one step"),
-      el(
-        "label",
-        { class: "check" },
-        confirm,
-        el("span", { text: "Choose the exact match in Genius's suggestions for me" }),
-      ),
-      el("p", {
-        class: "help",
-        text: "When Genius has no exact match, the text stays typed and you choose. A close match is never picked for you.",
-      }),
-      el(
-        "label",
-        { class: "check" },
-        autoReturn,
-        el("span", { text: "Go back to the main menu after the last track" }),
-      ),
+    // The same Auto-paste switch as on the paste screen, ON by default, and what each side of it means.
+    const autoOn = settings.pasteMode === "auto";
+    const modeSwitch = this.autoSwitch(
+      autoOn,
+      () => void this.panel.setSetting("pasteMode", autoOn ? "manual" : "auto"),
+      false,
+    );
+    modeSwitch.setAttribute("data-key", "setting-pasteMode");
+    modeSwitch.id = "setting-pasteMode";
+    modeSwitch.setAttribute("aria-describedby", "setting-pasteMode-help");
+    const meaning = (label: string, text: string, current: boolean): HTMLElement =>
       el(
         "div",
-        { class: "stack" },
-        el("label", { text: "Seconds before going back to the main menu", attrs: { for: "setting-returnSeconds" } }),
-        returnBox,
+        { class: current ? "onoff current" : "onoff", attrs: current ? { "aria-current": "true" } : {} },
+        el("strong", { text: label }),
+        el("span", { text }),
+      );
+    const meanings = el(
+      "div",
+      { class: "onoff-list", attrs: { id: "setting-pasteMode-help" } },
+      meaning(
+        "ON",
+        "Start pasting fills the whole track by itself, one field after another, pausing briefly between them. It stops the moment you click or type in the Genius form, press Esc, switch it off or close the panel, and you turn it back on to carry on. When Genius has no exact match for a name it waits for you to choose, then goes on by itself.",
+        autoOn,
       ),
-      el("p", {
-        class: "help",
-        text: `Between ${String(COUNTDOWN_RANGE.min)} and ${String(COUNTDOWN_RANGE.max)}. It waits while you are using the panel.`,
-        attrs: { id: "setting-returnSeconds-help" },
-      }),
-      el(
-        "div",
-        { class: "stack" },
-        el("label", { text: "Seconds before pasting the next track", attrs: { for: "setting-nextTrackSeconds" } }),
-        nextBox,
+      meaning(
+        "OFF",
+        `Start pasting fills one field each time you press the fill key (${settings.nextHotkey}), so you stay in control of every step. Auto-paste is still one button away on the paste screen.`,
+        !autoOn,
       ),
-      el("p", {
-        class: "help",
-        text: `Between ${String(COUNTDOWN_RANGE.min)} and ${String(COUNTDOWN_RANGE.max)}, or 0 to wait for you to press the button.`,
-        attrs: { id: "setting-nextTrackSeconds-help" },
-      }),
-      el(
-        "div",
-        { class: "stack" },
-        el("label", { text: "Wait for suggestions to settle (seconds)", attrs: { for: "setting-wait" } }),
-        wait,
+    );
+    const paceBox = el("input", {
+      class: "field",
+      attrs: {
+        id: "setting-autoPace",
+        "data-key": "setting-autoPace",
+        type: "number",
+        min: String(PACE_RANGE.min),
+        max: String(PACE_RANGE.max),
+        step: "0.1",
+        "aria-describedby": "setting-autoPace-help",
+      },
+      on: {
+        change: (event) => {
+          void this.panel.setSetting("autoPaceSeconds", Number((event.target as HTMLInputElement).value));
+        },
+      },
+    });
+    paceBox.value = String(settings.autoPaceSeconds);
+
+    return this.settingsCard(
+      "settings-pasting",
+      "Pasting on Genius",
+      el("div", { class: "setting" }, el("p", { class: "setting-label", text: "Start pasting" }), modeSwitch, meanings),
+      this.setting(
+        "Seconds between fields when pasting automatically",
+        "setting-autoPace",
+        paceBox,
+        "setting-autoPace-help",
+        `Between ${String(PACE_RANGE.min)} and ${String(PACE_RANGE.max)}. A longer pause is gentler on Genius and easier to follow.`,
       ),
-      el("p", {
-        class: "help",
-        text: "Raise this if Genius is slow to show suggestions.",
-        attrs: { id: "setting-wait-help" },
-      }),
+      this.subgroup(
+        "Keys",
+        keySelect("nextHotkey", "Key that fills the next step"),
+        keySelect("backHotkey", "Key that goes back one step"),
+      ),
+      this.subgroup(
+        "When Genius has no exact match",
+        el(
+          "div",
+          { class: "setting" },
+          el(
+            "label",
+            { class: "check" },
+            confirm,
+            el("span", { text: "Choose the exact match in Genius's suggestions for me" }),
+          ),
+          el("p", {
+            class: "help",
+            text: "When Genius has no exact match, the text stays typed and you choose. A close match is never picked for you.",
+          }),
+        ),
+        this.setting(
+          "Wait for suggestions to settle (seconds)",
+          "setting-wait",
+          wait,
+          "setting-wait-help",
+          "Raise this if Genius is slow to show suggestions.",
+        ),
+      ),
+      this.subgroup(
+        "After a track",
+        el(
+          "label",
+          { class: "check" },
+          autoReturn,
+          el("span", { text: "Go back to the main menu after the last track" }),
+        ),
+        this.setting(
+          "Seconds before going back to the main menu",
+          "setting-returnSeconds",
+          returnBox,
+          "setting-returnSeconds-help",
+          `Between ${String(COUNTDOWN_RANGE.min)} and ${String(COUNTDOWN_RANGE.max)}. It waits while you are using the panel.`,
+        ),
+        this.setting(
+          "Seconds before pasting the next track",
+          "setting-nextTrackSeconds",
+          nextBox,
+          "setting-nextTrackSeconds-help",
+          `Between ${String(COUNTDOWN_RANGE.min)} and ${String(COUNTDOWN_RANGE.max)}, or 0 to wait for you to press the button.`,
+        ),
+      ),
     );
   }
 
@@ -1028,17 +1195,16 @@ export class PanelView {
     );
     reads.value = String(settings.parallelReads);
 
-    return el(
-      "fieldset",
-      { class: "stack" },
-      el("legend", { text: "Reading credits" }),
-      el("label", { text: "Tracks read at the same time", attrs: { for: "setting-parallelReads" } }),
-      reads,
-      el("p", {
-        class: "help",
-        text: "More at once is faster for an album, but opens that many hidden tabs on Apple Music together. One by one is the gentlest; three is the default.",
-        attrs: { id: "setting-parallelReads-help" },
-      }),
+    return this.settingsCard(
+      "settings-reading",
+      "Reading credits",
+      this.setting(
+        "Tracks read at the same time",
+        "setting-parallelReads",
+        reads,
+        "setting-parallelReads-help",
+        "More at once is faster for an album, but opens that many hidden tabs on Apple Music together. One by one is the gentlest; three is the default.",
+      ),
     );
   }
 
@@ -1055,14 +1221,17 @@ export class PanelView {
       });
       input.checked = state.hosts[host];
       return [
-        el("label", { class: "check" }, input, el("span", { text: label })),
-        el("p", { class: "help", text: help, attrs: { id: `host-${host}-help` } }),
+        el(
+          "div",
+          { class: "setting" },
+          el("label", { class: "check" }, input, el("span", { text: label })),
+          el("p", { class: "help", text: help, attrs: { id: `host-${host}-help` } }),
+        ),
       ];
     };
-    return el(
-      "fieldset",
-      { class: "stack" },
-      el("legend", { text: "Look-ups on other sites" }),
+    return this.settingsCard(
+      "settings-lookups",
+      "Look-ups on other sites",
       ...box(
         "deezer",
         "Search Deezer for a cover when Apple has none",
@@ -1159,10 +1328,9 @@ export class PanelView {
 
     const busy = state.youtubeKey.busy;
     const message = state.youtubeKey.message;
-    return el(
-      "fieldset",
-      { class: "stack" },
-      el("legend", { text: "Better YouTube links (optional)" }),
+    return this.settingsCard(
+      "settings-youtube-key",
+      "Better YouTube links (optional)",
       el("p", {
         class: "help",
         text: "The free YouTube search can be blocked by Google, and then no link is found. For reliable links you can use Google's official YouTube service with your own free key. It is free for roughly 25 songs a day, and the key stays in this browser: it is not synced and it is sent only to Google.",

@@ -18,6 +18,16 @@
   --danger-ink: #1a0a08;
   --ok: #5ddc8a;
   --warn: #ffa94d;
+  /* The flowing gradient of the automatic button: yellow, orange, pink, violet. Dark ink stays readable on each. */
+  --magic-1: #f3c003;
+  --magic-2: #ff9a3d;
+  --magic-3: #ff6fb1;
+  --magic-4: #b18cff;
+  /* The light tints it shows when it is off and hovered. */
+  --magic-soft-1: #fbe28a;
+  --magic-soft-2: #ffcf9f;
+  --magic-soft-3: #ffc2de;
+  --magic-soft-4: #dccbff;
   --focus: #f4f3ee;
   /* One spacing scale for the whole panel: every gap, margin and padding is one of these. */
   --space-1: 4px;
@@ -864,4 +874,326 @@ main > .help {
 
 .progress {
   margin-bottom: var(--space-2);
+}
+
+/* The automatic button. It is meant to look like the app's special feature: a gradient that flows, a glow around it
+   and sparkles that twinkle. The glow, the gradient and the sparkles all have a still version that stays when the
+   system asks for reduced motion (the rule above removes only the movement), and nothing moves faster than a slow
+   pulse. The sparkles are decoration: an empty aria-hidden span and pseudo-elements, so the name stays plain. */
+.button.magic {
+  position: relative;
+  color: var(--accent-ink);
+  border-color: transparent;
+  background: linear-gradient(
+    110deg,
+    var(--magic-1),
+    var(--magic-2),
+    var(--magic-3),
+    var(--magic-4),
+    var(--magic-3),
+    var(--magic-2),
+    var(--magic-1)
+  );
+  background-size: 200% 100%;
+  box-shadow:
+    0 0 12px 2px rgb(255 154 61 / 45%),
+    0 0 26px 4px rgb(177 140 255 / 30%);
+  animation:
+    magic-flow 8s linear infinite,
+    magic-glow 3.2s ease-in-out infinite;
+}
+
+.button.magic:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.button.magic:disabled {
+  box-shadow: none;
+  animation: none;
+  filter: saturate(0.6);
+}
+
+.button.magic .sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.button.magic .sparkles::before,
+.button.magic .sparkles::after,
+.button.magic::before,
+.button.magic::after {
+  position: absolute;
+  color: #fff;
+  text-shadow: 0 0 6px rgb(255 255 255 / 85%);
+  opacity: 0.9;
+  pointer-events: none;
+  animation: magic-twinkle 2.8s ease-in-out infinite;
+}
+
+.button.magic .sparkles::before {
+  content: "\2726";
+  top: -8px;
+  right: 12%;
+  font-size: 0.85rem;
+}
+
+.button.magic .sparkles::after {
+  content: "\2726";
+  bottom: -7px;
+  left: 10%;
+  font-size: 0.65rem;
+  animation-delay: 1.3s;
+}
+
+.button.magic::before {
+  content: "\2727";
+  top: -6px;
+  left: 46%;
+  font-size: 0.7rem;
+  animation-delay: 0.7s;
+}
+
+.button.magic::after {
+  content: "\2727";
+  bottom: -6px;
+  right: 30%;
+  font-size: 0.6rem;
+  animation-delay: 2s;
+}
+
+.button.magic:disabled .sparkles,
+.button.magic:disabled::before,
+.button.magic:disabled::after {
+  display: none;
+}
+
+/* One image width is 200% of the button, so moving the position by 200% loops without a jump. */
+@keyframes magic-flow {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes magic-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 10px 1px rgb(255 154 61 / 35%),
+      0 0 22px 3px rgb(177 140 255 / 22%);
+  }
+  50% {
+    box-shadow:
+      0 0 18px 4px rgb(255 154 61 / 60%),
+      0 0 34px 8px rgb(177 140 255 / 40%);
+  }
+}
+
+@keyframes magic-twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.7) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15) rotate(20deg);
+  }
+}
+
+/* The automatic button when it is OFF: gray like any switch that is off, so it is clear nothing is running. Pointing
+   at it (or tabbing to it) lights it up in the light tints with sparkles, to show what turning it on does. The still
+   version (no movement) is what reduced motion keeps. */
+.button.magic-off {
+  position: relative;
+  color: var(--muted);
+  background: var(--surface-hi);
+  border-color: var(--control-border);
+}
+
+.button.magic-off .sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.button.magic-off .sparkles::before,
+.button.magic-off .sparkles::after,
+.button.magic-off::before,
+.button.magic-off::after {
+  position: absolute;
+  color: #fff;
+  text-shadow:
+    0 0 3px var(--magic-3),
+    0 0 7px var(--magic-2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.button.magic-off .sparkles::before {
+  content: "\2726";
+  top: -8px;
+  right: 12%;
+  font-size: 0.85rem;
+}
+
+.button.magic-off .sparkles::after {
+  content: "\2726";
+  bottom: -7px;
+  left: 10%;
+  font-size: 0.65rem;
+}
+
+.button.magic-off::before {
+  content: "\2727";
+  top: -6px;
+  left: 46%;
+  font-size: 0.7rem;
+}
+
+.button.magic-off::after {
+  content: "\2727";
+  bottom: -6px;
+  right: 30%;
+  font-size: 0.6rem;
+}
+
+.button.magic-off:hover:not(:disabled),
+.button.magic-off:focus-visible:not(:disabled) {
+  color: var(--accent-ink);
+  border-color: transparent;
+  background: linear-gradient(
+    110deg,
+    var(--magic-soft-1),
+    var(--magic-soft-2),
+    var(--magic-soft-3),
+    var(--magic-soft-4),
+    var(--magic-soft-3),
+    var(--magic-soft-2),
+    var(--magic-soft-1)
+  );
+  background-size: 200% 100%;
+  box-shadow:
+    0 0 10px 1px rgb(255 154 61 / 28%),
+    0 0 20px 3px rgb(177 140 255 / 20%);
+  animation: magic-flow 8s linear infinite;
+}
+
+.button.magic-off:hover:not(:disabled) .sparkles::before,
+.button.magic-off:hover:not(:disabled) .sparkles::after,
+.button.magic-off:hover:not(:disabled)::before,
+.button.magic-off:hover:not(:disabled)::after,
+.button.magic-off:focus-visible:not(:disabled) .sparkles::before,
+.button.magic-off:focus-visible:not(:disabled) .sparkles::after,
+.button.magic-off:focus-visible:not(:disabled)::before,
+.button.magic-off:focus-visible:not(:disabled)::after {
+  opacity: 0.95;
+  animation: magic-twinkle 2.8s ease-in-out infinite;
+}
+
+.button.magic-off:disabled .sparkles {
+  display: none;
+}
+
+/* The settings screen. Each section is a card with a heading, so where one starts and ends is plain: the space between
+   cards (24) is larger than the space inside one, and inside a card a setting (label, control, help) is tight (4) while
+   settings are 16 apart and groups are told apart by a line and a small heading. */
+.settings-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--surface-hi);
+  border-radius: 8px;
+}
+
+.settings-card > h3 {
+  margin: 0;
+  font-size: 1.0625rem;
+}
+
+.settings-card .setting {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.settings-card .setting > .field,
+.settings-card .setting > select {
+  align-self: stretch;
+}
+
+.settings-card .setting > .help {
+  margin: 0;
+}
+
+.settings-card .setting-label {
+  margin: 0;
+  font-weight: 600;
+}
+
+.settings-card .stack {
+  margin: 0;
+  gap: var(--space-1);
+}
+
+.settings-card .tracks {
+  gap: var(--space-2);
+}
+
+.settings-card > .help {
+  margin: 0;
+}
+
+.subgroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--surface-hi);
+}
+
+.subgroup > h4 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* What each side of the Auto-paste switch means; the one in force is marked and brighter. */
+.onoff-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-self: stretch;
+}
+
+.onoff {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  color: var(--muted);
+  border-left: 3px solid var(--surface-hi);
+  border-radius: 4px;
+}
+
+.onoff strong {
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+}
+
+.onoff.current {
+  color: var(--text);
+  background: var(--surface-hi);
+  border-left-color: var(--link);
 }

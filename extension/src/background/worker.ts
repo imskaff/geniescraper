@@ -54,3 +54,13 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse: (r
   // Anything else, including the Apple Music content script, gets no answer.
   return false;
 });
+
+// The open side panel keeps a connection here; when it ends the panel was closed, and an automatic run pauses.
+// Only this extension's own pages count, never a page of another origin.
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name !== "panel" || port.sender?.id !== chrome.runtime.id) return;
+  if (port.sender.url?.startsWith(chrome.runtime.getURL("")) !== true) return;
+  port.onDisconnect.addListener(() => {
+    void paste.panelClosed();
+  });
+});

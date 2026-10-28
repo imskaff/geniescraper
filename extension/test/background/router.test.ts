@@ -39,6 +39,20 @@ describe("router", () => {
     expect(JSON.stringify(answer)).not.toContain("boom");
   });
 
+  it("routes every paste command the panel can send, the automatic ones included", async () => {
+    const browser = fakeBrowser({ geniusTabs: [{ id: 7, active: true }] });
+    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS);
+    const queue: [string, string][] = [["written_by", "Writer One"]];
+    expect(await route({ type: "paste-start", title: "Song", queue })).toMatchObject({ ok: true });
+    for (const type of ["paste-auto-start", "paste-auto-pause", "paste-back", "paste-skip", "paste-stop"]) {
+      const answer = await route({ type });
+      // Each is a recognised request: whatever it answers, it is never "Unrecognised request".
+      expect(JSON.stringify(answer), type).not.toContain("Unrecognised request");
+    }
+    expect(await route({ type: "paste-start", title: "Song", queue })).toMatchObject({ ok: true });
+    expect(await route({ type: "paste-auto-start" })).toMatchObject({ ok: true, data: { auto: "running" } });
+  });
+
   it("routes a detect request", async () => {
     const route = createRouter(fakeBrowser().ports, FAST_CLIENT, pasteFor(fakeBrowser()), NO_COVERS);
     expect(await route({ type: "detect", url: ALBUM_URL })).toEqual({ ok: true, data: ALBUM_INFO });

@@ -73,14 +73,14 @@ They read the saved Apple Music pages in `../tests/fixtures/` and the golden fil
 These drive a real Chrome against the live sites, so they send real traffic and are never run by CI.
 Each takes `--chrome <path to chrome.exe>` or the `CHROME_PATH` environment variable.
 
-| Command                             | What it checks                                                  |
-| ----------------------------------- | --------------------------------------------------------------- |
-| `npm run live:hidden-tab`           | Reading Apple Music in a background tab.                        |
-| `npm run live:panel`                | The panel against live Apple Music.                             |
-| `npm run live:sidepanel`            | The side panel opening and its layout.                          |
-| `npm run live:parallel`             | Reading several tracks at once.                                 |
-| `npm run live:genius`               | The fill against a Genius edit form (needs you signed in).      |
-| `node scripts/live-youtube-api.mjs` | The YouTube API lookup, with your own key in `YOUTUBE_API_KEY`. |
+| Command                             | What it checks                                                                                                                                                             |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run live:hidden-tab`           | Reading Apple Music in a background tab.                                                                                                                                   |
+| `npm run live:panel`                | The panel against live Apple Music.                                                                                                                                        |
+| `npm run live:sidepanel`            | The side panel opening and its layout.                                                                                                                                     |
+| `npm run live:parallel`             | Reading several tracks at once.                                                                                                                                            |
+| `npm run live:genius`               | The fill against a Genius edit form (needs you signed in); `-- --mode auto` runs it automatically and checks every pause. Use the Playwright Chromium, not branded Chrome. |
+| `node scripts/live-youtube-api.mjs` | The YouTube API lookup, with your own key in `YOUTUBE_API_KEY`.                                                                                                            |
 
 ## Permissions
 

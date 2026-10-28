@@ -35,6 +35,19 @@ export function plainInput(form: HTMLFormElement, name: string): HTMLInputElemen
   return form.querySelector<HTMLInputElement>(`input[name="${name}"]`);
 }
 
+/**
+ * The button of a song that already has additional roles: the form shows only "N additional roles" and this Expand
+ * button until it is pressed, and the rows and the Add button are not in the page meanwhile (seen on a live form).
+ */
+export const CREDITS_EXPANDER = '[data-testid="custom-performances-expander"]';
+
+export function creditsExpander(form: HTMLFormElement): HTMLButtonElement | null {
+  const button = form.querySelector<HTMLButtonElement>(CREDITS_EXPANDER);
+  // The same button reads "Hide" once the section is open (the captured open form has it so): pressing it then would
+  // close the section again, so only a button that says Expand counts.
+  return button && /^Expand\b/i.test(button.textContent.trim()) ? button : null;
+}
+
 export function addCreditsButton(form: HTMLFormElement): HTMLButtonElement | null {
   for (const button of form.querySelectorAll("button")) {
     if (button.textContent.trim() === ADD_CREDITS_TEXT) return button;

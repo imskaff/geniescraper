@@ -1,6 +1,6 @@
 // Content script for genius.com. It is idle until the worker says a paste session is running: only then do the
 // hotkeys do anything, and it never presses Save or Cancel (see fill.ts for the rules it follows).
-import { isGeniusNotice, isResult } from "../shared/messages";
+import { isGeniusNotice, isPasteStatus, isResult } from "../shared/messages";
 import { normaliseSettings, SETTINGS_KEY } from "../shared/settings";
 import { REAL_COMBOBOX_TIMING } from "./fill";
 import { GeniusPage } from "./page";
@@ -44,10 +44,23 @@ if (!window.__geniescraperGenius) {
     true,
   );
 
+  // What counts as the user acting on the form during an automatic run. Only trusted events count (the page checks),
+  // so the extension's own typing never pauses its own run.
+  for (const type of ["mousedown", "keydown", "input"]) {
+    window.addEventListener(
+      type,
+      (event) => {
+        page.onUserActivity(event);
+      },
+      true,
+    );
+  }
+
   chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse: (response: unknown) => void) => {
     // Only this extension's own worker may drive the page.
     if (sender.id !== chrome.runtime.id || !isGeniusNotice(message)) return false;
     if (message.type === "genius/paste-active") page.setActive(message.active);
+    else if (message.type === "genius/auto-state") page.setAuto(message.auto);
     else void page.next();
     sendResponse({ ok: true });
     return false;
@@ -57,9 +70,11 @@ if (!window.__geniescraperGenius) {
   chrome.runtime
     .sendMessage({ type: "paste-status" })
     .then((answer: unknown) => {
-      if (isResult(answer) && answer.ok) {
-        const data = answer.data as { active?: unknown };
-        page.setActive(data.active === true);
+      if (isResult(answer) && answer.ok && isPasteStatus(answer.data)) {
+        page.setActive(answer.data.active);
+        // A page that loads under a running automatic run was reloaded or navigated: it never resumes by itself, the
+        // user presses Resume once the song's edit form is open again.
+        if (answer.data.auto === "running") page.pauseFromPage("page-changed");
       }
     })
     .catch(() => undefined);
