@@ -30,7 +30,7 @@ const SETTING_LABELS: readonly (readonly [ScrapeKey, string])[] = [
   ["scrapeAdditional", "Additional credits"],
   ["scrapeCopyright", "Copyright lines (℗ and ©)"],
   ["scrapeYoutube", "YouTube link"],
-  ["scrapeCoverArt", "Cover art link"],
+  ["scrapeCoverArt", "PNG cover art link"],
 ];
 
 const STATUS_TEXT: Readonly<Record<TrackStatus, string>> = {
@@ -55,6 +55,8 @@ export class PanelView {
   private readonly expanded = new Map<string, boolean>();
   /** What the user has typed into the key box, kept across re-renders and never stored by the view. */
   private keyDraft = "";
+  /** The welcome's intro has played; later redraws show it still. */
+  private welcomePlayed = false;
 
   constructor(
     private readonly root: HTMLElement,
@@ -139,6 +141,13 @@ export class PanelView {
     });
   }
 
+  /** True once: the first time the welcome is drawn. */
+  private playWelcome(): boolean {
+    const first = !this.welcomePlayed;
+    this.welcomePlayed = true;
+    return first;
+  }
+
   private region(id: string): HTMLElement {
     const node = this.root.querySelector<HTMLElement>(`#${id}`);
     if (!node) throw new Error(`missing #${id}`);
@@ -185,6 +194,7 @@ export class PanelView {
             heading: (text) => this.heading(text),
             lookupFieldset: () => this.lookupSettings(state),
             keyFieldset: () => this.youtubeKeySettings(state),
+            animateWelcome: () => this.playWelcome(),
           })
         : state.settingsOpen
           ? this.settings(state)
@@ -679,19 +689,6 @@ export class PanelView {
   private settings(state: PanelState): Node[] {
     return [
       this.heading("Settings"),
-      el(
-        "div",
-        { class: "row" },
-        this.button(
-          "Run the setup again",
-          "quiet",
-          "setup-again",
-          () => {
-            this.panel.openSetup();
-          },
-          state.paste.active,
-        ),
-      ),
       el(
         "fieldset",
         { class: "stack" },

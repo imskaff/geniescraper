@@ -338,7 +338,7 @@ describe("settings screen", () => {
       "Additional credits",
       "Copyright lines (℗ and ©)",
       "YouTube link",
-      "Cover art link",
+      "PNG cover art link",
       "Choose the exact match in Genius's suggestions for me",
       "Go back to the main menu 10 seconds after the last step",
       "Search Deezer for a cover when Apple has none",

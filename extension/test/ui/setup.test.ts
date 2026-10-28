@@ -1,8 +1,10 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { DEFAULT_SETTINGS, RECOMMENDED_SETTINGS, normaliseSettings } from "../../src/shared/settings";
+import { normaliseSettings } from "../../src/shared/settings";
 import { SETUP_STEPS, PanelController } from "../../src/ui/controller";
 import { PanelView } from "../../src/ui/view";
-import { ALBUM, fakeEnv } from "./fakes";
+import { fakeEnv } from "./fakes";
 
 const flush = async (): Promise<void> => {
   for (let i = 0; i < 50; i++) await Promise.resolve();
@@ -111,19 +113,24 @@ describe("walking through the set-up", () => {
     await goTo(root, SETUP_STEPS - 1);
     expect(has(root, "Next")).toBe(false);
     expect(has(root, "Start using Géniescraper")).toBe(true);
-    expect(has(root, "Skip the set-up")).toBe(false);
   });
 
-  it("can be skipped from any step but the last, keeping what was chosen so far", async () => {
-    const { root, env, panel } = await mount({ firstRun: true });
-    await goTo(root, 1);
-    await tick(root, "setting-scrapeAdditional", false);
-    await press(root, "Skip the set-up");
-    expect(panel.state.setup.open).toBe(false);
-    expect(panel.state.settings.scrapeAdditional).toBe(false);
-    expect(panel.state.settings.onboarded).toBe(true);
-    expect(env.settingsStore.data.get("settings")).toMatchObject({ onboarded: true, scrapeAdditional: false });
-    expect(heading(root)).toBe("Get credits from Apple Music");
+  it("cannot be skipped: no step has a skip button, and the only ways on are Next and the last step's finish", async () => {
+    const { root, panel } = await mount({ firstRun: true });
+    for (let i = 0; i < SETUP_STEPS; i++) {
+      expect(has(root, "Skip"), `step ${String(i)}`).toBe(false);
+      expect(root.textContent.toLowerCase()).not.toContain("skip the set-up");
+      expect(panel.state.setup.open).toBe(true);
+      if (i < SETUP_STEPS - 1) await press(root, i === 0 ? "Get started" : "Next");
+    }
+  });
+
+  it("stays open, with the same step, when the panel is reopened before it is finished", async () => {
+    const { root, env } = await mount({ firstRun: true });
+    await goTo(root, 2);
+    const again = await PanelController.create(fakeEnv({ firstRun: true }));
+    expect(again.state.setup.open).toBe(true);
+    expect(env.settingsStore.data.get("settings")).toBeUndefined();
   });
 
   it("finishes on the last step, saves that it was seen, and does not come back by itself", async () => {
@@ -135,6 +142,42 @@ describe("walking through the set-up", () => {
     expect(env.settingsStore.data.get("settings")).toMatchObject({ onboarded: true });
     const again = fakeEnv({ settings: env.settingsStore.data.get("settings") });
     expect((await PanelController.create(again)).state.setup.open).toBe(false);
+  });
+});
+
+describe("the welcome", () => {
+  it("shows the logo from the extension's own files, as decoration, above the welcome words", async () => {
+    const { root } = await mount({ firstRun: true });
+    const logo = $(root, ".welcome-logo") as HTMLImageElement;
+    expect(logo.getAttribute("src")).toBe("../icons/icon-128.png");
+    expect(logo.getAttribute("alt")).toBe("");
+    expect($(root, ".welcome-mark").getAttribute("aria-hidden")).toBe("true");
+    const mark = $(root, ".welcome-mark");
+    const title = $(root, "h2");
+    expect(mark.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("plays its fade-in the first time it is drawn, and not again on a redraw or when coming back to it", async () => {
+    const { root, panel } = await mount({ firstRun: true });
+    expect($(root, ".welcome").classList.contains("animate")).toBe(true);
+    expect($(root, ".setup-nav").classList.contains("animate")).toBe(true);
+    await panel.setSetting("autoReturn", true);
+    expect($(root, ".welcome").classList.contains("animate")).toBe(false);
+    expect($(root, ".setup-nav").classList.contains("animate")).toBe(false);
+    await press(root, "Get started");
+    await press(root, "Back");
+    expect($(root, ".welcome").classList.contains("animate")).toBe(false);
+    expect(heading(root)).toBe("Welcome to Géniescraper");
+  });
+
+  it("is built so that a part that does not play simply shows: the animation only says where to start from", () => {
+    const css = readFileSync(join(import.meta.dirname, "..", "..", "src", "ui", "panel.css"), "utf-8");
+    for (const rule of css.match(/\.(welcome|setup-nav)\.animate[^{]*\{[^}]*\}/g) ?? []) {
+      expect(rule, rule).toContain("backwards");
+      expect(rule, rule).not.toMatch(/forwards|both/);
+    }
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)[^}]*\{[^}]*animation: none !important/);
+    expect(css).not.toMatch(/\.welcome[^{]*\{[^}]*opacity: 0;/);
   });
 });
 
@@ -183,43 +226,6 @@ describe("the choices in the set-up", () => {
     await flush();
     expect(panel.state.settings).toMatchObject({ backHotkey: "F8", nextHotkey: "F7" });
   });
-
-  it("applies the recommended choices in one press, leaving the look-ups alone", async () => {
-    const { root, panel, env } = await mount({
-      firstRun: true,
-      hosts: { deezer: true },
-    });
-    await goTo(root, 1);
-    await tick(root, "setting-scrapeCore", false);
-    await tick(root, "setting-scrapeCoverArt", false);
-    await press(root, "Skip the set-up");
-    await panel.setSetting("parallelReads", 1);
-    panel.openSetup();
-    await flush();
-    await goTo(root, 2);
-    await press(root, "Use recommended");
-    expect(panel.state.settings).toMatchObject({ ...RECOMMENDED_SETTINGS, onboarded: true });
-    expect(panel.state.hosts.deezer).toBe(true);
-    expect(env.hosts.log).toEqual([]);
-  });
-
-  it("offers 'Use recommended' on the two steps with settings, and nowhere else", async () => {
-    const { root } = await mount({ firstRun: true });
-    const shown: boolean[] = [];
-    for (let i = 0; i < SETUP_STEPS; i++) {
-      shown.push(has(root, "Use recommended"));
-      if (i < SETUP_STEPS - 1) await press(root, i === 0 ? "Get started" : "Next");
-    }
-    expect(shown).toEqual([false, true, true, false, false]);
-  });
-
-  it("recommends only things that cost no request to another site", () => {
-    const keys = Object.keys(RECOMMENDED_SETTINGS);
-    expect(keys.some((k) => /host|youtubeApi|deezer/i.test(k))).toBe(false);
-    for (const [key, value] of Object.entries(RECOMMENDED_SETTINGS)) {
-      expect(DEFAULT_SETTINGS[key as keyof typeof DEFAULT_SETTINGS], key).toBe(value);
-    }
-  });
 });
 
 describe("the look-ups step", () => {
@@ -262,7 +268,7 @@ describe("the summary", () => {
     await goTo(root, SETUP_STEPS - 1);
     const text = $(root, "main").textContent;
     expect(text).toContain(
-      "Pasting: songwriters and producers, additional credits, copyright lines, the cover link, the YouTube link.",
+      "Pasting: songwriters and producers, additional credits, copyright lines, the PNG cover link, the YouTube link.",
     );
     expect(text).toContain("Reading: 3 tracks at a time.");
     expect(text).toContain("Genius keys: F8 fills the next step, F7 goes back.");
@@ -283,7 +289,7 @@ describe("the summary", () => {
     await panel.setSetting("nextHotkey", "F9");
     await goTo(root, SETUP_STEPS - 1);
     const text = $(root, "main").textContent;
-    expect(text).toContain("Pasting: additional credits, copyright lines, the cover link.");
+    expect(text).toContain("Pasting: additional credits, copyright lines, the PNG cover link.");
     expect(text).toContain("Reading: every track at once.");
     expect(text).toContain("F9 fills the next step");
     expect(text).toContain("Covers from Deezer when Apple has none: on.");
@@ -306,27 +312,17 @@ describe("the summary", () => {
   });
 });
 
-describe("running the set-up again", () => {
-  it("is offered at the top of Settings and starts from the welcome, without losing any choice", async () => {
-    const { root, panel } = await mount({ settings: { scrapeCore: false } });
+describe("no way to run it again", () => {
+  it("is not offered in Settings, and there is no 'Use recommended' anywhere", async () => {
+    const { root } = await mount({ settings: { scrapeCore: false } });
     await press(root, "Settings");
-    await press(root, "Run the setup again");
-    expect(panel.state.setup).toEqual({ open: true, step: 0 });
-    expect(panel.state.settingsOpen).toBe(false);
-    expect(heading(root)).toBe("Welcome to Géniescraper");
-    await goTo(root, 1);
-    expect(box(root, "setting-scrapeCore").checked).toBe(false);
-  });
-
-  it("is not offered while a track is being pasted", async () => {
-    const { root, panel } = await mount();
-    await panel.detect(ALBUM.url);
-    await panel.setAllSelected(true);
-    await panel.getCredits();
-    await panel.startPaste(0);
-    await press(root, "Settings");
-    const again = [...root.querySelectorAll("button")].find((b) => b.textContent === "Run the setup again");
-    expect((again as HTMLButtonElement).disabled).toBe(true);
+    expect(has(root, "Run the setup again")).toBe(false);
+    expect(root.textContent).not.toContain("setup again");
+    const fresh = await mount({ firstRun: true });
+    for (let i = 0; i < SETUP_STEPS; i++) {
+      expect(has(fresh.root, "Use recommended")).toBe(false);
+      if (i < SETUP_STEPS - 1) await press(fresh.root, i === 0 ? "Get started" : "Next");
+    }
   });
 });
 

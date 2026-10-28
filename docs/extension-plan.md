@@ -503,24 +503,25 @@ Also fixed: the record of which tracks had been asked about was keyed by track n
 
 ## 22. The first-time set-up
 
-A short walk through the choices that matter, shown the first time the panel opens (and from Settings, "Run the setup again").
-It is a whole screen with five steps, each skippable, and it adds no settings of its own except `onboarded`:
+A walk through the choices that matter, shown the first time the panel opens.
+It is a whole screen with five steps and it cannot be skipped: there is no skip button and no way to run it again later (the owner's decision; everything it sets is in Settings).
+It adds no settings of its own except `onboarded`, set when the last step's "Start using Géniescraper" is pressed.
 
-1. **Welcome.** What the extension does, that it never presses Save, that nothing is sent to us and there is no account.
-2. **What should it paste?** The five scrape toggles, each with a sentence saying what it does; the recommended ones are already ticked (YouTube link is ticked too, but yields nothing until a look-up is set up in step 4).
+1. **Welcome.** The logo fades in with a soft glow and a blur that sharpens, then the title, the lead and the points rise into place one after another, and the button comes last; it plays once, with the first draw, and a redraw or coming back to it shows the finished state.
+   It only says where each part starts from (`backwards` fill), so with reduced motion, or after it has played, everything simply shows; the machine this was built on reports reduced motion, so the live check turns that off to watch it play.
+   The logo is the packaged icon, loaded from the extension itself.
+2. **What should it paste?** The five toggles, each with a sentence; the recommended ones are already ticked.
+   The cover option is called "PNG cover art link" here and in Settings, because the link is to a 1000 by 1000 PNG.
 3. **Speed and comfort.** Tracks read at once (recommended 3, measured in section 16), auto-confirm, auto-return, and the two Genius keys with a note that laptops often need Fn for F-keys.
 4. **Better covers and links (optional).** The Deezer and YouTube look-up boxes and the YouTube key help, reused from Settings.
-   Each asks Chrome for its permission inside its own click, because a prompt needs a user gesture; the set-up therefore never turns a look-up on by itself.
-5. **You're all set.** A plain-words summary of what was chosen (from the live settings and permissions) and three lines on how to use it, with the real key names.
-
-"Use recommended" (steps 2 and 3) applies `RECOMMENDED_SETTINGS` in one press.
-It contains only choices that cost nothing: it leaves out everything that contacts another site.
-"Skip the set-up" keeps what was chosen so far and marks it seen.
+   Each asks Chrome for its permission inside its own click, because a prompt needs a user gesture; the set-up never turns a look-up on by itself.
+5. **You're all set.** A plain-words summary of what was chosen and three lines on how to use it, with the real key names.
 
 Who sees it: `onboarded` is read from the synced settings.
-Someone who already has saved settings from before this existed is treated as having seen it (any stored settings without the flag count as onboarded), so an update does not greet existing users; only an empty store shows it, and the flag syncs, so a second browser on the same account does not repeat it.
+Someone who already has saved settings from before this existed counts as having seen it, so an update does not greet existing users; only an empty store shows it, and the flag syncs, so a second browser on the same account does not repeat it.
+Until it is finished it shows again each time the panel opens, from the welcome.
 The Settings button and Start pasting are hidden while it shows.
-Accessibility: focus moves to each step's heading, every control has a label and a description, headings stay in order, and it is checked at 320 px.
+Accessibility: focus moves to each step's heading, every control has a label and a description, headings stay in order, the logo is decoration, and it is checked at 320 px.
 
-Verified: unit tests for every step, the summary, the skip and finish paths, persistence and the migration rule, and an accessibility sweep of all five steps; the live panel check drives it in real Chrome (focus, no horizontal scroll at 400 and 320 px, light and dark screenshots).
-Not verified: Chrome's real permission prompts from inside the set-up (a script cannot click them), and the extension's real side panel on a first install (the live check opens the panel page as a tab).
+Verified: unit tests for every step, the summary, that nothing offers a skip or a second run, the intro's one-time play, the animation rules in the CSS, persistence and the migration rule, and an accessibility sweep of all five steps; the live panel check drives it in real Chrome (the intro mid-play, fully visible after it, focus, no horizontal scroll at 400 and 320 px, light and dark screenshots).
+Not verified: Chrome's real permission prompts from inside the set-up, and the real side panel on a first install (the live check opens the panel page as a tab).

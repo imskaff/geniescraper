@@ -8,7 +8,7 @@ import type { PasteCommand } from "../shared/messages";
 import { IDLE_PASTE, type PasteState } from "../core/paste";
 import type { AlbumInfo, AppError, PageScrape } from "../shared/messages";
 import { EMPTY_SESSION, type Session, type TrackResult } from "../shared/session";
-import { RECOMMENDED_SETTINGS, normaliseSettings, queueOptions, type Settings } from "../shared/settings";
+import { normaliseSettings, queueOptions, type Settings } from "../shared/settings";
 import {
   loadPaste,
   loadSession,
@@ -521,11 +521,6 @@ export class PanelController {
 
   // ── the first-time set-up ───────────────────────────────────────────
 
-  /** Show the set-up from its first step (from Settings, "Run the setup again"). */
-  openSetup(): void {
-    this.update({ setup: { open: true, step: 0 }, settingsOpen: false, status: "", error: "" });
-  }
-
   setupNext(): void {
     const step = Math.min(SETUP_STEPS - 1, this.current.setup.step + 1);
     this.update({ setup: { open: true, step }, status: "", error: "" });
@@ -536,21 +531,10 @@ export class PanelController {
     this.update({ setup: { open: true, step }, status: "", error: "" });
   }
 
-  /** Close the set-up for good, whether it was finished or skipped; it does not show by itself again. */
+  /** Close the set-up for good, once its last step is reached; it does not show by itself again. */
   async finishSetup(): Promise<void> {
     this.update({ setup: { open: false, step: 0 }, status: "", error: "" });
     await this.setSetting("onboarded", true);
-  }
-
-  /** Apply the recommended choices in one go (not the look-ups, which need Chrome's permission). */
-  async useRecommended(): Promise<void> {
-    const normalised = normaliseSettings({ ...this.current.settings, ...RECOMMENDED_SETTINGS });
-    this.update({ settings: normalised });
-    try {
-      await saveSettings(this.env.stores, normalised);
-    } catch {
-      // Applied for this session even if it cannot be saved.
-    }
   }
 
   async setSetting<K extends keyof Settings>(key: K, value: Settings[K]): Promise<void> {

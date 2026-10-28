@@ -21,6 +21,8 @@ export interface SetupParts {
   lookupFieldset(): HTMLElement;
   /** The YouTube key box with its step-by-step help. */
   keyFieldset(): HTMLElement;
+  /** True the first time the welcome is drawn, so the intro plays once and a redraw does not replay it. */
+  animateWelcome(): boolean;
 }
 
 const PARALLEL_TEXT = (n: number): string => (n === 0 ? "All at once" : n === 1 ? "1 (one by one)" : String(n));
@@ -89,7 +91,7 @@ export function setupSummary(state: PanelState): string[] {
     settings.scrapeCore && "songwriters and producers",
     settings.scrapeAdditional && "additional credits",
     settings.scrapeCopyright && "copyright lines",
-    settings.scrapeCoverArt && "the cover link",
+    settings.scrapeCoverArt && "the PNG cover link",
     settings.scrapeYoutube && "the YouTube link",
   ].filter((part): part is string => typeof part === "string");
   const reads = settings.parallelReads;
@@ -116,24 +118,41 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
     text: `Set-up, step ${String(step + 1)} of ${String(SETUP_STEPS)}`,
   });
 
+  // The intro plays once, with the first draw of the welcome; its button fades in last.
+  const play = step === 0 && parts.animateWelcome();
   const body: Node[] = [];
   switch (step) {
     case 0:
       body.push(
-        parts.heading("Welcome to Géniescraper"),
-        el("p", {
-          text: "Géniescraper copies a song's credits from Apple Music into Genius's Edit Metadata form, one field at a time, when you press a key.",
-        }),
         el(
-          "ul",
-          { class: "plain-list" },
-          el("li", { text: "It never presses Save for you. You look over the form and save it yourself." }),
-          el("li", {
-            text: "Nothing is sent to us: there is no account and no tracking. Your settings stay in your browser.",
+          "div",
+          { class: play ? "welcome animate" : "welcome" },
+          el(
+            "div",
+            { class: "welcome-mark", attrs: { "aria-hidden": "true" } },
+            el("span", { class: "welcome-glow" }),
+            // The icon ships in the package, so it loads from the extension itself, never from the network.
+            el("img", {
+              class: "welcome-logo",
+              attrs: { src: "../icons/icon-128.png", alt: "", width: "96", height: "96" },
+            }),
+          ),
+          el("div", { class: "welcome-title" }, parts.heading("Welcome to Géniescraper")),
+          el("p", {
+            class: "welcome-lead",
+            text: "Géniescraper copies a song's credits from Apple Music into Genius's Edit Metadata form, one field at a time, when you press a key.",
           }),
-          el("li", {
-            text: "A short set-up follows. Every choice can be changed later in Settings, and you can skip it now.",
-          }),
+          el(
+            "ul",
+            { class: "plain-list welcome-points" },
+            el("li", { text: "It never presses Save for you. You look over the form and save it yourself." }),
+            el("li", {
+              text: "Nothing is sent to us: there is no account and no tracking. Your settings stay in your browser.",
+            }),
+            el("li", {
+              text: "A short set-up follows: what to paste, how fast to read, and the optional look-ups. Every choice can be changed later in Settings.",
+            }),
+          ),
         ),
       );
       break;
@@ -172,8 +191,8 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
             panel,
             state,
             "scrapeCoverArt",
-            "Cover art link",
-            "A link to the 1000 by 1000 cover, ready to add to Genius. Recommended.",
+            "PNG cover art link",
+            "A link to the 1000 by 1000 PNG cover, ready to add to Genius. Recommended.",
           ),
           option(
             panel,
@@ -273,9 +292,10 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
       );
   }
 
+  // The set-up has to be walked through: there is no skip, and "Back" is the only way out of a step but on.
   const nav = el(
     "div",
-    { class: "stack setup-nav" },
+    { class: play ? "stack setup-nav animate" : "stack setup-nav" },
     el(
       "div",
       { class: "row" },
@@ -301,11 +321,7 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
             },
             false,
           ),
-      step === 1 || step === 2
-        ? parts.button("Use recommended", "quiet", "setup-recommended", () => void panel.useRecommended(), false)
-        : null,
     ),
-    last ? null : parts.button("Skip the set-up", "nav", "setup-skip", () => void panel.finishSetup(), false),
   );
 
   return [progress, ...body, nav];

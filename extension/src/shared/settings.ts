@@ -51,24 +51,6 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   onboarded: false,
 };
 
-/**
- * The choices that give the best result for most people: what the set-up's "Use recommended" applies. Everything
- * that costs a request to another site is left out; those are the user's to switch on, because Chrome asks first.
- */
-export const RECOMMENDED_SETTINGS: Readonly<Partial<Settings>> = {
-  scrapeCore: true,
-  scrapeAdditional: true,
-  scrapeCopyright: true,
-  scrapeCoverArt: true,
-  scrapeYoutube: true,
-  nextHotkey: "F8",
-  backHotkey: "F7",
-  autoConfirm: true,
-  autocompleteWaitSeconds: 0.6,
-  parallelReads: 3,
-  autoReturn: true,
-};
-
 export const SETTINGS_KEY = "settings";
 
 type BooleanKey = {
