@@ -136,7 +136,10 @@ describe("a press from the Genius page", () => {
 
   it("answers status and back", async () => {
     const { start, service, stored } = setup();
-    expect(await service.fromGenius({ type: "paste-status" })).toEqual({ ok: true, data: { active: false } });
+    expect(await service.fromGenius({ type: "paste-status" })).toEqual({
+      ok: true,
+      data: { active: false, auto: "off", awaiting: false, position: 0 },
+    });
     await start();
     await service.command({ type: "paste-skip" });
     await service.fromGenius({ type: "paste-back" });

@@ -38,6 +38,8 @@ export interface FillContext {
   timing: ComboboxTiming;
   /** Choose the exact match without asking. When false every combobox step is left for the user. */
   autoConfirm: boolean;
+  /** An automatic run is filling: the wording does not ask the user to press the Next key. */
+  auto?: boolean;
 }
 
 export const REAL_COMBOBOX_TIMING: ComboboxTiming = { suggestionMs: 4_000, settleMs: 600, selectMs: 1_500, pollMs: 50 };
@@ -63,7 +65,12 @@ async function fillCombobox(
   const options = await suggestionsFor(input, value, ctx.timing);
 
   if (!ctx.autoConfirm) {
-    return { status: "needs-choice", message: `Typed ${value}. Choose it from the suggestions, then press Next.` };
+    return {
+      status: "needs-choice",
+      message: ctx.auto
+        ? `Typed ${value}. Choose it from the suggestions and automatic pasting carries on.`
+        : `Typed ${value}. Choose it from the suggestions, then press Next.`,
+    };
   }
   const exact = options.find((option) => sameName(option.textContent, value));
   if (!exact) {
@@ -109,6 +116,36 @@ function fillPlain(form: HTMLFormElement, name: string, value: string, label: st
   return input.value === value
     ? { status: "filled", message: `Set the ${label}.` }
     : { status: "needs-choice", message: `Genius did not keep the ${label}. Paste it yourself: ${value}` };
+}
+
+/**
+ * Whether the user has put this step's value on the form themselves: its chip is in the field, or the plain field
+ * holds it. An automatic run waits for exactly this after a step that needed the user's choice.
+ */
+export function isStepDone(doc: Document, item: QueueItem): boolean {
+  const form = findForm(doc);
+  if (!form) return false;
+  const [kind, value] = item;
+  const has = (box: Element | undefined): boolean =>
+    box !== undefined && chipTexts(box).some((c) => sameName(c, value));
+  switch (kind) {
+    case "written_by":
+    case "produced_by": {
+      const input = comboboxByLabel(form, kind === "written_by" ? WRITER_LABEL : PRODUCER_LABEL);
+      return input ? has(boxOf(input)) : false;
+    }
+    case "role":
+    case "copyright_role":
+      return has(lastRow(form)?.roleBox);
+    case "artist":
+    case "phonographic_copyright":
+    case "copyright_notice":
+      return has(lastRow(form)?.artistsBox);
+    case "youtube_url":
+      return plainInput(form, YOUTUBE_INPUT_NAME)?.value === value;
+    case "cover_art":
+      return plainInput(form, COVER_ART_INPUT_NAME)?.value === value;
+  }
 }
 
 export async function fillStep(item: QueueItem, ctx: FillContext): Promise<StepOutcome> {

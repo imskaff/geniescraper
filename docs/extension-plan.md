@@ -802,6 +802,12 @@ Each is tested first and committable on its own.
 1. The pure state: auto mode and pause reasons, with a test for every transition. Done in `core/paste.ts` (`startAuto`, `pauseAuto`, `confirmChoice`, `canAutoStep`, `pauseMessage`, and the `source` of `begin`), tested in `test/core/autoPaste.test.ts`.
    A Next-key press while a run is going pauses it and fills nothing; Back pauses it; Skip on a field awaiting a choice lets it go on; a missing field pauses it with Genius's own words; a finished run switches itself off; a stored state is restored as it was.
 2. The page driver: the loop, the pace, the pause on the user's input, and the choice wait and resume, against a fake form.
+   Done. The loop is `GeniusPage.runAuto` (`genius/page.ts`): it asks the worker for each step (`paste-begin` with `source: "auto"`), fills it, reports, waits the pace the worker hands out, and repeats; the worker alone moves the position.
+   After a step that needs the user's choice it waits (`isStepDone` in `genius/fill.ts` sees the chip or the plain value appear), asks the worker to count the step done (`paste-confirm`), and goes on; it notices a Skip from the panel by asking the worker how the run stands every half second.
+   The user's real clicks and keys in the form (`isTrusted`, so never the extension's own events) pause it with `paste-pause`, except while it waits for a choice; Esc always pauses it; a Next-key press pauses it and fills nothing; a page that loads under a running run reports `page-changed` and stays paused.
+   The worker (`background/paste.ts`) handles the new panel commands `paste-auto-start` and `paste-auto-pause`, tells every Genius tab how a run stands (`genius/auto-state`), and answers a resumed run that still awaits a choice with an `await` reply naming the item.
+   The pace is a setting (`autoPaceSeconds`, 0.6 by default, 0.2 to 5); its field in Settings comes in slice 4.
+   Tests: `test/genius/autoPage.test.ts` runs the real page driver, the real worker service and the fake Genius form together; `test/background/autoPaste.test.ts` and `test/shared/autoMessages.test.ts` cover the worker and the message checks. Not yet seen in a real browser: that is slice 5.
 3. The worker messages, the panel buttons (Start, Step by step, Pause, Resume) and the status wording.
 4. The pace setting and the default.
 5. A live run on a Genius song the owner created (`npm run live:genius` with the scratch profile), then docs and the privacy and listing text if anything they say changes.

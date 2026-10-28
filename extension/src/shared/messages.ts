@@ -1,7 +1,7 @@
 // Contracts between the extension's contexts. Everything crossing a context boundary is plain JSON
 // and is validated on receipt: a message is data, never trusted to have the shape it claims.
 import type { Credit } from "../core/models";
-import type { Outcome } from "../core/paste";
+import type { AutoMode, Outcome } from "../core/paste";
 
 export interface AlbumInfo {
   url: string;
@@ -61,6 +61,10 @@ export type PasteCommand =
   | { type: "paste-back" }
   | { type: "paste-skip" }
   | { type: "paste-stop" }
+  /** Start automatic pasting, or resume it after a pause. */
+  | { type: "paste-auto-start" }
+  /** Pause automatic pasting; the user can resume it. */
+  | { type: "paste-auto-pause" }
   /** Fill the next step now, as the hotkey would, in the Genius tab the user is looking at. */
   | { type: "paste-fill" };
 
@@ -76,15 +80,33 @@ export type WorkerRequest =
 
 /** What the Genius content script asks the worker. The worker also checks that it really came from genius.com. */
 export type GeniusRequest =
-  | { type: "paste-begin" }
+  /** `source: "auto"` is the automatic loop asking for its next step; without it, it is the user's Next key. */
+  | { type: "paste-begin"; source?: "auto" }
   | { type: "paste-status" }
   | { type: "paste-back" }
+  /** The user chose the awaited suggestion themselves; an automatic run counts the step as done. */
+  | { type: "paste-confirm" }
+  /** The page pauses a run: the user used the form or pressed Esc, or the page was reloaded under the run. */
+  | { type: "paste-pause"; reason: PagePauseReason }
   | { type: "paste-report"; position: number; outcome: Outcome };
+
+/** The pauses only the page can know about. */
+export type PagePauseReason = "input" | "user" | "page-changed";
+
+/** The worker's answer to paste-status. */
+export interface PasteStatus {
+  active: boolean;
+  auto: AutoMode;
+  awaiting: boolean;
+  position: number;
+}
 
 /** The worker's answer to paste-begin: what the page should do for this press. */
 export type BeginReply =
   | { action: "none" }
   | { action: "advanced" }
+  /** An automatic run resumed while a step still awaits the user's choice: wait for it, do not fill again. */
+  | { action: "await"; item: [string, string]; position: number; paceMs?: number }
   | {
       action: "fill";
       item: [string, string];
@@ -92,6 +114,8 @@ export type BeginReply =
       autoConfirm: boolean;
       /** How long suggestions must hold still before they are trusted. */
       settleMs: number;
+      /** The pause an automatic run makes after each field; absent for a key press. */
+      paceMs?: number;
     };
 
 export function isOutcome(value: unknown): value is Outcome {
@@ -106,7 +130,9 @@ export function isOutcome(value: unknown): value is Outcome {
 export type GeniusNotice =
   | { type: "genius/fill-now" }
   /** The paste session started or ended, so the page knows whether the hotkeys are live. */
-  | { type: "genius/paste-active"; active: boolean };
+  | { type: "genius/paste-active"; active: boolean }
+  /** An automatic run started, paused, resumed or ended, so the page loop knows whether to go on. */
+  | { type: "genius/auto-state"; auto: AutoMode };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -122,7 +148,15 @@ export function isContentRequest(value: unknown): value is ContentRequest {
   return value["type"] === "apple/scrape" && typeof value["trackTitle"] === "string";
 }
 
-const PASTE_COMMANDS: ReadonlySet<unknown> = new Set(["paste-back", "paste-skip", "paste-stop", "paste-fill"]);
+const PASTE_COMMANDS: ReadonlySet<unknown> = new Set([
+  "paste-back",
+  "paste-skip",
+  "paste-stop",
+  "paste-fill",
+  "paste-auto-start",
+  "paste-auto-pause",
+]);
+const PAGE_PAUSE_REASONS: ReadonlySet<unknown> = new Set(["input", "user", "page-changed"]);
 
 function isPair(value: unknown): value is [string, string] {
   return Array.isArray(value) && value.length === 2 && typeof value[0] === "string" && typeof value[1] === "string";
@@ -152,8 +186,11 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
 
 export function isGeniusRequest(value: unknown): value is GeniusRequest {
   if (!isRecord(value)) return false;
-  if (value["type"] === "paste-begin" || value["type"] === "paste-status" || value["type"] === "paste-back")
+  if (value["type"] === "paste-begin") return value["source"] === undefined || value["source"] === "auto";
+  if (value["type"] === "paste-status" || value["type"] === "paste-back" || value["type"] === "paste-confirm") {
     return true;
+  }
+  if (value["type"] === "paste-pause") return PAGE_PAUSE_REASONS.has(value["reason"]);
   return (
     value["type"] === "paste-report" &&
     typeof value["position"] === "number" &&
@@ -165,6 +202,13 @@ export function isGeniusRequest(value: unknown): value is GeniusRequest {
 export function isBeginReply(value: unknown): value is BeginReply {
   if (!isRecord(value)) return false;
   if (value["action"] === "none" || value["action"] === "advanced") return true;
+  if (value["action"] === "await") {
+    return (
+      isPair(value["item"]) &&
+      typeof value["position"] === "number" &&
+      (value["paceMs"] === undefined || typeof value["paceMs"] === "number")
+    );
+  }
   return (
     value["action"] === "fill" &&
     Array.isArray(value["item"]) &&
@@ -173,13 +217,27 @@ export function isBeginReply(value: unknown): value is BeginReply {
     typeof value["item"][1] === "string" &&
     typeof value["position"] === "number" &&
     typeof value["autoConfirm"] === "boolean" &&
-    typeof value["settleMs"] === "number"
+    typeof value["settleMs"] === "number" &&
+    (value["paceMs"] === undefined || typeof value["paceMs"] === "number")
+  );
+}
+
+const AUTO_MODES: ReadonlySet<unknown> = new Set(["off", "running", "paused"]);
+
+export function isPasteStatus(value: unknown): value is PasteStatus {
+  return (
+    isRecord(value) &&
+    typeof value["active"] === "boolean" &&
+    AUTO_MODES.has(value["auto"]) &&
+    typeof value["awaiting"] === "boolean" &&
+    typeof value["position"] === "number"
   );
 }
 
 export function isGeniusNotice(value: unknown): value is GeniusNotice {
   if (!isRecord(value)) return false;
   if (value["type"] === "genius/fill-now") return true;
+  if (value["type"] === "genius/auto-state") return AUTO_MODES.has(value["auto"]);
   return value["type"] === "genius/paste-active" && typeof value["active"] === "boolean";
 }
 
