@@ -152,6 +152,7 @@ describe("realYoutube", () => {
     expect(await realYoutube({ getText: counting, granted: () => Promise.resolve(false) }).find("SOS", "SZA")).toEqual({
       url: "",
       isMusicVideo: false,
+      keyProblem: "",
     });
     expect(called).toBe(0);
   });

@@ -13,7 +13,7 @@ import { Limiter, Serial } from "./serial";
 /** Hidden tabs open at once, whatever the panel asks for. */
 export const MAX_OPEN_TABS = 24;
 
-const NO_LINK = { url: "", isMusicVideo: false };
+const NO_LINK = { url: "", isMusicVideo: false, keyProblem: "" } as const;
 
 export type Router = (raw: unknown) => Promise<Result<unknown>>;
 
@@ -61,10 +61,7 @@ export function createRouter(
         }
         if (raw.type === "youtube-lookup") {
           const link = await youtube.find(raw.title, raw.artist).catch(() => NO_LINK);
-          return {
-            ok: true,
-            data: { ...link, throttled: !link.url && youtube.throttled(), keyProblem: youtube.keyProblem() },
-          };
+          return { ok: true, data: { ...link, throttled: !link.url && youtube.throttled() } };
         }
         if (raw.type === "youtube-key-check") return { ok: true, data: await checkKey(raw.key) };
         const result = await scrapeTrack(ports, raw.url, raw.trackTitle, timing);

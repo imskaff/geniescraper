@@ -246,15 +246,15 @@ describe("the service with a key", () => {
     expect(await yt.find("SOS", "SZA")).toEqual({
       url: "https://www.youtube.com/watch?v=tafAB36p2sc",
       isMusicVideo: false,
+      keyProblem: "",
     });
     expect(scraped).toEqual([]);
     expect(google.calls.length).toBeGreaterThan(0);
-    expect(yt.keyProblem()).toBe("");
   });
 
   it("does not read YouTube's pages when Google answered and simply had nothing", async () => {
     const { yt, scraped } = service({ key: KEY, result: { status: 200, body: { items: [] } } });
-    expect(await yt.find("SOS", "SZA")).toEqual({ url: "", isMusicVideo: false });
+    expect(await yt.find("SOS", "SZA")).toEqual({ url: "", isMusicVideo: false, keyProblem: "" });
     expect(scraped).toEqual([]);
   });
 
@@ -266,9 +266,9 @@ describe("the service with a key", () => {
     "falls back to YouTube's pages when the key cannot be used (%j), and says why",
     async (result, problem) => {
       const { yt, scraped } = service({ key: KEY, result });
-      await yt.find("SOS", "SZA");
+      const found = await yt.find("SOS", "SZA");
       expect(scraped.length).toBeGreaterThan(0);
-      expect(yt.keyProblem()).toBe(problem);
+      expect(found.keyProblem).toBe(problem);
     },
   );
 
@@ -282,11 +282,25 @@ describe("the service with a key", () => {
       getResult: google.getResult,
       apiGranted: () => Promise.resolve(true),
     });
-    await yt.find("SOS", "SZA");
-    expect(yt.keyProblem()).toBe("quota");
+    expect((await yt.find("SOS", "SZA")).keyProblem).toBe("quota");
     result = okSearch;
-    await yt.find("SOS", "SZA");
-    expect(yt.keyProblem()).toBe("");
+    expect((await yt.find("SOS", "SZA")).keyProblem).toBe("");
+  });
+
+  it("gives every concurrent lookup its own key problem, not the latest lookup's", async () => {
+    const google = fakeGoogle({
+      search: (q) => (q.includes("BAD") ? { status: 403, body: error("quotaExceeded") } : okSearch),
+    });
+    const yt = realYoutube({
+      getText: () => Promise.resolve(null),
+      granted: () => Promise.resolve(true),
+      getKey: () => Promise.resolve(KEY),
+      getResult: google.getResult,
+      apiGranted: () => Promise.resolve(true),
+    });
+    const [bad, good] = await Promise.all([yt.find("BAD", "SZA"), yt.find("SOS", "SZA")]);
+    expect(bad.keyProblem).toBe("quota");
+    expect(good.keyProblem).toBe("");
   });
 
   it("uses only the pages, and sends nothing to Google, without a key or without Chrome's permission", async () => {

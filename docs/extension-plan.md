@@ -604,3 +604,14 @@ Measured live (`npm run live:panel`, 10 tracks read three at a time): the tab co
 Up to four windows exist at once (the user's and three minimized readers); they do not take focus.
 Not observed: how the operating system shows a minimized window (on Windows a taskbar button may appear briefly), and the history entry for each song page, which is unchanged.
 `live:sidepanel` now marks the first-time set-up as done first, since a fresh profile starts with it.
+
+### Code review fixes
+
+A review of the branch found and fixed:
+- The 30-second return keys off the tracks left to paste, not their order, so pasting a later track first no longer wipes unpasted tracks.
+- The countdown no longer forgets that the pointer was already over the panel when it started.
+- A lookup's key problem travels with its own answer instead of a shared variable that concurrent lookups overwrote.
+- A minimized reader window with no usable tab id is closed before falling back to a tab.
+- Start pasting waits at most 8 seconds for a YouTube link, then starts without it.
+- Lookups started by reading an album write only their track's note, so they no longer overwrite the "Got credits" summary; only Start pasting announces on the status line.
+- The desktop app maps any unlisted "<X> Programming" to "<X> Programmer" too, as the extension does.

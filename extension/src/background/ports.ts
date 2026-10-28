@@ -41,6 +41,8 @@ export function chromePorts(): BrowserPorts {
           const win = await chrome.windows.create({ url, state: "minimized", focused: false });
           const id = win?.tabs?.[0]?.id;
           if (id !== undefined) return id;
+          // A window with no tab id we can use would stay open with nobody to close it: close it before falling back.
+          if (win?.id !== undefined) await chrome.windows.remove(win.id).catch(() => undefined);
         } catch {
           // fall through to a tab
         }

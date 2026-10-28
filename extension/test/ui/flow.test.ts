@@ -57,8 +57,9 @@ async function toReview(options: Parameters<typeof fakeEnv>[0] = {}) {
 }
 
 /** Start pasting the first track and walk every step, so the done screen is up. */
-async function toDone(options: Parameters<typeof fakeEnv>[0] = {}, index = 0) {
+async function toDone(options: Parameters<typeof fakeEnv>[0] = {}, index = 0, alsoPasted: number[] = []) {
   const ui = await toReview(options);
+  for (const earlier of alsoPasted) await ui.panel.startPaste(earlier);
   await ui.panel.startPaste(index);
   // The fake worker holds the finished state too, so a Back from the done screen starts at the last step.
   ui.env.api.pasteState = { ...ui.env.api.pasteState, position: ui.env.api.pasteState.queue.length };
@@ -376,8 +377,8 @@ describe("returning to the main menu after the last step", () => {
   };
   const timed = async (options: Parameters<typeof fakeEnv>[0] = {}) => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-    // The countdown belongs to the last track of the list, which is track 2 here.
-    return toDone(options, 2);
+    // The countdown belongs to the last track left to paste: track 0 was pasted first, track 2 is the one just finished.
+    return toDone(options, 2, [0]);
   };
   afterEach(() => {
     vi.useRealTimers();
@@ -472,6 +473,27 @@ describe("returning to the main menu after the last step", () => {
     const state = panel.state.paste;
     panel.setPaste({ ...state, position: state.queue.length });
     expect(panel.state.doneCountdown).toBe(30);
+  });
+
+  it("follows the tracks left to paste, not their order: finishing a later track first starts no countdown", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { root, panel } = await toDone({}, 2);
+    expect(panel.state.doneCountdown).toBeNull();
+    await tick(60);
+    expect($(root, "h2").textContent).toBe("All credits entered");
+  });
+
+  it("keeps waiting when the pointer was already over the panel as the countdown started", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const ui = await toReview();
+    await ui.panel.startPaste(0);
+    await ui.panel.startPaste(2);
+    ui.root.dispatchEvent(new Event("mouseenter"));
+    const state = ui.panel.state.paste;
+    ui.panel.setPaste({ ...state, position: state.queue.length });
+    await tick(60);
+    expect(ui.panel.state.doneCountdown).toBe(30);
+    expect($(ui.root, "h2").textContent).toBe("All credits entered");
   });
 
   it("does not start when it is not known which track was pasted", async () => {

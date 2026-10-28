@@ -4,19 +4,21 @@ import { apiPages } from "../lookups/youtubeApi";
 import { extractVar, findYoutube, type YoutubeLink, type YoutubePages } from "../lookups/youtube";
 import { Limiter } from "./serial";
 
+/** A link, and why the user's key could not be used for it ("" when it was not involved or worked). */
+export interface YoutubeResult extends YoutubeLink {
+  keyProblem: "" | "key" | "quota" | "not-enabled";
+}
+
 export interface YoutubeService {
   /** The link for this song, or an empty link when none is found or YouTube may not be contacted. */
-  find(title: string, artist: string): Promise<YoutubeLink>;
+  find(title: string, artist: string): Promise<YoutubeResult>;
   /** True while YouTube is being left alone because it stopped answering. */
   throttled(): boolean;
-  /** Why the user's key could not be used in the most recent lookup, or "". */
-  keyProblem(): "" | "key" | "quota" | "not-enabled";
 }
 
 export const NO_YOUTUBE: YoutubeService = {
-  find: () => Promise.resolve({ url: "", isMusicVideo: false }),
+  find: () => Promise.resolve({ url: "", isMusicVideo: false, keyProblem: "" }),
   throttled: () => false,
-  keyProblem: () => "",
 };
 
 /**
@@ -142,10 +144,9 @@ export function realYoutube(options: YoutubeOptions = {}): YoutubeService {
   const gate = new YoutubeGate();
   const pages = youtubePages(getText, gate, granted);
   const api = new Limiter(2);
-  let keyProblem: YoutubeService["keyProblem"] extends () => infer R ? R : never = "";
   return {
     async find(title, artist) {
-      keyProblem = "";
+      let keyProblem: YoutubeResult["keyProblem"] = "";
       const key = await getKey().catch(() => "");
       if (key && (await apiAllowed().catch(() => false))) {
         const viaApi = apiPages(getResult, key);
@@ -155,12 +156,11 @@ export function realYoutube(options: YoutubeOptions = {}): YoutubeService {
         };
         const link = await findYoutube(limited, title, artist);
         const problem = viaApi.problem();
-        if (link.url || problem === "" || problem === "failed") return link;
+        if (link.url || problem === "" || problem === "failed") return { ...link, keyProblem: "" };
         keyProblem = problem;
       }
-      return findYoutube(pages, title, artist);
+      return { ...(await findYoutube(pages, title, artist)), keyProblem };
     },
     throttled: () => gate.coolingDown,
-    keyProblem: () => keyProblem,
   };
 }

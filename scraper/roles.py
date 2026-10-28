@@ -1,5 +1,7 @@
 # All Apple Music contributor roles. Edit directly to add/remove entries.
 
+import re
+
 ROLE_MAP: dict[str, str] = {
     '10-string bass guitar': '10-String Bass Guitar',
     '10-string guitar': '10-String Guitar',
@@ -988,3 +990,15 @@ ROLE_MAP: dict[str, str] = {
 }
 
 ALL_ROLE_KEYS: frozenset[str] = frozenset(ROLE_MAP)
+
+
+_PROGRAMMING = re.compile(r"^(?:(.*\S)\s+)?programming$", re.IGNORECASE)
+
+
+def genius_role_name(role: str) -> str:
+    """Genius has "Programmer" and "Drum Programmer" and no "Programming": a role Apple lists as
+    "<X> Programming" that ROLE_MAP does not know is typed as "<X> Programmer" too."""
+    match = _PROGRAMMING.match(role.strip())
+    if not match:
+        return role
+    return f"{match.group(1)} Programmer" if match.group(1) else "Programmer"

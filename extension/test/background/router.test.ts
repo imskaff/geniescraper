@@ -131,14 +131,13 @@ describe("Limiter", () => {
 });
 
 describe("the YouTube look-up", () => {
-  const LINK = { url: "https://www.youtube.com/watch?v=abcDEF_-123", isMusicVideo: true };
-  const none = { url: "", isMusicVideo: false };
+  const LINK = { url: "https://www.youtube.com/watch?v=abcDEF_-123", isMusicVideo: true, keyProblem: "" as const };
+  const none = { url: "", isMusicVideo: false, keyProblem: "" as const };
 
   const route = (service: Partial<YoutubeService>, browser = fakeBrowser()) =>
     createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS, {
       find: () => Promise.resolve(none),
       throttled: () => false,
-      keyProblem: () => "",
       ...service,
     });
 
@@ -157,6 +156,25 @@ describe("the YouTube look-up", () => {
   it("says when no link was found only because YouTube is limiting requests", async () => {
     const answer = await route({ throttled: () => true })({ type: "youtube-lookup", title: "x", artist: "y" });
     expect(answer).toEqual({ ok: true, data: { url: "", isMusicVideo: false, throttled: true, keyProblem: "" } });
+  });
+
+  it("passes on why the user's key could not be used, with that lookup's own answer", async () => {
+    const answer = await route({
+      find: () => Promise.resolve({ ...none, keyProblem: "quota" as const }),
+    })({ type: "youtube-lookup", title: "x", artist: "y" });
+    expect(answer).toEqual({ ok: true, data: { ...none, throttled: false, keyProblem: "quota" } });
+  });
+
+  it("keeps each concurrent lookup's key problem to itself", async () => {
+    const r = route({
+      find: (title) => Promise.resolve({ ...none, keyProblem: title === "a" ? ("key" as const) : ("" as const) }),
+    });
+    const [a, b] = await Promise.all([
+      r({ type: "youtube-lookup", title: "a", artist: "y" }),
+      r({ type: "youtube-lookup", title: "b", artist: "y" }),
+    ]);
+    expect(a).toMatchObject({ data: { keyProblem: "key" } });
+    expect(b).toMatchObject({ data: { keyProblem: "" } });
   });
 
   it("does not call a found link throttled", async () => {

@@ -53,6 +53,8 @@ try {
   const workerTarget = await findServiceWorker(browser);
   worker = await connect(workerTarget.webSocketDebuggerUrl);
   await waitUntilReady(worker);
+  // The first-time set-up is not what this check is about: mark it as done.
+  await worker.evaluate("chrome.storage.sync.set({ settings: { onboarded: true } })");
   const panelUrl = `chrome-extension://${new URL(workerTarget.url).host}/ui/panel.html`;
 
   // ── Genius: the user's own song, with the edit form open ──

@@ -6,8 +6,8 @@
 // "Additional Producer" or "Vocal Recording Engineer". It has nothing close to "Editing Engineer", so that role is
 // left as it is and the user decides.
 //
-// This is a mapping of the extension's paste queue only. scraper/roles.py is the Apple-side vocabulary shared with
-// the desktop app and its golden files, so it is not changed here.
+// The desktop app maps the Programming family the same way (scraper/roles.py), so both apps type the same name; the
+// two other roles above are mapped here only.
 
 /** Apple role (lowercase) to the Genius role that means the same thing. */
 const EXPLICIT: Readonly<Record<string, string>> = {

@@ -131,6 +131,9 @@ export function buildSong(album: AlbumInfo, result: Pick<TrackResult, "url">, sc
 /** Seconds the finished screen waits before returning to the main menu, as the desktop app does. */
 export const DONE_SECONDS = 30;
 
+/** The longest Start pasting waits for a YouTube link before starting without it. */
+export const YOUTUBE_WAIT_MS = 8000;
+
 const NO_HOSTS: Record<OptionalHost, boolean> = { deezer: false, youtube: false, youtubeApi: false };
 
 /** What the user is told when their YouTube key cannot be used, in their terms. */
@@ -418,6 +421,7 @@ export class PanelController {
     }
     // Track numbers belong to this album: what was asked about another album's tracks must not carry over.
     this.forgetYoutube();
+    this.pasted.clear();
     const results: TrackResult[] = selected.map((index) => ({
       index,
       title: album.trackTitles[index] ?? "",
@@ -508,6 +512,7 @@ export class PanelController {
   async newAlbum(): Promise<void> {
     this.run++;
     this.forgetYoutube();
+    this.pasted.clear();
     await this.updateSession({ ...EMPTY_SESSION });
     this.update({ busy: null, error: "", status: "" });
   }
@@ -576,13 +581,22 @@ export class PanelController {
     const wasFinished = isFinished(this.current.paste);
     this.applyPaste(paste);
     if (!isFinished(paste)) this.cancelCountdown();
-    // Only the last track of the list ends the work: after any other there is a next track to paste, and the
-    // user must not be moved away from it. When it is not known which track was pasted, nothing is assumed.
+    // Only the last track left to paste ends the work: while another has not been pasted the user must not be moved
+    // away (leaving wipes the credits). When it is not known which track was pasted, nothing is assumed.
     else if (!wasFinished && this.current.settings.autoReturn && this.finishedLastTrack()) this.startCountdown();
   }
 
+  /** Tracks the user has started pasting in this album, so 'last track' does not depend on the order they chose. */
+  private readonly pasted = new Set<number>();
+
+  /** True when the track just finished was the last one with anything left to paste, in whatever order. */
   private finishedLastTrack(): boolean {
-    return this.current.pasteIndex !== null && this.nextPastable() === null;
+    const { pasteIndex, session } = this.current;
+    if (pasteIndex === null) return false;
+    return !session.results.some(
+      (r) =>
+        r.song !== null && r.index !== pasteIndex && !this.pasted.has(r.index) && this.queueFor(r.index).length > 0,
+    );
   }
 
   private applyPaste(paste: PasteState): void {
@@ -620,7 +634,7 @@ export class PanelController {
    * paste the track, never for a whole album at once: Google blocks a burst of searches, which left most of an
    * album without links. The answer is kept on the track, so it is not asked again.
    */
-  ensureYoutube(index: number): Promise<void> {
+  ensureYoutube(index: number, announce = false): Promise<void> {
     const known = this.youtubeLookups.get(index);
     if (known) return known;
     const result = this.current.session.results.find((r) => r.index === index);
@@ -629,7 +643,7 @@ export class PanelController {
     // Either way of asking will do: reading YouTube's pages (its permission) or Google's service with the user's key.
     const canAsk = hosts.youtube || (youtubeKey.saved && hosts.youtubeApi);
     if (!result || !song || song.youtubeUrl || !settings.scrapeYoutube || !canAsk) return Promise.resolve();
-    const lookup = this.lookupYoutube(index, song);
+    const lookup = this.lookupYoutube(index, song, announce);
     this.youtubeLookups.set(index, lookup);
     return lookup;
   }
@@ -647,12 +661,17 @@ export class PanelController {
     this.update({ youtubeNotes: notes });
   }
 
-  private async lookupYoutube(index: number, song: SongCredits): Promise<void> {
+  /**
+   * `announce` puts the outcome on the status line, which is for what the user just asked for (Start pasting). A
+   * look-up started by reading an album only writes the track's own note, so it never overwrites the read's summary or
+   * names an arbitrary track.
+   */
+  private async lookupYoutube(index: number, song: SongCredits, announce: boolean): Promise<void> {
     const artist = song.artist || this.current.session.album?.artist || "";
     const title = song.title;
     if (!title || !artist) return;
     this.note(index, MESSAGES.lookingForYoutubeShort);
-    this.update({ status: MESSAGES.lookingForYoutube });
+    if (announce) this.update({ status: MESSAGES.lookingForYoutube });
     const answer = await this.env.api.lookupYoutube(title, artist);
     const current = this.current.session.results.find((r) => r.index === index);
     // The panel may have moved on (another album, the main menu) while YouTube was being asked.
@@ -664,30 +683,37 @@ export class PanelController {
         song: { ...current.song, youtubeUrl: answer.data.url, youtubeIsMv: answer.data.isMusicVideo },
       });
       this.note(index, "");
-      this.update({ status: keyMessage });
+      if (announce) this.update({ status: keyMessage });
       return;
     }
     // A failed lookup may be tried again later; a clean "nothing found" is not asked twice.
-    if (!answer.ok || answer.data.throttled) this.youtubeLookups.delete(index);
-    this.note(
-      index,
-      keyMessage ||
-        (answer.ok && answer.data.throttled
-          ? MESSAGES.youtubeThrottled
-          : answer.ok
-            ? MESSAGES.noYoutubeShort
-            : MESSAGES.youtubeFailedShort),
-    );
-    this.update({
-      status:
-        keyMessage ||
-        (answer.ok && answer.data.throttled ? MESSAGES.youtubeThrottled : answer.ok ? MESSAGES.noYoutube : ""),
+    const throttled = answer.ok && answer.data.throttled;
+    if (!answer.ok || throttled) this.youtubeLookups.delete(index);
+    const [note, status] = !answer.ok
+      ? [MESSAGES.youtubeFailedShort, ""]
+      : throttled
+        ? [MESSAGES.youtubeThrottled, MESSAGES.youtubeThrottled]
+        : [MESSAGES.noYoutubeShort, MESSAGES.noYoutube];
+    this.note(index, keyMessage || note);
+    if (announce) this.update({ status: keyMessage || status });
+  }
+
+  /** Wait for a look-up, but not for ever: pasting starts with what there is when YouTube is slow. */
+  private async waitForYoutube(index: number): Promise<void> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const patience = new Promise<void>((resolve) => {
+      timer = setTimeout(resolve, YOUTUBE_WAIT_MS);
     });
+    try {
+      await Promise.race([this.ensureYoutube(index, true), patience]);
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   /** Begin pasting one track's queue into Genius. */
   async startPaste(index: number): Promise<void> {
-    await this.ensureYoutube(index);
+    await this.waitForYoutube(index);
     const result = this.current.session.results.find((r) => r.index === index);
     const queue = this.queueFor(index);
     if (!result?.song || queue.length === 0) return;
@@ -696,6 +722,7 @@ export class PanelController {
       title: result.song.title || result.title,
       queue: queue.map(([kind, value]) => [kind, value]),
     });
+    this.pasted.add(index);
     this.update({ pasteIndex: index });
     await this.updateSession({ current: index });
   }
@@ -714,7 +741,7 @@ export class PanelController {
   private countdownPaused = false;
 
   private startCountdown(): void {
-    this.countdownPaused = false;
+    // The pause flag is left as the view last set it: the pointer may already be over the panel.
     this.update({ doneCountdown: DONE_SECONDS });
     this.scheduleTick();
   }

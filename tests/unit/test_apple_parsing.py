@@ -149,6 +149,8 @@ class TestSmallHelpers:
             ("Rhythm Programming", "Rhythm Programmer"),
             ("Synthesizer Programming", "Synthesizer Programmer"),
             ("Vocal Programming", "Vocal Programmer"),
+            ("Percussion Programming", "Percussion Programmer"),
+            ("Bass Programming:", "Bass Programmer"),
         ],
     )
     def test_programming_roles_are_typed_as_genius_names_them(self, apple_role, genius_role):

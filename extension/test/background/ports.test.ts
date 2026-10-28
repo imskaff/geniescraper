@@ -4,12 +4,17 @@ import { chromePorts } from "../../src/background/ports";
 interface Calls {
   windows: unknown[];
   tabs: unknown[];
+  removed: number[];
 }
 
 function stubChrome(options: { windowsCreate?: () => Promise<unknown>; tabId?: number | undefined } = {}): Calls {
-  const calls: Calls = { windows: [], tabs: [] };
+  const calls: Calls = { windows: [], tabs: [], removed: [] };
   vi.stubGlobal("chrome", {
     windows: {
+      remove: (id: number) => {
+        calls.removed.push(id);
+        return Promise.resolve();
+      },
       create: (info: unknown) => {
         calls.windows.push(info);
         return (options.windowsCreate ?? (() => Promise.resolve({ tabs: [{ id: 11 }] })))();
@@ -51,6 +56,13 @@ describe("opening a page to read", () => {
       expect(calls.tabs).toHaveLength(1);
     },
   );
+
+  it("closes a window it made but cannot use before falling back to a tab, so none is left behind", async () => {
+    const calls = stubChrome({ windowsCreate: () => Promise.resolve({ id: 77, tabs: [] }) });
+    expect(await chromePorts().createTab("https://music.apple.com/x", false)).toBe(22);
+    expect(calls.removed).toEqual([77]);
+    expect(calls.tabs).toHaveLength(1);
+  });
 
   it("opens a tab, never a window, when the page is meant to be seen", async () => {
     const calls = stubChrome();

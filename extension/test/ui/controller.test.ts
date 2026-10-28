@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { PanelController, MESSAGES, describeError } from "../../src/ui/controller";
+import { describe, expect, it, vi } from "vitest";
+import { PanelController, MESSAGES, YOUTUBE_WAIT_MS, describeError } from "../../src/ui/controller";
 import type { Result, PageScrape } from "../../src/shared/messages";
 import { ALBUM, SINGLE, deferred, fakeEnv, scrapeFor } from "./fakes";
 
@@ -625,13 +625,13 @@ describe("the YouTube link of a track", () => {
 
   it("says no link was found, right after the look-up", async () => {
     const { panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(NOTHING) } });
-    await panel.ensureYoutube(2);
+    await panel.ensureYoutube(2, true);
     expect(panel.state.status).toBe(MESSAGES.noYoutube);
   });
 
   it("says YouTube is limiting requests when it is, and asks again next time", async () => {
     const { env, panel } = await ready({ api: { lookupYoutube: () => Promise.resolve(THROTTLED) } });
-    await panel.ensureYoutube(0);
+    await panel.ensureYoutube(0, true);
     expect(panel.state.status).toBe(MESSAGES.youtubeThrottled);
     await panel.startPaste(0);
     expect(lookups(env)).toHaveLength(3);
@@ -902,5 +902,66 @@ describe("what became of each track's YouTube look-up", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(ui.env.api.calls.filter((c) => c.startsWith("youtube:")).length).toBe(before * 2);
     expect(ui.panel.state.youtubeNotes).toEqual({});
+  });
+});
+
+describe("YouTube look-ups and the status line", () => {
+  const found = {
+    ok: true as const,
+    data: {
+      url: "https://www.youtube.com/watch?v=abcDEF_-123",
+      isMusicVideo: false,
+      throttled: false,
+      keyProblem: "" as const,
+    },
+  };
+  const nothing = {
+    ok: true as const,
+    data: { url: "", isMusicVideo: false, throttled: false, keyProblem: "" as const },
+  };
+
+  async function read(api: Parameters<typeof open>[0]) {
+    const ui = await open({ hosts: { youtube: true }, ...api });
+    await ui.panel.detect(ALBUM_URL);
+    await ui.panel.setAllSelected(true);
+    await ui.panel.getCredits();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    return ui;
+  }
+
+  it("leaves the read's summary alone when a look-up started by the read finishes", async () => {
+    const { panel } = await read({ api: { lookupYoutube: () => Promise.resolve(nothing) } });
+    expect(panel.state.status).toBe("Got credits for 2 tracks.");
+    const found2 = await read({ api: { lookupYoutube: () => Promise.resolve(found) } });
+    expect(found2.panel.state.status).toBe("Got credits for 2 tracks.");
+  });
+
+  it("still tells the track's own note why it has no link", async () => {
+    const { panel } = await read({ api: { lookupYoutube: () => Promise.resolve(nothing) } });
+    expect(panel.state.youtubeNotes[0]).toBe("No link found for this track.");
+  });
+
+  it("does not wait for ever for a slow look-up: pasting starts without the link after the wait", async () => {
+    const gate = deferred<typeof found>();
+    const { env, panel } = await read({ api: { lookupYoutube: () => gate.promise } });
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      const started = panel.startPaste(0);
+      await vi.advanceTimersByTimeAsync(YOUTUBE_WAIT_MS - 1);
+      expect(env.api.pasteState.active).toBe(false);
+      await vi.advanceTimersByTimeAsync(2);
+      await started;
+      expect(env.api.pasteState.active).toBe(true);
+      expect(env.api.pasteState.queue.some(([kind]) => kind === "youtube_url")).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("starts at once when the look-up answers in time", async () => {
+    const { env, panel } = await read({ api: { lookupYoutube: () => Promise.resolve(found) } });
+    await panel.startPaste(0);
+    expect(env.api.pasteState.active).toBe(true);
+    expect(env.api.pasteState.queue.some(([kind]) => kind === "youtube_url")).toBe(true);
   });
 });
