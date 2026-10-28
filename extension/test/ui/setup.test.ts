@@ -84,7 +84,7 @@ describe("walking through the set-up", () => {
   it("hides what does not belong over it: the Settings button and Start pasting", async () => {
     const { root } = await mount({ firstRun: true });
     expect($(root, "#settings-toggle").hidden).toBe(true);
-    expect($(root, "#paste-top").hidden).toBe(true);
+    expect(root.querySelector('[data-key="start"]')).toBeNull();
   });
 
   it("goes through all five steps with Next and Back, moving focus to each heading", async () => {

@@ -263,35 +263,30 @@ try {
   );
   await shot("4-review-golden-track");
 
-  // ── the header, the glow, the collapsed queue, Genius role names ──
+  // ── the button row, the glow, the collapsed queue, Genius role names ──
   await panel.send("Emulation.setEmulatedMedia", {
     features: [{ name: "prefers-reduced-motion", value: "no-preference" }],
   });
   await sleep(200);
   const top = await panel.evaluate(`(() => {
-    const b = document.querySelector('#paste-top');
-    const r = b.getBoundingClientRect();
-    return { hidden: b.hidden, text: b.textContent, label: b.getAttribute('aria-label'), animation: getComputedStyle(b).animationName,
-      inHeader: !!b.closest('header'), nextIsSettings: b.nextElementSibling?.id === 'settings-toggle', top: r.top };
+    const b = document.querySelector('main [data-key="start"]');
+    const row = b.parentElement;
+    return { text: b.textContent, label: b.getAttribute('aria-label'), animation: getComputedStyle(b).animationName,
+      inHeader: !!b.closest('header'), first: row.firstElementChild === b,
+      withBack: !!row.querySelector('[data-key="back"]'), withMenu: !!row.querySelector('[data-key="menu"]') };
   })()`);
   check(
-    "Start pasting is at the top, next to Settings",
-    !top.hidden && top.inHeader && top.nextIsSettings && top.top < 80,
+    "Start pasting is first in the row with Back to tracks and Back to main menu, not in the header",
+    top.first && top.withBack && top.withMenu && !top.inHeader,
     JSON.stringify(top),
   );
   check("Start pasting pulses when motion is allowed", top.animation === "glow", top.animation);
   check(
     "Start pasting has a halo",
-    (await style("#paste-top", "boxShadow")) !== "none",
-    String(await style("#paste-top", "boxShadow")),
+    (await style('main [data-key="start"]', "boxShadow")) !== "none",
+    String(await style('main [data-key="start"]', "boxShadow")),
   );
   check("Start pasting names its track for screen readers", top.label === "Start pasting CHIHIRO", String(top.label));
-  check(
-    "Start pasting is not repeated further down",
-    !(await panel.evaluate(
-      "[...document.querySelector('main').querySelectorAll('button')].some((b) => b.textContent === 'Start pasting')",
-    )),
-  );
   check(
     "the main menu button is a different color from Settings",
     (await style('[data-key="menu"]', "color")) !== (await style("#settings-toggle", "color")) &&
@@ -304,15 +299,15 @@ try {
     ),
   );
   await shot("4a-header-top");
-  // The header stays in view: scroll to the bottom and it is still at the top of the window.
+  // The header (with Settings) stays in view: scroll to the bottom and it is still at the top of the window.
   await panel.evaluate("window.scrollTo(0, document.body.scrollHeight)");
   await sleep(300);
   const sticky = await panel.evaluate(
-    "(() => { const h = document.querySelector('header').getBoundingClientRect(); const b = document.querySelector('#paste-top').getBoundingClientRect(); return { scrolled: window.scrollY, headerTop: h.top, buttonVisible: b.top >= 0 && b.bottom <= innerHeight }; })()",
+    "(() => { const h = document.querySelector('header').getBoundingClientRect(); const b = document.querySelector('#settings-toggle').getBoundingClientRect(); return { scrolled: window.scrollY, headerTop: h.top, buttonVisible: b.top >= 0 && b.bottom <= innerHeight }; })()",
   );
   check("the page really scrolled", sticky.scrolled > 50, String(sticky.scrolled));
   check(
-    "the header, with Start pasting, stays in view while scrolled",
+    "the header, with Settings, stays in view while scrolled",
     Math.abs(sticky.headerTop) < 2 && sticky.buttonVisible,
     JSON.stringify(sticky),
   );
@@ -347,9 +342,12 @@ try {
   await sleep(200);
   check(
     "the pulse stops when the system asks for reduced motion",
-    (await style("#paste-top", "animationName")) === "none",
+    (await style('main [data-key="start"]', "animationName")) === "none",
   );
-  check("the halo stays, so the button still stands out", (await style("#paste-top", "boxShadow")) !== "none");
+  check(
+    "the halo stays, so the button still stands out",
+    (await style('main [data-key="start"]', "boxShadow")) !== "none",
+  );
   await panel.send("Emulation.setEmulatedMedia", {
     features: [{ name: "prefers-reduced-motion", value: "no-preference" }],
   });
@@ -579,8 +577,8 @@ try {
   const doneOverflow = await horizontalOverflow();
   check("the finished screen has no horizontal scrollbar", doneOverflow.scroll <= doneOverflow.client);
   check(
-    "the main menu button counts down to the automatic return",
-    /^Back to main menu \(\d+s\)$/.test((await text('[data-key="pmenu"]')) ?? ""),
+    "no countdown starts after a track that has another track after it",
+    (await text('[data-key="pmenu"]')) === "Back to main menu",
     String(await text('[data-key="pmenu"]')),
   );
   await shot("9g-done-screen");

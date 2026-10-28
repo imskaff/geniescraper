@@ -586,3 +586,12 @@ The tick and cross are decoration; the words carry the meaning, and the message 
 "Save and check key" is disabled while the box holds the key that is already saved and working, since pressing it would change nothing; it enables again when the text changes, after the key is removed, or after a check that did not succeed.
 Because a button that disables itself drops keyboard focus, focus moves to the key box when that happens.
 The green and red are checked for contrast in both themes.
+
+## 25. Changes before release
+
+- **Start pasting moved down.** It is now the first button in the row at the bottom of the credits, with Back to tracks and Back to main menu, and no longer in the header (which keeps only Settings).
+  It keeps the glow, is shown for a single song too, and is named for its track for screen readers.
+- **Return to the main menu after 30 seconds, and only after the last track.**
+  The countdown (which still holds while the panel is in use and can be turned off in Settings) starts only when the track just finished is the last one of the list that has anything to paste; after any other track the finished screen stays until the user chooses, so nobody is moved away from the next track.
+  If it is not known which track was pasted (a restored panel that cannot tell), no countdown starts.
+- **Programming roles in the desktop app.** See section 15: `scraper/roles.py` now types Programmer.

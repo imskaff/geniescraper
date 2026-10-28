@@ -57,9 +57,9 @@ async function toReview(options: Parameters<typeof fakeEnv>[0] = {}) {
 }
 
 /** Start pasting the first track and walk every step, so the done screen is up. */
-async function toDone(options: Parameters<typeof fakeEnv>[0] = {}) {
+async function toDone(options: Parameters<typeof fakeEnv>[0] = {}, index = 0) {
   const ui = await toReview(options);
-  await ui.panel.startPaste(0);
+  await ui.panel.startPaste(index);
   // The fake worker holds the finished state too, so a Back from the done screen starts at the last step.
   ui.env.api.pasteState = { ...ui.env.api.pasteState, position: ui.env.api.pasteState.queue.length };
   ui.panel.setPaste(ui.env.api.pasteState);
@@ -376,7 +376,8 @@ describe("returning to the main menu after the last step", () => {
   };
   const timed = async (options: Parameters<typeof fakeEnv>[0] = {}) => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-    return toDone(options);
+    // The countdown belongs to the last track of the list, which is track 2 here.
+    return toDone(options, 2);
   };
   afterEach(() => {
     vi.useRealTimers();
@@ -384,15 +385,15 @@ describe("returning to the main menu after the last step", () => {
 
   it("starts a countdown on the finished screen and shows it on the main menu button", async () => {
     const { root } = await timed();
-    expect(DONE_SECONDS).toBe(10);
-    expect(button(root, "Back to main menu").textContent).toBe("Back to main menu (10s)");
+    expect(DONE_SECONDS).toBe(30);
+    expect(button(root, "Back to main menu").textContent).toBe("Back to main menu (30s)");
     await tick(3);
-    expect(button(root, "Back to main menu").textContent).toBe("Back to main menu (7s)");
+    expect(button(root, "Back to main menu").textContent).toBe("Back to main menu (27s)");
   });
 
   it("goes to the main menu with a clean slate when it reaches zero", async () => {
     const { root, panel } = await timed();
-    await tick(10);
+    await tick(30);
     await flush();
     expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
     expect(panel.state.paste.active).toBe(false);
@@ -402,16 +403,16 @@ describe("returning to the main menu after the last step", () => {
   it("waits while the pointer is over the panel or a button is focused, and carries on after", async () => {
     const { root, panel } = await timed();
     root.dispatchEvent(new Event("mouseenter"));
-    await tick(15);
-    expect(panel.state.doneCountdown).toBe(10);
+    await tick(40);
+    expect(panel.state.doneCountdown).toBe(30);
     root.dispatchEvent(new Event("mouseleave"));
     await tick(2);
-    expect(panel.state.doneCountdown).toBe(8);
+    expect(panel.state.doneCountdown).toBe(28);
     button(root, "Back to the credits").focus();
-    await tick(15);
-    expect(panel.state.doneCountdown).toBe(8);
+    await tick(40);
+    expect(panel.state.doneCountdown).toBe(28);
     (document.activeElement as HTMLElement).blur();
-    await tick(8);
+    await tick(28);
     await flush();
     expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
   });
@@ -419,7 +420,7 @@ describe("returning to the main menu after the last step", () => {
   it("does not hold for the heading having focus, which is where focus lands on this screen", async () => {
     const { root } = await timed();
     expect(document.activeElement).toBe($(root, "h2"));
-    await tick(10);
+    await tick(30);
     await flush();
     expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
   });
@@ -429,14 +430,14 @@ describe("returning to the main menu after the last step", () => {
     button(first.root, "Back to the credits").click();
     await flush();
     expect(first.panel.state.doneCountdown).toBeNull();
-    await tick(15);
+    await tick(40);
     expect($(first.root, "h2").textContent).toBe("Credits");
 
     const second = await timed();
     await second.panel.pasteBack();
     await flush();
     expect(second.panel.state.doneCountdown).toBeNull();
-    await tick(15);
+    await tick(40);
     expect($(second.root, "h2").textContent).toBe("Paste into Genius");
   });
 
@@ -446,22 +447,43 @@ describe("returning to the main menu after the last step", () => {
     expect(button(off.root, "Back to main menu").textContent).toBe("Back to main menu");
     vi.useRealTimers();
     const on = await timed();
-    expect(on.panel.state.doneCountdown).toBe(10);
+    expect(on.panel.state.doneCountdown).toBe(30);
     await on.panel.setSetting("autoReturn", false);
     expect(on.panel.state.doneCountdown).toBeNull();
-    await tick(15);
+    await tick(40);
     expect($(on.root, "h2").textContent).toBe("All credits entered");
   });
 
-  it("starts again for the next track, from ten", async () => {
-    const { root, panel } = await timed();
-    await tick(4);
+  it("does not start after a track that has another track after it, and the user is not moved away", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { root, panel } = await toDone({}, 0);
+    expect(panel.state.doneCountdown).toBeNull();
+    expect(button(root, "Back to main menu").textContent).toBe("Back to main menu");
+    await tick(60);
+    expect($(root, "h2").textContent).toBe("All credits entered");
+  });
+
+  it("starts, from thirty, once the last track is finished, after the user moved on from the first", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { root, panel } = await toDone({}, 0);
     button(root, "Paste next track").click();
     await flush();
     expect(panel.state.doneCountdown).toBeNull();
     const state = panel.state.paste;
     panel.setPaste({ ...state, position: state.queue.length });
-    expect(panel.state.doneCountdown).toBe(10);
+    expect(panel.state.doneCountdown).toBe(30);
+  });
+
+  it("does not start when it is not known which track was pasted", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { panel } = await toDone({}, 2);
+    panel.cancelCountdown();
+    const state = panel.state.paste;
+    panel.setPaste({ ...state, position: 0 });
+    // A panel restored with no way to tell which track the paste was for:
+    (panel as unknown as { current: { pasteIndex: number | null } }).current.pasteIndex = null;
+    panel.setPaste({ ...state, position: state.queue.length });
+    expect(panel.state.doneCountdown).toBeNull();
   });
 });
 

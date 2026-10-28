@@ -129,7 +129,7 @@ export function buildSong(album: AlbumInfo, result: Pick<TrackResult, "url">, sc
 }
 
 /** Seconds the finished screen waits before returning to the main menu, as the desktop app does. */
-export const DONE_SECONDS = 10;
+export const DONE_SECONDS = 30;
 
 const NO_HOSTS: Record<OptionalHost, boolean> = { deezer: false, youtube: false, youtubeApi: false };
 
@@ -576,7 +576,13 @@ export class PanelController {
     const wasFinished = isFinished(this.current.paste);
     this.applyPaste(paste);
     if (!isFinished(paste)) this.cancelCountdown();
-    else if (!wasFinished && this.current.settings.autoReturn) this.startCountdown();
+    // Only the last track of the list ends the work: after any other there is a next track to paste, and the
+    // user must not be moved away from it. When it is not known which track was pasted, nothing is assumed.
+    else if (!wasFinished && this.current.settings.autoReturn && this.finishedLastTrack()) this.startCountdown();
+  }
+
+  private finishedLastTrack(): boolean {
+    return this.current.pasteIndex !== null && this.nextPastable() === null;
   }
 
   private applyPaste(paste: PasteState): void {

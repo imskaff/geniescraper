@@ -78,7 +78,7 @@ describe("starting to paste", () => {
       await panel.setSetting(key, false);
     }
     await flush();
-    expect($(root, "#paste-top").hidden).toBe(true);
+    expect(root.querySelector('[data-key="start"]')).toBeNull();
   });
 });
 

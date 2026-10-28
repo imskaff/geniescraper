@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { PageScrape, Result } from "../../src/shared/messages";
 import { PanelController } from "../../src/ui/controller";
 import { PanelView } from "../../src/ui/view";
-import { ALBUM, deferred, fakeEnv, scrapeFor } from "./fakes";
+import { ALBUM, SINGLE, deferred, fakeEnv, scrapeFor } from "./fakes";
 
 const flush = async (): Promise<void> => {
   for (let i = 0; i < 5; i++) await new Promise((resolve) => setTimeout(resolve, 0));
@@ -54,49 +54,65 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-describe("Start pasting in the header", () => {
+const startButton = (root: HTMLElement): HTMLButtonElement | null =>
+  root.querySelector<HTMLButtonElement>('main [data-key="start"]');
+
+describe("Start pasting in the button row", () => {
   it("is not shown before there are credits to paste", async () => {
     for (const go of [mount, toTracks]) {
       const { root } = await go();
-      expect($(root, "#paste-top").hidden).toBe(true);
+      expect(startButton(root)).toBeNull();
     }
   });
 
-  it("is shown next to Settings once a track's credits are in, and glows", async () => {
+  it("is in the row with Back to tracks and Back to main menu, first, and glows", async () => {
     const { root } = await toReview();
-    const top = $(root, "#paste-top");
-    expect(top.hidden).toBe(false);
-    expect(top.textContent).toBe("Start pasting");
-    expect(top.classList.contains("primary")).toBe(true);
-    expect(top.classList.contains("glow")).toBe(true);
-    expect($(root, ".bar-actions").contains(top)).toBe(true);
-    expect($(root, ".bar-actions").contains($(root, "#settings-toggle"))).toBe(true);
-    expect(top.nextElementSibling).toBe($(root, "#settings-toggle"));
+    const start = startButton(root);
+    expect(start?.textContent).toBe("Start pasting");
+    expect(start?.classList.contains("primary")).toBe(true);
+    expect(start?.classList.contains("glow")).toBe(true);
+    const row = start?.parentElement;
+    expect(row?.firstElementChild).toBe(start);
+    expect(row?.contains($(root, '[data-key="back"]'))).toBe(true);
+    expect(row?.contains($(root, '[data-key="menu"]'))).toBe(true);
   });
 
-  it("is not repeated down in the credits, so there is one place to look", async () => {
+  it("is no longer in the header, which keeps only Settings", async () => {
     const { root } = await toReview();
-    expect([...$(root, "main").querySelectorAll("button")].some((b) => b.textContent === "Start pasting")).toBe(false);
+    expect($(root, "header").textContent).not.toContain("Start pasting");
+    expect(root.querySelector("#paste-top")).toBeNull();
+  });
+
+  it("is shown for a single song too, in the row with Back to main menu", async () => {
+    const { root } = await mount({ api: { detect: () => Promise.resolve({ ok: true, data: SINGLE }) } });
+    const input = $(root, "#link") as HTMLInputElement;
+    input.value = SINGLE.url;
+    $(root, "form").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flush();
+    const start = startButton(root);
+    expect(start).not.toBeNull();
+    expect(start?.parentElement?.contains($(root, '[data-key="menu"]'))).toBe(true);
   });
 
   it("names the track it will paste, for a screen reader, while the label keeps its visible words", async () => {
     const { root } = await toReview();
-    const label = $(root, "#paste-top").getAttribute("aria-label") ?? "";
+    const start = startButton(root);
+    const label = start?.getAttribute("aria-label") ?? "";
     expect(label).toBe("Start pasting One");
-    expect(label.startsWith($(root, "#paste-top").textContent)).toBe(true);
+    expect(label.startsWith(start?.textContent ?? "?")).toBe(true);
   });
 
   it("pastes the track on screen", async () => {
     const { root, env, panel } = await toReview();
     $(root, '[data-key="show-2"]').click();
     await flush();
-    expect($(root, "#paste-top").getAttribute("aria-label")).toBe("Start pasting Three");
-    $(root, "#paste-top").click();
+    expect(startButton(root)?.getAttribute("aria-label")).toBe("Start pasting Three");
+    startButton(root)?.click();
     await flush();
     expect(env.api.pasteState.title).toBe("Three");
     expect(panel.state.paste.active).toBe(true);
     expect($(root, "h2").textContent).toBe("Paste into Genius");
-    expect($(root, "#paste-top").hidden).toBe(true);
+    expect(startButton(root)).toBeNull();
   });
 
   it("is disabled, and stops glowing, while credits are still being read", async () => {
@@ -105,16 +121,16 @@ describe("Start pasting in the header", () => {
     await panel.setAllSelected(true);
     void panel.getCredits();
     await flush();
+    expect(panel.state.busy).toBe("scrape");
+    // While the run is on, nothing is startable yet.
     gate.resolve({ ok: true, data: scrapeFor("One") });
-    // Once the first track is in, the second is still loading: busy until the run ends.
     await flush();
-    const top = $(root, "#paste-top") as HTMLButtonElement;
     expect(panel.state.busy).toBeNull();
-    expect(top.disabled).toBe(false);
-    expect(top.classList.contains("glow")).toBe(true);
+    expect(startButton(root)?.disabled).toBe(false);
+    expect(startButton(root)?.classList.contains("glow")).toBe(true);
   });
 
-  it("is hidden when the settings leave nothing to paste", async () => {
+  it("is absent when the settings leave nothing to paste", async () => {
     const { root, panel } = await toReview();
     for (const key of [
       "scrapeCore",
@@ -126,14 +142,14 @@ describe("Start pasting in the header", () => {
       await panel.setSetting(key, false);
     }
     await flush();
-    expect($(root, "#paste-top").hidden).toBe(true);
+    expect(startButton(root)).toBeNull();
   });
 
   it("is not shown over settings", async () => {
     const { root, panel } = await toReview();
     panel.openSettings();
     await flush();
-    expect($(root, "#paste-top").hidden).toBe(true);
+    expect(startButton(root)).toBeNull();
   });
 });
 

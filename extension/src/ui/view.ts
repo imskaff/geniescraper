@@ -87,18 +87,6 @@ export class PanelView {
           el(
             "div",
             { class: "bar-actions" },
-            // Start pasting lives here, in the header that stays in view, so it is never a scroll away.
-            el("button", {
-              class: "button primary glow",
-              text: "Start pasting",
-              attrs: { type: "button", id: "paste-top", "data-key": "paste-top", hidden: "" },
-              on: {
-                click: () => {
-                  const index = this.startableIndex(this.panel.state);
-                  if (index !== null) void this.panel.startPaste(index);
-                },
-              },
-            }),
             el("button", {
               class: "button quiet",
               text: "Settings",
@@ -174,7 +162,6 @@ export class PanelView {
     toggle.textContent = state.settingsOpen ? "Back" : "Settings";
     // The set-up is the whole screen: no Settings button over it (its steps are the settings that matter).
     toggle.hidden = state.setup.open;
-    this.updateHeader(state);
 
     const finished =
       state.paste.active && state.paste.queue.length > 0 && state.paste.position >= state.paste.queue.length;
@@ -239,25 +226,24 @@ export class PanelView {
     return el("h2", { text, attrs: { tabindex: "-1" } });
   }
 
+  /** The Start pasting button for the track on screen, or nothing when there is nothing to paste yet. */
+  private startButton(state: PanelState, busy: boolean): HTMLElement | null {
+    const index = this.startableIndex(state);
+    if (index === null) return null;
+    const button = this.button("Start pasting", "primary", "start", () => void this.panel.startPaste(index), busy);
+    // It glows while it is the thing to do next, not while it cannot be pressed.
+    if (!busy) button.classList.add("glow");
+    const title = state.session.results.find((r) => r.index === index)?.song?.title;
+    if (title) button.setAttribute("aria-label", `Start pasting ${title}`);
+    return button;
+  }
+
   /** The track whose credits are on screen and can be pasted now, or null. */
   private startableIndex(state: PanelState): number | null {
     if (state.setup.open || state.settingsOpen || state.paste.active || state.session.screen !== "review") return null;
     const { results, current } = state.session;
     const shown = results.find((r) => r.index === current) ?? results[0];
     return shown?.song && this.panel.queueFor(shown.index).length > 0 ? shown.index : null;
-  }
-
-  /** The header's shortcut to pasting follows the screen. */
-  private updateHeader(state: PanelState): void {
-    const top = this.region("paste-top") as HTMLButtonElement;
-    const index = this.startableIndex(state);
-    top.hidden = index === null;
-    top.disabled = state.busy !== null;
-    // It glows while it is the thing to do next, not while it cannot be pressed.
-    top.classList.toggle("glow", !top.disabled);
-    const title = state.session.results.find((r) => r.index === index)?.song?.title;
-    if (title) top.setAttribute("aria-label", `Start pasting ${title}`);
-    else top.removeAttribute("aria-label");
   }
 
   /** A section the user can open and close, closed until they do unless it opens by default. Its state survives re-rendering. */
@@ -452,6 +438,8 @@ export class PanelView {
         "div",
         { class: "row" },
         busy ? this.button("Stop", "quiet", "stop", () => void this.panel.stop(), false) : null,
+        // Start pasting sits with the other ways on and off this screen, so there is one row to look at.
+        this.startButton(state, busy),
         // One song has no list to go back to.
         (session.album?.trackCount ?? 0) > 1
           ? this.button("Back to tracks", "quiet", "back", () => void this.panel.backToTracks(), busy)
@@ -805,7 +793,7 @@ export class PanelView {
         "label",
         { class: "check" },
         autoReturn,
-        el("span", { text: "Go back to the main menu 10 seconds after the last step" }),
+        el("span", { text: "Go back to the main menu 30 seconds after the last track" }),
       ),
       el(
         "div",
