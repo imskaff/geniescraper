@@ -232,56 +232,21 @@ export class PanelView {
     return el("h2", { text, attrs: { tabindex: "-1" } });
   }
 
-  /**
-   * The automatic button: it glows, with a flowing gradient and sparkles, so it reads as the special thing the app
-   * does. The look is all stylesheet (the sparkles are an empty decorative span), so its name and text stay plain.
-   */
-  private magicButton(text: string, key: string, onClick: () => void, disabled: boolean): HTMLElement {
-    const button = this.button(text, "primary", key, onClick, disabled);
-    button.classList.add("magic");
-    button.append(el("span", { class: "sparkles", attrs: { "aria-hidden": "true" } }));
-    return button;
-  }
-
-  /**
-   * The ways to start pasting the track on screen, or nothing when there is nothing to paste yet: Start pasting does
-   * it by itself, Step by step is the Next key, one field per press.
-   */
+  /** Use the single start action with the fill mode the user selected in Settings. */
   private startButtons(state: PanelState, busy: boolean): HTMLElement[] {
     const index = this.startableIndex(state);
     if (index === null) return [];
     const title = state.session.results.find((r) => r.index === index)?.song?.title;
-    if (state.settings.pasteMode === "manual") {
-      // The user chose step by step as the main way: Start pasting is the plain, glowing yellow button, and the
-      // automatic one is offered beside it.
-      const start = this.button(
-        "Start pasting",
-        "primary",
-        "start",
-        () => void this.panel.startPaste(index, "manual"),
-        busy,
-      );
-      if (!busy) start.classList.add("glow");
-      const auto = this.magicButton("Auto-paste", "start-auto", () => void this.panel.startPaste(index, "auto"), busy);
-      if (title) {
-        start.setAttribute("aria-label", `Start pasting ${title}, one key press per field`);
-        auto.setAttribute("aria-label", `Auto-paste ${title}, filling it by itself`);
-      }
-      return [start, auto];
-    }
-    const auto = this.magicButton("Start pasting", "start", () => void this.panel.startPaste(index, "auto"), busy);
-    const manual = this.button(
-      "Step by step",
-      "quiet",
-      "start-manual",
-      () => void this.panel.startPaste(index, "manual"),
-      busy,
-    );
+    const start = this.button("Start pasting", "primary", "start", () => void this.panel.startPaste(index), busy);
     if (title) {
-      auto.setAttribute("aria-label", `Start pasting ${title} automatically`);
-      manual.setAttribute("aria-label", `Step by step: ${title}, one key press per field`);
+      start.setAttribute(
+        "aria-label",
+        state.settings.pasteMode === "auto"
+          ? `Start pasting ${title} automatically. It pauses when you interact with Genius.`
+          : `Start pasting ${title} one field at a time using the selected hotkey.`,
+      );
     }
-    return [auto, manual];
+    return [start];
   }
 
   /** The track whose credits are on screen and can be pasted now, or null. */
@@ -478,6 +443,16 @@ export class PanelView {
           : null,
         this.button("Back to main menu", "nav", "menu", () => void this.panel.newAlbum(), false),
       ),
+      this.startableIndex(state) !== null
+        ? el("p", {
+            class: "help",
+            text:
+              (state.settings.pasteMode === "auto"
+                ? "Auto-paste is ON: fields fill in sequence and pause if you interact with Genius. "
+                : `Auto-paste is OFF: press ${state.settings.nextHotkey} or Next in the panel for each field. `) +
+              "Review your changes and save them on Genius; the extension does not submit the form.",
+          })
+        : null,
     ].filter((node): node is HTMLElement => node !== null);
   }
 
@@ -655,6 +630,8 @@ export class PanelView {
       on: {
         input: (event) => {
           this.linkDraft = { index, text: (event.target as HTMLInputElement).value };
+          const useButton = this.root.querySelector<HTMLButtonElement>('[data-key="youtube-use"]');
+          if (useButton) useButton.disabled = !(event.target as HTMLInputElement).value.trim();
         },
       },
     });
@@ -679,16 +656,18 @@ export class PanelView {
           },
         },
       },
-      el("label", { class: "sr-only", text: "YouTube link for this track", attrs: { for: "youtube-link" } }),
-      input,
-      this.button("Use this link", "quiet", "youtube-use", use, false),
+      el("label", { text: "YouTube video URL", attrs: { for: "youtube-link" } }),
+      el("div", { class: "input-action" }, input, this.button("Use", "quiet", "youtube-use", use, !draft.trim())),
     );
     // The YouTube step is a setting like the other fields: with it off, a link has nowhere to go.
     const off = !state.settings.scrapeYoutube;
     return el(
       "section",
       { class: "stack youtube-link", attrs: { "aria-label": "YouTube link" } },
-      el("h4", { text: "YouTube link" }),
+      el("h4", { text: "YouTube video link" }),
+      !song.youtubeUrl
+        ? el("p", { class: "help", text: "No video link is available. Search for a video or paste its address below." })
+        : null,
       el("a", {
         class: "button quiet link-button",
         text: "Find on YouTube",
@@ -705,8 +684,8 @@ export class PanelView {
         text: state.youtubeLinkError
           ? state.youtubeLinkError
           : off
-            ? "The YouTube link step is turned off in Settings, so a link is not pasted."
-            : "Search for the video on YouTube, copy its address, and paste it here.",
+            ? "The YouTube field is off in Settings, so this link will not be added to Genius."
+            : "Paste a YouTube video address and choose Use. You can check and save the Genius form yourself.",
         attrs: { id: "youtube-link-help", "aria-live": "polite" },
       }),
       song.youtubeByUser && song.youtubeUrl
@@ -767,7 +746,7 @@ export class PanelView {
         { class: "row" },
         ...this.pasteControls(state, finished),
         this.button(
-          `Back (${settings.backHotkey})`,
+          `Previous (${settings.backHotkey})`,
           "quiet",
           "pback",
           () => void this.panel.pasteBack(),
@@ -787,10 +766,7 @@ export class PanelView {
     ].filter((node): node is HTMLElement => node !== null);
   }
 
-  /**
-   * The Auto-paste switch, the same button on the paste screen and in Settings: ON in the glowing gradient, OFF in
-   * gray (lit with sparkles when pointed at). Its text says the state and its name says what pressing it does.
-   */
+  /** Auto-paste mode toggle, shared by Settings and the paste screen. */
   private autoSwitch(on: boolean, onClick: () => void, disabled: boolean): HTMLElement {
     const toggle = this.button(
       on ? "Auto-paste: ON" : "Auto-paste: OFF",
@@ -810,10 +786,7 @@ export class PanelView {
   }
 
   /**
-   * The main controls of the paste screen. Auto-paste is a switch and always the first, primary button: ON (the
-   * glowing gradient) while a run goes, OFF (gray, with the sparkles and light colours on hover) when it is off or
-   * paused, whatever the reason. Pressing it turns it the other way. Fill next, the manual way, is secondary, and
-   * only there while the run is off: while it is on, the Next key would only take over from it.
+   * Auto-paste can be paused or resumed; manual Next is available whenever auto-paste is off.
    */
   private pasteControls(state: PanelState, finished: boolean): HTMLElement[] {
     const { paste, settings } = state;
@@ -825,7 +798,7 @@ export class PanelView {
     );
     if (on) return [toggle];
     const fill = this.button(
-      `Fill next (${settings.nextHotkey})`,
+      `Next (${settings.nextHotkey})`,
       "quiet",
       "fill",
       () => void this.panel.fillNext(),
@@ -1053,7 +1026,7 @@ export class PanelView {
     });
     wait.value = String(settings.autocompleteWaitSeconds);
 
-    // The same Auto-paste switch as on the paste screen, ON by default, and what each side of it means.
+    // Auto-paste mode is enabled by default.
     const autoOn = settings.pasteMode === "auto";
     const modeSwitch = this.autoSwitch(
       autoOn,
@@ -1075,12 +1048,12 @@ export class PanelView {
       { class: "onoff-list", attrs: { id: "setting-pasteMode-help" } },
       meaning(
         "ON",
-        "Start pasting fills the whole track by itself, one field after another, pausing briefly between them. It stops the moment you click or type in the Genius form, press Esc, switch it off or close the panel, and you turn it back on to carry on. When Genius has no exact match for a name it waits for you to choose, then goes on by itself.",
+        "Start pasting fills the whole track by itself, one field after another, pausing briefly between them. It stops when you interact with the Genius form, press Esc, or close the panel. Turn Auto-paste back on to carry on. You still review and save the form on Genius.",
         autoOn,
       ),
       meaning(
         "OFF",
-        `Start pasting fills one field each time you press the fill key (${settings.nextHotkey}), so you stay in control of every step. Auto-paste is still one button away on the paste screen.`,
+        `Start pasting fills one field each time you press ${settings.nextHotkey}, so you stay in control of every step. You can turn Auto-paste on from the paste screen whenever you need it.`,
         !autoOn,
       ),
     );

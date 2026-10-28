@@ -152,7 +152,7 @@ describe("the automatic pasting pace", () => {
 describe("the countdown settings", () => {
   it("default to 30 seconds back to the menu and 15 to the next track", () => {
     expect(DEFAULT_SETTINGS.returnSeconds).toBe(30);
-    expect(DEFAULT_SETTINGS.nextTrackSeconds).toBe(15);
+    expect(DEFAULT_SETTINGS.nextTrackSeconds).toBe(0);
   });
 
   it.each([5, 20, 120])("accepts %i seconds for both", (value) => {
@@ -179,7 +179,7 @@ describe("the countdown settings", () => {
     "falls back to the defaults for %j",
     (value) => {
       const settings = normaliseSettings({ returnSeconds: value, nextTrackSeconds: value });
-      expect([settings.returnSeconds, settings.nextTrackSeconds]).toEqual([30, 15]);
+      expect([settings.returnSeconds, settings.nextTrackSeconds]).toEqual([30, 0]);
     },
   );
 });

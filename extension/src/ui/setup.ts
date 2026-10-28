@@ -286,7 +286,7 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
           }),
           el("li", { text: "Choose the tracks and press Get credits." }),
           el("li", {
-            text: `Open the song's Edit Metadata form on Genius, press Start pasting, and press ${state.settings.nextHotkey} for each step.`,
+            text: "Open the song's Edit Metadata form on Genius and press Start pasting. Auto-paste in Settings decides whether fields fill automatically or one at a time. Review and save the form on Genius.",
           }),
         ),
       );

@@ -65,7 +65,7 @@ async function toReviewOpen(options: Parameters<typeof fakeEnv>[0] = {}) {
   return ui;
 }
 
-/** Start pasting the first track and walk every step, so the done screen is up. */
+/** Fill automatically the first track and walk every step, so the done screen is up. */
 async function toDone(options: Parameters<typeof fakeEnv>[0] = {}, index = 0, alsoPasted: number[] = []) {
   const ui = await toReview(options);
   for (const earlier of alsoPasted) await ui.panel.startPaste(earlier, "manual");
@@ -289,7 +289,7 @@ describe("the finished screen", () => {
   it("offers the next track with credits, as the main action", async () => {
     const { root, env } = await toDone();
     const next = button(root, "Paste next track");
-    expect(next.textContent).toBe(`Paste next track: Three (${String(DEFAULT_SETTINGS.nextTrackSeconds)}s)`);
+    expect(next.textContent).toBe("Paste next track: Three");
     expect(next.classList.contains("primary")).toBe(true);
     next.click();
     await flush();
@@ -466,8 +466,8 @@ describe("returning to the main menu after the last step", () => {
 
   it("starts the next track by itself after fifteen seconds, then the menu countdown after the last one", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-    const { root, panel, env } = await toDone();
-    expect(DEFAULT_SETTINGS.nextTrackSeconds).toBe(15);
+    const { root, panel, env } = await toDone({ settings: { nextTrackSeconds: 15 } });
+    expect(DEFAULT_SETTINGS.nextTrackSeconds).toBe(0);
     expect(button(root, "Paste next track").textContent).toBe("Paste next track: Three (15s)");
     await tick(3);
     expect(button(root, "Paste next track").textContent).toBe("Paste next track: Three (12s)");
@@ -516,7 +516,7 @@ describe("returning to the main menu after the last step", () => {
 
   it("stops a running next-track countdown when its seconds are set to zero, and leaves the other one alone", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-    const { panel } = await toDone();
+    const { panel } = await toDone({ settings: { nextTrackSeconds: 15 } });
     expect(panel.state.nextCountdown).toBe(15);
     await panel.setSetting("autoReturn", false);
     expect(panel.state.nextCountdown).toBe(15);
@@ -526,7 +526,7 @@ describe("returning to the main menu after the last step", () => {
 
   it("waits while the pointer is over the panel, and starts the next track after it leaves", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-    const { root, panel } = await toDone();
+    const { root, panel } = await toDone({ settings: { nextTrackSeconds: 15 } });
     root.dispatchEvent(new Event("mouseenter"));
     await tick(40);
     expect(panel.state.nextCountdown).toBe(15);

@@ -274,7 +274,7 @@ describe("the summary", () => {
     expect(text).toContain("Genius keys: F8 fills the next step, F7 goes back.");
     expect(text).toContain("Covers from Deezer when Apple has none: off.");
     expect(text).toContain("YouTube links: not looked up (you can add a key in Settings).");
-    expect(text).toContain("press F8 for each step");
+    expect(text).toContain("press Start pasting");
   });
 
   it("follows the choices made", async () => {

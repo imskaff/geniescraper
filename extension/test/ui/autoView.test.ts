@@ -33,31 +33,25 @@ afterEach(() => {
 });
 
 describe("the ways to start pasting", () => {
-  it("makes Start pasting the glowing automatic button, with Step by step beside it", async () => {
+  it("shows one plain yellow Start pasting button", async () => {
     const { root } = await onReview();
-    const auto = $(root, '[data-key="start"]');
-    expect(auto.classList.contains("magic")).toBe(true);
-    expect(auto.classList.contains("primary")).toBe(true);
-    const manual = $(root, '[data-key="start-manual"]');
-    expect(manual.classList.contains("magic")).toBe(false);
-    expect(manual.classList.contains("quiet")).toBe(true);
-    expect(auto.nextElementSibling).toBe(manual);
+    const start = $(root, '[data-key="start"]');
+    expect(start.textContent).toBe("Start pasting");
+    expect(start.classList.contains("primary")).toBe(true);
+    expect(start.classList.contains("magic")).toBe(false);
+    expect(has(root, '[data-key="start-manual"]')).toBe(false);
+    expect(has(root, '[data-key="start-auto"]')).toBe(false);
   });
 
-  it("keeps the automatic button's name and text plain: the sparkles are decoration", async () => {
+  it("describes the selected paste mode beside the button", async () => {
     const { root } = await onReview();
-    const auto = $(root, '[data-key="start"]');
-    expect(auto.textContent).toBe("Start pasting");
-    expect(auto.getAttribute("aria-label")).toBe("Start pasting One automatically");
-    const sparkles = $(auto, ".sparkles");
-    expect(sparkles.getAttribute("aria-hidden")).toBe("true");
-    expect(sparkles.textContent).toBe("");
-    expect($(root, '[data-key="start-manual"]').getAttribute("aria-label")).toBe(
-      "Step by step: One, one key press per field",
+    expect($(root, '[data-key="start"]').getAttribute("aria-label")).toBe(
+      "Start pasting One automatically. It pauses when you interact with Genius.",
     );
+    expect(root.textContent).toContain("Auto-paste is ON");
   });
 
-  it("Start pasting starts the session and then the run, and the paste screen shows Auto-paste: ON first", async () => {
+  it("uses the selected automatic mode and shows the Auto-paste switch", async () => {
     const { root, env, panel } = await onReview();
     $(root, '[data-key="start"]').click();
     await flush();
@@ -78,9 +72,9 @@ describe("the ways to start pasting", () => {
     expect(root.textContent).not.toMatch(/Press F8 to add/);
   });
 
-  it("Step by step starts only the session, with Auto-paste: OFF first in gray and the manual buttons secondary", async () => {
-    const { root, env, panel } = await onReview();
-    $(root, '[data-key="start-manual"]').click();
+  it("uses the manual mode selected in Settings", async () => {
+    const { root, env, panel } = await onReview({ settings: { pasteMode: "manual" } });
+    $(root, '[data-key="start"]').click();
     await flush();
     expect(env.api.calls.filter((c) => c.startsWith("paste:"))).toEqual(["paste:paste-start"]);
     expect(panel.state.paste).toMatchObject({ active: true, auto: "off" });
@@ -95,12 +89,12 @@ describe("the ways to start pasting", () => {
       expect($(root, `[data-key="${key}"]`).classList.contains("primary"), key).toBe(false);
     }
     expect($(root, '[data-key="fill"]').classList.contains("quiet")).toBe(true);
-    expect(root.textContent).toMatch(/Press F8 to add/);
+    expect(root.textContent).toContain("Auto-paste: OFF");
   });
 
-  it("turning Auto-paste on part-way through a step-by-step session starts a run", async () => {
-    const { root, panel } = await onReview();
-    $(root, '[data-key="start-manual"]').click();
+  it("can turn Auto-paste on from the paste screen", async () => {
+    const { root, panel } = await onReview({ settings: { pasteMode: "manual" } });
+    $(root, '[data-key="start"]').click();
     await flush();
     $(root, '[data-key="auto-toggle"]').click();
     await flush();
@@ -108,46 +102,43 @@ describe("the ways to start pasting", () => {
     expect($(root, '[data-key="auto-toggle"]').getAttribute("data-state")).toBe("on");
   });
 
-  it("keeps the toggle's sparkles as decoration, with a name that says what pressing it does", async () => {
-    const { root } = await onReview();
-    $(root, '[data-key="start-manual"]').click();
+  it("labels the Auto-paste switch with its current state and action", async () => {
+    const { root } = await onReview({ settings: { pasteMode: "manual" } });
+    $(root, '[data-key="start"]').click();
     await flush();
     const off = $(root, '[data-key="auto-toggle"]');
-    expect($(off, ".sparkles").getAttribute("aria-hidden")).toBe("true");
     expect(off.getAttribute("aria-label")).toBe("Auto-paste: OFF. Press to turn it on.");
     $(root, '[data-key="auto-toggle"]').click();
     await flush();
     const on = $(root, '[data-key="auto-toggle"]');
     expect(on.getAttribute("aria-label")).toBe("Auto-paste: ON. Press to turn it off and take over.");
-    expect(on.getAttribute("aria-label")?.startsWith(on.textContent)).toBe(true);
   });
 });
 
-describe("when the user chose step by step as the way Start pasting works", () => {
+describe("when the user chose manual mode in Settings", () => {
   const manualDefault = { settings: { pasteMode: "manual" } };
 
-  it("leads with Start pasting as the Next-key button, and offers Auto-paste beside it", async () => {
+  it("keeps one plain Start pasting button and explains the selected mode", async () => {
     const { root } = await onReview(manualDefault);
     const start = $(root, '[data-key="start"]');
     expect(start.classList.contains("magic")).toBe(false);
     expect(start.classList.contains("primary")).toBe(true);
-    expect(start.getAttribute("aria-label")).toBe("Start pasting One, one key press per field");
-    const auto = $(root, '[data-key="start-auto"]');
-    expect(auto.classList.contains("magic")).toBe(true);
-    expect(auto.textContent).toBe("Auto-paste");
-    expect(has(root, '[data-key="start-manual"]')).toBe(false);
+    expect(start.textContent).toBe("Start pasting");
+    expect(start.getAttribute("aria-label")).toBe("Start pasting One one field at a time using the selected hotkey.");
+    expect(has(root, '[data-key="start-auto"]')).toBe(false);
+    expect(root.textContent).toContain("Auto-paste is OFF");
   });
 
-  it("Start pasting then starts the session only, and Auto-paste runs it by itself", async () => {
+  it("Start pasting follows the saved mode", async () => {
     const first = await onReview(manualDefault);
     $(first.root, '[data-key="start"]').click();
     await flush();
     expect(first.env.api.calls.filter((c) => c.startsWith("paste:"))).toEqual(["paste:paste-start"]);
 
     const second = await onReview(manualDefault);
-    $(second.root, '[data-key="start-auto"]').click();
+    $(second.root, '[data-key="start"]').click();
     await flush();
-    expect(second.panel.state.paste.auto).toBe("running");
+    expect(second.panel.state.paste.auto).toBe("off");
   });
 
   it("makes the next track follow that choice until the user starts one the other way", async () => {
@@ -159,7 +150,7 @@ describe("when the user chose step by step as the way Start pasting works", () =
     expect(env.api.calls.filter((c) => c === "paste:paste-auto-start")).toHaveLength(2);
   });
 
-  it("changing the setting changes what the next Start pasting does", async () => {
+  it("changing the setting changes what the next Fill automatically does", async () => {
     const { env, panel } = await onReview();
     await panel.setSetting("pasteMode", "manual");
     await panel.startPaste(0);
@@ -178,7 +169,7 @@ describe("pausing and resuming", () => {
     return ui;
   }
 
-  it("turning Auto-paste off pauses the run, and the toggle goes gray with one step on the Next key beside it", async () => {
+  it("turning automatic filling off pauses the run, and the toggle goes gray with one step on the Next key beside it", async () => {
     const { root, panel } = await running();
     $(root, '[data-key="auto-toggle"]').click();
     await flush();
@@ -199,7 +190,7 @@ describe("pausing and resuming", () => {
     expect($(root, "#status").textContent).toMatch(/Auto-paste/);
   });
 
-  it("turning Auto-paste back on carries on from the same step", async () => {
+  it("turning automatic filling back on carries on from the same step", async () => {
     const { root, panel } = await running();
     $(root, '[data-key="auto-toggle"]').click();
     await flush();
