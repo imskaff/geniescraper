@@ -50,7 +50,7 @@ The pass, using a public album with several tracks and a Genius song you can ope
 3. Select all and get credits: tracks show "All found" or "Needs a look" with the missing item named, and no Apple Music window stays open afterwards.
 4. Open a track: credits, cover link and paste queue are right; a track with no YouTube link shows the box for pasting one.
 5. Start pasting with the Genius edit form open: it fills every field by itself, pausing between fields, and nothing is saved for you.
-   Check each way it should stop and resume: click in the form (it pauses), Esc and Pause, closing the panel, a name Genius has no exact match for (it waits, then carries on after you choose), and Resume.
+   Check each way it should stop and resume: click in the form (it pauses), Esc and the Auto-paste switch (ON glows, OFF is gray and lights up on hover), closing the panel, a name Genius has no exact match for (it waits, then carries on after you choose), and turning Auto-paste back on.
    Then Step by step: the fill key fills one field per press, and Back and Skip work.
 6. Finish a track: the next-track countdown runs and starts the next one; after the last track the menu countdown returns to the main menu.
 7. Settings: change a setting, close and reopen the panel, and see it kept; the optional hosts ask Chrome for permission only when switched on, and can be taken back.

@@ -23,6 +23,11 @@
   --magic-2: #ff9a3d;
   --magic-3: #ff6fb1;
   --magic-4: #b18cff;
+  /* The light tints it shows when it is off and hovered. */
+  --magic-soft-1: #fbe28a;
+  --magic-soft-2: #ffcf9f;
+  --magic-soft-3: #ffc2de;
+  --magic-soft-4: #dccbff;
   --focus: #f4f3ee;
   /* One spacing scale for the whole panel: every gap, margin and padding is one of these. */
   --space-1: 4px;
@@ -997,4 +1002,99 @@ main > .help {
     opacity: 1;
     transform: scale(1.15) rotate(20deg);
   }
+}
+
+/* The automatic button when it is OFF: gray like any switch that is off, so it is clear nothing is running. Pointing
+   at it (or tabbing to it) lights it up in the light tints with sparkles, to show what turning it on does. The still
+   version (no movement) is what reduced motion keeps. */
+.button.magic-off {
+  position: relative;
+  color: var(--muted);
+  background: var(--surface-hi);
+  border-color: var(--control-border);
+}
+
+.button.magic-off .sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.button.magic-off .sparkles::before,
+.button.magic-off .sparkles::after,
+.button.magic-off::before,
+.button.magic-off::after {
+  position: absolute;
+  color: #fff;
+  text-shadow:
+    0 0 3px var(--magic-3),
+    0 0 7px var(--magic-2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.button.magic-off .sparkles::before {
+  content: "\2726";
+  top: -8px;
+  right: 12%;
+  font-size: 0.85rem;
+}
+
+.button.magic-off .sparkles::after {
+  content: "\2726";
+  bottom: -7px;
+  left: 10%;
+  font-size: 0.65rem;
+}
+
+.button.magic-off::before {
+  content: "\2727";
+  top: -6px;
+  left: 46%;
+  font-size: 0.7rem;
+}
+
+.button.magic-off::after {
+  content: "\2727";
+  bottom: -6px;
+  right: 30%;
+  font-size: 0.6rem;
+}
+
+.button.magic-off:hover:not(:disabled),
+.button.magic-off:focus-visible:not(:disabled) {
+  color: var(--accent-ink);
+  border-color: transparent;
+  background: linear-gradient(
+    110deg,
+    var(--magic-soft-1),
+    var(--magic-soft-2),
+    var(--magic-soft-3),
+    var(--magic-soft-4),
+    var(--magic-soft-3),
+    var(--magic-soft-2),
+    var(--magic-soft-1)
+  );
+  background-size: 200% 100%;
+  box-shadow:
+    0 0 10px 1px rgb(255 154 61 / 28%),
+    0 0 20px 3px rgb(177 140 255 / 20%);
+  animation: magic-flow 8s linear infinite;
+}
+
+.button.magic-off:hover:not(:disabled) .sparkles::before,
+.button.magic-off:hover:not(:disabled) .sparkles::after,
+.button.magic-off:hover:not(:disabled)::before,
+.button.magic-off:hover:not(:disabled)::after,
+.button.magic-off:focus-visible:not(:disabled) .sparkles::before,
+.button.magic-off:focus-visible:not(:disabled) .sparkles::after,
+.button.magic-off:focus-visible:not(:disabled)::before,
+.button.magic-off:focus-visible:not(:disabled)::after {
+  opacity: 0.95;
+  animation: magic-twinkle 2.8s ease-in-out infinite;
+}
+
+.button.magic-off:disabled .sparkles {
+  display: none;
 }

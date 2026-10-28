@@ -32,7 +32,7 @@ Roles are entered under the names Genius uses.
 You stay in control:
 
 - It never presses Save on Genius. You check the form and save it yourself.
-- It stops the moment you click or type in the form, press Esc or Pause, or close the panel, and you resume when you are ready.
+- It stops the moment you click or type in the form, press Esc or turn Auto-paste off, or close the panel, and you switch it back on when you are ready.
 - When Genius has no exact match for a name it leaves the text for you to choose, then carries on after you do.
 - Hotkeys, what to include, and more are in Settings.
 

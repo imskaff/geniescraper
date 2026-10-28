@@ -227,7 +227,7 @@ try {
 
   // ── an automatic run, and every way it must stop and start again ──
   const pHas = (selector) => panel.evaluate(`!!document.querySelector(${JSON.stringify(selector)})`);
-  const isPaused = () => pHas('[data-key="auto-resume"]');
+  const isPaused = () => pHas('[data-key="auto-toggle"][data-state="off"]');
   const stateInStorage = () =>
     worker.evaluate("chrome.storage.session.get('paste').then((items) => items.paste ?? null)");
   const pausedWithin = async (ms) => {
@@ -265,12 +265,20 @@ try {
     return false;
   };
   const resume = async () => {
-    await pClick("Resume");
-    await pUntil("!!document.querySelector('[data-key=\"auto-pause\"]')", "the run to be going again", 15000);
+    await pClick("Auto-paste: OFF");
+    await pUntil(
+      '!!document.querySelector(\'[data-key="auto-toggle"][data-state="on"]\')',
+      "the run to be going again",
+      15000,
+    );
   };
   const runAuto = async () => {
-    const started = await pUntil("!!document.querySelector('[data-key=\"auto-pause\"]')", "Pause", 20000);
-    check("the run starts by itself, with Pause on screen", started);
+    const started = await pUntil(
+      '!!document.querySelector(\'[data-key="auto-toggle"][data-state="on"]\')',
+      "Auto-paste: ON",
+      20000,
+    );
+    check("the run starts by itself, with Auto-paste: ON on screen", started);
     if (!started) {
       // Say what the panel and the worker hold, so a failure here can be understood without another run.
       const text = await panel.evaluate("document.querySelector('main')?.innerText ?? document.body.innerText");
@@ -286,8 +294,8 @@ try {
     await shot(panel, "genius-auto-1-running");
 
     // Pause, from the panel: it stops after the step in progress and stays stopped.
-    await pClick("Pause");
-    check("Pause pauses the run", await pausedWithin(15000));
+    await pClick("Auto-paste: ON");
+    check("turning Auto-paste off pauses the run", await pausedWithin(15000));
     await sleep(1500);
     const held = await position();
     await sleep(3000);
@@ -342,7 +350,11 @@ try {
 
     // Open the panel again: the session is restored, paused, and Resume finishes the track.
     await openPanel();
-    await pUntil("!!document.querySelector('[data-key=\"auto-resume\"]')", "the restored paste screen", 20000);
+    await pUntil(
+      '!!document.querySelector(\'[data-key="auto-toggle"][data-state="off"]\')',
+      "the restored paste screen",
+      20000,
+    );
     check("the reopened panel shows the paused run", await isPaused());
     await resume();
     check("it finishes the track by itself", await runFor(total, 180000));

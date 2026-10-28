@@ -100,6 +100,8 @@ export const MESSAGES = {
   notAYoutubeLink:
     "That is not a link to one YouTube video. Open the video on YouTube and copy the address from the address bar, or use its Share button.",
   pasteYoutubeLink: "Paste the YouTube link into the box first.",
+  workerOutOfDate:
+    "The extension's background part is older than this panel, so it does not know that command. Open chrome://extensions, press Reload on Géniescraper, then try again. Step by step still works.",
   allDone: "All credits entered. Check the Genius page, then press Save there.",
 } as const;
 
@@ -645,6 +647,9 @@ export class PanelController {
   private async pasteCommand(command: PasteCommand): Promise<void> {
     const answer = await this.env.api.paste(command);
     if (answer.ok) this.setPaste(answer.data);
+    // The worker refusing a paste command it should know means it is an older build than this panel: the browser
+    // kept the old background script after an update. Reloading the extension fixes it.
+    else if (answer.error.code === "bad-request") this.update({ error: MESSAGES.workerOutOfDate, status: "" });
     else this.update({ error: describeError(answer.error), status: "" });
   }
 

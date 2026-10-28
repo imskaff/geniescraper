@@ -57,7 +57,7 @@ describe("the ways to start pasting", () => {
     );
   });
 
-  it("Start pasting starts the session and then the run, and the paste screen shows Pause", async () => {
+  it("Start pasting starts the session and then the run, and the paste screen shows Auto-paste: ON first", async () => {
     const { root, env, panel } = await onReview();
     $(root, '[data-key="start"]').click();
     await flush();
@@ -67,34 +67,59 @@ describe("the ways to start pasting", () => {
     ]);
     expect(panel.state.paste).toMatchObject({ active: true, auto: "running" });
     expect($(root, "h2").textContent).toBe("Paste into Genius");
-    expect($(root, '[data-key="auto-pause"]').textContent).toBe("Pause");
+    const toggle = $(root, '[data-key="auto-toggle"]');
+    expect(toggle.textContent).toBe("Auto-paste: ON");
+    expect(toggle.getAttribute("data-state")).toBe("on");
+    expect(toggle.classList.contains("magic")).toBe(true);
+    expect(toggle.classList.contains("primary")).toBe(true);
+    expect(toggle.parentElement?.firstElementChild).toBe(toggle);
     expect(has(root, '[data-key="fill"]')).toBe(false);
-    expect(has(root, ".magic")).toBe(false); // calm while it works: no glow, no sparkles
-    expect(root.textContent).toContain("Pasting automatically. Press Pause to take over.");
+    expect(root.textContent).toContain("Pasting automatically. Turn Auto-paste off to take over.");
     expect(root.textContent).not.toMatch(/Press F8 to add/);
   });
 
-  it("Step by step starts only the session, and offers Fill next and the automatic button", async () => {
+  it("Step by step starts only the session, with Auto-paste: OFF first in gray and the manual buttons secondary", async () => {
     const { root, env, panel } = await onReview();
     $(root, '[data-key="start-manual"]').click();
     await flush();
     expect(env.api.calls.filter((c) => c.startsWith("paste:"))).toEqual(["paste:paste-start"]);
     expect(panel.state.paste).toMatchObject({ active: true, auto: "off" });
-    expect($(root, '[data-key="fill"]').classList.contains("primary")).toBe(true);
-    const auto = $(root, '[data-key="auto-start"]');
-    expect(auto.classList.contains("magic")).toBe(true);
-    expect(auto.textContent).toBe("Auto-paste");
+    const toggle = $(root, '[data-key="auto-toggle"]');
+    expect(toggle.textContent).toBe("Auto-paste: OFF");
+    expect(toggle.getAttribute("data-state")).toBe("off");
+    expect(toggle.classList.contains("magic-off")).toBe(true);
+    expect(toggle.classList.contains("magic")).toBe(false);
+    expect(toggle.parentElement?.firstElementChild).toBe(toggle);
+    // Every manual control is secondary to it.
+    for (const key of ["fill", "pback", "pskip"]) {
+      expect($(root, `[data-key="${key}"]`).classList.contains("primary"), key).toBe(false);
+    }
+    expect($(root, '[data-key="fill"]').classList.contains("quiet")).toBe(true);
     expect(root.textContent).toMatch(/Press F8 to add/);
   });
 
-  it("starts a run part-way through a step-by-step session from the paste screen", async () => {
+  it("turning Auto-paste on part-way through a step-by-step session starts a run", async () => {
     const { root, panel } = await onReview();
     $(root, '[data-key="start-manual"]').click();
     await flush();
-    $(root, '[data-key="auto-start"]').click();
+    $(root, '[data-key="auto-toggle"]').click();
     await flush();
     expect(panel.state.paste).toMatchObject({ auto: "running", position: 0 });
-    expect(has(root, '[data-key="auto-pause"]')).toBe(true);
+    expect($(root, '[data-key="auto-toggle"]').getAttribute("data-state")).toBe("on");
+  });
+
+  it("keeps the toggle's sparkles as decoration, with a name that says what pressing it does", async () => {
+    const { root } = await onReview();
+    $(root, '[data-key="start-manual"]').click();
+    await flush();
+    const off = $(root, '[data-key="auto-toggle"]');
+    expect($(off, ".sparkles").getAttribute("aria-hidden")).toBe("true");
+    expect(off.getAttribute("aria-label")).toBe("Auto-paste: OFF. Press to turn it on.");
+    $(root, '[data-key="auto-toggle"]').click();
+    await flush();
+    const on = $(root, '[data-key="auto-toggle"]');
+    expect(on.getAttribute("aria-label")).toBe("Auto-paste: ON. Press to turn it off and take over.");
+    expect(on.getAttribute("aria-label")?.startsWith(on.textContent)).toBe(true);
   });
 });
 
@@ -153,36 +178,48 @@ describe("pausing and resuming", () => {
     return ui;
   }
 
-  it("Pause pauses the run, and the screen offers Resume and one step with the Next key", async () => {
+  it("turning Auto-paste off pauses the run, and the toggle goes gray with one step on the Next key beside it", async () => {
     const { root, panel } = await running();
-    $(root, '[data-key="auto-pause"]').click();
+    $(root, '[data-key="auto-toggle"]').click();
     await flush();
     expect(panel.state.paste).toMatchObject({ auto: "paused", pauseReason: "user" });
-    const resume = $(root, '[data-key="auto-resume"]');
-    expect(resume.classList.contains("magic")).toBe(true);
-    expect(resume.textContent).toBe("Resume");
-    const fill = $(root, '[data-key="fill"]');
-    expect(fill.classList.contains("quiet")).toBe(true);
+    const toggle = $(root, '[data-key="auto-toggle"]');
+    expect(toggle.textContent).toBe("Auto-paste: OFF");
+    expect(toggle.classList.contains("magic-off")).toBe(true);
+    expect(toggle.parentElement?.firstElementChild).toBe(toggle);
+    expect($(root, '[data-key="fill"]').classList.contains("quiet")).toBe(true);
     expect(root.textContent).toMatch(/Press F8 to add/);
-    expect(has(root, '[data-key="auto-pause"]')).toBe(false);
   });
 
   it("says why it paused, and how to carry on", async () => {
     const { root, panel } = await running();
-    $(root, '[data-key="auto-pause"]').click();
+    $(root, '[data-key="auto-toggle"]').click();
     await flush();
     expect($(root, "#status").textContent).toBe(panel.state.paste.message);
-    expect($(root, "#status").textContent).toMatch(/Resume/);
+    expect($(root, "#status").textContent).toMatch(/Auto-paste/);
   });
 
-  it("Resume carries on from the same step", async () => {
+  it("turning Auto-paste back on carries on from the same step", async () => {
     const { root, panel } = await running();
-    $(root, '[data-key="auto-pause"]').click();
+    $(root, '[data-key="auto-toggle"]').click();
     await flush();
-    $(root, '[data-key="auto-resume"]').click();
+    $(root, '[data-key="auto-toggle"]').click();
     await flush();
     expect(panel.state.paste).toMatchObject({ auto: "running", position: 0, pauseReason: "" });
-    expect(has(root, '[data-key="auto-pause"]')).toBe(true);
+    expect($(root, '[data-key="auto-toggle"]').getAttribute("data-state")).toBe("on");
+  });
+
+  it("shows the toggle as off when a pause came from somewhere else, such as a click in the Genius form", async () => {
+    const { root, env, panel } = await running();
+    panel.setPaste({
+      ...env.api.pasteState,
+      auto: "paused",
+      pauseReason: "input",
+      message: "Paused because you used the form. Turn Auto-paste on to carry on.",
+    });
+    await flush();
+    expect($(root, '[data-key="auto-toggle"]').getAttribute("data-state")).toBe("off");
+    expect($(root, "#status").textContent).toContain("used the form");
   });
 
   it("Back pauses a running run, as taking over by hand does", async () => {
@@ -207,7 +244,7 @@ describe("pausing and resuming", () => {
     expect(panel.state.paste.auto).toBe("running");
     expect(root.textContent).toContain("Choose Writer One in Genius's suggestions. Automatic pasting carries on");
     expect($(root, '[aria-current="step"]').textContent).toContain("Waiting for you");
-    expect(has(root, '[data-key="auto-pause"]')).toBe(true);
+    expect($(root, '[data-key="auto-toggle"]').getAttribute("data-state")).toBe("on");
   });
 });
 
@@ -234,6 +271,31 @@ describe("which way the next track goes", () => {
   });
 });
 
+describe("when the extension's background part is older than the panel", () => {
+  it("says to reload the extension, not that reading the page went wrong", async () => {
+    const { root, panel } = await onReview({
+      api: {
+        paste: (command) =>
+          Promise.resolve(
+            command.type === "paste-auto-start"
+              ? { ok: false, error: { code: "bad-request", message: "Unrecognised request." } }
+              : {
+                  ok: true,
+                  data: { ...panel.state.paste, active: true, queue: [["written_by", "Writer One"]], title: "One" },
+                },
+          ),
+      },
+    });
+    $(root, '[data-key="start"]').click();
+    await flush();
+    expect(panel.state.error).toContain("Reload");
+    expect(panel.state.error).toContain("chrome://extensions");
+    expect(panel.state.error).not.toContain("reading the page");
+    // The session itself is fine: the user can still go step by step.
+    expect(panel.state.paste.active).toBe(true);
+  });
+});
+
 describe("when no Genius page can take the run", () => {
   it("says what to open, and leaves a step-by-step session the user can start automatically later", async () => {
     const { root, panel } = await onReview({
@@ -257,6 +319,6 @@ describe("when no Genius page can take the run", () => {
     expect(panel.state.paste.active).toBe(true);
     expect(panel.state.paste.auto).toBe("off");
     expect(root.textContent).toContain("Edit Metadata form on Genius");
-    expect(has(root, '[data-key="auto-start"]')).toBe(true);
+    expect(has(root, '[data-key="auto-toggle"]')).toBe(true);
   });
 });

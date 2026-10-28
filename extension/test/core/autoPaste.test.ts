@@ -120,7 +120,7 @@ describe("pausing", () => {
     (reason) => {
       const paused = pauseAuto(running(), reason);
       expect(paused).toMatchObject({ auto: "paused", pauseReason: reason, message: pauseMessage(reason) });
-      expect(pauseMessage(reason)).toMatch(/Resume|Start/);
+      expect(pauseMessage(reason)).toMatch(/Auto-paste/);
     },
   );
 
@@ -201,7 +201,7 @@ describe("what the panel says while a run goes", () => {
   it("never asks for a key press while it pastes by itself, and says how to take over", () => {
     const text = instruction(running(), "F8");
     expect(text).toMatch(/automatically/i);
-    expect(text).toMatch(/Pause/);
+    expect(text).toMatch(/Auto-paste off/);
     expect(text).not.toMatch(/Press F8/);
   });
 

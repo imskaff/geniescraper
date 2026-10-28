@@ -788,25 +788,37 @@ export class PanelView {
   }
 
   /**
-   * The main controls of the paste screen, by how it is going: running by itself (Pause, and calm), paused (Resume,
-   * with the Next key still there for one step), or step by step (Fill next, with the automatic button offered).
+   * The main controls of the paste screen. Auto-paste is a switch and always the first, primary button: ON (the
+   * glowing gradient) while a run goes, OFF (gray, with the sparkles and light colours on hover) when it is off or
+   * paused, whatever the reason. Pressing it turns it the other way. Fill next, the manual way, is secondary, and
+   * only there while the run is off: while it is on, the Next key would only take over from it.
    */
   private pasteControls(state: PanelState, finished: boolean): HTMLElement[] {
     const { paste, settings } = state;
+    const on = paste.auto === "running";
+    const toggle = this.button(
+      on ? "Auto-paste: ON" : "Auto-paste: OFF",
+      on ? "primary" : "quiet",
+      "auto-toggle",
+      () => void (on ? this.panel.pauseAutoPaste() : this.panel.autoPaste()),
+      finished,
+    );
+    toggle.classList.add(on ? "magic" : "magic-off");
+    toggle.setAttribute("data-state", on ? "on" : "off");
+    toggle.setAttribute(
+      "aria-label",
+      on ? "Auto-paste: ON. Press to turn it off and take over." : "Auto-paste: OFF. Press to turn it on.",
+    );
+    toggle.append(el("span", { class: "sparkles", attrs: { "aria-hidden": "true" } }));
+    if (on) return [toggle];
     const fill = this.button(
       `Fill next (${settings.nextHotkey})`,
-      paste.auto === "paused" ? "quiet" : "primary",
+      "quiet",
       "fill",
       () => void this.panel.fillNext(),
       finished || paste.busy,
     );
-    if (paste.auto === "running") {
-      return [this.button("Pause", "primary", "auto-pause", () => void this.panel.pauseAutoPaste(), false)];
-    }
-    if (paste.auto === "paused") {
-      return [this.magicButton("Resume", "auto-resume", () => void this.panel.autoPaste(), finished), fill];
-    }
-    return [fill, this.magicButton("Auto-paste", "auto-start", () => void this.panel.autoPaste(), finished)];
+    return [toggle, fill];
   }
 
   /** The error above the step counter. A new error, or the same one on a new attempt, plays the attention animation once. */

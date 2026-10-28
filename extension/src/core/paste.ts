@@ -137,15 +137,15 @@ export function report(state: PasteState, position: number, outcome: Outcome): P
 export function pauseMessage(reason: PauseReason): string {
   switch (reason) {
     case "user":
-      return "Paused. Press Resume to carry on, or the Next key for one step.";
+      return "Paused. Turn Auto-paste on to carry on, or use the Next key for one step.";
     case "input":
-      return "Paused because you used the form. Press Resume to carry on.";
+      return "Paused because you used the form. Turn Auto-paste on to carry on.";
     case "panel-closed":
-      return "Paused because the panel was closed. Press Resume to carry on.";
+      return "Paused because the panel was closed. Turn Auto-paste on to carry on.";
     case "page-changed":
-      return "Paused because the Genius page changed. Open the song's edit form, then press Resume.";
+      return "Paused because the Genius page changed. Open the song's edit form, then turn Auto-paste on.";
     case "problem":
-      return "Paused because a step could not be filled. Fix it on the form or press Skip, then Resume.";
+      return "Paused because a step could not be filled. Fix it on the form or press Skip, then turn Auto-paste on.";
   }
 }
 
@@ -261,7 +261,7 @@ export function instruction(state: PasteState, hotkey: string): string {
   if (state.auto === "running") {
     return state.awaiting
       ? `Choose ${item[1]} in Genius's suggestions. Automatic pasting carries on when you do.`
-      : "Pasting automatically. Press Pause to take over.";
+      : "Pasting automatically. Turn Auto-paste off to take over.";
   }
   if (state.awaiting) return `Choose ${item[1]} in Genius's suggestions, then press ${key}. Or use Skip.`;
   const [kind, value] = item;

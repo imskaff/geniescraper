@@ -822,6 +822,15 @@ Each is tested first and committable on its own.
    The first-time set-up does not ask about it: automatic is the default and the choice is in Settings.
 5. Done (below). A live run on a Genius song the owner created (`npm run live:genius` with the scratch profile), then docs and the privacy and listing text if anything they say changes.
 
+### Auto-paste is a switch (after the first hands-on test)
+
+Pause and Resume became one control, the first and primary button of the paste screen: "Auto-paste: ON" in the glowing gradient while a run goes (pressing it turns the run off and takes over), and "Auto-paste: OFF" in plain gray when it is off or paused, whatever the reason (pressing it turns the run on from the same step).
+Hovering or tabbing to the gray button lights it in light tints with sparkles, to show what turning it on does; the manual buttons (Fill next, Back, Skip) are secondary and quiet, and Fill next is only there while the run is off.
+The button is a plain button whose name says what pressing it does ("Auto-paste: OFF. Press to turn it on."); the light tints are tokens with their ink contrast tested, and the sparkles are decoration, with only their movement removed under reduced motion.
+The review screen keeps Start pasting as the first, glowing button, with Step by step quiet beside it.
+
+The hands-on test also showed "Something went wrong while reading the page: Unrecognised request." on Start pasting: the panel was newer than the extension's background worker, which the browser had kept from before the update, so it rejected the new `paste-auto-start`. The router accepts every paste command (a test pins that), so the panel now says what happened, to reload the extension on chrome://extensions, and that Step by step still works; a new version number also makes the browser take the new worker.
+
 ### The live run (slice 5)
 
 `node scripts/live-genius.mjs --mode auto` (signed-in scratch profile, the owner's own song, never Save) ran an automatic paste of a whole track on the real Genius form.

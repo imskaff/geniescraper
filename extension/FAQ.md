@@ -34,11 +34,11 @@ It resets at midnight Pacific time. Until then the extension falls back to YouTu
 The panel says why. It pauses when:
 
 - you click or type in the form (except while it waits for you to choose a name, when it expects you to),
-- you press Esc, Pause or Back, or press the fill key,
+- you press Esc, turn Auto-paste off, press Back, or press the fill key,
 - you close the panel,
 - a field it needs is not on the form, or the Genius page is reloaded.
 
-Press Resume to carry on from the same step.
+Turn Auto-paste back on to carry on from the same step.
 If you started it before opening the song's Edit Metadata form, it waits for the form to appear.
 It never presses Save.
 
