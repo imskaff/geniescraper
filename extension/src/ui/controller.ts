@@ -2,6 +2,7 @@
 // Everything that touches the outside (the worker, storage, the browser's tabs) is injected, so the whole flow
 // runs in tests with fakes.
 import { parseAppleMusicUrl } from "../apple/url";
+import { appleTabEntries, type AppleTabEntry, type OpenTab } from "../core/appleTabs";
 import { geniusRole } from "../core/geniusRoles";
 import { typedQueue, type QueueItem, type SongCredits } from "../core/models";
 import type { PasteCommand } from "../shared/messages";
@@ -50,6 +51,8 @@ export interface Env {
   secrets: KeyValueStore;
   /** The tab the user is looking at, or null when there is none to read. */
   activeTab(): Promise<ActiveTab | null>;
+  /** Every tab of the browser that shows Apple Music, in the browser's order, with the one in view marked. */
+  appleTabs(): Promise<OpenTab[]>;
 }
 
 export interface PanelState {
@@ -84,6 +87,8 @@ export interface PanelState {
   status: string;
   /** The Apple Music page the user is on, offered as the default link ("" when there is none). */
   pageUrl: string;
+  /** The album and song pages already open in the browser, offered on the link screen; the page in view first. */
+  appleTabs: AppleTabEntry[];
 }
 
 export const MESSAGES = {
@@ -184,6 +189,7 @@ export class PanelController {
     settings: Settings,
     session: Session,
     pageUrl: string,
+    appleTabs: AppleTabEntry[] = [],
     paste: PasteState = { ...IDLE_PASTE },
     hosts: Record<OptionalHost, boolean> = { ...NO_HOSTS },
     keySaved = false,
@@ -209,21 +215,32 @@ export class PanelController {
       error: "",
       status: "",
       pageUrl,
+      appleTabs,
     };
   }
 
   /** Load settings, the stored session and the active tab, and build the controller from them. */
   static async create(env: Env): Promise<PanelController> {
-    const [settings, session, paste, tab, hosts, key] = await Promise.all([
+    const [settings, session, paste, tab, hosts, key, open] = await Promise.all([
       loadSettings(env.stores),
       loadSession(env.stores),
       loadPaste(env.stores),
       env.activeTab().catch(() => null),
       env.hosts.granted().catch(() => ({ ...NO_HOSTS })),
       loadYoutubeKey(env.secrets),
+      env.appleTabs().catch(() => []),
     ]);
     const pageUrl = tab && parseAppleMusicUrl(tab.url) ? tab.url : "";
-    const controller = new PanelController(env, settings, session, pageUrl, paste, hosts, key !== "");
+    const controller = new PanelController(
+      env,
+      settings,
+      session,
+      pageUrl,
+      appleTabEntries(open),
+      paste,
+      hosts,
+      key !== "",
+    );
     // A permission taken back in chrome://extensions, or granted elsewhere, changes the Settings box at once.
     env.hosts.subscribe(() => void controller.refreshHosts());
     // Tracks that were mid-read when the panel closed were restored as pending: carry on with them.
@@ -365,11 +382,16 @@ export class PanelController {
     await this.refreshHosts();
   }
 
-  /** Re-read which Apple Music page the user is on, after they switch tabs or navigate. */
+  /** Re-read which Apple Music page the user is on and which others are open, after tabs change or navigate. */
   async refreshPage(): Promise<void> {
-    const tab = await this.env.activeTab().catch(() => null);
+    const [tab, open] = await Promise.all([
+      this.env.activeTab().catch(() => null),
+      this.env.appleTabs().catch(() => []),
+    ]);
     const pageUrl = tab && parseAppleMusicUrl(tab.url) ? tab.url : "";
-    if (pageUrl !== this.current.pageUrl) this.update({ pageUrl });
+    const appleTabs = appleTabEntries(open);
+    const same = JSON.stringify(appleTabs) === JSON.stringify(this.current.appleTabs);
+    if (pageUrl !== this.current.pageUrl || !same) this.update({ pageUrl, appleTabs });
   }
 
   // ── link ────────────────────────────────────────────────────────────

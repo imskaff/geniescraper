@@ -533,6 +533,15 @@ select.field {
   min-height: 36px;
 }
 
+/* Pages already open in the browser: one full-width button each, the way tracks are listed. */
+.open-pages {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 h3.section {
   margin-top: var(--space-4);
 }

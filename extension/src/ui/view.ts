@@ -326,7 +326,54 @@ export class PanelView {
         attrs: { type: "submit", "data-key": "go", ...(busy ? { disabled: "" } : {}) },
       }),
     );
-    return [this.heading("Get credits from Apple Music"), form];
+    return [this.heading("Get credits from Apple Music"), form, ...this.openPages(state)];
+  }
+
+  /** The album and song pages already open in the browser, one press each; nothing when there are none. */
+  private openPages(state: PanelState): Node[] {
+    if (state.appleTabs.length === 0) return [];
+    const busy = state.busy !== null;
+    const items = state.appleTabs.map((page, index) =>
+      el(
+        "li",
+        {},
+        el(
+          "button",
+          {
+            class: "button track",
+            attrs: {
+              type: "button",
+              "data-key": `open-page-${String(index)}`,
+              "aria-label": `Get tracks for ${page.name}${page.current ? ", the page you are on" : ""}`,
+              ...(busy ? { disabled: "" } : {}),
+            },
+            on: {
+              click: () => {
+                this.draft = page.url;
+                void this.panel.detect(page.url);
+              },
+            },
+          },
+          el(
+            "span",
+            { class: "body" },
+            el("span", { class: "open-name name", text: page.name }),
+            el("span", {
+              class: "tag",
+              text: `${page.kind === "album" ? "Album" : "Song"}${page.current ? " · this page" : ""}`,
+            }),
+          ),
+        ),
+      ),
+    );
+    return [
+      el(
+        "section",
+        { class: "open-pages-section", attrs: { "data-key": "open-pages" } },
+        el("h3", { class: "section", text: "Open in your browser" }),
+        el("ul", { class: "open-pages" }, ...items),
+      ),
+    ];
   }
 
   // ── tracks ──────────────────────────────────────────────────────────

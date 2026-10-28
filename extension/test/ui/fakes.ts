@@ -3,6 +3,7 @@ import type { AlbumInfo, PageScrape, PasteCommand, KeyCheck, Result, YoutubeAnsw
 import type { KeyValueStore, Stores } from "../../src/shared/storage";
 import type { WorkerApi } from "../../src/ui/api";
 import type { OptionalHost } from "../../src/lookups/http";
+import type { OpenTab } from "../../src/core/appleTabs";
 import type { ActiveTab, Env, HostPermissions } from "../../src/ui/controller";
 
 export function memoryStore(initial: Record<string, unknown> = {}): KeyValueStore & { data: Map<string, unknown> } {
@@ -166,6 +167,8 @@ export function fakeHosts(initial: Partial<Record<OptionalHost, boolean>> = {}):
 }
 
 export interface FakeEnv extends Env {
+  /** The Apple Music tabs the browser has open; change it to simulate the user opening or closing pages. */
+  openTabs: OpenTab[];
   api: FakeApi;
   hosts: FakeHosts;
   settingsStore: ReturnType<typeof memoryStore>;
@@ -177,6 +180,7 @@ export function fakeEnv(
   options: {
     api?: ApiScript;
     tab?: ActiveTab | null;
+    openTabs?: OpenTab[];
     settings?: unknown;
     session?: unknown;
     hosts?: Partial<Record<OptionalHost, boolean>>;
@@ -193,7 +197,10 @@ export function fakeEnv(
   const stores: Stores = { settings: settingsStore, session: sessionStore };
   const secretsStore = memoryStore(options.youtubeKey === undefined ? {} : { youtubeApiKey: options.youtubeKey });
   const tab = options.tab ?? null;
+  const openTabs = [...(options.openTabs ?? [])];
   return {
+    openTabs,
+    appleTabs: () => Promise.resolve([...openTabs]),
     api: fakeApi(options.api),
     hosts: fakeHosts(options.hosts),
     stores,

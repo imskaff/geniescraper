@@ -864,6 +864,15 @@ Two traps for the live scripts, both now handled:
 - Branded Chrome ignores `--load-extension` in recent versions, so the live scripts need the Playwright Chromium (`%LOCALAPPDATA%\ms-playwright\chromium-*\chrome-win64\chrome.exe`).
 - A profile that has run the extension before keeps its service worker cached under the same version, so a rebuilt extension can run the old worker ("Unrecognised request" for a new command). `live-genius.mjs` loads a throwaway copy of the build with a unique version instead of deleting anything in the profile.
 
+### Open Apple Music pages on the link screen
+
+Chosen over "the icon click copies the current page": listing every open album or song page includes that case, and the panel already fills the link box from the page in view.
+The panel asks the browser for tabs on `music.apple.com` (`chrome.tabs.query` with a URL pattern, covered by the host permission the extension already has, so no new permission and no new data leaves the browser).
+`src/core/appleTabs.ts` keeps only album and song pages, lists a page once, names it from the tab title (site name and invisible marks removed, the address's slug as fallback, capped at 120 characters) and puts the page in view first.
+The link screen shows them as "Open in your browser"; one press reads that page.
+The page in view is read in place, any other in a hidden window, as `detect` already did.
+The list refreshes when tabs are activated, updated or closed.
+
 ### Open risks
 
 - Genius's guidelines: per-press filling was chosen to stay inside them, and full automation is more automation.

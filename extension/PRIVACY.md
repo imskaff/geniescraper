@@ -36,6 +36,8 @@ The extension sends song titles and artist names (public text from the page you 
 Requests carry no cookies and no referrer.
 Apple Music pages are opened in a minimized window of your own browser (a background tab if that is not possible), as if you had visited them, and closed again when read.
 Because that is a real visit, Apple Music sees it as it would see any visit from your browser, including any cookies you already have for it; the extension reads only the page's public credits text.
+The side panel also lists the Apple Music album and song pages you already have open (their addresses and titles, read from your own tabs with the access to `music.apple.com` the extension already has), so you can pick one.
+That list stays in the panel; it is not stored and not sent anywhere.
 If you add the optional YouTube link by pasting one yourself, nothing is sent anywhere: the link is only copied into the Genius form.
 The extension does not send anything to the developer or to any other party.
 

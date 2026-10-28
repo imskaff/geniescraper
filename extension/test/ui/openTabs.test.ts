@@ -1,0 +1,150 @@
+import { afterEach, describe, expect, it } from "vitest";
+import type { OpenTab } from "../../src/core/appleTabs";
+import { PanelController } from "../../src/ui/controller";
+import { PanelView } from "../../src/ui/view";
+import { ALBUM, SINGLE, fakeEnv } from "./fakes";
+
+const flush = async (): Promise<void> => {
+  for (let i = 0; i < 5; i++) await new Promise((resolve) => setTimeout(resolve, 0));
+};
+
+const $ = (root: ParentNode, selector: string): HTMLElement => {
+  const node = root.querySelector<HTMLElement>(selector);
+  if (!node) throw new Error(`missing ${selector}`);
+  return node;
+};
+
+const SONG_URL = "https://music.apple.com/us/song/chihiro/1739659140";
+const tabs = (...list: [url: string, title: string, current?: boolean][]): OpenTab[] =>
+  list.map(([url, title, current], index) => ({ tabId: index + 1, url, title, current: current ?? false }));
+
+async function mount(options: Parameters<typeof fakeEnv>[0] = {}) {
+  document.body.replaceChildren();
+  const root = document.createElement("div");
+  document.body.append(root);
+  const env = fakeEnv(options);
+  const panel = await PanelController.create(env);
+  new PanelView(root, panel);
+  await flush();
+  return { root, env, panel };
+}
+
+afterEach(() => {
+  document.body.replaceChildren();
+});
+
+describe("the open Apple Music pages on the link screen", () => {
+  it("lists each open album or song, the page the user is on first and marked, with what each is", async () => {
+    const { root } = await mount({
+      openTabs: tabs(
+        [ALBUM.url, "‎Demo Album - Album by Demo Artist - Apple Music"],
+        [SONG_URL, "Chihiro - Song by Demo Artist - Apple Music", true],
+      ),
+    });
+    const section = $(root, '[data-key="open-pages"]');
+    expect(section.querySelector("h3")?.textContent).toBe("Open in your browser");
+    const items = [...section.querySelectorAll<HTMLElement>("li")];
+    expect(items.map((li) => li.querySelector(".open-name")?.textContent)).toEqual([
+      "Chihiro - Song by Demo Artist",
+      "Demo Album - Album by Demo Artist",
+    ]);
+    expect(items.map((li) => li.querySelector(".tag")?.textContent)).toEqual(["Song · this page", "Album"]);
+  });
+
+  it("is not there when no Apple Music page is open", async () => {
+    const { root } = await mount({ openTabs: [] });
+    expect(root.querySelector('[data-key="open-pages"]')).toBeNull();
+    // The link box and the Scrape button are as they were.
+    expect(root.querySelector("#link")).not.toBeNull();
+  });
+
+  it("leaves out pages that are not an album or a song", async () => {
+    const { root } = await mount({
+      openTabs: tabs(["https://music.apple.com/us/browse", "Browse - Apple Music"], [ALBUM.url, "Demo Album"]),
+    });
+    expect(root.querySelectorAll('[data-key="open-pages"] li')).toHaveLength(1);
+  });
+
+  it("gets the tracks of a page with one click, and goes on to the track list", async () => {
+    const { root, env, panel } = await mount({ openTabs: tabs([ALBUM.url, "Demo Album - Apple Music"]) });
+    $(root, '[data-key="open-page-0"]').click();
+    await flush();
+    expect(env.api.calls).toContain(`detect:${ALBUM.url}:undefined`);
+    expect(panel.state.session.screen).toBe("tracks");
+    expect($(root, "h2").textContent).toBe(ALBUM.albumTitle);
+  });
+
+  it("reads the page the user is on in place, as the link box always did, and the others in a hidden window", async () => {
+    const current = await mount({
+      tab: { tabId: 9, url: SONG_URL },
+      openTabs: tabs([SONG_URL, "Chihiro - Apple Music", true]),
+      api: { detect: () => Promise.resolve({ ok: true, data: SINGLE }) },
+    });
+    $(current.root, '[data-key="open-page-0"]').click();
+    await flush();
+    expect(current.env.api.calls).toContain(`detect:${SONG_URL}:9`);
+
+    const other = await mount({
+      tab: { tabId: 9, url: "https://example.com/" },
+      openTabs: tabs([ALBUM.url, "Demo Album - Apple Music"]),
+    });
+    $(other.root, '[data-key="open-page-0"]').click();
+    await flush();
+    expect(other.env.api.calls).toContain(`detect:${ALBUM.url}:undefined`);
+  });
+
+  it("names every item for a screen reader by what pressing it does, and says which page the user is on", async () => {
+    const { root } = await mount({
+      openTabs: tabs([ALBUM.url, "Demo Album - Apple Music"], [SONG_URL, "Chihiro - Apple Music", true]),
+    });
+    expect($(root, '[data-key="open-page-0"]').getAttribute("aria-label")).toBe(
+      "Get tracks for Chihiro, the page you are on",
+    );
+    expect($(root, '[data-key="open-page-1"]').getAttribute("aria-label")).toBe("Get tracks for Demo Album");
+  });
+
+  it("shows a tab's title as text, never as markup", async () => {
+    const hostile = '<img src=x onerror="window.__pwned=1"> - Apple Music';
+    const { root } = await mount({ openTabs: tabs([ALBUM.url, hostile]) });
+    expect(root.querySelector("img")).toBeNull();
+    expect($(root, ".open-name").textContent).toContain("<img");
+    expect((window as unknown as Record<string, unknown>)["__pwned"]).toBeUndefined();
+  });
+
+  it("follows the browser: a page opened or closed later changes the list when the panel refreshes", async () => {
+    const { root, env, panel } = await mount({ openTabs: [] });
+    expect(root.querySelector('[data-key="open-pages"]')).toBeNull();
+    env.openTabs.push(...tabs([ALBUM.url, "Demo Album - Apple Music"]));
+    await panel.refreshPage();
+    await flush();
+    expect(root.querySelectorAll('[data-key="open-pages"] li')).toHaveLength(1);
+    env.openTabs.length = 0;
+    await panel.refreshPage();
+    await flush();
+    expect(root.querySelector('[data-key="open-pages"]')).toBeNull();
+  });
+
+  it("copes with the browser refusing to list its tabs", async () => {
+    const { root, env, panel } = await mount();
+    env.appleTabs = () => Promise.reject(new Error("no access"));
+    await expect(panel.refreshPage()).resolves.toBeUndefined();
+    await flush();
+    expect(root.querySelector('[data-key="open-pages"]')).toBeNull();
+  });
+
+  it("cannot be pressed while a page is being read", async () => {
+    const { root, panel } = await mount({ openTabs: tabs([ALBUM.url, "Demo Album"]) });
+    void panel.detect(ALBUM.url);
+    await flush();
+    const maybe = root.querySelector<HTMLButtonElement>('[data-key="open-page-0"]');
+    // Either the list is gone with the screen, or its buttons are off while the read runs.
+    expect(maybe === null || maybe.disabled).toBe(true);
+  });
+
+  it("is not on the other screens", async () => {
+    const { root, panel } = await mount({ openTabs: tabs([ALBUM.url, "Demo Album"]) });
+    await panel.detect(ALBUM.url);
+    await flush();
+    expect(root.querySelector('[data-key="open-pages"]')).toBeNull();
+  });
+});
