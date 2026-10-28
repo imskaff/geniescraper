@@ -118,6 +118,27 @@ describe("youtubePages", () => {
     expect(await youtubePages(() => Promise.resolve("<html></html>"), gate()).watch("x")).toBeNull();
   });
 
+  it("does not count an ordinary page that holds no data as a failure: only a refusal means YouTube is limiting us", async () => {
+    const g = gate();
+    const pages = youtubePages(() => Promise.resolve("<html><body>a perfectly ordinary page</body></html>"), g);
+    for (let i = 0; i < 10; i++) expect(await pages.watch("x")).toBeNull();
+    expect(g.coolingDown).toBe(false);
+  });
+
+  it.each([
+    [
+      "Google's unusual-traffic page",
+      "<html>Our systems have detected unusual traffic from your computer network</html>",
+    ],
+    ["a /sorry/ redirect page", '<html><a href="https://www.google.com/sorry/index?continue=x">here</a></html>'],
+    ["the consent wall", '<html><form action="https://consent.youtube.com/save"></form></html>'],
+  ])("counts %s as a failure, so a few of them rest the gate", async (_name, page) => {
+    const g = gate();
+    const pages = youtubePages(() => Promise.resolve(page), g);
+    for (let i = 0; i < 3; i++) await pages.search("x");
+    expect(g.coolingDown).toBe(true);
+  });
+
   it("asks for nothing, and counts no failure, while the permission is not granted", async () => {
     let asked = 0;
     const getText: GetText = () => {
@@ -138,6 +159,81 @@ describe("youtubePages", () => {
       () => Promise.reject(new Error("x")),
     );
     expect(await pages.search("x")).toBeNull();
+  });
+});
+
+describe("realYoutube with the user's key", () => {
+  const KEY = "AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q";
+  const quota = { status: 403, body: { error: { code: 403, errors: [{ reason: "quotaExceeded" }] } } };
+  const empty = { status: 200, body: { items: [] } };
+  const base = {
+    granted: () => Promise.resolve(true),
+    apiGranted: () => Promise.resolve(true),
+  };
+
+  it("stops asking Google once its daily allowance is used up, and keeps saying so, until the allowance is back", async () => {
+    let asked = 0;
+    let now = Date.UTC(2026, 9, 28, 20, 0, 0); // 13:00 in Pacific time
+    const service = realYoutube({
+      ...base,
+      getKey: () => Promise.resolve(KEY),
+      getResult: () => {
+        asked++;
+        return Promise.resolve(quota);
+      },
+      getText: () => Promise.resolve(null),
+      now: () => now,
+    });
+    const first = await service.find("SOS", "SZA");
+    expect(first.keyProblem).toBe("quota");
+    const askedAfterFirst = asked;
+    expect(askedAfterFirst).toBeGreaterThan(0);
+
+    // Every later song goes straight to the pages, and the answer still names the key's problem.
+    const second = await service.find("Kill Bill", "SZA");
+    expect(second.keyProblem).toBe("quota");
+    expect(asked).toBe(askedAfterFirst);
+
+    // The allowance resets at midnight Pacific time: after it, Google is asked again.
+    now = Date.UTC(2026, 9, 29, 7, 30, 0); // 00:30 the next day in Pacific time
+    await service.find("Snooze", "SZA");
+    expect(asked).toBeGreaterThan(askedAfterFirst);
+  });
+
+  it("asks again at once when the user saves a different key", async () => {
+    let asked = 0;
+    let key = KEY;
+    const service = realYoutube({
+      ...base,
+      getKey: () => Promise.resolve(key),
+      getResult: () => {
+        asked++;
+        return Promise.resolve(quota);
+      },
+      getText: () => Promise.resolve(null),
+    });
+    await service.find("SOS", "SZA");
+    const before = asked;
+    key = "AIzaSyB9z8Y7x6W5v4U3t2S1r0Q9p8O7n6M5l4K";
+    await service.find("Kill Bill", "SZA");
+    expect(asked).toBeGreaterThan(before);
+  });
+
+  it("falls back to reading YouTube's pages when Google finds nothing, instead of calling that final", async () => {
+    let pagesAsked = 0;
+    const service = realYoutube({
+      ...base,
+      getKey: () => Promise.resolve(KEY),
+      getResult: () => Promise.resolve(empty),
+      getText: () => {
+        pagesAsked++;
+        return Promise.resolve(null);
+      },
+    });
+    const answer = await service.find("SOS", "SZA");
+    expect(answer.url).toBe("");
+    expect(answer.keyProblem).toBe("");
+    expect(pagesAsked).toBeGreaterThan(0);
   });
 });
 

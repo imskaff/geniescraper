@@ -715,7 +715,7 @@ Margins, paddings and gaps had drifted (6, 10, 14, 20 and 22 px next to the 4, 8
 - A block spaces itself from the block before it only once: a stack or row inside a stack, a title or a disclosure inside a stack, and the list under a help line no longer add a second margin, and the doubled gap in the track picker is gone.
 Checked in a browser at 400 px wide on the credits, track picker, paste and settings screens (a throwaway preview built from the real view with sample data), not in the real side panel.
 
-## 33. Paste next track starts by itself after 15 seconds
+## 33. Paste next track starts by itself after a countdown (15 seconds at first, now 0: off)
 
 When a track has been pasted and another track with credits is waiting, the finished screen counts down from 15 on the "Paste next track" button and starts that track when it reaches zero, unless the user gets there first (a click, or leaving the screen, cancels it).
 It waits while the pointer is over the panel or a button has focus, like the menu countdown, and only one countdown runs at a time: after the last track the 30-second return to the main menu takes over.
@@ -737,7 +737,7 @@ Still not done: the slow-load warning (credits that did not appear in time versu
 
 ## 35. The two countdowns are settings
 
-The seconds before the finished screen goes back to the main menu (`returnSeconds`, default 30) and before it starts the next track (`nextTrackSeconds`, default 15) are settings, in "Pasting on Genius" beside the Go-back checkbox.
+The seconds before the finished screen goes back to the main menu (`returnSeconds`, default 30) and before it starts the next track (`nextTrackSeconds`, default 0 since the third hands-on round: it waits for the button) are settings, in "Pasting on Genius" beside the Go-back checkbox.
 - Both are whole seconds from 5 to 120; anything else stored is clamped, and anything that is not a number falls back to the default (`COUNTDOWN_RANGE` in `shared/settings.ts`).
 - `nextTrackSeconds` also accepts 0, which means "do not start it by itself": the button stays, with no countdown. The return to the menu has no zero: the checkbox turns it off.
 - A change applies from the next countdown; setting the next-track seconds to 0 stops one that is running. Turning off the menu return no longer stops a running next-track countdown (it used to cancel both).
@@ -830,6 +830,17 @@ The button is a plain button whose name says what pressing it does ("Auto-paste:
 The review screen keeps Start pasting as the first, glowing button, with Step by step quiet beside it.
 
 The hands-on test also showed "Something went wrong while reading the page: Unrecognised request." on Start pasting: the panel was newer than the extension's background worker, which the browser had kept from before the update, so it rejected the new `paste-auto-start`. The router accepts every paste command (a test pins that), so the panel now says what happened, to reload the extension on chrome://extensions, and that Step by step still works; a new version number also makes the browser take the new worker.
+
+### Links not found while an album is read (third hands-on round)
+
+Symptom: after reading an album some tracks say no YouTube link was found, and opening one makes it look again and usually find it.
+Causes found in the code, each now fixed with a test written first:
+- With a saved key every track was looked up at once. When the key's daily allowance was used up each lookup tried Google, failed, and fell back to reading YouTube's pages, so a whole album hit YouTube together. The panel now always asks for one track at a time, with a key too.
+- The gate's cool-down (a minute after three failures in a row) counted any page that lacked the expected data as a failure, so a few ordinary misses locked everything out. Only a failed request or a refusal page (unusual traffic, a /sorry/ redirect, the consent wall) counts now.
+- Nothing asked again by itself: tracks caught in a cool-down stayed "not found" or "not checked" until opened. They are now asked again after 45 seconds, up to three times (`YOUTUBE_RETRY_MS`), and a track whose lookup came back empty gets one more try when it is opened.
+- With a key, Google's empty answer was taken as final although it is one thin search per kind. The normal page search now runs as a second opinion.
+- A key Google refuses is not asked again for every song: an allowance that is used up waits until midnight Pacific time, a key that was not accepted waits ten minutes, and saving a different key clears either at once.
+The next-track countdown (section 33) now defaults to 0, which waits for the button.
 
 ### A choice that is not spelled as Apple spells it, and a clearer Settings screen (second hands-on round)
 

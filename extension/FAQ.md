@@ -19,8 +19,9 @@ A step you switched off in Settings is never reported as missing.
 ## It says "YouTube is limiting requests right now"
 
 YouTube refuses a burst of searches from one address.
-The extension asks for one track at a time and stops at the first refusal; the tracks it did not get to say "Not checked".
-Wait a minute and open the track to try again.
+The extension asks for one track at a time, with your key too, and stops at the first refusal; the tracks it did not get to say "Not checked".
+After about 45 seconds it looks again by itself, up to three times, so most of them fill in without you doing anything.
+Opening a track also tries again, once, if its lookup found nothing.
 For a long album, add your own free YouTube key in Settings (the panel walks you through it): Google's official service does not have this limit, but its free daily allowance covers a limited number of songs (roughly fifty, by our estimate).
 You can always use "Find on YouTube" and paste the link yourself.
 

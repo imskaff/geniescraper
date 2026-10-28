@@ -139,6 +139,10 @@ export function buildSong(album: AlbumInfo, result: Pick<TrackResult, "url">, sc
   };
 }
 
+/** How long the lookups rest before a track YouTube refused is asked about again, and how many times that happens. */
+export const YOUTUBE_RETRY_MS = 45_000;
+const YOUTUBE_RETRY_LIMIT = 3;
+
 /** The longest Start pasting waits for a YouTube link before starting without it. */
 export const YOUTUBE_WAIT_MS = 8000;
 
@@ -509,8 +513,21 @@ export class PanelController {
     this.update({ youtubeLinkError: "" });
     const closing = this.current.session.current === index;
     await this.updateSession({ current: closing ? null : index });
+    if (closing) return;
+    // A lookup that came back empty is asked once more when the user opens the track: the first answer may have come
+    // from a thin search, and the user is now looking at exactly this link. One still running is left alone.
+    const song = this.current.session.results.find((r) => r.index === index)?.song;
+    if (
+      song &&
+      !song.youtubeUrl &&
+      this.current.youtubeNotes[index] === MESSAGES.noYoutubeShort &&
+      !this.youtubeReasked.has(index)
+    ) {
+      this.youtubeReasked.add(index); // once: a track that truly has no video is not asked about at every opening
+      this.youtubeLookups.delete(index);
+    }
     // Opened credits get their link looked up now, as the user is about to look at (and maybe fix) it.
-    if (!closing) void this.ensureYoutube(index);
+    void this.ensureYoutube(index);
   }
 
   /** The first track, in album order, whose credits are in and give something to paste; Start pasting begins here. */
@@ -695,31 +712,70 @@ export class PanelController {
    */
   private queueYoutube(index: number): void {
     if (!this.youtubeAskable()) return;
-    const { hosts, youtubeKey } = this.current;
-    if (youtubeKey.saved && hosts.youtubeApi) {
-      void this.ensureYoutube(index);
-      return;
-    }
+    // Always one track at a time, with the user's key too: the key may be refused (its allowance used up) and each
+    // lookup then reads YouTube's pages, so a whole album asked at once was a burst that got the album refused.
     const epoch = this.youtubeEpoch;
     if (!this.youtubeLookups.has(index)) this.note(index, MESSAGES.lookingForYoutubeShort);
     this.youtubeChain = this.youtubeChain.then(async () => {
       if (epoch !== this.youtubeEpoch) return;
       if (this.youtubePaused) {
         this.note(index, MESSAGES.youtubeNotChecked);
+        this.lookAgainLater(index);
         return;
       }
       await this.ensureYoutube(index);
       if (epoch !== this.youtubeEpoch) return;
       const song = this.current.session.results.find((r) => r.index === index)?.song;
       if (song?.youtubeUrl) this.note(index, "");
-      // A refused or failed lookup is forgotten so it can be asked again; that is the sign to stop sending more.
-      else if (song && !this.youtubeLookups.has(index)) this.youtubePaused = true;
+      // A refused or failed lookup is forgotten so it can be asked again; that is the sign to stop sending more, and to
+      // look again later by itself.
+      else if (song && !this.youtubeLookups.has(index)) {
+        this.youtubePaused = true;
+        this.lookAgainLater(index);
+      }
     });
+  }
+
+  /** Tracks whose lookup was refused or never made, to be asked again after a rest. */
+  private readonly youtubeRetries = new Set<number>();
+  private readonly youtubeAttempts = new Map<number, number>();
+  /** Tracks whose empty answer has already been given the one more try that opening them brings. */
+  private readonly youtubeReasked = new Set<number>();
+  private youtubeRetryTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /**
+   * A track whose link could not be looked up because YouTube was limiting requests is tried again after a rest, a few
+   * times, so the user is not left to open each track to get it going. Past the limit it is left to them.
+   */
+  private lookAgainLater(index: number): void {
+    if ((this.youtubeAttempts.get(index) ?? 0) >= YOUTUBE_RETRY_LIMIT) return;
+    this.youtubeRetries.add(index);
+    if (this.youtubeRetryTimer !== undefined) return;
+    const epoch = this.youtubeEpoch;
+    this.youtubeRetryTimer = setTimeout(() => {
+      this.youtubeRetryTimer = undefined;
+      if (epoch !== this.youtubeEpoch) return;
+      const again = [...this.youtubeRetries].sort((a, b) => a - b);
+      this.youtubeRetries.clear();
+      // The rest is over: the chain may ask again.
+      this.youtubePaused = false;
+      for (const index of again) {
+        const song = this.current.session.results.find((r) => r.index === index)?.song;
+        if (!song || song.youtubeUrl || !this.youtubeAskable()) continue;
+        this.youtubeAttempts.set(index, (this.youtubeAttempts.get(index) ?? 0) + 1);
+        this.queueYoutube(index);
+      }
+    }, YOUTUBE_RETRY_MS);
   }
 
   private forgetYoutube(): void {
     this.youtubeEpoch++;
     this.youtubePaused = false;
+    clearTimeout(this.youtubeRetryTimer);
+    this.youtubeRetryTimer = undefined;
+    this.youtubeRetries.clear();
+    this.youtubeAttempts.clear();
+    this.youtubeReasked.clear();
     this.youtubeLookups.clear();
     if (this.current.youtubeLinkError) this.update({ youtubeLinkError: "" });
     this.keyNote = "";
