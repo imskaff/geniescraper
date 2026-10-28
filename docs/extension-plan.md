@@ -200,7 +200,7 @@ Each slice ends working, tested and committable.
 | 7 | iTunes cover lookup (done) | Replays `tests/fixtures/lookups/covers` against the golden artwork; live lookup checked in `npm run live:panel` |
 | 8 | Deezer and YouTube lookups with optional permissions (done, with the optional YouTube key; sections 17 to 21) | Replays `tests/fixtures/lookups/youtube` and matches `tests/golden/youtube.json` |
 | 9 | Store readiness: icons, locales, privacy policy, listing text, permission justifications, packaging script (done, section 22) | Zip validated; manifest contract tests green |
-| 10 | Edge check, Safari converter notes | Documented result |
+| 10 | Edge check, Safari converter notes (done, section 23) | Documented result |
 
 ## 9. Open items
 
@@ -514,3 +514,41 @@ Also fixed: the record of which tracks had been asked about was keyed by track n
 - **CI.** The extension job runs `npm run package` after the build.
 - **Still by hand.** Screenshots (1280x800), the 440x280 promotional tile, hosting the privacy policy at a public URL, and the developer account and upload.
   I did not submit anything.
+
+## 23. Slice 10: Edge and Safari
+
+### Edge: checked, works unchanged
+
+The same unpacked build was loaded in Microsoft Edge 156 (`msedge.exe`, passed to the live scripts with `--chrome`).
+- `npm run live:panel` (the real panel and worker against live Apple Music: album read through hidden tabs, credits, exact cover, paste screen, finished screen, settings, restore after reopening) passed every check.
+- `npm run live:sidepanel` (the real side panel opened for the window, prefill from the active tab, tab switching, album read in place with no extra tab, the user's tabs untouched) passed every check.
+- Not run in Edge: `npm run live:genius`, which needs a signed-in Genius profile; the Genius content script uses only standard DOM APIs and no browser-specific ones.
+No code change was needed for Edge.
+
+### Safari: not tested (needs a Mac); what to expect
+
+Safari is a separate later job: it needs macOS, Xcode and, to distribute, an Apple developer account, none of which is available here.
+Nothing below was run.
+
+How to convert, on a Mac:
+
+```
+npm run build
+xcrun safari-web-extension-converter dist --project-location ../safari --app-name "Geniescraper" --bundle-identifier <your.reverse.domain.geniescraper>
+```
+
+Open the generated Xcode project, run it, then in Safari enable the extension (Settings, Extensions) and, for an unsigned build, Develop, Allow Unsigned Extensions.
+Safari asks the user to allow each website, so Apple Music and Genius must be set to Allow.
+
+What the converter will not fix, from the APIs the extension uses:
+
+| Area | Issue | Needed |
+|------|-------|--------|
+| Side panel | Safari has no `chrome.sidePanel` and ignores the `side_panel` key | The worker already skips the call when the API is absent (done in this slice). The UI needs a toolbar popup (`action.default_popup` pointing at `ui/panel.html`) for Safari; a popup closes when it loses focus, so the session kept in `storage.session` carries the work, and the hotkey flow on Genius does not need the panel open. |
+| Optional hosts | `permissions.request` for Deezer, YouTube and Google's service behaves per Safari's own website-permission model | Test the Settings boxes; the prompt may be a Safari one rather than Chrome's |
+| Service worker | MV3 service workers and Safari's background lifetime differ from Chrome's; the keep-alive ping may not apply | Test a whole album read and a paste |
+| Hidden tabs | Safari may throttle or refuse to load background tabs the way Chrome does not | Test the credits read; fall back to reading the user's own tab |
+| Clipboard | "Paste from clipboard" needs a user gesture and may be refused | Typing with Ctrl+V already works |
+| Manifest keys | `minimum_chrome_version` and `side_panel` are ignored with warnings | None |
+
+Everything else used (`storage`, `scripting.executeScript`, `tabs`, `runtime` messaging, content scripts) is supported by current Safari.

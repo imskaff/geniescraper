@@ -29,7 +29,8 @@ const route = createRouter(
 );
 
 // The toolbar button opens the side panel. The setting persists, so this is harmless on every worker start.
-chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => undefined);
+// Browsers without a side panel (Safari) have no such API: the worker must still start there.
+if ("sidePanel" in chrome) chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => undefined);
 
 const GENIUS_ORIGIN = "https://genius.com";
 
