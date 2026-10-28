@@ -590,14 +590,11 @@ a.link-button {
   color: var(--text);
 }
 
-/* The step that must not be skipped is filled yellow, like the primary buttons. */
-.how-to li.highlight {
+/* Only the title of the step that must not be skipped is filled yellow, like a highlighter. */
+.how-to li.highlight > strong {
+  display: inline-block;
+  padding: 1px 8px;
   color: var(--accent-ink);
   background: var(--accent);
-  border-radius: 6px;
-  padding: 8px 10px 8px 6px;
-}
-
-.how-to li.highlight .step-detail {
-  color: var(--accent-ink);
+  border-radius: 4px;
 }
