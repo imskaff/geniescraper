@@ -742,3 +742,16 @@ The seconds before the finished screen goes back to the main menu (`returnSecond
 - `nextTrackSeconds` also accepts 0, which means "do not start it by itself": the button stays, with no countdown. The return to the menu has no zero: the checkbox turns it off.
 - A change applies from the next countdown; setting the next-track seconds to 0 stops one that is running. Turning off the menu return no longer stops a running next-track countdown (it used to cancel both).
 - The label and the first-time set-up no longer say "30 seconds", since the number is now the user's.
+
+## 36. Store readiness, support and CI
+
+- **CI on GitHub.** The branch was pushed and the `extension` job ran on Linux for the first time.
+  It failed on one thing the local run could not show: the saved Apple Music pages are checked out with CRLF on Windows and LF on Linux, and a DOM that computes `innerText` ran the footer's date and "23 songs" together into a count of 202223 for LF files.
+  The footer reads now use its own text (a test covers both line endings, and the whole suite was also run locally against LF copies of every fixture).
+  The second run passed: format, lint, types, tests, build and package.
+- **Privacy.** `PRIVACY.md` and `store/listing.md` now say that the YouTube lookup runs for every track read once the user has turned it on, that video ids go to Google with a key, and that Apple Music is read in a minimized window. A test fails if the lookup or worker code hardcodes an address the policy does not name.
+  `store/listing.md` has suggested answers for the dashboard's data-use questions, to check against its current wording.
+- **Support.** `.github/ISSUE_TEMPLATE/` (an extension bug form that says what not to paste, an idea form, and a link to the FAQ), `extension/FAQ.md`, and weekly grouped Dependabot updates for the extension's npm packages and the workflow actions.
+- **Releasing.** `extension/RELEASING.md`: version, checks, a manual pass for Chrome and Edge on Windows and macOS, the live checks kept apart, upload, and what to do after.
+  There is no changelog file: release notes go in the GitHub release.
+- **Store images.** `node scripts/store-assets.mjs --chrome <chrome.exe>` renders four 1280x800 screenshots and the 440x280 tile from the real panel with sample data into `store/assets/` (not committed).

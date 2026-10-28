@@ -83,5 +83,8 @@ Link to `extension/PRIVACY.md` in the project's repository (any public URL for t
 
 ## Assets still to prepare by hand
 
-- At least one 1280x800 or 640x400 screenshot of the side panel, a small promotional tile (440x280), and a store icon (128x128, already in `icons/`).
+- Screenshots (1280x800) and the promotional tile (440x280) are made by `node scripts/store-assets.mjs --chrome <chrome.exe>` into `store/assets/` (not committed).
+  They show the real panel with sample data; look at each one before uploading.
+- The store icon (128x128) is already in `icons/`.
 - Do not use Apple or Genius logos.
+- Still by hand: a support contact (the repository's issue page is the default) and the public address of `PRIVACY.md`.
