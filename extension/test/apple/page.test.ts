@@ -6,6 +6,7 @@ import {
   readCopyright,
   readCoverUrl,
   readTitleArtist,
+  readTrackCount,
   readTrackTitle,
   readTrackTitles,
 } from "../../src/apple/page";
@@ -19,6 +20,24 @@ const SONGS = CASES.filter((c) => c.url.includes("/song/"));
 
 // Albums whose page header shows only motion artwork and an editorial still, never the album artwork.
 const HEADER_WITHOUT_ARTWORK = new Set(["rodrigo-sour-t6"]);
+
+describe("the album footer, whatever the line endings of the saved page", () => {
+  // The footer's lines are separated by a newline in the markup. A DOM that computes innerText can drop a lone
+  // LF there ("2022" and "23 songs" run together into a count of 202223), which is what CI's Linux checkout did.
+  const footer = (eol: string): Document =>
+    new DOMParser().parseFromString(
+      `<body><p data-testid="tracklist-footer-description">December 9, 2022${eol}23 songs, 1 hour 8 minutes${eol}℗ 2022 Top Dawg Entertainment</p></body>`,
+      "text/html",
+    );
+
+  it.each([
+    ["LF", "\n"],
+    ["CRLF", "\r\n"],
+  ])("reads the track count and the copyright with %s line endings", (_name, eol) => {
+    expect(readTrackCount(footer(eol))).toBe(23);
+    expect(readCopyright(footer(eol))[0]).toBe("℗ 2022 Top Dawg Entertainment");
+  });
+});
 
 describe("readTrackTitles", () => {
   const rows = (...names: string[]): Document =>

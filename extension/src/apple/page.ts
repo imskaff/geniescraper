@@ -59,10 +59,13 @@ export function readTitleArtist(doc: Document): [title: string, artist: string] 
   return [title || firstText(doc, TITLE_SELECTORS), artist || firstText(doc, ARTIST_SELECTORS)];
 }
 
-/** The first ℗ and © lines of an album page footer ("", "" on song pages, which have no footer). */
+/**
+ * The first ℗ and © lines of an album page footer ("", "" on song pages, which have no footer). The footer is a plain
+ * paragraph, so its own text is read: a computed innerText can run its lines together in a DOM without layout.
+ */
 export function readCopyright(doc: Document): [phonographic: string, copyright: string] {
   const footer = doc.querySelector(FOOTER_SELECTOR);
-  return splitCopyright(footer ? visibleText(footer) : "");
+  return splitCopyright(footer ? footer.textContent : "");
 }
 
 /** Title of the 1-based `trackIndex` row of an album tracklist ("" when there is no such row). */
@@ -103,7 +106,7 @@ export function readTrackUrls(doc: Document, trackCount: number): string[] {
 /** Number of songs in the album footer ("12 songs, 45 minutes"); 1 for songs and singles without one. */
 export function readTrackCount(doc: Document): number {
   const footer = doc.querySelector(FOOTER_SELECTOR);
-  return footer ? trackCountFromFooter(visibleText(footer)) : 1;
+  return footer ? trackCountFromFooter(footer.textContent) : 1;
 }
 
 /** The header artwork URLs in DOM order, then the legacy meta image tags. */
