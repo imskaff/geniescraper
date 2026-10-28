@@ -1,6 +1,6 @@
 [project]
 name = "geniescraper"
-version = "0.5.1"
+version = "0.5.2"
 description = "Scrape Apple Music credits and paste them into Genius with a hotkey assistant."
 readme = "README.md"
 license = "MIT"
