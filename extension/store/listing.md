@@ -23,8 +23,8 @@ How it works:
 
 1. Open the side panel and paste an Apple Music album or song link (or open the page and the panel offers it).
 2. Choose the tracks you want, and review the credits the extension read.
-3. Press Start pasting, open the song's Edit Metadata form on Genius, and press F8 to fill one field at a time.
-   F7 goes back and the panel can skip a step.
+3. Open the song's Edit Metadata form on Genius and press Start pasting: the extension fills the fields by itself, one after another.
+   Prefer to stay in control? Step by step fills one field per key press (F8), F7 goes back, and the panel can skip a step.
 
 What it fills: writers, producers, other roles and their artists, the phonographic and copyright lines, a YouTube link, and the cover art link.
 Roles are entered under the names Genius uses.
@@ -32,7 +32,8 @@ Roles are entered under the names Genius uses.
 You stay in control:
 
 - It never presses Save on Genius. You check the form and save it yourself.
-- It fills one field per key press, and when Genius has no exact match for a name it leaves the text for you to choose.
+- It stops the moment you click or type in the form, press Esc or Pause, or close the panel, and you resume when you are ready.
+- When Genius has no exact match for a name it leaves the text for you to choose, then carries on after you do.
 - Hotkeys, what to include, and more are in Settings.
 
 Optional extras, off until you turn them on (Chrome asks first):

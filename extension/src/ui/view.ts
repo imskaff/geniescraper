@@ -232,16 +232,38 @@ export class PanelView {
     return el("h2", { text, attrs: { tabindex: "-1" } });
   }
 
-  /** The Start pasting button for the track on screen, or nothing when there is nothing to paste yet. */
-  private startButton(state: PanelState, busy: boolean): HTMLElement | null {
-    const index = this.startableIndex(state);
-    if (index === null) return null;
-    const button = this.button("Start pasting", "primary", "start", () => void this.panel.startPaste(index), busy);
-    // It glows while it is the thing to do next, not while it cannot be pressed.
-    if (!busy) button.classList.add("glow");
-    const title = state.session.results.find((r) => r.index === index)?.song?.title;
-    if (title) button.setAttribute("aria-label", `Start pasting ${title}`);
+  /**
+   * The automatic button: it glows, with a flowing gradient and sparkles, so it reads as the special thing the app
+   * does. The look is all stylesheet (the sparkles are an empty decorative span), so its name and text stay plain.
+   */
+  private magicButton(text: string, key: string, onClick: () => void, disabled: boolean): HTMLElement {
+    const button = this.button(text, "primary", key, onClick, disabled);
+    button.classList.add("magic");
+    button.append(el("span", { class: "sparkles", attrs: { "aria-hidden": "true" } }));
     return button;
+  }
+
+  /**
+   * The ways to start pasting the track on screen, or nothing when there is nothing to paste yet: Start pasting does
+   * it by itself, Step by step is the Next key, one field per press.
+   */
+  private startButtons(state: PanelState, busy: boolean): HTMLElement[] {
+    const index = this.startableIndex(state);
+    if (index === null) return [];
+    const title = state.session.results.find((r) => r.index === index)?.song?.title;
+    const auto = this.magicButton("Start pasting", "start", () => void this.panel.startPaste(index, "auto"), busy);
+    const manual = this.button(
+      "Step by step",
+      "quiet",
+      "start-manual",
+      () => void this.panel.startPaste(index, "manual"),
+      busy,
+    );
+    if (title) {
+      auto.setAttribute("aria-label", `Start pasting ${title} automatically`);
+      manual.setAttribute("aria-label", `Step by step: ${title}, one key press per field`);
+    }
+    return [auto, manual];
   }
 
   /** The track whose credits are on screen and can be pasted now, or null. */
@@ -431,7 +453,7 @@ export class PanelView {
         { class: "row" },
         busy ? this.button("Stop", "quiet", "stop", () => void this.panel.stop(), false) : null,
         // Start pasting sits with the other ways on and off this screen, so there is one row to look at.
-        this.startButton(state, busy),
+        ...this.startButtons(state, busy),
         // One song has no list to go back to.
         (session.album?.trackCount ?? 0) > 1
           ? this.button("Back to tracks", "quiet", "back", () => void this.panel.backToTracks(), busy)
@@ -725,13 +747,7 @@ export class PanelView {
       el(
         "div",
         { class: "row" },
-        this.button(
-          `Fill next (${settings.nextHotkey})`,
-          "primary",
-          "fill",
-          () => void this.panel.fillNext(),
-          finished || paste.busy,
-        ),
+        ...this.pasteControls(state, finished),
         this.button(
           `Back (${settings.backHotkey})`,
           "quiet",
@@ -751,6 +767,28 @@ export class PanelView {
       doneCount > 0 ? this.disclosure("stepsdone", `Steps done (${String(doneCount)})`, doneSteps) : null,
       total - doneCount > 0 ? this.disclosure("steps", `Steps left (${String(total - doneCount)})`, steps, true) : null,
     ].filter((node): node is HTMLElement => node !== null);
+  }
+
+  /**
+   * The main controls of the paste screen, by how it is going: running by itself (Pause, and calm), paused (Resume,
+   * with the Next key still there for one step), or step by step (Fill next, with the automatic button offered).
+   */
+  private pasteControls(state: PanelState, finished: boolean): HTMLElement[] {
+    const { paste, settings } = state;
+    const fill = this.button(
+      `Fill next (${settings.nextHotkey})`,
+      paste.auto === "paused" ? "quiet" : "primary",
+      "fill",
+      () => void this.panel.fillNext(),
+      finished || paste.busy,
+    );
+    if (paste.auto === "running") {
+      return [this.button("Pause", "primary", "auto-pause", () => void this.panel.pauseAutoPaste(), false)];
+    }
+    if (paste.auto === "paused") {
+      return [this.magicButton("Resume", "auto-resume", () => void this.panel.autoPaste(), finished), fill];
+    }
+    return [fill, this.magicButton("Auto-paste", "auto-start", () => void this.panel.autoPaste(), finished)];
   }
 
   /** The error above the step counter. A new error, or the same one on a new attempt, plays the attention animation once. */

@@ -4,7 +4,8 @@
 
 1. Open the side panel from the toolbar button and paste an Apple Music album or song link.
 2. Pick the tracks and press Get credits.
-3. Open the Genius song's Edit Metadata form in a tab, press Start pasting, and press your fill key (F8 by default) once per step.
+3. Open the Genius song's Edit Metadata form in a tab and press Start pasting: the extension fills the fields by itself.
+   (Step by step fills one field per press of your fill key, F8 by default.)
 4. Check the form on Genius, then press Save there yourself. The extension never saves for you.
 
 ## A track says "Needs a look". What does that mean?
@@ -27,6 +28,19 @@ You can always use "Find on YouTube" and paste the link yourself.
 
 That is your own key's daily quota.
 It resets at midnight Pacific time. Until then the extension falls back to YouTube's pages, or you can paste links yourself.
+
+## Automatic pasting stopped. Why, and how do I carry on?
+
+The panel says why. It pauses when:
+
+- you click or type in the form (except while it waits for you to choose a name, when it expects you to),
+- you press Esc, Pause or Back, or press the fill key,
+- you close the panel,
+- a field it needs is not on the form, or the Genius page is reloaded.
+
+Press Resume to carry on from the same step.
+If you started it before opening the song's Edit Metadata form, it waits for the form to appear.
+It never presses Save.
 
 ## Pressing F8 or F7 does nothing
 

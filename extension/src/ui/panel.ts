@@ -41,6 +41,26 @@ const env: Env = {
 const root = document.getElementById("app");
 if (!root) throw new Error("The panel page has no #app element.");
 
+/**
+ * An open panel holds a connection to the worker. When the panel closes the worker sees it end and pauses an automatic
+ * run, since nobody is watching it. If the worker is stopped and restarted meanwhile (it idles out), the connection
+ * ends from this side too, so the panel connects again: it is still open, and a later close must still be noticed.
+ */
+function keepConnected(): void {
+  let leaving = false;
+  addEventListener("pagehide", () => {
+    leaving = true;
+  });
+  const connect = (): void => {
+    const port = chrome.runtime.connect({ name: "panel" });
+    port.onDisconnect.addListener(() => {
+      if (!leaving) setTimeout(connect, 1000);
+    });
+  };
+  connect();
+}
+keepConnected();
+
 void PanelController.create(env).then((panel) => {
   new PanelView(root, panel);
   // The worker is the paste session's only writer; this panel just follows what it stores.

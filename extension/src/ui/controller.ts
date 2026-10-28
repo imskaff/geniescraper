@@ -137,6 +137,9 @@ export function buildSong(album: AlbumInfo, result: Pick<TrackResult, "url">, sc
   };
 }
 
+/** How a track's paste is started: by itself, or one Next-key press per step. */
+export type PasteMode = "auto" | "manual";
+
 /** The longest Start pasting waits for a YouTube link before starting without it. */
 export const YOUTUBE_WAIT_MS = 8000;
 
@@ -633,7 +636,8 @@ export class PanelController {
         ? {
             paste,
             error: paste.tone === "attention" ? paste.message : "",
-            status: paste.tone === "ok" ? paste.message : "",
+            // Progress and information (a pause says why and how to carry on) are announced politely.
+            status: paste.tone === "attention" ? "" : paste.message,
           }
         : { paste },
     );
@@ -805,12 +809,19 @@ export class PanelController {
     await this.setResult(index, { song });
   }
 
-  /** Begin pasting one track's queue into Genius. */
-  async startPaste(index: number): Promise<void> {
+  /** How the last track was started, so the next one (the countdown, the next-track button) goes the same way. */
+  private lastMode: PasteMode = "auto";
+
+  /**
+   * Begin pasting one track's queue into Genius: by itself ("auto", the default way) or one key press per step
+   * ("manual"). A track started by the countdown or the next-track button goes the way the last one did.
+   */
+  async startPaste(index: number, mode: PasteMode = this.lastMode): Promise<void> {
     await this.waitForYoutube(index);
     const result = this.current.session.results.find((r) => r.index === index);
     const queue = this.queueFor(index);
     if (!result?.song || queue.length === 0) return;
+    this.lastMode = mode;
     await this.pasteCommand({
       type: "paste-start",
       title: result.song.title || result.title,
@@ -819,6 +830,19 @@ export class PanelController {
     this.pasted.add(index);
     this.update({ pasteIndex: index });
     await this.updateSession({ current: index });
+    // The session is running by now. If no Genius page can take the run, the error says what to open, and the
+    // session stays as a step-by-step one that the user can start automatically from the paste screen.
+    if (mode === "auto") await this.autoPaste();
+  }
+
+  /** Start automatic pasting, or resume it after a pause, from the step the session is at. */
+  autoPaste(): Promise<void> {
+    return this.pasteCommand({ type: "paste-auto-start" });
+  }
+
+  /** Pause automatic pasting; the user can resume it, or take over with the Next key. */
+  pauseAutoPaste(): Promise<void> {
+    return this.pasteCommand({ type: "paste-auto-pause" });
   }
 
   /** The next track after the one being pasted whose credits are in and give something to paste, or null. */

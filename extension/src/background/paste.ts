@@ -70,9 +70,20 @@ export class PasteService {
   }
 
   /** Tell every Genius tab how an automatic run stands, so the page loop knows whether to go on. */
-  private async announceAuto(auto: AutoMode): Promise<void> {
+  private async announceAuto(auto: AutoMode): Promise<number> {
     const tabs = await this.ports.geniusTabIds().catch(() => []);
-    await Promise.all(tabs.map((tab) => this.ports.notifyGenius(tab, { type: "genius/auto-state", auto })));
+    const heard = await Promise.all(
+      tabs.map((tab) => this.ports.notifyGenius(tab, { type: "genius/auto-state", auto })),
+    );
+    return heard.filter(Boolean).length;
+  }
+
+  /** The panel was closed: a run pauses, since nobody is watching it. A step awaiting the user's choice stays awaited. */
+  panelClosed(): Promise<void> {
+    return this.serial.run(async () => {
+      const state = await this.load();
+      await this.apply(state, pauseAuto(state, "panel-closed"));
+    });
   }
 
   /** A request from the panel. */
@@ -92,8 +103,23 @@ export class PasteService {
           return this.apply(state, back(state));
         case "paste-skip":
           return this.apply(state, skip(state));
-        case "paste-auto-start":
-          return this.apply(state, startAuto(state));
+        case "paste-auto-start": {
+          const next = startAuto(state);
+          if (next === state) return { ok: true, data: state };
+          // The page loop starts when it hears of the run, and asks for its first step from the saved state: save
+          // first, and take it back if no Genius page was there to hear.
+          await this.save(next);
+          const heard = await this.announceAuto("running");
+          if (heard > 0) return { ok: true, data: next };
+          await this.save(state);
+          const open = (await this.ports.geniusTabIds().catch(() => [])).length > 0;
+          return fail(
+            "tab-failed",
+            open
+              ? "Reload the Genius page, then try again."
+              : "Open the song's Edit Metadata form on Genius first, then start again.",
+          );
+        }
         case "paste-auto-pause":
           return this.apply(state, pauseAuto(state, "user"));
         case "paste-stop": {

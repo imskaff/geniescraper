@@ -93,6 +93,65 @@ describe("starting, pausing and stopping a run", () => {
   });
 });
 
+describe("a run that no Genius page can hear", () => {
+  const start = (service: PasteService) => service.command({ type: "paste-start", title: "Song", queue: QUEUE });
+
+  it("does not start with no Genius tab open, and says what to open", async () => {
+    const browser = fakeBrowser({ geniusTabs: [] });
+    const session = memoryStore();
+    const service = new PasteService(browser.ports, { settings: memoryStore(), session }, () => 1_000_000);
+    await start(service);
+    const answer = await service.command({ type: "paste-auto-start" });
+    expect(answer).toMatchObject({ ok: false, error: { code: "tab-failed" } });
+    expect(JSON.stringify(answer)).toContain("Genius");
+    expect(normalisePaste(session.data.get(PASTE_KEY))).toMatchObject({ active: true, auto: "off" });
+  });
+
+  it("does not start when no open Genius tab has the extension's script, and leaves the session as it was", async () => {
+    const browser = fakeBrowser({ geniusTabs: [{ id: 7, active: true }], deaf: [7] });
+    const session = memoryStore();
+    const service = new PasteService(browser.ports, { settings: memoryStore(), session }, () => 1_000_000);
+    await start(service);
+    const answer = await service.command({ type: "paste-auto-start" });
+    expect(answer).toMatchObject({ ok: false, error: { code: "tab-failed" } });
+    expect(JSON.stringify(answer)).toContain("Reload");
+    expect(normalisePaste(session.data.get(PASTE_KEY))).toMatchObject({ active: true, auto: "off", position: 0 });
+  });
+});
+
+describe("the panel closing", () => {
+  it("pauses a run, and the page hears of it", async () => {
+    const { browser, service, stored, auto } = setup();
+    await auto();
+    await service.panelClosed();
+    expect(stored()).toMatchObject({ auto: "paused", pauseReason: "panel-closed" });
+    expect(autoNotices(browser.notices)).toEqual(["7:genius/auto-state:paused", "8:genius/auto-state:paused"]);
+  });
+
+  it("changes nothing when no run is going", async () => {
+    const { browser, service, stored } = setup();
+    await service.command({ type: "paste-start", title: "Song", queue: QUEUE });
+    browser.notices.length = 0;
+    await service.panelClosed();
+    expect(stored()).toMatchObject({ auto: "off", pauseReason: "" });
+    expect(autoNotices(browser.notices)).toEqual([]);
+  });
+
+  it("leaves a step waiting for the user's choice waiting, but paused", async () => {
+    const { service, stored, auto, begin } = setup();
+    await auto();
+    const reply = await begin();
+    if (reply.action !== "fill") throw new Error("expected a fill");
+    await service.fromGenius({
+      type: "paste-report",
+      position: reply.position,
+      outcome: { status: "needs-choice", message: "Choose Writer One" },
+    });
+    await service.panelClosed();
+    expect(stored()).toMatchObject({ auto: "paused", pauseReason: "panel-closed", awaiting: true, position: 0 });
+  });
+});
+
 describe("the page's requests", () => {
   it("hands an automatic loop its step with the pace from the settings, and a key press none", async () => {
     const { auto, begin } = setup({ autoPaceSeconds: 1.5 });

@@ -809,6 +809,12 @@ Each is tested first and committable on its own.
    The pace is a setting (`autoPaceSeconds`, 0.6 by default, 0.2 to 5); its field in Settings comes in slice 4.
    Tests: `test/genius/autoPage.test.ts` runs the real page driver, the real worker service and the fake Genius form together; `test/background/autoPaste.test.ts` and `test/shared/autoMessages.test.ts` cover the worker and the message checks. Not yet seen in a real browser: that is slice 5.
 3. The worker messages, the panel buttons (Start, Step by step, Pause, Resume) and the status wording.
+   Done. Start pasting is now the automatic button (class `magic`: a flowing yellow, orange, pink and violet gradient, a glow and four sparkles, all drawn by the stylesheet), with a quiet "Step by step" button beside it; the paste screen shows Pause (plain, no glow) while a run goes, Resume and a quiet Fill next while paused, and Fill next with an "Auto-paste" button in a step-by-step session.
+   The gradient colours are tokens, and the contrast test holds the button's ink to 4.5:1 on each; the sparkles are an empty `aria-hidden` span and pseudo-elements, so the button's text and name stay plain, and the reduced-motion rule removes only the movement.
+   A track started by the countdown or the next-track button goes the way the last one did (`PanelController.startPaste` remembers the mode).
+   A run only starts if a Genius page hears of it (otherwise the panel says to open the song's Edit Metadata form, or to reload the page), and a run started before the form is open waits for it.
+   The panel keeps a connection open to the worker; when it ends the worker pauses the run (`panel-closed`), and the panel reconnects if the worker was restarted meanwhile. This has not been seen in a real browser yet: slice 5 checks it.
+   A pause now shows its message as a polite status line, so the user is told why.
 4. The pace setting and the default.
 5. A live run on a Genius song the owner created (`npm run live:genius` with the scratch profile), then docs and the privacy and listing text if anything they say changes.
 

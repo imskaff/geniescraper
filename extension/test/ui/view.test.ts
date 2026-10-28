@@ -330,7 +330,7 @@ describe("review screen", () => {
     it("has Start pasting right under the track list, ready for the first track", async () => {
       const { root } = await onReview();
       const start = root.querySelector<HTMLButtonElement>('main [data-key="start"]');
-      expect(start?.getAttribute("aria-label")).toBe("Start pasting One");
+      expect(start?.getAttribute("aria-label")).toBe("Start pasting One automatically");
       expect(start?.hasAttribute("disabled")).toBe(false);
       const list = $(root, "ul.tracks");
       expect(list.compareDocumentPosition(start as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

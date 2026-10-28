@@ -35,9 +35,10 @@ async function onReview() {
   return { root, env, panel };
 }
 
+/** A track started step by step, as these tests are about the Next key; automatic pasting has its own tests. */
 async function onPaste() {
   const ui = await onReview();
-  button(ui.root, "Start pasting").click();
+  button(ui.root, "Step by step").click();
   await flush();
   return ui;
 }
@@ -61,7 +62,7 @@ describe("starting to paste", () => {
   it("sends the queue the settings produce, not the whole credits", async () => {
     const { panel, env } = await onReview();
     await panel.setSetting("scrapeCore", false);
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     expect(env.api.pasteState.queue.map(([kind]) => kind)).not.toContain("written_by");
     expect(env.api.pasteState.queue.map(([kind]) => kind)).toContain("role");
   });
@@ -190,7 +191,7 @@ describe("the paste screen", () => {
     await panel.detect(ALBUM.url);
     await panel.setAllSelected(true);
     await panel.getCredits();
-    await panel.startPaste(0);
+    await panel.startPaste(0, "manual");
     panel.setPaste({ ...env.api.pasteState, active: true, queue: [["written_by", "A"]], title: "T" });
     await flush();
     button(root, "Fill next").click();

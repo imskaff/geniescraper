@@ -52,6 +52,9 @@ const STATUS_EVERY_POLLS = 10;
 /** A run asked for a step and got none this many times in a row while it still counts as running: it gives up. */
 const MAX_IDLE_ASKS = 5;
 
+/** While a run waits for the form it looks this many times as slowly as the form is polled for a choice. */
+const FORM_POLL_FACTOR = 10;
+
 /** Keys that change nothing on their own; holding one is not the user editing the form. */
 const MODIFIER_KEYS: ReadonlySet<string> = new Set(["Shift", "Control", "Alt", "Meta", "CapsLock", "AltGraph"]);
 
@@ -208,6 +211,8 @@ export class GeniusPage {
   private async runAuto(): Promise<void> {
     let idleAsks = 0;
     while (this.auto === "running") {
+      // The next song has its own edit page: a run waits for its form to be open instead of failing without one.
+      if (!(await this.waitForForm())) return;
       const answer = await this.env.send({ type: "paste-begin", source: "auto" }).catch(() => null);
       if (!isResult(answer) || !answer.ok || !isBeginReply(answer.data)) return;
       const reply = answer.data;
@@ -237,6 +242,15 @@ export class GeniusPage {
         await sleep(DEFAULT_PACE_MS);
       }
     }
+  }
+
+  /** Wait for the song's Edit Metadata form; false when the run stopped or was paused meanwhile. */
+  private async waitForForm(): Promise<boolean> {
+    while (this.auto === "running") {
+      if (findForm(this.env.doc)) return true;
+      await sleep(this.env.timing.pollMs * FORM_POLL_FACTOR);
+    }
+    return false;
   }
 
   /**

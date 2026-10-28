@@ -258,13 +258,36 @@ describe("the user taking over", () => {
 });
 
 describe("problems stop the run with a plain message", () => {
-  it("a missing form pauses it as a problem, in Genius's own words, without moving on", async () => {
+  it("a field that is not on the form pauses it as a problem, in Genius's own words, without moving on", async () => {
     const { fake, page, stored, begin } = setup();
-    fake.form.remove();
-    await begin(SHORT);
+    fake.form.querySelector('input[name="youtube_url"]')?.remove();
+    await begin([["youtube_url", URL]]);
     await page.whenAutoIdle();
     expect(stored()).toMatchObject({ auto: "paused", pauseReason: "problem", position: 0, busy: false });
-    expect(stored().message).toContain("Edit Metadata");
+    expect(stored().message).toContain("YouTube URL field is not on the form");
+  });
+
+  it("waits for the song's edit form to be open, then carries on by itself", async () => {
+    const { fake, page, stored, begin } = setup();
+    const parent = fake.form.parentElement;
+    fake.form.remove();
+    await begin(SHORT);
+    await wait(150);
+    // Nothing was asked of the worker and nothing was filled while there was no form: the run is simply waiting.
+    expect(stored()).toMatchObject({ auto: "running", position: 0, busy: false });
+    parent?.append(fake.form);
+    await page.whenAutoIdle();
+    expect(stored()).toMatchObject({ position: SHORT.length, auto: "off" });
+  });
+
+  it("stops waiting for the form when the run is paused from the panel", async () => {
+    const { fake, page, service, stored, begin } = setup();
+    fake.form.remove();
+    await begin(SHORT);
+    await wait(80);
+    await service.command({ type: "paste-auto-pause" });
+    await page.whenAutoIdle();
+    expect(stored()).toMatchObject({ auto: "paused", pauseReason: "user", position: 0 });
   });
 
   it("a worker that does not answer ends the loop instead of spinning", async () => {

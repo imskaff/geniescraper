@@ -257,6 +257,12 @@ export function instruction(state: PasteState, hotkey: string): string {
   const key = hotkey.toUpperCase();
   const item = state.queue[state.position];
   if (!item) return "Every step is done. Check the form on Genius, then save it there.";
+  // A run is filling by itself: nothing to press, only a choice to make when Genius has no exact match.
+  if (state.auto === "running") {
+    return state.awaiting
+      ? `Choose ${item[1]} in Genius's suggestions. Automatic pasting carries on when you do.`
+      : "Pasting automatically. Press Pause to take over.";
+  }
   if (state.awaiting) return `Choose ${item[1]} in Genius's suggestions, then press ${key}. Or use Skip.`;
   const [kind, value] = item;
   switch (kind) {

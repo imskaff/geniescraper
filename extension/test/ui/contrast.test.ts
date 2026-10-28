@@ -36,6 +36,11 @@ const PAIRS: readonly [string, string, number, string][] = [
   ["muted", "surface-hi", 4.5, "help text on hover"],
   ["accent-ink", "accent", 4.5, "primary button text"],
   ["accent-ink", "accent-hover", 4.5, "primary button text on hover"],
+  // The automatic button's gradient flows through every one of these, so its text must read on each.
+  ["accent-ink", "magic-1", 4.5, "automatic button text on the first gradient colour"],
+  ["accent-ink", "magic-2", 4.5, "automatic button text on the second gradient colour"],
+  ["accent-ink", "magic-3", 4.5, "automatic button text on the third gradient colour"],
+  ["accent-ink", "magic-4", 4.5, "automatic button text on the fourth gradient colour"],
   ["danger", "bg", 4.5, "error text"],
   ["danger", "surface", 4.5, "error text on cards"],
   ["ok", "bg", 4.5, "success text"],

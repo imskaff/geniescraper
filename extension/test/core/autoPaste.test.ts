@@ -6,6 +6,7 @@ import {
   begin,
   canAutoStep,
   confirmChoice,
+  instruction,
   normalisePaste,
   pauseAuto,
   pauseMessage,
@@ -193,6 +194,32 @@ describe("the user taking over by hand", () => {
   it("stop ends the run and forgets why it paused", () => {
     expect(stop(pauseAuto(running(), "user"))).toMatchObject({ auto: "off", pauseReason: "" });
     expect(stop(running())).toMatchObject({ auto: "off", pauseReason: "", active: false });
+  });
+});
+
+describe("what the panel says while a run goes", () => {
+  it("never asks for a key press while it pastes by itself, and says how to take over", () => {
+    const text = instruction(running(), "F8");
+    expect(text).toMatch(/automatically/i);
+    expect(text).toMatch(/Pause/);
+    expect(text).not.toMatch(/Press F8/);
+  });
+
+  it("asks for the user's choice, and says it carries on afterwards", () => {
+    const awaiting = autoStep(running(), { status: "needs-choice", message: "choose" });
+    const text = instruction(awaiting, "F8");
+    expect(text).toContain("Choose Writer One in Genius's suggestions");
+    expect(text).toMatch(/carries on/);
+    expect(text).not.toMatch(/press F8/i);
+  });
+
+  it("goes back to the Next key's wording once it is paused or off", () => {
+    expect(instruction(pauseAuto(running(), "user"), "F8")).toBe("Press F8 to add Writer One as a writer.");
+    expect(instruction(manual(), "F8")).toBe("Press F8 to add Writer One as a writer.");
+  });
+
+  it("still sends the user to the form when every step is done", () => {
+    expect(instruction({ ...running(), position: QUEUE.length }, "F8")).toContain("Check the form on Genius");
   });
 });
 
