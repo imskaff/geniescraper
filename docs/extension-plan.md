@@ -151,6 +151,7 @@ The TypeScript port must not drift, so parity is enforced by tests, not by disci
 | host `https://itunes.apple.com/*` | Exact cover lookup | required |
 | host `https://api.deezer.com/*` | Cover fallback | optional |
 | host `https://www.youtube.com/*` | Official video lookup | optional |
+| host `https://www.googleapis.com/*` | Official YouTube service with the user's own key | optional |
 | `storage` | Settings and the current queue | required |
 | `scripting` | Drive the MORE then View Credits path | required |
 | `sidePanel` | Main UI in Chrome and Edge | required |
@@ -197,8 +198,8 @@ Each slice ends working, tested and committable.
 | 5 | Side panel UI: link, track picker, credits and paste queue, settings; accessibility pass (done) | Unit tests with fake worker and storage; `npm run live:panel` drives the real panel, worker and live Apple Music |
 | 6 | Genius fill, one field per press (done) | Fake-select tests on the saved form; engine and whole extension run live on Genius (`npm run live:genius`) |
 | 7 | iTunes cover lookup (done) | Replays `tests/fixtures/lookups/covers` against the golden artwork; live lookup checked in `npm run live:panel` |
-| 8 | Deezer and YouTube lookups with optional permissions | Replays `tests/fixtures/lookups/youtube` and matches `tests/golden/youtube.json` |
-| 9 | Store readiness: icons, locales, privacy policy, listing text, permission justifications, packaging script | Zip validated; manifest contract tests green |
+| 8 | Deezer and YouTube lookups with optional permissions (done, with the optional YouTube key; sections 17 to 21) | Replays `tests/fixtures/lookups/youtube` and matches `tests/golden/youtube.json` |
+| 9 | Store readiness: icons, locales, privacy policy, listing text, permission justifications, packaging script (done, section 22) | Zip validated; manifest contract tests green |
 | 10 | Edge check, Safari converter notes | Documented result |
 
 ## 9. Open items
@@ -500,3 +501,16 @@ A problem with the key found while reading (wrong key, allowance used up, servic
 
 Each track's credits now say what became of its YouTube look-up: "Looking for it…", "No link found for this track.", that YouTube is limiting requests, or what is wrong with the key, so a missing link always has a visible reason.
 Also fixed: the record of which tracks had been asked about was keyed by track number and survived a change of album, so a second album's tracks could be skipped as already asked; it is now cleared when a new album is read or the user returns to the main menu.
+
+## 22. Slice 9: store readiness
+
+- **Package.** `npm run package` builds, checks the build, and writes `release/geniescraper-extension-<version>.zip` (ignored by git).
+  The zip comes from a small deterministic writer in `scripts/lib/zip.mjs` (sorted names, fixed timestamps, so the same sources give the same bytes), so there is no new dependency.
+  The real package was extracted with PowerShell's `Expand-Archive` and matched `dist/` byte for byte.
+- **Check before zipping.** `scripts/lib/validate-dist.mjs` fails the package for: a manifest that is not version 3 or has a version that is not Chrome's kind or differs from `package.json`; a missing locale message or a description over 132 characters; a missing, non-PNG or wrongly sized icon; anything the manifest points at that is not in the package; source maps, TypeScript, test files, notes or `node_modules`; empty scripts; `eval`, `new Function`, `innerHTML` assignments, `insertAdjacentHTML` or `document.write` in the shipped code; remote or inline scripts in HTML; and more than 10 MB.
+  The checker itself is tested with a good package and every one of these faults.
+- **Documents.** `extension/PRIVACY.md` (what is handled, what leaves the browser and to whom, what the extension does not do) and `extension/store/listing.md` (name, description, category, single purpose, a justification for every permission, remote-code and data-usage answers).
+  Tests keep them honest: every permission and host in the manifest must have a justification row and no row may be extra, optional hosts must be marked optional, the short description must equal the manifest's and fit the limit, and the policy must mention every host the extension can contact.
+- **CI.** The extension job runs `npm run package` after the build.
+- **Still by hand.** Screenshots (1280x800), the 440x280 promotional tile, hosting the privacy policy at a public URL, and the developer account and upload.
+  I did not submit anything.

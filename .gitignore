@@ -33,3 +33,4 @@ bench/results/
 # Browser extension build output and dependencies
 extension/node_modules/
 extension/dist/
+extension/release/

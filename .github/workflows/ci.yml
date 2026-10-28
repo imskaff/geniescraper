@@ -73,6 +73,8 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+      - name: Package for the store
+        run: npm run package
 
   live:
     name: Live tests (Apple Music)
