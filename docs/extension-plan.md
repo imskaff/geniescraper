@@ -615,3 +615,23 @@ A review of the branch found and fixed:
 - Start pasting waits at most 8 seconds for a YouTube link, then starts without it.
 - Lookups started by reading an album write only their track's note, so they no longer overwrite the "Got credits" summary; only Start pasting announces on the status line.
 - The desktop app maps any unlisted "<X> Programming" to "<X> Programmer" too, as the extension does.
+
+## 26. The YouTube lookup moves to YouTube's JSON endpoints
+
+Two open-source projects were looked at: `youtube-search-api` (npm, TypeScript) and `ytscrape` (Python).
+Neither is used as a dependency: the first reads like the HTML-page scraping already in the extension, so it would block the same way, and the second is Python and needs three runtime packages.
+`ytscrape` is useful as a pointer: it does not read YouTube's HTML pages but calls the same JSON endpoints YouTube's own website calls (`youtubei/v1/search` and `youtubei/v1/player`).
+That technique is now in the extension (`lookups/innertube.ts`), written for this project, with no new dependency.
+
+- **What it does.** The lookup asks `POST https://www.youtube.com/youtubei/v1/search` (and `player` for a video's description) with the web client's identity and no key.
+  The answers have the shape of the page data the scorer already reads (`videoRenderer`, badges, `videoDetails`), at about a third of the size of the HTML page, so the golden-tested scoring is unchanged.
+- **Order.** JSON endpoints first, through the same gate (2 at a time, spaced, cool-down after repeated failures); the HTML pages only when the JSON gives nothing, so a changed endpoint does not leave the user with no lookup at all.
+  With a user's API key Google's official service is still used first, as before.
+- **Measured live** from the development address, which Google was already blocking for the HTML pages: 20 paced searches in a row all answered; 10 description requests all answered; the whole golden set (15 songs, about 5 requests each) found an accepted video with the right music-video flag for 15 of 15 in 29 seconds with no fallback to HTML; a 10-track album with every lookup started together was not throttled.
+- **Not verified:** how long this keeps working.
+  The endpoint is unofficial and the client version it expects (a constant in `innertube.ts`) will age; Google may start refusing it as it did the HTML pages.
+  The permission is the same one as before (`www.youtube.com`), so the privacy policy and store text did not change.
+- **A scoring bug found on the way.** The title check matched pieces of words, so "THE GREATEST" matched a video of "BIRDS OF A FEATHER" ("the" is inside "feather") and was given that video's link.
+  It now matches whole words; the golden set still passes.
+  The desktop app's `scraper/youtube.py` has the same check and the same bug (not changed here).
+- **What album results look like.** Most tracks of a pop album have only a lyric video, a live performance and fan uploads on YouTube; the lookup skips lyric and live videos on purpose (as the desktop app does) and finds a link only for a music video or an official audio upload, so 3 of 10 tracks of the sample album got one.

@@ -74,14 +74,21 @@ const MV_DESC_INDICATORS = [
 /** Python's \W: anything that is not a letter, digit or underscore, in any script. */
 const NON_WORD = /[^\p{L}\p{N}_]+/u;
 
-/** True if a significant word (3+ chars) of the song title is in the video title, or its collapsed form is. */
+/**
+ * True if a significant word (3+ chars) of the song title is a whole word of the video title, or its collapsed form
+ * is inside it. Whole words, not substrings: "the" is inside "feather", which let "THE GREATEST" match a video of
+ * "BIRDS OF A FEATHER".
+ */
 export function sigPresent(videoTitle: string, songTitle: string): boolean {
   const t = videoTitle.toLowerCase();
   const sig = songTitle
     .toLowerCase()
     .split(NON_WORD)
     .filter((w) => w.length >= 3);
-  if (sig.length > 0) return sig.some((w) => t.includes(w));
+  if (sig.length > 0) {
+    const present = new Set(t.split(NON_WORD));
+    return sig.some((w) => present.has(w));
+  }
   // "FE!N" collapses to "fen", checked against the collapsed video title.
   const collapse = (text: string): string => text.replace(/[^a-z0-9]/g, "");
   const ct = collapse(songTitle.toLowerCase());

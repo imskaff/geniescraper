@@ -147,6 +147,19 @@ describe("title matching", () => {
   it("does not split an accented word the way an ASCII-only split would", () => {
     expect(sigPresent("BAD BUNNY - DÁKITI (Official Video)", "DÁKITI")).toBe(true);
   });
+
+  it("matches whole words, not pieces of words: 'the' is not in 'feather'", () => {
+    const video = "Billie Eilish - BIRDS OF A FEATHER (Official Music Video)";
+    expect(sigPresent(video, "THE GREATEST")).toBe(false);
+    expect(sigPresent(video, "BIRDS OF A FEATHER")).toBe(true);
+    expect(scoreMv(video, "BillieEilishVEVO", "Billie Eilish", "THE GREATEST")).toBe(-1);
+    expect(scoreAudio(video, "Billie Eilish - Topic", "Billie Eilish", "THE GREATEST")).toBe(-1);
+  });
+
+  it("still finds a song whose title is a word inside a longer video title", () => {
+    expect(sigPresent("Taylor Swift - Fortnight (feat. Post Malone) (Official Video)", "Fortnight")).toBe(true);
+    expect(sigPresent("Pink + White", "Pink + White")).toBe(true);
+  });
 });
 
 describe("channels", () => {

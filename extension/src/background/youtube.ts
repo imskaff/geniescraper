@@ -1,5 +1,14 @@
 // The worker's YouTube lookup behind an interface, so the router can be tested without the network.
-import { fetchResult, fetchText, hostOrigin, type GetResult, type GetText } from "../lookups/http";
+import {
+  fetchPost,
+  fetchResult,
+  fetchText,
+  hostOrigin,
+  type GetResult,
+  type GetText,
+  type PostJson,
+} from "../lookups/http";
+import { innertubePages } from "../lookups/innertube";
 import { apiPages } from "../lookups/youtubeApi";
 import { extractVar, findYoutube, type YoutubeLink, type YoutubePages } from "../lookups/youtube";
 import { Limiter } from "./serial";
@@ -96,6 +105,7 @@ export function youtubePages(
   getText: GetText,
   gate: YoutubeGate,
   granted: () => Promise<boolean> = () => Promise.resolve(true),
+  post?: PostJson,
 ): YoutubePages {
   const page = async (url: string, name: string): Promise<unknown> => {
     if (!(await granted().catch(() => false))) return null;
@@ -104,7 +114,7 @@ export function youtubePages(
       return html === null ? null : extractVar(html, name);
     });
   };
-  return {
+  const html: YoutubePages = {
     search: (query) =>
       page(
         `https://www.youtube.com/results?${new URLSearchParams({ search_query: query }).toString()}`,
@@ -113,6 +123,16 @@ export function youtubePages(
     watch: (id) =>
       page(`https://www.youtube.com/watch?${new URLSearchParams({ v: id }).toString()}`, "ytInitialPlayerResponse"),
   };
+  if (!post) return html;
+  // YouTube's JSON endpoints first; the HTML pages only when they give nothing (the endpoint changed, or it refused).
+  const json = innertubePages(async (url, body) => {
+    if (!(await granted().catch(() => false))) return null;
+    return gate.run(() => post(url, body));
+  });
+  return {
+    search: async (query) => (await json.search(query)) ?? (await html.search(query)),
+    watch: async (id) => (await json.watch(id)) ?? (await html.watch(id)),
+  };
 }
 
 const youtubeGranted = (): Promise<boolean> => chrome.permissions.contains({ origins: [hostOrigin("youtube")] });
@@ -120,6 +140,8 @@ const apiGranted = (): Promise<boolean> => chrome.permissions.contains({ origins
 
 export interface YoutubeOptions {
   getText?: GetText;
+  /** YouTube's JSON endpoints; when absent only the HTML pages are used. */
+  post?: PostJson;
   granted?: () => Promise<boolean>;
   /** The user's own YouTube key; "" when they have none. */
   getKey?: () => Promise<string>;
@@ -136,13 +158,14 @@ export interface YoutubeOptions {
 export function realYoutube(options: YoutubeOptions = {}): YoutubeService {
   const {
     getText = fetchText,
+    post = fetchPost,
     granted = youtubeGranted,
     getKey = () => Promise.resolve(""),
     getResult = fetchResult,
     apiGranted: apiAllowed = apiGranted,
   } = options;
   const gate = new YoutubeGate();
-  const pages = youtubePages(getText, gate, granted);
+  const pages = youtubePages(getText, gate, granted, post);
   const api = new Limiter(2);
   return {
     async find(title, artist) {

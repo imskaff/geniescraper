@@ -45,11 +45,11 @@ function createFetcher<T>(
   granted: Granted,
   read: (response: Response) => Promise<T | null>,
   readErrors = false,
-): (url: string, headers?: Record<string, string>) => Promise<T | null> {
+): (url: string, headers?: Record<string, string>, post?: string) => Promise<T | null> {
   const optional = new Map<string, OptionalHost>(
     (Object.keys(OPTIONAL_LOOKUP_HOSTS) as OptionalHost[]).map((key) => [OPTIONAL_LOOKUP_HOSTS[key], key]),
   );
-  return async (url, headers) => {
+  return async (url, headers, post) => {
     try {
       const target = new URL(url);
       if (target.protocol !== "https:") return null;
@@ -63,6 +63,7 @@ function createFetcher<T>(
         redirect: "error",
         signal: AbortSignal.timeout(TIMEOUT_MS),
         ...(headers ? { headers } : {}),
+        ...(post === undefined ? {} : { method: "POST", body: post }),
       });
       if (!response.ok && !readErrors) return null;
       return await read(response);
@@ -99,8 +100,17 @@ export const createFetchResult = (granted: Granted): GetResult =>
     true,
   );
 
+/** Send JSON and read JSON back: the way YouTube's own web app asks its search and player endpoints. */
+export type PostJson = (url: string, body: unknown) => Promise<unknown>;
+
+export const createFetchPost = (granted: Granted): PostJson => {
+  const send = createFetcher<unknown>(granted, async (response) => (await response.json()) as unknown);
+  return (url, body) => send(url, { "content-type": "application/json" }, JSON.stringify(body));
+};
+
 const chromeGranted: Granted = (origin) => chrome.permissions.contains({ origins: [origin] });
 
 export const fetchJson: GetJson = createFetchJson(chromeGranted);
 export const fetchText: GetText = createFetchText(chromeGranted);
 export const fetchResult: GetResult = createFetchResult(chromeGranted);
+export const fetchPost: PostJson = createFetchPost(chromeGranted);
