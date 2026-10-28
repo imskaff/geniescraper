@@ -326,25 +326,39 @@ export class PanelView {
         attrs: { type: "submit", "data-key": "go", ...(busy ? { disabled: "" } : {}) },
       }),
     );
-    return [this.heading("Get credits from Apple Music"), form, ...this.openPages(state)];
+    return [this.heading("Get credits from Apple Music"), ...this.openPages(state), form];
   }
 
-  /** The album and song pages already open in the browser, one press each; nothing when there are none. */
+  /**
+   * The detector: listens for Apple Music pages already open in the browser. With none it says so and waits (the
+   * radar animates); with some, it announces them and the page in view stands out. The status line is in the page
+   * before anything is found, so a screen reader announces a detection instead of a new block appearing.
+   */
   private openPages(state: PanelState): Node[] {
-    if (state.appleTabs.length === 0) return [];
+    const pages = state.appleTabs;
+    const found = pages.length > 0;
     const busy = state.busy !== null;
-    const items = state.appleTabs.map((page, index) =>
+    const title = !found
+      ? "Listening for Apple Music pages…"
+      : pages.length === 1
+        ? "Apple Music page detected"
+        : `${String(pages.length)} Apple Music pages detected`;
+    const hint = found
+      ? "Pick one to get its credits."
+      : "Open an album or song on Apple Music in your browser and it shows up here.";
+    const items = pages.map((page, index) =>
       el(
         "li",
         {},
         el(
           "button",
           {
-            class: "button track",
+            class: "button track detected",
             attrs: {
               type: "button",
               "data-key": `open-page-${String(index)}`,
               "aria-label": `Get tracks for ${page.name}${page.current ? ", the page you are on" : ""}`,
+              ...(page.current ? { "data-current": "true" } : {}),
               ...(busy ? { disabled: "" } : {}),
             },
             on: {
@@ -363,15 +377,33 @@ export class PanelView {
               text: `${page.kind === "album" ? "Album" : "Song"}${page.current ? " · this page" : ""}`,
             }),
           ),
+          el("span", { class: "go", text: "Get credits", attrs: { "aria-hidden": "true" } }),
         ),
       ),
     );
     return [
       el(
         "section",
-        { class: "open-pages-section", attrs: { "data-key": "open-pages" } },
-        el("h3", { class: "section", text: "Open in your browser" }),
-        el("ul", { class: "open-pages" }, ...items),
+        { class: "detector", attrs: { "data-key": "open-pages", "data-state": found ? "found" : "listening" } },
+        el(
+          "div",
+          { class: "detector-head", attrs: { "aria-live": "polite" } },
+          el(
+            "span",
+            { class: "radar", attrs: { "aria-hidden": "true" } },
+            el("i", {}),
+            el("i", {}),
+            el("i", {}),
+            el("b", {}),
+          ),
+          el(
+            "div",
+            { class: "detector-text" },
+            el("h3", { class: "detector-title", text: title }),
+            el("p", { class: "detector-hint", text: hint }),
+          ),
+        ),
+        found ? el("ul", { class: "open-pages" }, ...items) : null,
       ),
     ];
   }

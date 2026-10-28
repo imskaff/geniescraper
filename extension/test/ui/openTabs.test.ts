@@ -42,7 +42,8 @@ describe("the open Apple Music pages on the link screen", () => {
       ),
     });
     const section = $(root, '[data-key="open-pages"]');
-    expect(section.querySelector("h3")?.textContent).toBe("Open in your browser");
+    expect(section.getAttribute("data-state")).toBe("found");
+    expect(section.querySelector("h3")?.textContent).toBe("2 Apple Music pages detected");
     const items = [...section.querySelectorAll<HTMLElement>("li")];
     expect(items.map((li) => li.querySelector(".open-name")?.textContent)).toEqual([
       "Chihiro - Song by Demo Artist",
@@ -51,9 +52,13 @@ describe("the open Apple Music pages on the link screen", () => {
     expect(items.map((li) => li.querySelector(".tag")?.textContent)).toEqual(["Song · this page", "Album"]);
   });
 
-  it("is not there when no Apple Music page is open", async () => {
+  it("says it is listening when no Apple Music page is open, and tells what to do", async () => {
     const { root } = await mount({ openTabs: [] });
-    expect(root.querySelector('[data-key="open-pages"]')).toBeNull();
+    const section = $(root, '[data-key="open-pages"]');
+    expect(section.getAttribute("data-state")).toBe("listening");
+    expect(section.querySelector("h3")?.textContent).toBe("Listening for Apple Music pages…");
+    expect(section.textContent).toContain("Open an album or song");
+    expect(section.querySelector("li")).toBeNull();
     // The link box and the Scrape button are as they were.
     expect(root.querySelector("#link")).not.toBeNull();
   });
@@ -63,6 +68,20 @@ describe("the open Apple Music pages on the link screen", () => {
       openTabs: tabs(["https://music.apple.com/us/browse", "Browse - Apple Music"], [ALBUM.url, "Demo Album"]),
     });
     expect(root.querySelectorAll('[data-key="open-pages"] li')).toHaveLength(1);
+    expect($(root, '[data-key="open-pages"] h3').textContent).toBe("Apple Music page detected");
+  });
+
+  it("makes the page the user is on stand out from the others", async () => {
+    const { root } = await mount({
+      openTabs: tabs([ALBUM.url, "Demo Album - Apple Music"], [SONG_URL, "Chihiro - Apple Music", true]),
+    });
+    expect($(root, '[data-key="open-page-0"]').getAttribute("data-current")).toBe("true");
+    expect($(root, '[data-key="open-page-1"]').hasAttribute("data-current")).toBe(false);
+  });
+
+  it("announces a detection politely, in a region that is there before anything is found", async () => {
+    const { root } = await mount({ openTabs: [] });
+    expect($(root, '[data-key="open-pages"] [aria-live="polite"]')).not.toBeNull();
   });
 
   it("gets the tracks of a page with one click, and goes on to the track list", async () => {
@@ -113,7 +132,7 @@ describe("the open Apple Music pages on the link screen", () => {
 
   it("follows the browser: a page opened or closed later changes the list when the panel refreshes", async () => {
     const { root, env, panel } = await mount({ openTabs: [] });
-    expect(root.querySelector('[data-key="open-pages"]')).toBeNull();
+    expect($(root, '[data-key="open-pages"]').getAttribute("data-state")).toBe("listening");
     env.openTabs.push(...tabs([ALBUM.url, "Demo Album - Apple Music"]));
     await panel.refreshPage();
     await flush();
@@ -121,7 +140,7 @@ describe("the open Apple Music pages on the link screen", () => {
     env.openTabs.length = 0;
     await panel.refreshPage();
     await flush();
-    expect(root.querySelector('[data-key="open-pages"]')).toBeNull();
+    expect($(root, '[data-key="open-pages"]').getAttribute("data-state")).toBe("listening");
   });
 
   it("copes with the browser refusing to list its tabs", async () => {
@@ -129,7 +148,7 @@ describe("the open Apple Music pages on the link screen", () => {
     env.appleTabs = () => Promise.reject(new Error("no access"));
     await expect(panel.refreshPage()).resolves.toBeUndefined();
     await flush();
-    expect(root.querySelector('[data-key="open-pages"]')).toBeNull();
+    expect($(root, '[data-key="open-pages"]').getAttribute("data-state")).toBe("listening");
   });
 
   it("cannot be pressed while a page is being read", async () => {
