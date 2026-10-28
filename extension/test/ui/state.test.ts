@@ -115,6 +115,20 @@ describe("parallelReads setting", () => {
   });
 });
 
+describe("the paste mode setting", () => {
+  it("is automatic by default", () => {
+    expect(DEFAULT_SETTINGS.pasteMode).toBe("auto");
+  });
+
+  it.each(["auto", "manual"])("accepts %s", (mode) => {
+    expect(normaliseSettings({ pasteMode: mode }).pasteMode).toBe(mode);
+  });
+
+  it.each(["fast", "", null, undefined, 3, true])("falls back to automatic for %j", (mode) => {
+    expect(normaliseSettings({ pasteMode: mode }).pasteMode).toBe("auto");
+  });
+});
+
 describe("the automatic pasting pace", () => {
   it("defaults to 0.6 seconds between fields", () => {
     expect(DEFAULT_SETTINGS.autoPaceSeconds).toBe(0.6);

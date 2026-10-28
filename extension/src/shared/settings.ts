@@ -3,7 +3,12 @@
 // from it is trusted to have the right shape.
 import type { QueueOptions } from "../core/models";
 
+/** How a track's paste is started: by itself, or one Next-key press per step. */
+export type PasteMode = "auto" | "manual";
+
 export interface Settings {
+  /** What the main Start pasting button does. */
+  pasteMode: PasteMode;
   /** Which parts of a track's credits go into the paste queue. */
   scrapeCore: boolean;
   scrapeAdditional: boolean;
@@ -49,6 +54,7 @@ export const PACE_RANGE = { min: 0.2, max: 5 } as const;
 export const COUNTDOWN_RANGE = { min: 5, max: 120 } as const;
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = {
+  pasteMode: "auto",
   scrapeCore: true,
   scrapeAdditional: true,
   scrapeCopyright: true,
@@ -104,6 +110,9 @@ export function normaliseSettings(raw: unknown): Settings {
     return Math.min(COUNTDOWN_RANGE.max, Math.max(COUNTDOWN_RANGE.min, Math.round(value)));
   };
 
+  const mode = source["pasteMode"];
+  const pasteMode: PasteMode = mode === "manual" ? "manual" : DEFAULT_SETTINGS.pasteMode;
+
   const pace = source["autoPaceSeconds"];
   const autoPaceSeconds =
     typeof pace === "number" && Number.isFinite(pace)
@@ -124,6 +133,7 @@ export function normaliseSettings(raw: unknown): Settings {
     backHotkey = DEFAULT_SETTINGS.backHotkey;
   }
   return {
+    pasteMode,
     scrapeCore: flag("scrapeCore"),
     scrapeAdditional: flag("scrapeAdditional"),
     scrapeCopyright: flag("scrapeCopyright"),

@@ -7,7 +7,7 @@ import { shownTrack, type TrackResult } from "../shared/session";
 import { trackHealth, type Health, type HealthLevel } from "../core/trackHealth";
 import { STEP_LABELS, instruction } from "../core/paste";
 import type { OptionalHost } from "../lookups/http";
-import { COUNTDOWN_RANGE, HOTKEY_CHOICES, PARALLEL_CHOICES, WAIT_RANGE } from "../shared/settings";
+import { COUNTDOWN_RANGE, HOTKEY_CHOICES, PACE_RANGE, PARALLEL_CHOICES, WAIT_RANGE } from "../shared/settings";
 import { youtubeSearchUrl } from "../core/youtubeLink";
 import { el } from "./dom";
 import { renderSetup } from "./setup";
@@ -251,6 +251,24 @@ export class PanelView {
     const index = this.startableIndex(state);
     if (index === null) return [];
     const title = state.session.results.find((r) => r.index === index)?.song?.title;
+    if (state.settings.pasteMode === "manual") {
+      // The user chose step by step as the main way: Start pasting is the plain, glowing yellow button, and the
+      // automatic one is offered beside it.
+      const start = this.button(
+        "Start pasting",
+        "primary",
+        "start",
+        () => void this.panel.startPaste(index, "manual"),
+        busy,
+      );
+      if (!busy) start.classList.add("glow");
+      const auto = this.magicButton("Auto-paste", "start-auto", () => void this.panel.startPaste(index, "auto"), busy);
+      if (title) {
+        start.setAttribute("aria-label", `Start pasting ${title}, one key press per field`);
+        auto.setAttribute("aria-label", `Auto-paste ${title}, filling it by itself`);
+      }
+      return [start, auto];
+    }
     const auto = this.magicButton("Start pasting", "start", () => void this.panel.startPaste(index, "auto"), busy);
     const manual = this.button(
       "Step by step",
@@ -982,10 +1000,75 @@ export class PanelView {
     });
     wait.value = String(settings.autocompleteWaitSeconds);
 
+    // How the main Start pasting button works, and how fast an automatic run goes.
+    const modeSelect = el(
+      "select",
+      {
+        class: "field",
+        attrs: {
+          id: "setting-pasteMode",
+          "data-key": "setting-pasteMode",
+          "aria-describedby": "setting-pasteMode-help",
+        },
+        on: {
+          change: (event) => {
+            const value = (event.target as HTMLSelectElement).value;
+            void this.panel.setSetting("pasteMode", value === "manual" ? "manual" : "auto");
+          },
+        },
+      },
+      el("option", { text: "Automatically", attrs: { value: "auto" } }),
+      el("option", { text: "Step by step, one key press per field", attrs: { value: "manual" } }),
+    );
+    modeSelect.value = settings.pasteMode;
+    const paceBox = el("input", {
+      class: "field",
+      attrs: {
+        id: "setting-autoPace",
+        "data-key": "setting-autoPace",
+        type: "number",
+        min: String(PACE_RANGE.min),
+        max: String(PACE_RANGE.max),
+        step: "0.1",
+        "aria-describedby": "setting-autoPace-help",
+      },
+      on: {
+        change: (event) => {
+          void this.panel.setSetting("autoPaceSeconds", Number((event.target as HTMLInputElement).value));
+        },
+      },
+    });
+    paceBox.value = String(settings.autoPaceSeconds);
+
     return el(
       "fieldset",
       { class: "stack" },
       el("legend", { text: "Pasting on Genius" }),
+      el(
+        "div",
+        { class: "stack" },
+        el("label", { text: "Start pasting", attrs: { for: "setting-pasteMode" } }),
+        modeSelect,
+      ),
+      el("p", {
+        class: "help",
+        text: "The other way is always one button away. Automatic pasting stops when you click or type in the form, press Esc or Pause, or close the panel.",
+        attrs: { id: "setting-pasteMode-help" },
+      }),
+      el(
+        "div",
+        { class: "stack" },
+        el("label", {
+          text: "Seconds between fields when pasting automatically",
+          attrs: { for: "setting-autoPace" },
+        }),
+        paceBox,
+      ),
+      el("p", {
+        class: "help",
+        text: `Between ${String(PACE_RANGE.min)} and ${String(PACE_RANGE.max)}. A longer pause is gentler on Genius and easier to follow.`,
+        attrs: { id: "setting-autoPace-help" },
+      }),
       keySelect("nextHotkey", "Key that fills the next step"),
       keySelect("backHotkey", "Key that goes back one step"),
       el(

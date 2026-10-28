@@ -451,6 +451,8 @@ describe("settings screen", () => {
     ]);
     // Selects and the number box are named by their labels too (expectAccessible checks every control).
     expect([...root.querySelectorAll<HTMLElement>("select, input[type=number]")].map(accessibleName)).toEqual([
+      "Start pasting",
+      "Seconds between fields when pasting automatically",
       "Key that fills the next step",
       "Key that goes back one step",
       "Seconds before going back to the main menu",

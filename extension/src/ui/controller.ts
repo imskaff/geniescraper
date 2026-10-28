@@ -8,7 +8,7 @@ import type { PasteCommand } from "../shared/messages";
 import { IDLE_PASTE, type PasteState } from "../core/paste";
 import type { AlbumInfo, AppError, PageScrape } from "../shared/messages";
 import { EMPTY_SESSION, type Session, type TrackResult } from "../shared/session";
-import { normaliseSettings, queueOptions, type Settings } from "../shared/settings";
+import { normaliseSettings, queueOptions, type PasteMode, type Settings } from "../shared/settings";
 import {
   loadPaste,
   loadSession,
@@ -136,9 +136,6 @@ export function buildSong(album: AlbumInfo, result: Pick<TrackResult, "url">, sc
     youtubeIsMv: false,
   };
 }
-
-/** How a track's paste is started: by itself, or one Next-key press per step. */
-export type PasteMode = "auto" | "manual";
 
 /** The longest Start pasting waits for a YouTube link before starting without it. */
 export const YOUTUBE_WAIT_MS = 8000;
@@ -583,6 +580,8 @@ export class PanelController {
       settings.nextHotkey = this.current.settings.backHotkey;
     }
     const normalised = normaliseSettings(settings);
+    // A new choice of how Start pasting works applies at once, ahead of however the last track was started.
+    if (key === "pasteMode") this.lastMode = null;
     this.update({ settings: normalised });
     // Each countdown stops when its own setting says so; the other one is none of this change's business.
     if (
@@ -809,19 +808,23 @@ export class PanelController {
     await this.setResult(index, { song });
   }
 
-  /** How the last track was started, so the next one (the countdown, the next-track button) goes the same way. */
-  private lastMode: PasteMode = "auto";
+  /**
+   * How the last track was started, so the next one (the countdown, the next-track button) goes the same way. Until a
+   * track has been started, and after the user changes the setting, the setting decides.
+   */
+  private lastMode: PasteMode | null = null;
 
   /**
-   * Begin pasting one track's queue into Genius: by itself ("auto", the default way) or one key press per step
-   * ("manual"). A track started by the countdown or the next-track button goes the way the last one did.
+   * Begin pasting one track's queue into Genius: by itself ("auto") or one key press per step ("manual"). Without
+   * a mode it goes the way the last track did, or the way the settings say for the first one.
    */
-  async startPaste(index: number, mode: PasteMode = this.lastMode): Promise<void> {
+  async startPaste(index: number, mode?: PasteMode): Promise<void> {
     await this.waitForYoutube(index);
     const result = this.current.session.results.find((r) => r.index === index);
     const queue = this.queueFor(index);
     if (!result?.song || queue.length === 0) return;
-    this.lastMode = mode;
+    const way = mode ?? this.lastMode ?? this.current.settings.pasteMode;
+    this.lastMode = way;
     await this.pasteCommand({
       type: "paste-start",
       title: result.song.title || result.title,
@@ -832,7 +835,7 @@ export class PanelController {
     await this.updateSession({ current: index });
     // The session is running by now. If no Genius page can take the run, the error says what to open, and the
     // session stays as a step-by-step one that the user can start automatically from the paste screen.
-    if (mode === "auto") await this.autoPaste();
+    if (way === "auto") await this.autoPaste();
   }
 
   /** Start automatic pasting, or resume it after a pause, from the step the session is at. */

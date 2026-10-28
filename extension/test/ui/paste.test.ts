@@ -276,6 +276,54 @@ describe("pasting settings", () => {
   });
 });
 
+describe("the automatic pasting settings", () => {
+  async function onSettings() {
+    const ui = await onReview();
+    button(ui.root, "Settings").click();
+    await flush();
+    return ui;
+  }
+
+  const change = async (field: HTMLInputElement | HTMLSelectElement, value: string): Promise<void> => {
+    field.value = value;
+    field.dispatchEvent(new Event("change", { bubbles: true }));
+    await flush();
+  };
+
+  it("shows the defaults: automatic, with 0.6 seconds between fields", async () => {
+    const { root } = await onSettings();
+    expect(($(root, "#setting-pasteMode") as HTMLSelectElement).value).toBe("auto");
+    expect(($(root, "#setting-autoPace") as HTMLInputElement).value).toBe("0.6");
+  });
+
+  it("saves the way Start pasting works", async () => {
+    const { root, panel, env } = await onSettings();
+    await change($(root, "#setting-pasteMode") as HTMLSelectElement, "manual");
+    expect(panel.state.settings.pasteMode).toBe("manual");
+    expect(env.settingsStore.data.get("settings")).toMatchObject({ pasteMode: "manual" });
+  });
+
+  it("saves the pace, kept between 0.2 and 5 seconds", async () => {
+    const { root, panel, env } = await onSettings();
+    const pace = $(root, "#setting-autoPace") as HTMLInputElement;
+    await change(pace, "1.5");
+    expect(panel.state.settings.autoPaceSeconds).toBe(1.5);
+    expect(env.settingsStore.data.get("settings")).toMatchObject({ autoPaceSeconds: 1.5 });
+    await change(pace, "99");
+    expect(panel.state.settings.autoPaceSeconds).toBe(5);
+    await change(pace, "0");
+    expect(panel.state.settings.autoPaceSeconds).toBe(0.2);
+  });
+
+  it("describes each field for a screen reader", async () => {
+    const { root } = await onSettings();
+    for (const id of ["setting-pasteMode", "setting-autoPace"]) {
+      const help = $(root, `#${id}`).getAttribute("aria-describedby") ?? "";
+      expect(root.querySelector(`#${help}`)?.textContent, id).toBeTruthy();
+    }
+  });
+});
+
 describe("the paste error box", () => {
   const attention = (env: { api: { pasteState: PasteState } }, message: string): PasteState => ({
     ...env.api.pasteState,

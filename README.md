@@ -208,8 +208,8 @@ To try the extension, run `npm run build`, open `chrome://extensions`, switch on
 The toolbar button opens the side panel: paste an Apple Music album or song link (or open one and the panel offers it), choose tracks with **Select all** or by ticking them (none are ticked for you), and review the credits and the paste queue (collapsed until you open it).
 **Start pasting** is in the header next to Settings, and **Back to main menu** returns to the start.
 The cover is Apple's exact 1000x1000 PNG for the album you opened, looked up by its catalog id on `itunes.apple.com`, and it is filled into Genius's Song Art field.
-Review the credits, open the song's **Edit Metadata** form on Genius, and click **Start pasting**: the extension fills the fields by itself, with a short pause between them.
-**Step by step** is the other way: one field per press of **F8** (**F7** goes back).
+Review the credits, open the song's **Edit Metadata** form on Genius, and click **Start pasting**: the extension fills the fields by itself, with a short pause between them (the pace is in Settings).
+**Step by step** is the other way: one field per press of **F8** (**F7** goes back); Settings can make it the main way instead.
 Automatic pasting pauses when you click or type in the form, press Esc or **Pause**, or close the panel, and **Resume** carries on from the same step; it never clicks Save, so you check the form and save it yourself.
 When Genius has no exact match for a name or role the text stays typed and nothing is chosen for you: pick a suggestion yourself, or press Skip in the panel.
 The first time the panel opens, a short set-up walks you through what to paste, speed and keys, and the optional look-ups.

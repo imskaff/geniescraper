@@ -816,6 +816,10 @@ Each is tested first and committable on its own.
    The panel keeps a connection open to the worker; when it ends the worker pauses the run (`panel-closed`), and the panel reconnects if the worker was restarted meanwhile. This has not been seen in a real browser yet: slice 5 checks it.
    A pause now shows its message as a polite status line, so the user is told why.
 4. The pace setting and the default.
+   Done. Settings, under "Pasting on Genius", has "Start pasting" (`pasteMode`: automatically, the default, or step by step) and "Seconds between fields when pasting automatically" (`autoPaceSeconds`, 0.2 to 5).
+   With step by step as the main way, Start pasting is the plain glowing yellow button for the Next key and "Auto-paste" is the glowing gradient button beside it; either way the other is one button away.
+   Changing the setting applies at once to the next Start pasting; after that a track started the other way sets how the next track goes, as before.
+   The first-time set-up does not ask about it: automatic is the default and the choice is in Settings.
 5. A live run on a Genius song the owner created (`npm run live:genius` with the scratch profile), then docs and the privacy and listing text if anything they say changes.
 
 ### Open risks

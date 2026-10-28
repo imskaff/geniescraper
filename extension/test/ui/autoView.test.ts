@@ -98,6 +98,53 @@ describe("the ways to start pasting", () => {
   });
 });
 
+describe("when the user chose step by step as the way Start pasting works", () => {
+  const manualDefault = { settings: { pasteMode: "manual" } };
+
+  it("leads with Start pasting as the Next-key button, and offers Auto-paste beside it", async () => {
+    const { root } = await onReview(manualDefault);
+    const start = $(root, '[data-key="start"]');
+    expect(start.classList.contains("magic")).toBe(false);
+    expect(start.classList.contains("primary")).toBe(true);
+    expect(start.getAttribute("aria-label")).toBe("Start pasting One, one key press per field");
+    const auto = $(root, '[data-key="start-auto"]');
+    expect(auto.classList.contains("magic")).toBe(true);
+    expect(auto.textContent).toBe("Auto-paste");
+    expect(has(root, '[data-key="start-manual"]')).toBe(false);
+  });
+
+  it("Start pasting then starts the session only, and Auto-paste runs it by itself", async () => {
+    const first = await onReview(manualDefault);
+    $(first.root, '[data-key="start"]').click();
+    await flush();
+    expect(first.env.api.calls.filter((c) => c.startsWith("paste:"))).toEqual(["paste:paste-start"]);
+
+    const second = await onReview(manualDefault);
+    $(second.root, '[data-key="start-auto"]').click();
+    await flush();
+    expect(second.panel.state.paste.auto).toBe("running");
+  });
+
+  it("makes the next track follow that choice until the user starts one the other way", async () => {
+    const { env, panel } = await onReview(manualDefault);
+    await panel.startPaste(0);
+    expect(env.api.calls).not.toContain("paste:paste-auto-start");
+    await panel.startPaste(2, "auto");
+    await panel.startPaste(0);
+    expect(env.api.calls.filter((c) => c === "paste:paste-auto-start")).toHaveLength(2);
+  });
+
+  it("changing the setting changes what the next Start pasting does", async () => {
+    const { env, panel } = await onReview();
+    await panel.setSetting("pasteMode", "manual");
+    await panel.startPaste(0);
+    expect(env.api.calls).not.toContain("paste:paste-auto-start");
+    await panel.setSetting("pasteMode", "auto");
+    await panel.startPaste(0);
+    expect(env.api.calls).toContain("paste:paste-auto-start");
+  });
+});
+
 describe("pausing and resuming", () => {
   async function running() {
     const ui = await onReview();
