@@ -773,6 +773,7 @@ export class PanelView {
     const next = this.panel.nextPastable();
     const nextTitle = state.session.results.find((r) => r.index === next)?.song?.title;
     const tracks = (state.session.album?.trackCount ?? 0) > 1;
+    const nextLabel = nextTitle ? `Paste next track: ${nextTitle}` : "Paste next track";
     return [
       el(
         "div",
@@ -787,7 +788,7 @@ export class PanelView {
         { class: "stack" },
         next !== null
           ? this.button(
-              nextTitle ? `Paste next track: ${nextTitle}` : "Paste next track",
+              state.nextCountdown === null ? nextLabel : `${nextLabel} (${String(state.nextCountdown)}s)`,
               "primary",
               "pnext",
               () => void this.panel.startPaste(next),

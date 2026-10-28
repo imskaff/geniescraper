@@ -714,3 +714,9 @@ Margins, paddings and gaps had drifted (6, 10, 14, 20 and 22 px next to the 4, 8
 - Controls (buttons, fields, summaries, queue items) are all 8 px by 12 px; cards (credits, the step to paste) 12 px; gaps inside a control 8 or 12 px.
 - A block spaces itself from the block before it only once: a stack or row inside a stack, a title or a disclosure inside a stack, and the list under a help line no longer add a second margin, and the doubled gap in the track picker is gone.
 Checked in a browser at 400 px wide on the credits, track picker, paste and settings screens (a throwaway preview built from the real view with sample data), not in the real side panel.
+
+## 33. Paste next track starts by itself after 15 seconds
+
+When a track has been pasted and another track with credits is waiting, the finished screen counts down from 15 on the "Paste next track" button and starts that track when it reaches zero, unless the user gets there first (a click, or leaving the screen, cancels it).
+It waits while the pointer is over the panel or a button has focus, like the menu countdown, and only one countdown runs at a time: after the last track the 30-second return to the main menu takes over.
+The countdown does not depend on the "Go back to the main menu" setting.

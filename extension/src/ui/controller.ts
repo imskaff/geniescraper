@@ -72,6 +72,8 @@ export interface PanelState {
   youtubeLinkError: string;
   /** Seconds left before the finished screen returns to the main menu, or null when no countdown runs. */
   doneCountdown: number | null;
+  /** Seconds left before the finished screen starts the next track by itself, or null when no countdown runs. */
+  nextCountdown: number | null;
   /** Counts every error shown, so the same message appearing again (a repeated attempt) can still be told apart. */
   errorSeq: number;
   /** What the panel is waiting for; the buttons that would start another job are disabled meanwhile. */
@@ -138,6 +140,9 @@ export function buildSong(album: AlbumInfo, result: Pick<TrackResult, "url">, sc
 /** Seconds the finished screen waits before returning to the main menu, as the desktop app does. */
 export const DONE_SECONDS = 30;
 
+/** Seconds the finished screen waits before starting the next track by itself, when one is waiting. */
+export const NEXT_TRACK_SECONDS = 15;
+
 /** The longest Start pasting waits for a YouTube link before starting without it. */
 export const YOUTUBE_WAIT_MS = 8000;
 
@@ -196,6 +201,7 @@ export class PanelController {
       youtubeNotes: {},
       youtubeLinkError: "",
       doneCountdown: null,
+      nextCountdown: null,
       errorSeq: 0,
       settingsOpen: false,
       setup: { open: !settings.onboarded, step: 0 },
@@ -599,6 +605,8 @@ export class PanelController {
     // Only the last track left to paste ends the work: while another has not been pasted the user must not be moved
     // away (leaving wipes the credits). When it is not known which track was pasted, nothing is assumed.
     else if (!wasFinished && this.current.settings.autoReturn && this.finishedLastTrack()) this.startCountdown();
+    // Another track with credits is waiting: press its button for the user after a short pause, once, on arrival.
+    else if (!wasFinished && this.nextPastable() !== null) this.startNextCountdown();
   }
 
   /** Tracks the user has started pasting in this album, so 'last track' does not depend on the order they chose. */
@@ -828,7 +836,14 @@ export class PanelController {
 
   private startCountdown(): void {
     // The pause flag is left as the view last set it: the pointer may already be over the panel.
-    this.update({ doneCountdown: DONE_SECONDS });
+    // Only one countdown runs at a time: starting one takes the other away.
+    this.update({ doneCountdown: DONE_SECONDS, nextCountdown: null });
+    this.scheduleTick();
+  }
+
+  /** The same hold for the next track: a countdown that starts it unless the user gets there first. */
+  private startNextCountdown(): void {
+    this.update({ nextCountdown: NEXT_TRACK_SECONDS, doneCountdown: null });
     this.scheduleTick();
   }
 
@@ -840,18 +855,33 @@ export class PanelController {
   }
 
   private tick(): void {
-    const left = this.current.doneCountdown;
-    if (left === null || !isFinished(this.current.paste)) return;
     if (this.countdownPaused) {
       this.scheduleTick();
       return;
     }
-    if (left <= 1) {
-      this.cancelCountdown();
-      void this.leavePasting("menu");
+    const done = this.current.doneCountdown;
+    if (done !== null) {
+      if (!isFinished(this.current.paste)) return;
+      if (done <= 1) {
+        this.cancelCountdown();
+        void this.leavePasting("menu");
+        return;
+      }
+      this.update({ doneCountdown: done - 1 });
+      this.scheduleTick();
       return;
     }
-    this.update({ doneCountdown: left - 1 });
+    const left = this.current.nextCountdown;
+    if (left === null) return;
+    // The next track may have gone away meanwhile (the session ended, the credits changed): nothing to start then.
+    const target = this.nextPastable();
+    if (target === null) return;
+    if (left <= 1) {
+      this.cancelCountdown();
+      void this.startPaste(target);
+      return;
+    }
+    this.update({ nextCountdown: left - 1 });
     this.scheduleTick();
   }
 
@@ -859,7 +889,10 @@ export class PanelController {
   cancelCountdown(): void {
     clearTimeout(this.countdownTimer);
     this.countdownTimer = undefined;
-    if (this.current.doneCountdown !== null) this.update({ doneCountdown: null });
+    const patch: Partial<PanelState> = {};
+    if (this.current.doneCountdown !== null) patch.doneCountdown = null;
+    if (this.current.nextCountdown !== null) patch.nextCountdown = null;
+    if (patch.doneCountdown !== undefined || patch.nextCountdown !== undefined) this.update(patch);
   }
 
   /** Hold the countdown while the user is using the panel (pointer over it, a button focused); it carries on after. */
