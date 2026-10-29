@@ -160,9 +160,9 @@ def test_settings_window_uses_app_icon_and_fast_scroll(walk):
 
 def test_settings_follow_the_extensions_order(walk):
     assert walk["settings_headings"] == [
-        "What to collect",
-        "Pasting into Genius",
-        "Reading tracks",
+        "What to paste",
+        "Pasting on Genius",
+        "Reading credits",
         "Window",
     ]
 

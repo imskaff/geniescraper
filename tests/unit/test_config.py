@@ -66,22 +66,22 @@ def test_per_user_file_wins_over_legacy_checkout_env(tmp_path):
     assert (loaded.auto_tab, loaded.hotkey) == (True, "f10")
 
 
-def test_parallel_reads_defaults_to_one_track_at_a_time():
-    assert _settings(None).parallel_reads == 1
+def test_parallel_reads_defaults_to_three_tracks_at_a_time_like_the_extension():
+    assert _settings(None).parallel_reads == 3
 
 
 def test_parallel_reads_is_saved_and_loaded(tmp_path, monkeypatch):
     env = tmp_path / ".env"
     monkeypatch.setattr(config, "_ENV_PATH", env)
-    _settings(None).model_copy(update={"parallel_reads": 3}).save()
-    assert _settings(str(env)).parallel_reads == 3
+    _settings(None).model_copy(update={"parallel_reads": 5}).save()
+    assert _settings(str(env)).parallel_reads == 5
 
 
 @pytest.mark.parametrize("written", ["4", "-1", "many"])
 def test_parallel_reads_outside_the_choices_falls_back_to_the_default(tmp_path, written):
     env = tmp_path / ".env"
     env.write_text(f"PARALLEL_READS={written}\n", encoding="utf-8")
-    assert _settings(str(env)).parallel_reads == 1
+    assert _settings(str(env)).parallel_reads == 3
 
 
 def test_parallel_reads_zero_means_all_at_once(tmp_path):

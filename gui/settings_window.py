@@ -20,23 +20,32 @@ from utils import config
 from utils.config import settings
 
 _AUTO_START_DELAYS = ("5", "10", "15", "30")
-_READS_ALL = "All"
+_READS_ALL = "All at once"
+_READS_ONE = "1 (one by one)"
 _AUTO_PASTE_HINT_ON = (
-    "The extension fills every field by itself and pauses if you touch Genius. "
-    "Off, you press Next or the key for each step."
+    "The extension fills the whole track by itself, one field after another, and pauses if you touch Genius. "
+    "Off, you press the key or Next for each step."
 )
 _AUTO_PASTE_HINT_OFF = "Needs the browser extension: connect it below to turn this on."
 _COLLECT = (
-    ("scrape_core", "Writers and producers", "Written By and Produced By"),
+    ("scrape_core", "Songwriters and producers", "Written By and Produced By"),
     ("scrape_additional", "Additional credits", "Every other role, such as engineers and musicians"),
-    ("scrape_copyright", "Copyright lines", "℗ and © labels, from album links"),
+    ("scrape_copyright", "Copyright lines (℗ and ©)", "The labels, from album links"),
     (
         "scrape_youtube",
         "Find a YouTube link for each track (recommended)",
         "Official music video, lyric video or official audio",
     ),
-    ("scrape_cover_art", "Cover art", "1000×1000 PNG of the exact release"),
+    ("scrape_cover_art", "PNG cover art link", "1000×1000 PNG of the exact release"),
 )
+
+
+def _reads_label(n: int) -> str:
+    return _READS_ALL if n == 0 else _READS_ONE if n == 1 else str(n)
+
+
+def _reads_value(label: str) -> int:
+    return 0 if label == _READS_ALL else 1 if label == _READS_ONE else int(label)
 
 
 class SettingsWindow(ctk.CTkToplevel):
@@ -78,11 +87,11 @@ class SettingsWindow(ctk.CTkToplevel):
 
         # The extension's Settings, in the same order: what to collect, then pasting (with the link to the browser
         # extension that does the pasting for you), reading, and the desktop-only window options last.
-        self._card("What to collect")
+        self._card("What to paste")
         for key, label, hint in _COLLECT:
             self._switch(key, label, hint)
 
-        self._card("Pasting into Genius")
+        self._card("Pasting on Genius")
         self._auto_paste()
         self._link_area()
         self._subgroup("Keys")
@@ -100,7 +109,7 @@ class SettingsWindow(ctk.CTkToplevel):
         )
         self._wait_slider()
 
-        self._card("Reading tracks")
+        self._card("Reading credits")
         self._parallel_reads()
 
         self._card("Window")
@@ -173,8 +182,8 @@ class SettingsWindow(ctk.CTkToplevel):
 
     def _wait_slider(self) -> None:
         _, control = self._setting_row(
-            "Autocomplete wait",
-            "How long to wait for Genius's suggestions before confirming. Raise it if a wrong name gets picked.",
+            "Wait for suggestions to settle (seconds)",
+            "Raise this if Genius is slow to show suggestions.",
             wrap=220,
         )
         value = ctk.CTkLabel(control, text=f"{settings.autocomplete_wait:.1f} s", width=44, font=theme.font(12))
@@ -195,25 +204,28 @@ class SettingsWindow(ctk.CTkToplevel):
 
     def _parallel_reads(self) -> None:
         _, control = self._setting_row(
-            "Parallel reads",
-            "How many album tracks are read at once while you paste. 1 is the gentlest on Apple Music and YouTube.",
+            "Tracks read at the same time",
+            "More at once is faster for an album, but opens that many Apple Music pages together. "
+            "One by one is the gentlest; three is the default.",
             wrap=230,
         )
         menu = ctk.CTkOptionMenu(
             control,
-            values=[_READS_ALL if n == 0 else str(n) for n in config.PARALLEL_CHOICES],
-            width=70,
+            values=[_reads_label(n) for n in config.PARALLEL_CHOICES],
+            width=130,
             font=theme.font(12),
-            command=lambda v: self._set("parallel_reads", 0 if v == _READS_ALL else int(v)),
+            command=lambda v: self._set("parallel_reads", _reads_value(v)),
         )
-        menu.set(_READS_ALL if settings.parallel_reads == 0 else str(settings.parallel_reads))
+        menu.set(_reads_label(settings.parallel_reads))
         menu.pack()
 
     def _hotkeys(self) -> None:
         box = ctk.CTkFrame(self._box, fg_color="transparent", corner_radius=0)
         box.grid_columnconfigure(1, weight=1)
         self._hk_buttons: dict[str, ctk.CTkButton] = {}
-        for i, (key, label) in enumerate((("hotkey", "Paste next"), ("back_hotkey", "Go back one step"))):
+        for i, (key, label) in enumerate(
+            (("hotkey", "Key that fills the next step"), ("back_hotkey", "Key that goes back one step"))
+        ):
             ctk.CTkLabel(box, text=label, font=theme.font(13, "bold"), text_color=theme.TEXT, anchor="w").grid(
                 row=i, column=0, sticky="w", padx=0, pady=(6 if i == 0 else 4, 4)
             )

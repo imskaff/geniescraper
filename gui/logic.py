@@ -94,7 +94,7 @@ def hotkey_error(key: str, other_key: str) -> str | None:
 def prefetch_plan(parallel_reads: int) -> tuple[int, int]:
     """(tracks read at once, tracks started ahead) for the "parallel reads" setting; 0 reads every pending track.
 
-    The default of 1 reads one track at a time with two started ahead, as the app always did.
+    The default is 3, as in the extension; 1 reads one track at a time with two started ahead, as the app used to.
     """
     limit = parallel_reads if parallel_reads > 0 else 1000
     return limit, max(2, limit)

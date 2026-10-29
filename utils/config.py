@@ -19,6 +19,7 @@ _ENV_PATH = settings_path()
 
 # Tracks read at once, as the extension offers them; 0 is all of them.
 PARALLEL_CHOICES = (1, 2, 3, 5, 0)
+PARALLEL_DEFAULT = 3  # the extension's default too
 
 
 class Settings(BaseSettings):
@@ -45,7 +46,7 @@ class Settings(BaseSettings):
     always_on_top: bool = True  # Keep the window above the browser while pasting
 
     # Tracks of an album read at once while the one before is being pasted: 1 (the default), 2, 3, 5 or 0 for all
-    parallel_reads: int = 1
+    parallel_reads: int = PARALLEL_DEFAULT
 
     # Companion link to the browser extension (assistant/bridge.py). The secret is written to this file only,
     # never logged or printed: repr=False keeps it out of repr(settings) and out of tracebacks.
@@ -64,8 +65,8 @@ class Settings(BaseSettings):
         try:
             reads = int(str(value))
         except ValueError:
-            return 1
-        return reads if reads in PARALLEL_CHOICES else 1
+            return PARALLEL_DEFAULT
+        return reads if reads in PARALLEL_CHOICES else PARALLEL_DEFAULT
 
     @field_validator("link_mode", mode="before")
     @classmethod

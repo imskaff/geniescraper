@@ -331,7 +331,7 @@ class App(ctk.CTk):
 
         actions = ctk.CTkFrame(body, fg_color="transparent")
         actions.pack(fill="x", pady=(14, 0))
-        self._scrape_btn = self._button(actions, "Scrape", self._start_scrape, primary=True, width=150)
+        self._scrape_btn = self._button(actions, "Get credits", self._start_scrape, primary=True, width=150)
         self._set_enabled(self._scrape_btn, False)
         self._scrape_btn.pack(side="left")
         self._cancel_btn = self._button(actions, "Cancel", self._cancel_scrape, width=100)
@@ -348,7 +348,7 @@ class App(ctk.CTk):
         hk = settings.hotkey.upper()
         for n, text in enumerate(
             (
-                "Paste an album or song link and press Scrape.",
+                "Paste an album or song link and press Get credits.",
                 "Choose the tracks, then check the credits that were found.",
                 f"Open the song's edit page on Genius, click Written By, and press {hk} once per field.",
             ),
@@ -404,7 +404,7 @@ class App(ctk.CTk):
         self.after(200, self._check_url_loop)
 
     def _set_busy(self, busy: bool, status: str = "") -> None:
-        """Start-screen state while detecting: progress bar and Cancel instead of Scrape."""
+        """Start-screen state while detecting: progress bar and Cancel instead of Get credits."""
         self._busy = busy
         if not self._scrape_btn.winfo_exists():
             return

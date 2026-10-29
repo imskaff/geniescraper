@@ -79,7 +79,7 @@ Good to know:
 uv run python gui_main.py
 ```
 
-1. **Link** - Paste an Apple Music album or song link and click **Scrape**.
+1. **Link** - Paste an Apple Music album or song link and click **Get credits**.
    The app tells you right away if the link is not one it can read.
    Album links are best, because they include the copyright lines (℗ and ©).
 2. **Tracks** - For an album, tick the songs to paste, or choose all of them.
@@ -132,7 +132,7 @@ Open **⚙ Settings** from any screen:
 | Hotkey (Next) | F8 | Paste current field and advance |
 | Hotkey (Back) | F7 | Step back one field |
 | Auto-confirm | On | Press Enter after paste to confirm autocomplete |
-| Autocomplete wait | 0.6 s | How long to wait for Genius's suggestions before confirming |
+| Wait for suggestions to settle | 0.6 s | How long to wait for Genius's suggestions before confirming |
 | Auto-tab | Off | Automatically Tab between Genius fields |
 | Compact mode | Off | Hide queue list and shrink the window |
 | Always on top | On | Keep the window above the browser |

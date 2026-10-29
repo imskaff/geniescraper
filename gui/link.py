@@ -48,8 +48,8 @@ def default_factory(secret: str | None, origin: str | None, callbacks: _Callback
 class LinkState(Enum):
     NOT_PAIRED = "Not paired"
     WAITING = "Waiting for the extension"
-    CONNECTED = "Connected"
-    LOST = "Lost"
+    CONNECTED = "Paired and connected"
+    LOST = "Link lost"
 
 
 @dataclass(frozen=True)
