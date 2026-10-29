@@ -31,7 +31,7 @@ def status_state(**over):
     return state
 
 
-def make_session(*, secret=SECRET, pairing=None, origin=EXT_ORIGIN, pinned=None, now=0.0):
+def make_session(*, secret: str | None = SECRET, pairing=None, origin=EXT_ORIGIN, pinned=None, now=0.0):
     clock = {"t": now}
     session = b.ClientSession(
         secret=secret, pairing=pairing, origin=origin, pinned_origin=pinned, clock=lambda: clock["t"]
@@ -454,7 +454,7 @@ def test_send_command_without_a_connection_raises():
 websockets = pytest.importorskip("websockets")
 
 
-async def connect(port, *, origin=EXT_ORIGIN, host=None):
+async def connect(port, *, origin: str | None = EXT_ORIGIN, host=None):
     headers = {"Host": host} if host else None
     return await websockets.connect(f"ws://127.0.0.1:{port}/", origin=origin, additional_headers=headers)
 
