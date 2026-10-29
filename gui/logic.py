@@ -66,6 +66,14 @@ def url_hint(url: str) -> tuple[bool, str]:
 def friendly_error(message: str) -> str:
     """Rewrite a scrape failure into what happened and what to do next."""
     lower = message.lower()
+    if "executable doesn't exist" in lower or "playwright install" in lower:
+        # Playwright's own box of text hides the one useful part: where it looked, which names the browser revision.
+        looked = re.search(r"Executable doesn't exist at\s+(\S.*)", message)
+        where = f" (it looked for {looked.group(1).strip()})" if looked else ""
+        return (
+            f"The browser Géniescraper reads Apple Music with is missing or out of date{where}. "
+            "Close the app, run  uv run playwright install chromium  in the project folder, then start it again."
+        )
     if "page not found" in lower:
         return "Apple Music has no page at this link. Check the link and try again."
     if "timeout" in lower or "timed out" in lower:

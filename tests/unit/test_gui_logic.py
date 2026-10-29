@@ -120,3 +120,26 @@ def test_open_page_rows_cut_long_titles_and_say_how_many_more_there_are():
     rows, more = open_page_rows(pages)
     assert len(rows) == MAX_OPEN_ROWS and all(len(title) <= 56 and title.endswith("…") for _, title, _ in rows)
     assert more == "and 3 more open"
+
+
+PLAYWRIGHT_MISSING = (
+    "BrowserType.launch: Executable doesn't exist at "
+    r"C:\Users\skf\AppData\Local\ms-playwright\chromium_headless_shell-1248\chrome-headless-shell-win64\chrome-headless-shell.exe"
+    "\n+------------------------------------------------+\n"
+    "|| Looks like Playwright was just installed or updated. ||\n"
+    "|| Please run the following command to download new browsers: ||\n"
+    "||     playwright install ||\n"
+    "+------------------------------------------------+"
+)
+
+
+def test_a_missing_playwright_browser_says_where_it_looked_and_how_to_fix_it():
+    text = friendly_error(PLAYWRIGHT_MISSING)
+    assert "chromium_headless_shell-1248" in text  # the revision is the clue to a version mismatch
+    assert "uv run playwright install chromium" in text
+    assert "+---" not in text and "||" not in text  # none of Playwright's box art
+
+
+def test_a_playwright_message_without_a_path_still_gets_the_fix():
+    text = friendly_error("Please run the following command to download new browsers: playwright install")
+    assert "uv run playwright install chromium" in text and "it looked for" not in text
