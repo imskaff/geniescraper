@@ -12,6 +12,7 @@ from PIL import Image as PILImage
 
 from assistant import flow
 from gui import theme
+from gui.connect_prompt import ConnectPrompt
 from gui.link import LinkController, OpenPage, RunStatus, describe_status
 from gui.logic import (
     OPEN_PAGES_EMPTY,
@@ -124,6 +125,7 @@ class App(ctk.CTk):
         self._steps_heads: dict[str, ctk.CTkButton] = {}
         # The 'Open in your browser' card on the start screen, and what it currently shows.
         self._pages_card: ctk.CTkFrame | None = None
+        self._connect_card: ConnectPrompt | None = None  # the glowing 'Connect your browser extension' call
         self._how_card: ctk.CTkFrame | None = None
         self._pages_shown: tuple[bool, tuple[OpenPage, ...]] | None = None
 
@@ -314,13 +316,13 @@ class App(ctk.CTk):
             text_color=theme.ACCENT_INK,
             fg_color=theme.ACCENT,
             corner_radius=4,
-        ).pack(anchor="w", pady=(theme.SPACE_4, theme.SPACE_2), ipadx=theme.SPACE_3, ipady=theme.SPACE_1)
+        ).pack(anchor="w", pady=(theme.SPACE_2, theme.SPACE_2), ipadx=theme.SPACE_3, ipady=theme.SPACE_1)
         ctk.CTkLabel(
             body,
             text="Collect a song's credits from Apple Music and paste them into Genius.",
             font=_f(13),
             text_color=theme.MUTED,
-        ).pack(anchor="w", pady=(0, theme.SPACE_5))
+        ).pack(anchor="w", pady=(0, theme.SPACE_4))
 
         ctk.CTkLabel(body, text="Apple Music link", font=_f(13, "bold"), text_color=theme.TEXT).pack(anchor="w")
         url_field = ctk.CTkFrame(
@@ -363,14 +365,14 @@ class App(ctk.CTk):
 
         self._progress = ctk.CTkProgressBar(body, mode="indeterminate", height=4, progress_color=theme.ACCENT)
         self._status_lbl = ctk.CTkLabel(body, text="", font=_f(12), text_color=theme.MUTED, anchor="w", justify="left")
-        self._status_lbl.pack(anchor="w", fill="x", pady=(theme.SPACE_3, 0))
+        self._status_lbl.pack(anchor="w", fill="x", pady=(theme.SPACE_2, 0))
 
         how = ctk.CTkFrame(body, fg_color=theme.SURFACE, corner_radius=8)
-        how.pack(fill="x", pady=(theme.SPACE_5, 0))
-        self._pages_card, self._how_card, self._pages_shown = None, how, None
+        how.pack(fill="x", pady=(theme.SPACE_3, 0))
+        self._pages_card, self._connect_card, self._how_card, self._pages_shown = None, None, how, None
         self._render_open_pages()
         ctk.CTkLabel(how, text="HOW IT WORKS", font=_f(11, "bold"), text_color=theme.FAINT).pack(
-            anchor="w", padx=theme.SPACE_4, pady=(theme.SPACE_3, theme.SPACE_2)
+            anchor="w", padx=theme.SPACE_4, pady=(theme.SPACE_2, theme.SPACE_1)
         )
         hk = settings.hotkey.upper()
         for n, text in enumerate(
@@ -382,14 +384,14 @@ class App(ctk.CTk):
             start=1,
         ):
             row = ctk.CTkFrame(how, fg_color="transparent")
-            row.pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_2))
+            row.pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_1))
             ctk.CTkLabel(row, text=str(n), width=22, font=_f(13, "bold"), text_color=theme.ACCENT, anchor="w").pack(
                 side="left", anchor="n"
             )
             ctk.CTkLabel(
                 row, text=text, font=_f(13), text_color=theme.TEXT, anchor="w", justify="left", wraplength=470
             ).pack(side="left", fill="x")
-        ctk.CTkFrame(how, height=4, fg_color="transparent").pack()
+        ctk.CTkFrame(how, height=theme.SPACE_1, fg_color="transparent").pack()
 
         self._settings_summary(self).pack(side="bottom", pady=(0, theme.SPACE_4))
         self._check_url_loop()
@@ -400,15 +402,21 @@ class App(ctk.CTk):
         if self._screen != "start" or how is None or not how.winfo_exists():
             return
         link = self.link
-        shown = (link.connected, link.pages)
+        shown = (link.connected, link.pages if link.connected else ())
         if shown == self._pages_shown:
             return
         self._pages_shown = shown
         if self._pages_card is not None:
             self._pages_card.destroy()
             self._pages_card = None
+        if self._connect_card is not None:
+            self._connect_card.destroy()  # cancels its glow timer
+            self._connect_card = None
         if not link.connected:
-            how.pack(fill="x", pady=(theme.SPACE_5, 0))
+            # No extension: a glowing call to connect one, in the slot the detector takes once it is connected.
+            self._connect_card = ConnectPrompt(how.master, self._connect_extension)
+            self._connect_card.pack(fill="x", pady=(theme.SPACE_3, 0), after=self._status_lbl)
+            how.pack(fill="x", pady=(theme.SPACE_3, 0))
             return
         # The card takes the place of 'How it works', which a user with the extension connected no longer needs.
         how.pack_forget()

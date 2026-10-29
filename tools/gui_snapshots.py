@@ -139,7 +139,10 @@ def _walk(on_screen: Callable[[Any, str], None]) -> None:
         app.link._handle_connection(True)
         app.link._handle_pages(OPEN_PAGES)
         screen("03-start-open-pages")
+        app.link._handle_pages([])
+        screen("03a-start-connected-empty")
         app.link._handle_connection(False)
+        screen("03b-start-not-connected")
 
         app._open_settings()
         settings_win = app._settings_win

@@ -20,7 +20,8 @@ pytestmark = [
 ]
 
 EXPECTED_SCREENS = [
-    "01-start", "02-start-url", "03-start-error", "03-start-open-pages", "04-settings", "05-tracks", "06-loading",
+    "01-start", "02-start-url", "03-start-error", "03-start-open-pages", "03a-start-connected-empty",
+    "03b-start-not-connected", "04-settings", "05-tracks", "06-loading",
     "07-credits", "08-assistant-start", "09-assistant-middle", "09a-settings-from-connect", "09b-assistant-linked-auto",
     "09c-assistant-linked-manual", "09d-assistant-linked-message", "10-esc-confirm",
     "11-assistant-compact", "12-done",
@@ -68,6 +69,14 @@ def _texts(widget: Any) -> list[str]:
             found.append(text)
         found.extend(_texts(child))
     return found
+
+
+def _inside(widget: Any, ancestor: Any) -> bool:
+    while widget is not None:
+        if widget is ancestor:
+            return True
+        widget = widget.master
+    return False
 
 
 def _buttons(window: Any) -> dict[str, dict[str, Any]]:
@@ -229,6 +238,57 @@ def _check_open_pages(window: Any) -> dict[str, Any]:
     return seen
 
 
+def _check_connect_prompt(window: Any) -> dict[str, Any]:
+    """The start screen's glowing call to connect: up while unconnected, gone while connected, never a rebuild."""
+    from gui import connect_prompt
+
+    seen: dict[str, Any] = {}
+    link, entry = window.link, window._url_entry
+    card = window._connect_card
+    assert card is not None
+    seen["shown_when_unconnected"] = bool(card.winfo_ismapped())
+    seen["texts"] = _texts(card)
+    seen["above_how_it_works"] = card.winfo_y() < window._how_card.winfo_y()
+    seen["running"] = card._job is not None
+    # Two frames half a period apart differ; the same moment again touches no widget.
+    card.frame(0.0)
+    dim = card.title.cget("text_color"), card.button.cget("fg_color")
+    seen["frame_changes"] = (
+        card.frame(connect_prompt.PERIOD / 2)
+        and (
+            card.title.cget("text_color"),
+            card.button.cget("fg_color"),
+        )
+        != dim
+    )
+    seen["same_level_is_free"] = not card.frame(connect_prompt.PERIOD / 2)
+    # An extension connects: the prompt goes, its timer with it, the screen stays.
+    job = card._job
+    link._handle_connection(True)
+    window.update()
+    seen["hidden_when_connected"] = window._connect_card is None and not card.winfo_exists()
+    seen["job_cancelled"] = card._job is None and job not in window.tk.call("after", "info")
+    seen["entry_kept"] = window._url_entry is entry
+    # The link drops: it comes back, as a new card with a running timer.
+    link._handle_connection(False)
+    window.update()
+    back = window._connect_card
+    assert back is not None
+    seen["back_after_drop"] = bool(back.winfo_ismapped()) and back._job is not None
+    seen["entry_kept_after_drop"] = window._url_entry is entry
+    # Its button opens Settings with pairing started.
+    link._bridge = _FakeBridge()
+    back.button.invoke()
+    win = window._settings_win
+    window.update()
+    seen["pairing_code"] = link.pairing_code
+    seen["settings_open"] = win is not None and win.winfo_exists()
+    if win is not None:
+        win.close()
+    seen["card_for_later"] = back
+    return seen
+
+
 def _drive_link(window: Any) -> dict[str, Any]:
     """Connect a fake extension to the pasting screen and record how the screen and its hotkeys react."""
     seen: dict[str, Any] = {}
@@ -276,12 +336,26 @@ def walk() -> dict[str, Any]:
             seen["main_dark_title_bar"] = _dark_title_bar_attr(window)
         elif name == "03-start-open-pages":
             seen["open_pages"] = _check_open_pages(window)
+        elif name == "03b-start-not-connected":
+            seen["prompt"] = _check_connect_prompt(window)
+        elif name == "05-tracks":
+            card = seen["prompt"]["card_for_later"]
+            seen["prompt_job_after_leaving"] = card._job
+            seen["prompt_gone_after_leaving"] = not card.winfo_exists()
         elif name == "04-settings":
             seen["settings_dark_title_bar"] = _dark_title_bar_attr(window)
             seen["settings_icon_set"] = window._iconbitmap_method_called
             seen["settings_scroll_increment"] = int(window._body._parent_canvas.cget("yscrollincrement"))
             seen["settings_headings"] = window.headings
             seen["settings_texts"] = _texts(window)
+            first, pasting = window.cards[0], window.cards[2]
+            seen["first_card"] = {
+                "texts": _texts(first),
+                "auto_paste_inside": _inside(window._auto_switch, first),
+                "link_inside": _inside(window._link_box, first),
+                "auto_paste_in_pasting_card": _inside(window._auto_switch, pasting),
+                "link_in_pasting_card": _inside(window._link_box, pasting),
+            }
             calls: list[int] = []
             window._on_change = lambda: calls.append(1)
             original = settings.find_youtube
@@ -396,6 +470,7 @@ def test_settings_window_uses_app_icon_and_fast_scroll(walk):
 
 def test_settings_follow_the_extensions_order(walk):
     assert walk["settings_headings"] == [
+        "Browser extension (recommended)",
         "What to paste",
         "Pasting on Genius",
         "Reading credits",
@@ -403,6 +478,42 @@ def test_settings_follow_the_extensions_order(walk):
         "Cover art look-up",
         "Window",
     ]
+
+
+def test_the_extension_card_comes_first_and_holds_the_link_and_auto_paste(walk):
+    first = walk["first_card"]
+    assert first["auto_paste_inside"] and first["link_inside"]
+    assert not first["auto_paste_in_pasting_card"] and not first["link_in_pasting_card"]
+    for text in ("What is this?".upper(), "127.0.0.1", "Forget pairing", "Auto-paste", "Connect browser extension"):
+        assert any(text in t for t in first["texts"]), text
+    what = " ".join(first["texts"])
+    assert "works best with it connected" in what and "password is never shared" in what
+    assert "hotkeys" in what and "Auto-paste with exact artist matching" in what
+
+
+def test_the_start_screen_prompts_to_connect_while_unconnected(walk):
+    seen = walk["prompt"]
+    assert seen["shown_when_unconnected"] and seen["above_how_it_works"] and seen["running"]
+    assert "Connect your browser extension" in seen["texts"]
+    assert "Connect browser extension" in seen["texts"]
+
+
+def test_the_connect_prompt_comes_and_goes_with_the_link_without_a_rebuild(walk):
+    seen = walk["prompt"]
+    assert seen["hidden_when_connected"] and seen["entry_kept"]
+    assert seen["back_after_drop"] and seen["entry_kept_after_drop"]
+
+
+def test_the_connect_button_opens_settings_with_pairing_started(walk):
+    seen = walk["prompt"]
+    assert seen["settings_open"] and seen["pairing_code"] == "ABCD-EFGH"
+
+
+def test_the_connect_prompt_glows_and_leaves_no_timer_behind(walk):
+    seen = walk["prompt"]
+    assert seen["frame_changes"] and seen["same_level_is_free"]
+    assert seen["job_cancelled"]
+    assert walk["prompt_gone_after_leaving"] and walk["prompt_job_after_leaving"] is None
 
 
 def test_a_change_waits_for_the_window_to_close(walk):
