@@ -70,6 +70,13 @@ export function instructionText(queue: readonly QueueItem[], pos: number, hotkey
       return `Press ${hk} to copy the 1000×1000 PNG cover art URL to clipboard`;
     case "youtube_url":
       return `Press ${hk} to copy the YouTube video URL to clipboard`;
+    case "release_month":
+      // The dropdowns sit in the Tags and Albums section, which may be collapsed. No Tab sequence leads there.
+      return `Open the Tags and Albums section if it is closed. Click the Release Date Month dropdown, then press ${hk} to enter the month`;
+    case "release_day":
+      return `Click the Release Date Day dropdown, then press ${hk} to enter the day`;
+    case "release_year":
+      return `Click the Release Date Year dropdown, then press ${hk} to enter the year`;
     case "artist":
       return prev === "role"
         ? `Tab to Artists in this role, then press ${hk}`

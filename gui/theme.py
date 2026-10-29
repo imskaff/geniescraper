@@ -35,6 +35,16 @@ DANGER_DIM = "#3d1712"
 DANGER_HOVER = "#56211a"
 WARN = "#ffa94d"  # a link that cannot be scraped; kept apart from the accent
 
+# ── Spacing ──────────────────────────────────────────────────────────────
+# The extension's scale (--space-1 to --space-5 in panel.css); every padding in the app is one of these.
+# SPACE_6 is only for the wide gutters of the start screen's centered column.
+SPACE_1 = 4
+SPACE_2 = 8
+SPACE_3 = 12
+SPACE_4 = 16
+SPACE_5 = 24
+SPACE_6 = 40
+
 # ── Type ─────────────────────────────────────────────────────────────────
 # Programme ships in one weight, so it is only used where regular weight reads well:
 # titles and the big value being pasted. Interface text uses Segoe UI, whose

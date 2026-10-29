@@ -1,7 +1,7 @@
 // Renders the controller's state. The structure follows the accessibility basics rather than decoration:
 // real headings, labelled controls, a status and an alert region that are never rebuilt (so announcements
 // fire), focus moved to the new screen's heading, and focus kept where it was across a re-render.
-import type { QueueKind, SongCredits, VideoKind } from "../core/models";
+import { releaseDateText, type QueueKind, type SongCredits, type VideoKind } from "../core/models";
 import type { AlbumInfo } from "../shared/messages";
 import { shownTrack, type TrackResult } from "../shared/session";
 import { trackHealth, type Health, type HealthLevel } from "../core/trackHealth";
@@ -23,9 +23,13 @@ export const FIELD_LABELS: Readonly<Record<QueueKind, string>> = {
   copyright_notice: "© label",
   youtube_url: "YouTube URL",
   cover_art: "Cover art URL",
+  release_month: "Release month",
+  release_day: "Release day",
+  release_year: "Release year",
 };
 
-type ScrapeKey = "scrapeCore" | "scrapeAdditional" | "scrapeCopyright" | "scrapeYoutube" | "scrapeCoverArt";
+type ScrapeKey =
+  "scrapeCore" | "scrapeAdditional" | "scrapeCopyright" | "scrapeYoutube" | "scrapeCoverArt" | "scrapeReleaseDate";
 
 const SETTING_LABELS: readonly (readonly [ScrapeKey, string])[] = [
   ["scrapeCore", "Songwriters and producers"],
@@ -33,6 +37,7 @@ const SETTING_LABELS: readonly (readonly [ScrapeKey, string])[] = [
   ["scrapeCopyright", "Copyright lines (℗ and ©)"],
   ["scrapeYoutube", "YouTube link"],
   ["scrapeCoverArt", "PNG cover art link"],
+  ["scrapeReleaseDate", "Release date"],
 ];
 
 /** The mark in front of a track in the list; it repeats what the words say, so it is hidden from screen readers. */
@@ -72,6 +77,8 @@ export class PanelView {
   private readonly expanded = new Map<string, boolean>();
   /** What the user has typed into the key box, kept across re-renders and never stored by the view. */
   private keyDraft = "";
+  /** What the user has typed into the pairing code box, kept across re-renders. */
+  private codeDraft = "";
   /** What the user typed into the YouTube link box, and for which track; a draft is not carried to another track. */
   private linkDraft: { index: number; text: string } | null = null;
 
@@ -202,8 +209,8 @@ export class PanelView {
             button: (text, variant, key, onClick, disabled, wide) =>
               this.button(text, variant, key, onClick, disabled, wide),
             heading: (text) => this.heading(text),
-            lookupFieldset: () => this.lookupSettings(state),
-            keyFieldset: () => this.youtubeKeySettings(state),
+            youtubeFieldset: () => this.youtubeSettings(state),
+            deezerFieldset: () => this.deezerSettings(state),
             animateWelcome: () => this.playWelcome(),
           })
         : state.settingsOpen
@@ -639,6 +646,8 @@ export class PanelView {
     }
 
     const groups = el("dl", { class: "credits" });
+    const released = releaseDateText(song);
+    if (released) groups.append(el("dt", { text: "Released" }), el("dd", { text: released }));
     for (const credit of song.credits) {
       groups.append(el("dt", { text: credit.role }), el("dd", { text: credit.artists.join(", ") }));
     }
@@ -1018,8 +1027,9 @@ export class PanelView {
       ),
       this.pastingSettings(state),
       this.readingSettings(state),
-      this.lookupSettings(state),
-      this.youtubeKeySettings(state),
+      this.youtubeSettings(state),
+      this.desktopSettings(state),
+      this.deezerSettings(state),
     ];
   }
 
@@ -1291,40 +1301,52 @@ export class PanelView {
     );
   }
 
-  private lookupSettings(state: PanelState): HTMLElement {
-    const box = (host: OptionalHost, label: string, help: string): HTMLElement[] => {
-      const input = el("input", {
-        attrs: { type: "checkbox", "data-key": `host-${host}`, "aria-describedby": `host-${host}-help` },
-        on: {
-          change: (event) => {
-            // Straight from the click: Chrome shows its permission prompt only for a call made in the gesture.
-            void this.panel.setHost(host, (event.target as HTMLInputElement).checked);
-          },
+  /** One optional look-up: a box that asks Chrome for the site's permission, with what it does underneath. */
+  private hostBox(state: PanelState, host: OptionalHost, label: string, help: string): HTMLElement {
+    const input = el("input", {
+      attrs: { type: "checkbox", "data-key": `host-${host}`, "aria-describedby": `host-${host}-help` },
+      on: {
+        change: (event) => {
+          // Straight from the click: Chrome shows its permission prompt only for a call made in the gesture.
+          void this.panel.setHost(host, (event.target as HTMLInputElement).checked);
         },
-      });
-      input.checked = state.hosts[host];
-      return [
-        el(
-          "div",
-          { class: "setting" },
-          el("label", { class: "check" }, input, el("span", { text: label })),
-          el("p", { class: "help", text: help, attrs: { id: `host-${host}-help` } }),
-        ),
-      ];
-    };
+      },
+    });
+    input.checked = state.hosts[host];
+    return el(
+      "div",
+      { class: "setting" },
+      el("label", { class: "check" }, input, el("span", { text: label })),
+      el("p", { class: "help", text: help, attrs: { id: `host-${host}-help` } }),
+    );
+  }
+
+  /** The Deezer cover search. It comes last in Settings, as it does in the desktop app. */
+  private deezerSettings(state: PanelState): HTMLElement {
     return this.settingsCard(
-      "settings-lookups",
-      "Look-ups on other sites",
-      ...box(
+      "settings-deezer",
+      "Cover art look-up",
+      this.hostBox(
+        state,
         "deezer",
         "Search Deezer for a cover when Apple has none",
         "Chrome asks before this contacts api.deezer.com, and you can take the permission back here or in chrome://extensions.",
       ),
-      ...box(
+    );
+  }
+
+  /** The YouTube look-up and, under it, the optional key that makes it reliable: one card, as in the desktop app. */
+  private youtubeSettings(state: PanelState): HTMLElement {
+    return this.settingsCard(
+      "settings-youtube",
+      "YouTube links",
+      this.hostBox(
+        state,
         "youtube",
-        "Find a YouTube link for each track",
+        "Find a YouTube link for each track (recommended)",
         "Searches www.youtube.com's pages for the song, as the desktop app does. Off until you allow it, and it needs the YouTube link ticked above to be pasted. Chrome asks first; take the permission back here or in chrome://extensions.",
       ),
+      this.subgroup("Better YouTube links (optional)", ...this.youtubeKeyContent(state)),
     );
   }
 
@@ -1333,7 +1355,147 @@ export class PanelView {
    * one with a link to the exact Google page for each, and a way to paste and check it. The links open Google's own
    * pages in a new tab; the extension never reads those pages, so nothing here needs another permission.
    */
-  private youtubeKeySettings(state: PanelState): HTMLElement {
+  /** The link to the desktop app: what pairing does, how it stands now, and the code box. */
+  private desktopSettings(state: PanelState): HTMLElement {
+    const { bridge } = state;
+    const statusText = !bridge.known
+      ? "Checking the link to the desktop app…"
+      : !bridge.paired
+        ? "Not paired. No desktop app is linked to this browser."
+        : bridge.connected
+          ? "Paired and connected to the desktop app."
+          : "Paired, desktop app not running. Open the desktop app and this panel reconnects by itself.";
+    const pair = (): void => {
+      const input = this.root.querySelector<HTMLInputElement>("#bridge-code");
+      const typed = input ? input.value : this.codeDraft;
+      void this.panel.pairBridge(typed).then(() => {
+        // A code that worked is spent; one that did not stays, so a typo can be fixed rather than retyped.
+        if (this.panel.state.bridge.tone === "ok") this.codeDraft = "";
+        this.render();
+      });
+    };
+    const input = el("input", {
+      class: "field",
+      attrs: {
+        id: "bridge-code",
+        type: "text",
+        "data-key": "bridge-code",
+        autocomplete: "off",
+        autocapitalize: "characters",
+        spellcheck: "false",
+        maxlength: "16",
+        placeholder: "ABCD-EFGH",
+        "aria-describedby": bridge.message ? "bridge-code-help bridge-message" : "bridge-code-help",
+        ...(bridge.tone === "error" ? { "aria-invalid": "true" } : {}),
+      },
+      on: {
+        input: (event) => {
+          this.codeDraft = (event.target as HTMLInputElement).value;
+        },
+        keydown: (event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            pair();
+          }
+        },
+      },
+    });
+    input.value = this.codeDraft;
+    // Paste sits inside the right end of the box; Chrome may ask before the extension reads the clipboard, or refuse.
+    const pasteCode = async (): Promise<void> => {
+      try {
+        const text = (await navigator.clipboard.readText()).trim();
+        if (text) {
+          input.value = text;
+          this.codeDraft = text;
+          input.focus();
+          return;
+        }
+        this.panel.noteBridgeMessage("The clipboard is empty. Copy the code from the desktop app first.");
+      } catch {
+        this.panel.noteBridgeMessage(
+          "Chrome did not let the extension read the clipboard. Click in the box and press Ctrl+V (Cmd+V on a Mac) instead.",
+        );
+      }
+    };
+    const message = el(
+      "p",
+      {
+        class: bridge.message ? `help key-message ${bridge.tone}`.trim() : "help",
+        attrs: {
+          id: "bridge-message",
+          "aria-live": bridge.tone === "error" ? "assertive" : "polite",
+          "data-tone": bridge.tone,
+        },
+      },
+      ...(bridge.message && bridge.tone
+        ? [
+            el("span", {
+              class: "tone-mark",
+              text: bridge.tone === "ok" ? "✓ " : "✗ ",
+              attrs: { "aria-hidden": "true" },
+            }),
+          ]
+        : []),
+      bridge.message,
+    );
+    return this.settingsCard(
+      "settings-desktop",
+      "Desktop app",
+      el("label", { text: "Pairing code", attrs: { for: "bridge-code" } }),
+      el(
+        "div",
+        { class: "field-action" },
+        input,
+        this.button("Paste", "quiet", "bridge-paste", () => void pasteCode(), bridge.busy),
+      ),
+      el(
+        "div",
+        { class: "row" },
+        this.button("Pair", "primary", "bridge-pair", pair, bridge.busy),
+        bridge.paired
+          ? this.button(
+              "Unpair",
+              "quiet",
+              "bridge-unpair",
+              () => {
+                void this.panel.unpairBridge().then(() => {
+                  this.root.querySelector<HTMLElement>("#bridge-code")?.focus();
+                });
+              },
+              bridge.busy,
+            )
+          : null,
+      ),
+      el("p", { class: "help", text: statusText, attrs: { id: "bridge-status", "aria-live": "polite" } }),
+      message,
+      this.subgroup(
+        "What is this?",
+        el(
+          "div",
+          { class: "stack", attrs: { id: "bridge-help" } },
+          el("p", {
+            text: "The Géniescraper desktop app is this extension's companion on your computer, and pairing links the two. Once paired, the app lists the Apple Music pages you have open and this extension fills the Genius form for you, one step at a time or all at once.",
+          }),
+          el(
+            "ul",
+            { class: "plain-list" },
+            el("li", {
+              text: "To pair, open the desktop app, choose Connect browser extension and type its code above (capitals, dashes and spaces do not matter).",
+              attrs: { id: "bridge-code-help" },
+            }),
+            el("li", { text: "The link stays on this computer (127.0.0.1) and never goes over the internet." }),
+            el("li", {
+              text: "Your Genius password is never shared: you stay signed in in this browser, and the app never sees it.",
+            }),
+            el("li", { text: "Unpair at any time to cut the link." }),
+          ),
+        ),
+      ),
+    );
+  }
+
+  private youtubeKeyContent(state: PanelState): Node[] {
     const link = (text: string, href: string): HTMLElement =>
       el("a", {
         class: "button quiet link-button",
@@ -1411,9 +1573,7 @@ export class PanelView {
 
     const busy = state.youtubeKey.busy;
     const message = state.youtubeKey.message;
-    return this.settingsCard(
-      "settings-youtube-key",
-      "Better YouTube links (optional)",
+    return [
       el("p", {
         class: "help",
         text: "The free YouTube search can be blocked by Google, and then no link is found. For reliable links you can use Google's official YouTube service with your own free key. It is free for roughly 25 songs a day, and the key stays in this browser: it is not synced and it is sent only to Google.",
@@ -1474,7 +1634,7 @@ export class PanelView {
         { class: "help" },
         link("Google's own guide to API keys", "https://developers.google.com/youtube/v3/getting-started"),
       ),
-    );
+    ];
   }
 
   /** Fill the key box from the clipboard; Chrome may ask first, or refuse, and then typing it in works as well. */

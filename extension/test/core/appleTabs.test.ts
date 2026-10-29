@@ -22,6 +22,14 @@ describe("the open Apple Music pages the panel offers", () => {
     expect(entries.map((e) => e.url)).toEqual([ALBUM, SONG]);
   });
 
+  it("shows a title as one plain line: no-break and thin spaces, tabs and control characters are cleaned", () => {
+    const names = appleTabEntries([
+      tab(ALBUM, "Some\u00a0Album\u2009Name - Apple Music"),
+      tab(SONG, "Two\tcolumns\nand newline\u0007 - Apple Music"),
+    ]).map((e) => e.name);
+    expect(names).toEqual(["Some Album Name", "Two columns and newline"]);
+  });
+
   it("says whether a page is an album or a song", () => {
     expect(appleTabEntries([tab(ALBUM), tab(SONG)]).map((e) => e.kind)).toEqual(["album", "song"]);
   });

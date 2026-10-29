@@ -12,7 +12,20 @@ from PIL import Image as PILImage
 
 from assistant import flow
 from gui import theme
-from gui.logic import STEPS, friendly_error, prefetch_plan, queue_summary, url_hint
+from gui.connect_prompt import ConnectPrompt
+from gui.link import LinkController, OpenPage, RunStatus, describe_status
+from gui.logic import (
+    OPEN_PAGES_EMPTY,
+    OPEN_PAGES_PICK,
+    STEPS,
+    detector_title,
+    friendly_error,
+    open_page_rows,
+    prefetch_plan,
+    queue_summary,
+    url_hint,
+)
+from gui.radar import FOUND, LISTENING, Radar
 from gui.settings_window import SettingsWindow
 from scraper import apple_music, pipeline
 from scraper.apple_music import AlbumTrackInfo
@@ -22,6 +35,13 @@ from utils.config import settings
 theme.apply()
 
 _f = theme.font
+
+# The extension's paste-screen help line, word for word.
+_PASTE_HELP = (
+    "Keep the song's Edit Metadata form open on Genius. Nothing is saved for you: check the form, then save it there."
+)
+_AUTO_HINT_OFFLINE = "Connect the browser extension in Settings to use Auto-paste"
+_AUTO_HINT_IDLE = "The extension is not running this song. Use the hotkeys, or reconnect it in Settings."
 
 
 _FIELD_LABELS = {
@@ -34,6 +54,9 @@ _FIELD_LABELS = {
     "copyright_notice": "©  Copyright",
     "cover_art": "Cover Art URL",
     "youtube_url": "YouTube URL",
+    "release_month": "Release month",
+    "release_day": "Release day",
+    "release_year": "Release year",
 }
 
 
@@ -46,12 +69,15 @@ _LIST_LABELS = {
     "copyright_role": "Copyright",
     "youtube_url": "YouTube URL",
     "cover_art": "Cover Art URL",
+    "release_month": "Release month",
+    "release_day": "Release day",
+    "release_year": "Release year",
 }
 _NESTED_KINDS = frozenset({"artist", "phonographic_copyright", "copyright_notice"})
 
 
 class App(ctk.CTk):
-    def __init__(self) -> None:
+    def __init__(self, *, start_link: bool = True) -> None:
         super().__init__()
         self.title("Géniescraper v0.5")
         pos = f"+{settings.win_x}+{settings.win_y}" if settings.win_x >= 0 and settings.win_y >= 0 else ""
@@ -93,9 +119,38 @@ class App(ctk.CTk):
         self._job: int = 0  # bumped on every new scrape or cancel; stale results are dropped
         self._settings_win: SettingsWindow | None = None
         self._normal_height: int = 700
-        self._chips: dict[str, ctk.CTkButton] = {}
-        self._chip_label: dict[str, str] = {}
+        self._steps_open = {"done": False, "left": True}  # the step lists' disclosures: done closed, left open
+        self._esc_from_key = False
         self._app_focused: bool = False
+
+        self._link_lbl: ctk.CTkLabel | None = None
+        self._link_before: ctk.CTkLabel | None = None
+        self._ctl: dict[str, ctk.CTkButton] = {}
+        self._auto_hint_lbl: ctk.CTkLabel | None = None
+        self._manual_card: ctk.CTkFrame | None = None  # the 'Manual mode' notice, shown only without the extension
+        self._steps_heads: dict[str, ctk.CTkButton] = {}
+        # The 'Open in your browser' card on the start screen, and what it currently shows.
+        self._pages_card: ctk.CTkFrame | None = None
+        self._connect_card: ConnectPrompt | None = None  # the glowing 'Connect your browser extension' call
+        self._how_card: ctk.CTkFrame | None = None
+        self._pages_shown: tuple[bool, tuple[OpenPage, ...]] | None = None
+
+        # Companion link to the browser extension; its callbacks arrive on the bridge's thread and hop to Tk here.
+        self.link = LinkController(
+            secret=settings.bridge_secret,
+            origin=settings.bridge_origin,
+            persist=self._persist_pairing,
+            erase=self._erase_pairing,
+            schedule=self._on_tk_thread,
+        )
+        self.link.on_change = self._link_changed
+        self.link.on_status = self._link_status
+        self.link.on_finished = self._link_finished
+        self.link.on_run_ended = self._link_run_ended
+        self.link.on_connection = self._link_connection
+        self.link.on_pages = self._render_open_pages
+        if start_link:
+            self.link.start()
 
         self.bind("<FocusIn>", lambda _: setattr(self, "_app_focused", True))
         self.bind("<FocusOut>", lambda _: setattr(self, "_app_focused", False))
@@ -122,6 +177,8 @@ class App(ctk.CTk):
 
     def _register_assistant_keys(self) -> None:
         self._clear_kb_hooks()
+        if self.link.bridged:
+            return  # the extension owns the keys while it runs the paste; both at once would double-step
 
         def _on_fwd(e):
             if e.event_type == "down":
@@ -137,12 +194,12 @@ class App(ctk.CTk):
     def _header(self, step: int | None) -> None:
         """Top bar on every screen: where you are in the flow, and Settings."""
         bar = ctk.CTkFrame(self, fg_color="transparent")
-        bar.pack(fill="x", padx=20, pady=(12, 6))
+        bar.pack(fill="x", padx=theme.SPACE_4, pady=(theme.SPACE_3, theme.SPACE_2))
         crumbs = ctk.CTkFrame(bar, fg_color="transparent")
         crumbs.pack(side="left")
         for i, name in enumerate(STEPS):
             if i:
-                ctk.CTkLabel(crumbs, text="›", font=_f(12), text_color=theme.DONE).pack(side="left", padx=6)
+                ctk.CTkLabel(crumbs, text="›", font=_f(12), text_color=theme.DONE).pack(side="left", padx=theme.SPACE_2)
             if step is None:
                 color, weight = theme.FAINT, "normal"
             elif i < step:
@@ -171,17 +228,21 @@ class App(ctk.CTk):
             self._settings_win.lift()
             self._settings_win.focus_force()
             return
-        self._settings_win = SettingsWindow(self, on_change=self._settings_changed)
+        self._settings_win = SettingsWindow(self, on_change=self._settings_changed, link=self.link)
 
     def _settings_changed(self) -> None:
         """Apply a setting the moment it changes, on whatever screen is showing."""
         self.attributes("-topmost", settings.always_on_top)
         if self._screen == "assistant":
-            pos = self._pos
-            self._show_assistant_screen()
+            pos, old_queue = self._pos, list(self._queue)
+            self._show_assistant_screen(keep_run=True)
             with self._lock:
                 self._pos = min(pos, len(self._queue))
+            if self._queue != old_queue and (self.link.run_active or self.link.connected):
+                self._begin_link_run(self._pos)  # the extension holds the old queue: start it over, caught up
+                self._sync_hooks()
             self._render_assistant()
+            self._render_link()
         elif self._screen == "credits":
             self._show_credits_screen()
         elif self._screen == "start":
@@ -227,6 +288,8 @@ class App(ctk.CTk):
         )
 
     def destroy(self) -> None:
+        self.link.end_run()
+        self.link.stop()
         try:
             settings.win_x = self.winfo_x()
             settings.win_y = self.winfo_y()
@@ -250,7 +313,7 @@ class App(ctk.CTk):
         self._header(0)
 
         body = ctk.CTkFrame(self, fg_color="transparent")
-        body.pack(fill="both", expand=True, padx=40)
+        body.pack(fill="both", expand=True, padx=theme.SPACE_6)
 
         ctk.CTkLabel(
             body,
@@ -259,19 +322,19 @@ class App(ctk.CTk):
             text_color=theme.ACCENT_INK,
             fg_color=theme.ACCENT,
             corner_radius=4,
-        ).pack(anchor="w", pady=(18, 8), ipadx=12, ipady=2)
+        ).pack(anchor="w", pady=(theme.SPACE_2, theme.SPACE_2), ipadx=theme.SPACE_3, ipady=theme.SPACE_1)
         ctk.CTkLabel(
             body,
             text="Collect a song's credits from Apple Music and paste them into Genius.",
             font=_f(13),
             text_color=theme.MUTED,
-        ).pack(anchor="w", pady=(0, 22))
+        ).pack(anchor="w", pady=(0, theme.SPACE_4))
 
         ctk.CTkLabel(body, text="Apple Music link", font=_f(13, "bold"), text_color=theme.TEXT).pack(anchor="w")
         url_field = ctk.CTkFrame(
             body, height=40, fg_color=theme.SURFACE, border_color=theme.BORDER, border_width=1, corner_radius=6
         )
-        url_field.pack(fill="x", pady=(6, 6))
+        url_field.pack(fill="x", pady=(theme.SPACE_2, theme.SPACE_2))
         url_field.pack_propagate(False)
         self._url_entry = ctk.CTkEntry(
             url_field,
@@ -281,7 +344,7 @@ class App(ctk.CTk):
             placeholder_text="https://music.apple.com/us/album/...",
             font=_f(13),
         )
-        self._url_entry.pack(side="left", fill="both", expand=True, padx=(6, 0), pady=3)
+        self._url_entry.pack(side="left", fill="both", expand=True, padx=(theme.SPACE_2, 0), pady=theme.SPACE_1)
         self._url_entry.bind("<Return>", lambda _: self._start_scrape())
         self._url_entry.focus()
         ctk.CTkButton(
@@ -295,55 +358,144 @@ class App(ctk.CTk):
             corner_radius=4,
             font=_f(12),
             command=self._paste_url,
-        ).pack(side="right", padx=(0, 5), pady=4)
+        ).pack(side="right", padx=(0, theme.SPACE_2), pady=theme.SPACE_1)
         self._hint_lbl = ctk.CTkLabel(body, text="", font=_f(12), text_color=theme.MUTED, anchor="w", justify="left")
         self._hint_lbl.pack(anchor="w", fill="x")
 
         actions = ctk.CTkFrame(body, fg_color="transparent")
-        actions.pack(fill="x", pady=(14, 0))
-        self._scrape_btn = self._button(actions, "Scrape", self._start_scrape, primary=True, width=150)
+        actions.pack(fill="x", pady=(theme.SPACE_4, 0))
+        self._scrape_btn = self._button(actions, "Get credits", self._start_scrape, primary=True, width=150)
         self._set_enabled(self._scrape_btn, False)
         self._scrape_btn.pack(side="left")
         self._cancel_btn = self._button(actions, "Cancel", self._cancel_scrape, width=100)
 
         self._progress = ctk.CTkProgressBar(body, mode="indeterminate", height=4, progress_color=theme.ACCENT)
         self._status_lbl = ctk.CTkLabel(body, text="", font=_f(12), text_color=theme.MUTED, anchor="w", justify="left")
-        self._status_lbl.pack(anchor="w", fill="x", pady=(10, 0))
+        self._status_lbl.pack(anchor="w", fill="x", pady=(theme.SPACE_2, 0))
 
         how = ctk.CTkFrame(body, fg_color=theme.SURFACE, corner_radius=8)
-        how.pack(fill="x", pady=(24, 0))
+        how.pack(fill="x", pady=(theme.SPACE_3, 0))
+        self._pages_card, self._connect_card, self._how_card, self._pages_shown = None, None, how, None
+        self._render_open_pages()
         ctk.CTkLabel(how, text="HOW IT WORKS", font=_f(11, "bold"), text_color=theme.FAINT).pack(
-            anchor="w", padx=16, pady=(12, 6)
+            anchor="w", padx=theme.SPACE_4, pady=(theme.SPACE_2, theme.SPACE_1)
         )
         hk = settings.hotkey.upper()
         for n, text in enumerate(
             (
-                "Paste an album or song link and press Scrape.",
+                "Paste an album or song link and press Get credits.",
                 "Choose the tracks, then check the credits that were found.",
                 f"Open the song's edit page on Genius, click Written By, and press {hk} once per field.",
             ),
             start=1,
         ):
             row = ctk.CTkFrame(how, fg_color="transparent")
-            row.pack(fill="x", padx=16, pady=(0, 8))
+            row.pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_1))
             ctk.CTkLabel(row, text=str(n), width=22, font=_f(13, "bold"), text_color=theme.ACCENT, anchor="w").pack(
                 side="left", anchor="n"
             )
             ctk.CTkLabel(
                 row, text=text, font=_f(13), text_color=theme.TEXT, anchor="w", justify="left", wraplength=470
             ).pack(side="left", fill="x")
-        ctk.CTkFrame(how, height=4, fg_color="transparent").pack()
+        ctk.CTkFrame(how, height=theme.SPACE_1, fg_color="transparent").pack()
 
-        self._settings_summary(self).pack(side="bottom", pady=(0, 14))
+        self._settings_summary(self).pack(side="bottom", pady=(0, theme.SPACE_4))
         self._check_url_loop()
 
-    def _settings_summary(self, master) -> ctk.CTkButton:
-        """One clickable line with the settings that change how pasting behaves."""
-        text = (
-            f"Auto-tab {'on' if settings.auto_tab else 'off'}   ·   "
-            f"Auto-confirm {'on' if settings.auto_enter else 'off'}   ·   "
-            f"Hotkeys {settings.hotkey.upper()} / {settings.back_hotkey.upper()}"
+    def _render_open_pages(self) -> None:
+        """The 'Open in your browser' card: only while an extension is connected, and only this card is redrawn."""
+        how = self._how_card
+        if self._screen != "start" or how is None or not how.winfo_exists():
+            return
+        link = self.link
+        shown = (link.connected, link.pages if link.connected else ())
+        if shown == self._pages_shown:
+            return
+        self._pages_shown = shown
+        if self._pages_card is not None:
+            self._pages_card.destroy()
+            self._pages_card = None
+        if self._connect_card is not None:
+            self._connect_card.destroy()  # cancels its glow timer
+            self._connect_card = None
+        if not link.connected:
+            # No extension: a glowing call to connect one, in the slot the detector takes once it is connected.
+            self._connect_card = ConnectPrompt(how.master, self._connect_extension)
+            self._connect_card.pack(fill="x", pady=(theme.SPACE_3, 0), after=self._status_lbl)
+            how.pack(fill="x", pady=(theme.SPACE_3, 0))
+            return
+        # The card takes the place of 'How it works', which a user with the extension connected no longer needs.
+        how.pack_forget()
+        found = bool(link.pages)
+        card = ctk.CTkFrame(
+            how.master,
+            fg_color=theme.SURFACE,
+            corner_radius=10,
+            border_width=1,
+            border_color=theme.ACCENT if found else theme.BORDER,  # a find lights the card's edge, as in the extension
         )
+        card.pack(fill="x", pady=(theme.SPACE_4, 0), after=self._status_lbl)
+        self._pages_card = card
+        # The detector: a radar that listens while nothing is open and pings once when something is found.
+        head = ctk.CTkFrame(card, fg_color="transparent")
+        head.pack(fill="x", padx=theme.SPACE_3, pady=theme.SPACE_3)
+        Radar(head, state=FOUND if found else LISTENING, accent=theme.ACCENT, ground=theme.SURFACE).pack(
+            side="left", padx=(0, theme.SPACE_3)
+        )
+        text = ctk.CTkFrame(head, fg_color="transparent")
+        text.pack(side="left", fill="x", expand=True)
+        ctk.CTkLabel(
+            text, text=detector_title(len(link.pages)), font=_f(14, "bold"), text_color=theme.TEXT, anchor="w", height=0
+        ).pack(anchor="w")
+        ctk.CTkLabel(
+            text,
+            text=OPEN_PAGES_PICK if found else OPEN_PAGES_EMPTY,
+            font=_f(12),
+            text_color=theme.MUTED,
+            anchor="w",
+            justify="left",
+            wraplength=420,
+            height=0,
+        ).pack(anchor="w", pady=(theme.SPACE_1, 0))
+        rows, more = open_page_rows(link.pages)
+        if not rows:
+            return
+        for page, (tag, title, note) in zip(link.pages, rows, strict=False):
+            self._open_page_row(card, page, tag, title, note)
+        if more:
+            ctk.CTkLabel(card, text=more, font=_f(12), text_color=theme.FAINT, anchor="w").pack(
+                anchor="w", padx=theme.SPACE_4, pady=(0, theme.SPACE_2)
+            )
+        ctk.CTkFrame(card, height=theme.SPACE_2, fg_color="transparent").pack()
+
+    def _open_page_row(self, card: ctk.CTkFrame, page: OpenPage, tag: str, title: str, note: str) -> None:
+        """One open page: its kind, its title and 'this page' for the one in view. Clicking it gets its credits."""
+        row = ctk.CTkFrame(card, fg_color="transparent", corner_radius=6, cursor="hand2")
+        row.pack(fill="x", padx=theme.SPACE_2, pady=(0, theme.SPACE_1))
+        parts = [
+            ctk.CTkLabel(row, text=tag, width=52, font=_f(11, "bold"), text_color=theme.FAINT, anchor="w"),
+            ctk.CTkLabel(row, text=title, font=_f(13), text_color=theme.TEXT, anchor="w"),
+            ctk.CTkLabel(row, text=note, font=_f(12), text_color=theme.ACCENT, anchor="e"),
+        ]
+        parts[0].pack(side="left", padx=(theme.SPACE_2, 0), pady=theme.SPACE_1)
+        parts[1].pack(side="left", fill="x", expand=True, pady=theme.SPACE_1)
+        parts[2].pack(side="right", padx=(theme.SPACE_2, theme.SPACE_2), pady=theme.SPACE_1)
+        for widget in (row, *parts):
+            widget.bind("<Button-1>", lambda _, url=page.url: self._get_credits_for(url))
+            widget.bind("<Enter>", lambda _, r=row: r.configure(fg_color=theme.SURFACE_HI))
+            widget.bind("<Leave>", lambda _, r=row: r.configure(fg_color="transparent"))
+
+    def _get_credits_for(self, url: str) -> None:
+        """Same path as typing the link and pressing Get credits."""
+        if self._busy or self._screen != "start":
+            return
+        self._url_entry.delete(0, "end")
+        self._url_entry.insert(0, url)
+        self._start_scrape()
+
+    def _settings_summary(self, master) -> ctk.CTkButton:
+        """One clickable line with the hotkeys, which opens Settings."""
+        text = f"Hotkeys {settings.hotkey.upper()} / {settings.back_hotkey.upper()}"
         return ctk.CTkButton(
             master,
             text=text,
@@ -374,15 +526,15 @@ class App(ctk.CTk):
         self.after(200, self._check_url_loop)
 
     def _set_busy(self, busy: bool, status: str = "") -> None:
-        """Start-screen state while detecting: progress bar and Cancel instead of Scrape."""
+        """Start-screen state while detecting: progress bar and Cancel instead of Get credits."""
         self._busy = busy
         if not self._scrape_btn.winfo_exists():
             return
         if busy:
             self._set_enabled(self._scrape_btn, False)
             self._url_entry.configure(state="disabled")
-            self._cancel_btn.pack(side="left", padx=(8, 0))
-            self._progress.pack(fill="x", pady=(14, 0), before=self._status_lbl)
+            self._cancel_btn.pack(side="left", padx=(theme.SPACE_2, 0))
+            self._progress.pack(fill="x", pady=(theme.SPACE_4, 0), before=self._status_lbl)
             self._progress.start()
         else:
             self._url_entry.configure(state="normal")
@@ -409,6 +561,7 @@ class App(ctk.CTk):
             include_copyright=settings.scrape_copyright,
             include_youtube=settings.scrape_youtube,
             include_cover_art=settings.scrape_cover_art,
+            include_release_date=settings.scrape_release_date,
         )
         return flow.genius_queue(queue)  # roles typed under the names Genius uses
 
@@ -435,7 +588,7 @@ class App(ctk.CTk):
         self._credits_countdown_paused = False
 
         bottom = ctk.CTkFrame(self, fg_color="transparent")
-        bottom.pack(side="bottom", fill="x", padx=40, pady=(6, 14))
+        bottom.pack(side="bottom", fill="x", padx=theme.SPACE_6, pady=(theme.SPACE_2, theme.SPACE_4))
         self._button(bottom, "Back", self._back_from_credits, width=90).pack(side="left")
         self._start_assistant_btn = self._button(bottom, "", self._show_assistant_screen, primary=True, width=230)
         self._start_assistant_btn.pack(side="right")
@@ -455,14 +608,14 @@ class App(ctk.CTk):
                 self.after(1000, self._tick_credits_countdown)
 
         summary = ctk.CTkFrame(self, fg_color="transparent")
-        summary.pack(side="bottom", fill="x", padx=40)
+        summary.pack(side="bottom", fill="x", padx=theme.SPACE_6)
         ctk.CTkLabel(
             summary, text=queue_summary(queue), font=_f(12), text_color=theme.MUTED, anchor="w", wraplength=540
         ).pack(anchor="w")
         self._settings_summary(summary).pack(anchor="w")
 
         sf = theme.scroll_frame(self, fg_color=theme.SURFACE, corner_radius=8)
-        sf.pack(fill="both", expand=True, padx=40, pady=(0, 6))
+        sf.pack(fill="both", expand=True, padx=theme.SPACE_6, pady=(0, theme.SPACE_2))
         sf.grid_columnconfigure(0, weight=0, minsize=170)
         sf.grid_columnconfigure(1, weight=1)
         row = 0
@@ -470,26 +623,31 @@ class App(ctk.CTk):
         def section(title: str) -> None:
             nonlocal row
             ctk.CTkLabel(sf, text=title.upper(), font=_f(11, "bold"), text_color=theme.FAINT, anchor="w").grid(
-                row=row, column=0, columnspan=2, sticky="w", padx=10, pady=(12 if row else 6, 4)
+                row=row,
+                column=0,
+                columnspan=2,
+                sticky="w",
+                padx=theme.SPACE_3,
+                pady=(theme.SPACE_3 if row else theme.SPACE_2, theme.SPACE_1),
             )
             row += 1
 
         def line(label: str, value: str, *, missing: bool = False, link: str = "", note: str = "") -> None:
             nonlocal row
             ctk.CTkLabel(sf, text=label, font=_f(13), text_color=theme.MUTED, anchor="w").grid(
-                row=row, column=0, sticky="nw", padx=10, pady=3
+                row=row, column=0, sticky="nw", padx=theme.SPACE_3, pady=theme.SPACE_1
             )
             color = theme.FAINT if missing else (theme.ACCENT if link else theme.TEXT)
             font = ctk.CTkFont(family=theme.UI_FAMILY, size=13, underline=True) if link else _f(13)
             val = ctk.CTkLabel(sf, text=value, font=font, text_color=color, anchor="w", justify="left", wraplength=330)
-            val.grid(row=row, column=1, sticky="w", padx=(0, 10), pady=3)
+            val.grid(row=row, column=1, sticky="w", padx=(0, theme.SPACE_3), pady=theme.SPACE_1)
             if link:
                 val.configure(cursor="hand2")
                 val.bind("<Button-1>", lambda _, u=link: webbrowser.open(u))
             row += 1
             if note:
                 ctk.CTkLabel(sf, text=note, font=_f(11), text_color=theme.FAINT, anchor="w").grid(
-                    row=row, column=1, sticky="w", padx=(0, 10), pady=(0, 3)
+                    row=row, column=1, sticky="w", padx=(0, theme.SPACE_3), pady=(0, theme.SPACE_1)
                 )
                 row += 1
 
@@ -505,6 +663,8 @@ class App(ctk.CTk):
             line(credit.role, ", ".join(credit.artists))
 
         section("Release")
+        if released := song.release_date_text():
+            line("Released", released)
         phono, notice = song.phonographic_copyright, song.copyright_notice
         line("℗ Phonographic", phono or "Not found", missing=not phono)
         if notice and notice != phono:
@@ -542,9 +702,12 @@ class App(ctk.CTk):
         else:
             self._show_scrape_screen()
 
-    def _show_assistant_screen(self) -> None:
+    def _show_assistant_screen(self, *, keep_run: bool = False) -> None:
         self._screen = "assistant"
         self._credits_in_countdown = False
+        self._link_lbl = self._link_before = self._auto_hint_lbl = self._manual_card = None
+        self._ctl = {}
+        self._steps_heads = {}
         self._clear()
         self._queue = self._current_queue()
         self._pos = 0
@@ -554,9 +717,10 @@ class App(ctk.CTk):
         assert song is not None
         self._set_compact(settings.compact_mode)
 
-        if settings.compact_mode:
+        compact = settings.compact_mode
+        if compact:
             bar = ctk.CTkFrame(self, fg_color="transparent")
-            bar.pack(fill="x", padx=20, pady=(10, 2))
+            bar.pack(fill="x", padx=theme.SPACE_4, pady=(theme.SPACE_2, 0))
             ctk.CTkButton(
                 bar,
                 text="⚙",
@@ -570,136 +734,226 @@ class App(ctk.CTk):
             ).pack(side="right")
         else:
             self._header(3)
+            ctk.CTkLabel(
+                self, text="Paste into Genius", font=theme.display(24), text_color=theme.TEXT, anchor="w"
+            ).pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_1))
             bar = ctk.CTkFrame(self, fg_color="transparent")
-            bar.pack(fill="x", padx=20, pady=(0, 2))
+            bar.pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_2))
         ctk.CTkLabel(bar, text=f"{song.title}  ·  {song.artist}", font=_f(12), text_color=theme.MUTED, anchor="w").pack(
             side="left"
         )
-        self._prog_lbl = ctk.CTkLabel(bar, text="", text_color=theme.MUTED, font=_f(12))
-        self._prog_lbl.pack(side="right", padx=(0, 8))
 
-        self._progress_bar = ctk.CTkProgressBar(self, height=4, progress_color=theme.ACCENT)
-        self._progress_bar.pack(fill="x", padx=20, pady=(0, 8))
-        self._progress_bar.set(0)
+        # The status or error comes first, then the step counter, as in the extension's paste screen.
+        self._link_lbl = ctk.CTkLabel(
+            self, text="", font=_f(12), text_color=theme.MUTED, anchor="w", justify="left", wraplength=560
+        )
+        self._prog_lbl = ctk.CTkLabel(self, text="", font=_f(12, "bold"), text_color=theme.MUTED, anchor="w")
+        self._prog_lbl.pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_1))
+        self._link_before = self._prog_lbl
 
-        # ── Hero card: the value the next hotkey press pastes ───────────
+        # The step card: the value the next paste puts into Genius.
         self._hero_card = ctk.CTkFrame(
             self, corner_radius=12, fg_color=theme.SURFACE, border_width=1, border_color=theme.ACCENT
         )
-        self._hero_card.pack(fill="x", padx=20, pady=(0, 6))
+        self._hero_card.pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_2))
         badge_row = ctk.CTkFrame(self._hero_card, fg_color="transparent")
-        badge_row.pack(fill="x", padx=16, pady=(14, 0))
+        badge_row.pack(fill="x", padx=theme.SPACE_4, pady=(theme.SPACE_3, 0))
         self._hero_badge = ctk.CTkLabel(
             badge_row, text="", font=_f(12, "bold"), text_color=theme.ACCENT_INK, fg_color=theme.ACCENT, corner_radius=4
         )
-        self._hero_badge.pack(side="left", padx=(0, 8), ipadx=8, ipady=2)
-        self._hero_step_lbl = ctk.CTkLabel(badge_row, text="", font=_f(11), text_color=theme.FAINT)
-        self._hero_step_lbl.pack(side="left")
+        self._hero_badge.pack(side="left", ipadx=theme.SPACE_2, ipady=theme.SPACE_1)
         self._hero_value_lbl = ctk.CTkLabel(
-            self._hero_card, text="", font=theme.display(32), text_color=theme.TEXT, anchor="w", wraplength=540
-        )
-        self._hero_value_lbl.pack(anchor="w", padx=16, pady=(6, 4))
-        self._card_instr_lbl = ctk.CTkLabel(
             self._hero_card,
             text="",
+            font=theme.display(24 if compact else 32),
+            text_color=theme.TEXT,
             anchor="w",
             justify="left",
             wraplength=540,
-            font=_f(12),
-            text_color=theme.MUTED,
         )
-        self._card_instr_lbl.pack(anchor="w", padx=16, pady=(0, 12))
+        self._hero_value_lbl.pack(anchor="w", padx=theme.SPACE_4, pady=(theme.SPACE_1, theme.SPACE_3))
+        self._card_instr_lbl = ctk.CTkLabel(
+            self, text="", anchor="w", justify="left", wraplength=560, font=_f(12), text_color=theme.TEXT
+        )
+        self._card_instr_lbl.pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_2))
+        self._build_manual_card(compact)
 
-        # ── Controls: mouse equivalents of the hotkeys, and live toggles ─
+        # Buttons, in the extension's order.
         controls = ctk.CTkFrame(self, fg_color="transparent")
-        controls.pack(fill="x", padx=20, pady=(0, 6))
-        back_text = f"‹ Back  {settings.back_hotkey.upper()}"
-        for text, command in ((back_text, self._on_back_hotkey), ("Skip ›", self._skip)):
-            ctk.CTkButton(
-                controls,
-                text=text,
-                width=92,
-                height=28,
-                font=_f(12),
-                fg_color=theme.SURFACE,
-                hover_color=theme.SURFACE_HI,
-                text_color=theme.TEXT,
-                command=command,
-            ).pack(side="left", padx=(0, 6))
-        self._chips = {}
-        for key, label in (("auto_enter", "Auto-confirm"), ("auto_tab", "Auto-tab")):
-            chip = ctk.CTkButton(
-                controls,
-                text="",
-                width=118,
-                height=28,
-                font=_f(12),
-                corner_radius=14,
-                border_width=1,
-                command=lambda k=key: self._toggle_chip(k),
-            )
-            chip.pack(side="right", padx=(6, 0))
-            self._chips[key] = chip
-            self._chip_label[key] = label
-        self._refresh_chips()
+        controls.pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_1))
+        self._ctl = {
+            "auto": self._control(controls, "Auto-paste: OFF", self._toggle_auto, 128),
+            "next": self._control(controls, "", self._next_clicked, 104),
+            "back": self._control(controls, "", self._on_back_hotkey, 108),
+            "skip": self._control(controls, "Skip", self._skip, 64),
+        }
+        for name in ("auto", "next", "back", "skip"):
+            self._ctl[name].pack(side="left", padx=(0, theme.SPACE_2))
+        stop = self._control(controls, "Back to credits", self._ask_back_to_credits, 120)
+        stop.configure(fg_color="transparent", border_width=1, border_color=theme.BORDER)
+        stop.pack(side="right")
+        self._ctl["stop"] = stop
+        self._auto_hint_lbl = ctk.CTkLabel(self, text="", font=_f(11), text_color=theme.FAINT, anchor="w")
+        if not compact:
+            ctk.CTkLabel(
+                self,
+                text=_PASTE_HELP,
+                font=_f(11),
+                text_color=theme.FAINT,
+                anchor="w",
+                justify="left",
+                wraplength=560,
+            ).pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_2))
+            self._build_steps_list()
 
-        if not settings.compact_mode:
-            hint = f"Press {settings.hotkey.upper()} to paste.  Esc ends pasting.  Click a step to jump to it."
-            ctk.CTkLabel(self, text=hint, font=_f(11), text_color=theme.FAINT, anchor="w").pack(
-                fill="x", padx=22, pady=(0, 2)
-            )
-            self._queue_sf = theme.scroll_frame(self, fg_color=theme.SURFACE, corner_radius=8)
-            self._queue_sf.pack(fill="both", expand=True, padx=20, pady=(0, 12))
-            self._queue_sf.grid_columnconfigure(0, weight=1)
-
-            for i, (kind, value) in enumerate(self._queue):
-                row_frame = ctk.CTkFrame(self._queue_sf, fg_color="transparent", corner_radius=4, height=28)
-                row_frame.grid(row=i, column=0, sticky="ew", padx=0, pady=0)
-                row_frame.grid_columnconfigure(0, minsize=24)
-                row_frame.grid_columnconfigure(1, minsize=150)
-                row_frame.grid_columnconfigure(2, weight=1)
-
-                m = ctk.CTkLabel(row_frame, text="", width=20, anchor="center", font=_f(11))
-                m.grid(row=0, column=0, sticky="w", padx=(4, 0), pady=2)
-                nested = kind in _NESTED_KINDS
-                t = ctk.CTkLabel(
-                    row_frame,
-                    text="" if nested else _LIST_LABELS.get(kind, kind),
-                    width=140,
-                    anchor="w",
-                    font=_f(11),
-                )
-                t.grid(row=0, column=1, sticky="w", padx=4, pady=2)
-                v = ctk.CTkLabel(row_frame, text=value, anchor="w", font=_f(12))
-                v.grid(row=0, column=2, sticky="w", padx=(20 if nested else 4, 4), pady=2)
-                for w in (row_frame, m, t, v):
-                    w.bind("<Button-1>", lambda _, idx=i: self._jump_to(idx))
-                    w.configure(cursor="hand2")
-                self._row_widgets.append((row_frame, m, t, v, kind))
-
+        if not keep_run:
+            self._begin_link_run(0)
         self._render_assistant()
+        self._render_link()
         self._register_assistant_keys()
         threading.Thread(target=self._wait_esc, daemon=True).start()
 
-    def _refresh_chips(self) -> None:
-        for key, chip in self._chips.items():
-            on = bool(getattr(settings, key))
-            chip.configure(
-                text=f"{self._chip_label[key]}  {'on' if on else 'off'}",
-                fg_color=theme.ACCENT_DIM if on else "transparent",
-                border_color=theme.ACCENT if on else theme.BORDER,
-                text_color=theme.ACCENT if on else theme.MUTED,
-                hover_color=theme.SURFACE_HI,
+    def _build_manual_card(self, compact: bool) -> None:
+        """The 'Manual mode' notice. It is packed by _render_controls while no extension is connected."""
+        card = ctk.CTkFrame(self, corner_radius=12, fg_color=theme.SURFACE, border_width=1, border_color=theme.BORDER)
+        if compact:
+            # One line: the window is only 300 tall, so the explanation lives in the full-size screen.
+            row = ctk.CTkFrame(card, fg_color="transparent")
+            row.pack(fill="x", padx=theme.SPACE_3, pady=theme.SPACE_2)
+            ctk.CTkLabel(
+                row, text="Manual mode: extension not connected", font=_f(12, "bold"), text_color=theme.TEXT
+            ).pack(side="left")
+            connect = self._button(row, "Connect browser extension", self._connect_extension, primary=True, width=200)
+            connect.configure(height=28)
+            connect.pack(side="right")
+        else:
+            ctk.CTkLabel(card, text="Manual mode", font=_f(13, "bold"), text_color=theme.TEXT, anchor="w").pack(
+                fill="x", padx=theme.SPACE_4, pady=(theme.SPACE_3, 0)
             )
+            ctk.CTkLabel(
+                card,
+                text=(
+                    "The browser extension is not connected, so Géniescraper cannot see Genius. "
+                    f"Click each field yourself, then press {settings.hotkey.upper()}. "
+                    "It cannot tell what is already filled in (use Skip for those) or check that an artist exists."
+                ),
+                font=_f(12),
+                text_color=theme.MUTED,
+                anchor="w",
+                justify="left",
+                wraplength=520,
+            ).pack(fill="x", padx=theme.SPACE_4, pady=(theme.SPACE_1, theme.SPACE_2))
+            connect = self._button(card, "Connect browser extension", self._connect_extension, primary=True, width=220)
+            connect.pack(anchor="w", padx=theme.SPACE_4, pady=(0, theme.SPACE_3))
+        self._manual_card = card
 
-    def _toggle_chip(self, key: str) -> None:
-        setattr(settings, key, not getattr(settings, key))
-        settings.save()
-        self._refresh_chips()
-        self._card_instr_lbl.configure(text=self._instruction_text())
+    def _connect_extension(self) -> None:
+        """Open Settings at the link card and start pairing, so the code is on screen to copy."""
+        self._open_settings()
+        win = self._settings_win
+        if win is not None and win.winfo_exists():
+            win.show_link()
+
+    def _control(self, master, text: str, command, width: int) -> ctk.CTkButton:
+        return ctk.CTkButton(
+            master,
+            text=text,
+            width=width,
+            height=30,
+            font=_f(12),
+            fg_color=theme.SURFACE,
+            hover_color=theme.SURFACE_HI,
+            text_color=theme.TEXT,
+            text_color_disabled=theme.FAINT,
+            command=command,
+        )
+
+    def _build_steps_list(self) -> None:
+        """The step lists, in one scroll area: 'Steps done' (closed to start with) above 'Steps left' (open)."""
+        sf = self._queue_sf = theme.scroll_frame(self, fg_color=theme.SURFACE, corner_radius=8)
+        sf.pack(fill="both", expand=True, padx=theme.SPACE_4, pady=(0, theme.SPACE_3))
+        sf.grid_columnconfigure(0, weight=1)
+        for key in ("done", "left"):
+            self._steps_heads[key] = ctk.CTkButton(
+                sf,
+                text="",
+                anchor="w",
+                height=26,
+                font=_f(12, "bold"),
+                fg_color="transparent",
+                hover_color=theme.SURFACE_HI,
+                text_color=theme.MUTED,
+                command=lambda k=key: self._toggle_steps(k),
+            )
+        for i, (kind, value) in enumerate(self._queue):
+            row_frame = ctk.CTkFrame(sf, fg_color="transparent", corner_radius=4, height=28)
+            row_frame.grid_columnconfigure(0, minsize=24)
+            row_frame.grid_columnconfigure(1, minsize=150)
+            row_frame.grid_columnconfigure(2, weight=1)
+
+            m = ctk.CTkLabel(row_frame, text="", width=20, anchor="center", font=_f(11))
+            m.grid(row=0, column=0, sticky="w", padx=(theme.SPACE_1, 0), pady=theme.SPACE_1)
+            nested = kind in _NESTED_KINDS
+            t = ctk.CTkLabel(
+                row_frame,
+                text="" if nested else _LIST_LABELS.get(kind, kind),
+                width=140,
+                anchor="w",
+                font=_f(11),
+            )
+            t.grid(row=0, column=1, sticky="w", padx=theme.SPACE_1, pady=theme.SPACE_1)
+            v = ctk.CTkLabel(row_frame, text=value, anchor="w", font=_f(12))
+            v.grid(
+                row=0,
+                column=2,
+                sticky="w",
+                padx=(theme.SPACE_4 if nested else theme.SPACE_1, theme.SPACE_1),
+                pady=theme.SPACE_1,
+            )
+            for w in (row_frame, m, t, v):
+                w.bind("<Button-1>", lambda _, idx=i: self._jump_to(idx))
+                w.configure(cursor="hand2")
+            self._row_widgets.append((row_frame, m, t, v, kind))
+
+    def _toggle_steps(self, key: str) -> None:
+        self._steps_open[key] = not self._steps_open[key]
+        self._render_assistant()
+
+    def _auto_on(self) -> bool:
+        status = self.link.status
+        return self.link.bridged and status is not None and status.auto == "running"
+
+    def _toggle_auto(self) -> None:
+        """Auto-paste on the extension: pause it when it runs, otherwise start or resume it. Remembered for the next song."""
+        if not self.link.bridged:
+            return
+        turn_on = not self._auto_on()
+        if self.link.command("resume" if turn_on else "pause"):
+            settings.link_mode = "auto" if turn_on else "manual"
+            settings.save()
+
+    def _next_clicked(self) -> None:
+        """Next is only on screen while the extension runs the paste: it fills the step."""
+        self.link.command("fill-next")
+
+    def _ask_back_to_credits(self) -> None:
+        self._show_esc_confirm(to_credits=True)
+
+    def _back_to_credits(self) -> None:
+        """Leave pasting for the song's credits, without starting the countdown that would begin pasting again."""
+        self.link.end_run()
+        self._clear_kb_hooks()
+        if self._esc_overlay_open():
+            self._esc_overlay.destroy()
+        self._show_credits_screen()
+        self._credits_in_countdown = False
+        self._update_start_label()
 
     def _skip(self) -> None:
         """Move to the next step without pasting, for a field that is already filled on Genius."""
+        if self.link.bridged:
+            self.link.command("skip")  # the extension moves; its status updates the position
+            return
         with self._lock:
             if self._pos >= len(self._queue):
                 return
@@ -711,6 +965,9 @@ class App(ctk.CTk):
             self._render_assistant()
 
     def _jump_to(self, index: int) -> None:
+        if self.link.bridged:
+            self.link.jump(index - self._pos)
+            return
         with self._lock:
             self._pos = max(0, min(index, len(self._queue) - 1))
         self._render_assistant()
@@ -834,7 +1091,7 @@ class App(ctk.CTk):
         self._release_header(self, info.album_title, info.artist, getattr(self, "_album_cover_image", None))
 
         tools = ctk.CTkFrame(self, fg_color="transparent")
-        tools.pack(fill="x", padx=40, pady=(4, 4))
+        tools.pack(fill="x", padx=theme.SPACE_6, pady=(theme.SPACE_1, theme.SPACE_1))
         ctk.CTkLabel(
             tools, text=f"{info.track_count} songs. Tick the ones to paste.", font=_f(13), text_color=theme.MUTED
         ).pack(side="left")
@@ -853,18 +1110,18 @@ class App(ctk.CTk):
 
         # Bottom buttons - packed before the scrollable frame so they're always visible
         btn_row = ctk.CTkFrame(self, fg_color="transparent")
-        btn_row.pack(side="bottom", fill="x", padx=40, pady=(8, 14))
+        btn_row.pack(side="bottom", fill="x", padx=theme.SPACE_6, pady=(theme.SPACE_2, theme.SPACE_4))
         self._button(btn_row, "Back", self._go_to_main_from_album, width=90).pack(side="left")
         self._scrape_selected_btn = self._button(
             btn_row, "Start with selected", self._start_selected_queue, primary=True, width=190
         )
         self._scrape_selected_btn.pack(side="right")
         self._button(btn_row, f"All {info.track_count} songs", self._start_album_queue, width=130).pack(
-            side="right", padx=(0, 8)
+            side="right", padx=(0, theme.SPACE_2)
         )
 
         sf = theme.scroll_frame(self, fg_color=theme.SURFACE, corner_radius=8)
-        sf.pack(fill="both", expand=True, padx=40, pady=(0, 4))
+        sf.pack(fill="both", expand=True, padx=theme.SPACE_6, pady=(0, theme.SPACE_1))
 
         for i, title in enumerate(info.track_titles):
             n = i + 1
@@ -872,7 +1129,7 @@ class App(ctk.CTk):
             self._track_vars.append(var)
 
             row = ctk.CTkFrame(sf, fg_color="transparent", corner_radius=4)
-            row.pack(fill="x", padx=2, pady=1)
+            row.pack(fill="x", padx=theme.SPACE_1, pady=theme.SPACE_1)
 
             cb = ctk.CTkCheckBox(
                 row,
@@ -884,12 +1141,12 @@ class App(ctk.CTk):
                 checkbox_height=18,
                 command=self._update_selection_btn,
             )
-            cb.pack(side="left", padx=(8, 4))
+            cb.pack(side="left", padx=(theme.SPACE_2, theme.SPACE_1))
 
             num_lbl = ctk.CTkLabel(row, text=str(n), width=28, text_color=theme.FAINT, anchor="e", font=_f(13))
-            num_lbl.pack(side="left", padx=(0, 10))
+            num_lbl.pack(side="left", padx=(0, theme.SPACE_3))
             title_lbl = ctk.CTkLabel(row, text=title, anchor="w", font=_f(13), text_color=theme.TEXT)
-            title_lbl.pack(side="left", fill="x", expand=True, pady=4)
+            title_lbl.pack(side="left", fill="x", expand=True, pady=theme.SPACE_1)
 
             def _hover_on(_, r=row):
                 r.configure(fg_color=theme.FOCUS)
@@ -911,10 +1168,10 @@ class App(ctk.CTk):
 
     def _release_header(self, master, title: str, artist: str, cover: PILImage.Image | None, extra: str = "") -> None:
         top = ctk.CTkFrame(master, fg_color="transparent")
-        top.pack(fill="x", padx=40, pady=(10, 10))
+        top.pack(fill="x", padx=theme.SPACE_6, pady=(theme.SPACE_3, theme.SPACE_3))
         if cover is not None:
             thumb = ctk.CTkImage(cover, size=(88, 88))
-            ctk.CTkLabel(top, image=thumb, text="").pack(side="left", padx=(0, 16))
+            ctk.CTkLabel(top, image=thumb, text="").pack(side="left", padx=(0, theme.SPACE_4))
         info = ctk.CTkFrame(top, fg_color="transparent")
         info.pack(side="left", fill="both", expand=True)
         ctk.CTkLabel(
@@ -923,7 +1180,7 @@ class App(ctk.CTk):
         ctk.CTkLabel(info, text=artist, font=_f(14), text_color=theme.MUTED, anchor="w").pack(anchor="w")
         if extra:
             ctk.CTkLabel(info, text=extra, font=_f(12), text_color=theme.ACCENT, anchor="w").pack(
-                anchor="w", pady=(6, 0)
+                anchor="w", pady=(theme.SPACE_2, 0)
             )
 
     def _select_all(self, value: bool) -> None:
@@ -1007,7 +1264,7 @@ class App(ctk.CTk):
                 text_color=theme.FAINT,
             ).pack()
         ctk.CTkLabel(box, text=track_title, font=theme.display(26), text_color=theme.TEXT, wraplength=480).pack(
-            pady=(2, 14)
+            pady=(theme.SPACE_1, theme.SPACE_4)
         )
         bar = ctk.CTkProgressBar(box, mode="indeterminate", width=320, height=4, progress_color=theme.ACCENT)
         bar.pack()
@@ -1021,10 +1278,11 @@ class App(ctk.CTk):
             font=_f(12),
             text_color=theme.MUTED,
             justify="center",
-        ).pack(pady=(14, 18))
+        ).pack(pady=(theme.SPACE_4, theme.SPACE_4))
         self._button(box, "Cancel", self._cancel_scrape, width=110).pack()
 
     def _advance_album_queue(self) -> None:
+        self.link.end_run()
         self._clear_kb_hooks()
         self.geometry("620x700")
         if not self._album_queue_pending:
@@ -1117,6 +1375,9 @@ class App(ctk.CTk):
     # ── hotkey assistant ─────────────────────────────────────────────────
 
     def _on_back_hotkey(self) -> None:
+        if self.link.bridged:
+            self.link.command("back")
+            return
         with self._lock:
             if self._pos > 0:
                 self._pos -= 1
@@ -1134,13 +1395,13 @@ class App(ctk.CTk):
         time.sleep(0.15)
         pyperclip.copy(value)
         keyboard.press_and_release("ctrl+v")
-        if kind not in flow.CLIPBOARD_ONLY_KINDS and settings.auto_enter:
+        # The desktop cannot see Genius here, so it cannot check the suggestion: it waits, then takes the first one.
+        if kind not in flow.CLIPBOARD_ONLY_KINDS:
             time.sleep(settings.autocomplete_wait)
             keyboard.press_and_release("enter")
-        if settings.auto_tab:
-            for key, pause in flow.autotab_steps(kind, next_kind):
-                time.sleep(pause)
-                keyboard.press_and_release(key)
+        for key, pause in flow.autotab_steps(kind, next_kind):
+            time.sleep(pause)
+            keyboard.press_and_release(key)
 
         # Re-read pos - F7 may have decremented it during the paste window
         with self._lock:
@@ -1155,27 +1416,46 @@ class App(ctk.CTk):
     def _render_assistant(self) -> None:
         total = len(self._queue)
         pos = self._pos
+        finished = pos >= total
 
-        if pos < total:
+        self._prog_lbl.configure(text="All steps done" if finished else f"Step {pos + 1} of {total}")
+        if not finished:
             kind, value = self._queue[pos]
-            field_label = _FIELD_LABELS.get(kind, kind)
-
-            self._prog_lbl.configure(text=f"{pos + 1} / {total}")
-            self._progress_bar.set((pos + 1) / total if total else 0)
-
-            # Hero card updates
-            self._hero_badge.configure(text=field_label)
-            self._hero_step_lbl.configure(text=f"Step {pos + 1} of {total}")
+            self._hero_badge.configure(text=_FIELD_LABELS.get(kind, kind))
             self._hero_value_lbl.configure(text=value)
-            self._card_instr_lbl.configure(text=self._instruction_text())
+        else:
+            self._hero_badge.configure(text="Done")
+            self._hero_value_lbl.configure(text="✓")
+        self._card_instr_lbl.configure(text=self._instruction_text())
+        self._render_controls()
+        self._render_steps()
 
-            # Auto-scroll the queue list to keep the current item visible
-            if self._queue_sf is not None and self._queue_sf.winfo_exists():
-                fraction = max(0.0, (pos - 2) / max(1, total))
-                self._queue_sf._parent_canvas.yview_moveto(fraction)
+    def _render_steps(self) -> None:
+        """Rows done / here / left, the two disclosures between them, and the list scrolled to the current step."""
+        total = len(self._queue)
+        pos = min(self._pos, total)
+        if self._queue_sf is not None and self._queue_sf.winfo_exists():
+            # Row 0 is the 'done' header, row 2i+2 is step i, and the 'left' header sits just above step pos.
+            heads = self._steps_heads
+            for key, count, row in (("done", pos, 0), ("left", total - pos, 2 * pos + 1)):
+                head = heads[key]
+                if count == 0:
+                    head.grid_remove()
+                    continue
+                mark = "▾" if self._steps_open[key] else "▸"
+                title = "Steps done" if key == "done" else "Steps left"
+                head.configure(text=f"{mark}  {title} ({count})")
+                head.grid(row=row, column=0, sticky="ew", pady=(theme.SPACE_1, 0))
+            fraction = 0.0 if not self._steps_open["done"] else max(0.0, (pos - 2) / max(1, total))
+            self._queue_sf._parent_canvas.yview_moveto(fraction)
 
         # Full row sweep - avoids a race where scheduled renders see a stale _prev_pos
         for i, (row_frame, m, t, v, _kind) in enumerate(self._row_widgets):
+            shown = self._steps_open["done" if i < pos else "left"]
+            if shown:
+                row_frame.grid(row=2 * i + 2, column=0, sticky="ew")
+            else:
+                row_frame.grid_remove()
             if i < pos:
                 row_frame.configure(fg_color="transparent")
                 m.configure(text="✓", text_color=theme.DONE)
@@ -1192,8 +1472,70 @@ class App(ctk.CTk):
                 t.configure(text_color=theme.FAINT, font=_f(11))
                 v.configure(text_color=theme.MUTED, font=_f(12))
 
+    def _render_controls(self) -> None:
+        """Button states, as in the extension: Auto-paste (only with the extension), Next (only while auto is off)."""
+        ctl = self._ctl
+        if not ctl or not ctl["auto"].winfo_exists():
+            return
+        link = self.link
+        finished = self._pos >= len(self._queue)
+        bridged = link.bridged
+        on = self._auto_on()
+        auto = ctl["auto"]
+        auto.configure(text="Auto-paste: ON" if on else "Auto-paste: OFF")
+        if on:
+            auto.configure(
+                state="normal", fg_color=theme.ACCENT, hover_color=theme.ACCENT_HOVER, text_color=theme.ACCENT_INK
+            )
+        else:
+            auto.configure(
+                state="normal" if bridged else "disabled",
+                fg_color=theme.SURFACE if bridged else theme.SURFACE_HI,
+                hover_color=theme.SURFACE_HI,
+                text_color=theme.TEXT,
+            )
+        nxt = ctl["next"]
+        nxt.configure(
+            text=f"Next ({settings.hotkey.upper()})",
+            state="disabled" if finished or (bridged and bool(link.status and link.status.busy)) else "normal",
+        )
+        if on or not bridged:  # without the extension the hotkeys are the only way: no Next button, no window tricks
+            nxt.pack_forget()
+        elif not nxt.winfo_ismapped():
+            nxt.pack(side="left", padx=(0, theme.SPACE_2), before=ctl["back"])
+        ctl["back"].configure(
+            text=f"Previous ({settings.back_hotkey.upper()})", state="disabled" if self._pos == 0 else "normal"
+        )
+        ctl["skip"].configure(state="disabled" if finished else "normal")
+        card = self._manual_card
+        if card is not None:
+            if link.connected:
+                card.pack_forget()
+            elif not card.winfo_manager():
+                card.pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_2), after=self._card_instr_lbl)
+        compact_notice = settings.compact_mode and card is not None and bool(card.winfo_manager())
+        hint = "" if bridged or compact_notice else (_AUTO_HINT_IDLE if link.connected else _AUTO_HINT_OFFLINE)
+        if self._auto_hint_lbl is not None:
+            if hint:
+                self._auto_hint_lbl.configure(text=hint)
+                self._auto_hint_lbl.pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_1), after=auto.master)
+            else:
+                self._auto_hint_lbl.pack_forget()
+
     def _instruction_text(self) -> str:
-        return flow.instruction_text(self._queue, self._pos, settings.hotkey)
+        if self._auto_on():
+            return "Auto-paste is filling the form. It pauses if you use Genius; press Auto-paste to take over."
+        if self.link.bridged:
+            return f"Press Next here, or {settings.hotkey.upper()} on the Genius page, to fill this step."
+        text = flow.instruction_text(self._queue, self._pos, settings.hotkey)
+        if (
+            not settings.compact_mode  # compact mode has no room: its notice line says it
+            and self._pos < len(self._queue)
+            and self._queue[self._pos][0] not in flow.CLIPBOARD_ONLY_KINDS
+        ):
+            hk = settings.hotkey.upper()
+            text += "\n" + f"Click the field on Genius first: {hk} pastes wherever your cursor is."
+        return text
 
     def _show_done_screen(self) -> None:
         self._screen = "done"
@@ -1213,15 +1555,17 @@ class App(ctk.CTk):
             text="Check the Genius page, then press Save there.",
             font=_f(13),
             text_color=theme.MUTED,
-        ).pack(pady=(4, 22))
+        ).pack(pady=(theme.SPACE_1, theme.SPACE_5))
 
         self._back_btn = self._button(box, "", self._go_to_main, primary=True, width=260)
-        self._back_btn.pack(pady=(0, 8))
+        self._back_btn.pack(pady=(0, theme.SPACE_2))
         self._back_btn.bind("<Enter>", lambda _: self._pause_countdown())
         self._back_btn.bind("<Leave>", lambda _: self._resume_countdown())
         self._update_done_label()
         if self._album_info is not None and self._album_info.track_count > 1:
-            self._button(box, "Back to the track list", self._back_to_album_list, width=260).pack(pady=(0, 8))
+            self._button(box, "Back to the track list", self._back_to_album_list, width=260).pack(
+                pady=(0, theme.SPACE_2)
+            )
         self._button(box, "Close Géniescraper", self.destroy, width=260).pack()
 
         self.after(1000, self._tick_countdown)
@@ -1296,6 +1640,7 @@ class App(ctk.CTk):
         self._go_to_main()
 
     def _go_to_main(self) -> None:
+        self.link.end_run()
         self._in_countdown = False
         self._song = None
         self._cover_image = None
@@ -1312,14 +1657,98 @@ class App(ctk.CTk):
             self._prefetch_cache.clear()
         self._show_scrape_screen()
 
+    # ── companion link ───────────────────────────────────────────────────
+
+    def _on_tk_thread(self, fn) -> None:
+        self.after(0, fn)
+
+    def _persist_pairing(self, secret: str, origin: str) -> None:
+        settings.bridge_secret, settings.bridge_origin = secret, origin
+        settings.save()
+
+    def _erase_pairing(self) -> None:
+        settings.bridge_secret = settings.bridge_origin = ""
+        settings.save()
+
+    def _begin_link_run(self, resume_at: int) -> None:
+        """Give the current queue to the extension, when it is connected. Otherwise the hotkeys do the work."""
+        self.link.end_run()
+        song = self._song
+        if song is not None and self.link.connected:
+            self.link.start_run(f"{song.title} · {song.artist}", self._queue, settings.link_mode, resume_at)
+
+    def _sync_hooks(self) -> None:
+        """The extension owns F7/F8 while it runs the paste; otherwise the desktop's keys are registered."""
+        if self._screen == "assistant" and not self._esc_overlay_open():
+            self._register_assistant_keys()
+
+    def _link_connection(self, up: bool) -> None:
+        if up and self._screen == "assistant" and not self.link.run_active and not self._esc_overlay_open():
+            self._begin_link_run(self._pos)  # it connected mid-song: carry on from the current step
+        self._sync_hooks()
+        self._render_link()
+        self._render_open_pages()
+
+    def _link_run_ended(self) -> None:
+        """The extension refused or ended the run: the desktop's keys come back."""
+        self._sync_hooks()
+        self._render_link()
+        if self.link.notice:
+            self._toast(self.link.notice, error=True)
+
+    def _link_status(self, status: RunStatus) -> None:
+        if self._screen != "assistant":
+            return
+        with self._lock:
+            self._pos = max(0, min(status.position, len(self._queue)))
+        self._render_assistant()
+        self._render_link()
+
+    def _link_finished(self) -> None:
+        if self._screen == "assistant":
+            self._finish_song()
+
+    def _link_changed(self) -> None:
+        self._render_link()
+        win = self._settings_win
+        if win is not None and win.winfo_exists():
+            win.refresh_link()
+
+    def _render_link(self) -> None:
+        """The status or error line above the step counter, and the buttons that follow the link."""
+        lbl, before = self._link_lbl, self._link_before
+        if self._screen != "assistant" or lbl is None or before is None or not lbl.winfo_exists():
+            return
+        link = self.link
+        status = link.status
+        if link.bridged:
+            text, tone = describe_status(status) if status else ("", "info")
+            text = link.notice or text or "Linked to the browser extension."
+            tone = "attention" if link.notice else tone
+        elif link.run_active:
+            text, tone = "Link lost. The hotkeys work again until the extension reconnects.", "attention"
+        else:
+            text, tone = link.notice, "attention"
+        colour = {"ok": theme.DONE, "attention": theme.WARN}.get(tone, theme.MUTED)
+        if text:
+            lbl.configure(text=text, text_color=colour)
+            lbl.pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_1), before=before)
+        else:
+            lbl.pack_forget()
+        self._card_instr_lbl.configure(text=self._instruction_text())
+        self._render_controls()
+
     def _wait_esc(self) -> None:
         while True:
             keyboard.wait("esc")
             if self._app_focused:
-                self.after(0, self._show_esc_confirm)
+                self.after(0, lambda: self._show_esc_confirm(from_key=True))
                 return
 
-    def _show_esc_confirm(self) -> None:
+    def _show_esc_confirm(self, *, from_key: bool = False, to_credits: bool = False) -> None:
+        if self._screen != "assistant" or self._esc_overlay_open():
+            return  # an Esc from a screen already left, or a second one
+        self._esc_from_key = from_key  # the Esc listener is used up by a key press, not by the button
         # Unhook the assistant hotkeys so they don't fire during confirmation
         self._clear_kb_hooks()
 
@@ -1331,13 +1760,13 @@ class App(ctk.CTk):
 
         ctk.CTkLabel(
             self._esc_overlay,
-            text="End pasting for this song?",
+            text="Back to the credits?" if to_credits else "End pasting for this song?",
             font=theme.display(22),
             text_color=theme.TEXT,
-        ).pack(pady=(28, 20))
+        ).pack(pady=(theme.SPACE_5, theme.SPACE_4))
 
         btn_row = ctk.CTkFrame(self._esc_overlay, fg_color="transparent")
-        btn_row.pack(pady=(0, 28))
+        btn_row.pack(pady=(0, theme.SPACE_5))
 
         ctk.CTkButton(
             btn_row,
@@ -1351,10 +1780,10 @@ class App(ctk.CTk):
             hover_color=theme.SURFACE_HI,
             command=self._dismiss_esc_confirm,
             font=_f(13, "bold"),
-        ).pack(side="left", padx=(0, 12))
+        ).pack(side="left", padx=(0, theme.SPACE_3))
         ctk.CTkButton(
             btn_row,
-            text="End and start over",
+            text="Back to credits" if to_credits else "End and start over",
             width=160,
             height=38,
             fg_color=theme.DANGER_DIM,
@@ -1362,9 +1791,13 @@ class App(ctk.CTk):
             text_color=theme.DANGER,
             border_width=1,
             border_color=theme.DANGER,
-            command=self._confirm_esc_quit,
+            command=self._back_to_credits if to_credits else self._confirm_esc_quit,
             font=_f(13, "bold"),
         ).pack(side="left")
+
+    def _esc_overlay_open(self) -> bool:
+        overlay = getattr(self, "_esc_overlay", None)
+        return overlay is not None and overlay.winfo_exists()
 
     def _dismiss_esc_confirm(self) -> None:
         """User chose to resume - remove overlay and re-register hotkeys."""
@@ -1372,7 +1805,8 @@ class App(ctk.CTk):
             self._esc_overlay.destroy()
         # Re-register assistant hotkeys
         self._register_assistant_keys()
-        threading.Thread(target=self._wait_esc, daemon=True).start()
+        if self._esc_from_key:
+            threading.Thread(target=self._wait_esc, daemon=True).start()
 
     def _confirm_esc_quit(self) -> None:
         """User confirmed quit - clean up and go to main menu."""

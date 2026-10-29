@@ -12,6 +12,7 @@ const SONG: SongCredits = {
   coverArtUrl: "https://example.com/c.png",
   youtubeUrl: "https://www.youtube.com/watch?v=abcDEF_-123",
   youtubeIsMv: true,
+  releaseDate: "2024-04-19",
 };
 const ALL = { copyright: true, coverArt: true, youtube: true };
 

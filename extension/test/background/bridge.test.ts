@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { BridgeClient, DRIVEN_KEY, PAIRING_KEY, type BridgeDeps, type SocketLike } from "../../src/background/bridge";
+import {
+  BridgeClient,
+  DRIVEN_KEY,
+  PAGES_DEBOUNCE_MS,
+  PAIRING_KEY,
+  type BridgeDeps,
+  type SocketLike,
+} from "../../src/background/bridge";
+import type { OpenTab } from "../../src/core/appleTabs";
 import { PASTE_KEY, IDLE_PASTE, startPaste, normalisePaste, type PasteState } from "../../src/core/paste";
 import { BRIDGE_PORTS, computeProof } from "../../src/shared/bridge";
 import type { PasteCommand, Result } from "../../src/shared/messages";
@@ -44,6 +52,7 @@ function setup(over: { secret?: string | null } = {}) {
   const timers: { fn: () => void; ms: number; id: number }[] = [];
   let lostCalls = 0;
   let state: PasteState = { ...IDLE_PASTE };
+  const tabs: { open: OpenTab[]; reads: number } = { open: [], reads: 0 };
   const paste = {
     command(request: PasteCommand): Promise<Result<PasteState>> {
       pasteLog.push(request);
@@ -69,6 +78,10 @@ function setup(over: { secret?: string | null } = {}) {
     paste,
     local,
     session,
+    openTabs() {
+      tabs.reads++;
+      return Promise.resolve(tabs.open);
+    },
     randomHex: () => CLIENT_NONCE,
     setTimer(fn, ms) {
       const id = timers.length + 1;
@@ -88,6 +101,7 @@ function setup(over: { secret?: string | null } = {}) {
     local,
     session,
     timers,
+    tabs,
     lost: () => lostCalls,
     setState(next: PasteState) {
       state = next;
@@ -200,7 +214,10 @@ describe("connecting", () => {
 
   it("sends the current status once the handshake is done", async () => {
     const { socket } = await connected();
-    expect(socket.sent.at(-1)).toMatchObject({ type: "status", state: { active: false, total: 0 } });
+    expect(socket.sent.filter((m) => m["type"] === "status").at(-1)).toMatchObject({
+      type: "status",
+      state: { active: false, total: 0 },
+    });
   });
 
   it("answers a ping with a pong, and gives up cleanly on a binary or oversized frame", async () => {
@@ -292,7 +309,10 @@ describe("commands", () => {
     await flush();
     expect(pasteLog.map((c) => c.type)).toEqual(["paste-start", "paste-auto-start"]);
     expect(socket.sent.filter((m) => m["type"] === "ack")).toEqual([{ type: "ack", v: 1, id: 4, ok: true }]);
-    expect(socket.sent.at(-1)).toMatchObject({ type: "status", state: { auto: "running", total: 3 } });
+    expect(socket.sent.filter((m) => m["type"] === "status").at(-1)).toMatchObject({
+      type: "status",
+      state: { auto: "running", total: 3 },
+    });
   });
 
   it("begin in manual mode only starts the session", async () => {
@@ -416,5 +436,148 @@ describe("losing the desktop app", () => {
     for (const t of env.timers.splice(0)) t.fn();
     await flush();
     expect(env.sockets.length).toBeGreaterThan(before);
+  });
+});
+
+const ALBUM = "https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134";
+const SONG = "https://music.apple.com/us/song/chihiro/1739659140";
+const tab = (url: string, title: string, current = false, tabId = 1): OpenTab => ({ tabId, url, title, current });
+
+/** The `pages` messages the desktop app has received. */
+const pagesSent = (socket: FakeSocket): { pages: unknown[]; v: number }[] =>
+  socket.sent.filter((m) => m["type"] === "pages") as never;
+
+/** Run the debounce timer that is waiting, as the clock would. */
+async function settle(env: { timers: { fn: () => void; ms: number }[] }): Promise<void> {
+  const due = env.timers.splice(0).filter((t) => t.ms === PAGES_DEBOUNCE_MS);
+  due.forEach((t) => {
+    t.fn();
+  });
+  await flush();
+}
+
+describe("open Apple Music pages", () => {
+  it("are sent right after the link authenticates, even when there are none", async () => {
+    const env = setup();
+    env.tabs.open = [
+      tab(ALBUM, "Hit Me Hard And Soft by Billie Eilish on Apple Music", true),
+      tab(SONG, "Chihiro", false, 2),
+    ];
+    await env.client.start();
+    await flush();
+    const socket = env.sockets[0];
+    if (!socket) throw new Error("no socket");
+    await welcome(socket);
+    expect(pagesSent(socket)).toEqual([
+      {
+        type: "pages",
+        v: 1,
+        pages: [
+          { url: ALBUM, title: "Hit Me Hard And Soft by Billie Eilish", kind: "album", current: true },
+          { url: SONG, title: "Chihiro", kind: "song", current: false },
+        ],
+      },
+    ]);
+    const empty = await connected();
+    expect(pagesSent(empty.socket)).toEqual([{ type: "pages", v: 1, pages: [] }]);
+  });
+
+  it("are not sent, and no tab is read, while nothing is paired", async () => {
+    const env = setup({ secret: null });
+    env.tabs.open = [tab(ALBUM, "A", true)];
+    await env.client.start();
+    env.client.refreshPages();
+    await settle(env);
+    expect(env.sockets).toHaveLength(0);
+    expect(env.tabs.reads).toBe(0);
+  });
+
+  it("are not sent before the handshake is done", async () => {
+    const env = setup();
+    await env.client.start();
+    await flush();
+    const socket = env.sockets[0];
+    if (!socket) throw new Error("no socket");
+    env.client.refreshPages();
+    await settle(env);
+    expect(pagesSent(socket)).toHaveLength(0);
+    expect(env.tabs.reads).toBe(0);
+  });
+
+  it("follow a burst of tab changes as one event, a moment after the last", async () => {
+    const env = await connected();
+    env.timers.length = 0;
+    env.tabs.open = [tab(ALBUM, "A", true)];
+    env.client.refreshPages();
+    env.client.refreshPages();
+    env.client.refreshPages();
+    const waiting = env.timers.filter((t) => t.ms === PAGES_DEBOUNCE_MS);
+    expect(waiting).toHaveLength(3);
+    await settle(env);
+    expect(pagesSent(env.socket)).toHaveLength(2);
+    expect(pagesSent(env.socket)[1]?.pages).toHaveLength(1);
+  });
+
+  it("are not sent again when the list has not changed", async () => {
+    const env = await connected();
+    env.tabs.open = [tab(ALBUM, "A", true)];
+    env.client.refreshPages();
+    await settle(env);
+    env.client.refreshPages();
+    await settle(env);
+    expect(pagesSent(env.socket)).toHaveLength(2);
+    env.tabs.open = [tab(ALBUM, "A", false), tab(SONG, "B", true, 2)];
+    env.client.refreshPages();
+    await settle(env);
+    expect(pagesSent(env.socket)).toHaveLength(3);
+  });
+
+  it("send only what the panel lists, at most twenty, with long titles cut", async () => {
+    const env = await connected();
+    env.tabs.open = [
+      tab("https://music.apple.com/us/playlist/x/pl.1", "Not a page we list"),
+      tab("https://example.com/us/album/x/1", "Elsewhere"),
+      tab(`https://music.apple.com/us/album/long/1?q=${"x".repeat(3000)}`, "Address too long"),
+      tab("https://music.apple.com/us/album/long-title/2", `${"t".repeat(300)} - Apple Music`),
+      ...Array.from({ length: 30 }, (_, i) =>
+        tab(`https://music.apple.com/us/song/s${String(i)}/${String(100 + i)}`, `S${String(i)}`, false, 10 + i),
+      ),
+    ];
+    env.client.refreshPages();
+    await settle(env);
+    const pages = pagesSent(env.socket)[1]?.pages as { title: string; url: string }[];
+    expect(pages).toHaveLength(20);
+    expect(pages[0]?.title).toHaveLength(120);
+    expect(pages.some((p) => p.url.includes("example.com") || p.url.includes("playlist"))).toBe(false);
+    expect(pages.every((p) => p.url.length <= 2048)).toBe(true);
+    for (const page of pages) expect(Object.keys(page).sort()).toEqual(["current", "kind", "title", "url"]);
+  });
+
+  it("stop with the link: nothing is sent after it drops or the user unpairs", async () => {
+    const env = await connected();
+    env.tabs.open = [tab(ALBUM, "A", true)];
+    env.client.refreshPages();
+    env.socket.hang();
+    await settle(env);
+    expect(pagesSent(env.socket)).toHaveLength(1);
+
+    const second = await connected();
+    second.tabs.open = [tab(ALBUM, "A", true)];
+    second.client.refreshPages();
+    await second.client.unpair();
+    await settle(second);
+    expect(pagesSent(second.socket)).toHaveLength(1);
+  });
+
+  it("start afresh on a new connection", async () => {
+    const env = await connected();
+    env.socket.hang();
+    await flush();
+    for (const t of env.timers.splice(0)) t.fn();
+    await flush();
+    const next = env.sockets[env.sockets.length - 1];
+    if (!next || next === env.socket) throw new Error("no new socket");
+    await welcome(next);
+    expect(pagesSent(next)).toHaveLength(1);
   });
 });

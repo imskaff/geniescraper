@@ -22,11 +22,13 @@ import re
 import secrets
 import threading
 import time
+import unicodedata
 from collections.abc import Callable
 from concurrent.futures import Future
 from hashlib import sha256
 from http import HTTPStatus
 from typing import Any, TypeGuard
+from urllib.parse import urlsplit
 
 PROTOCOL_VERSION = 1
 HOST = "127.0.0.1"
@@ -37,6 +39,11 @@ MAX_MESSAGE_BYTES = 64 * 1024
 MAX_QUEUE_ITEMS = 500
 MAX_TEXT = 2000
 MAX_STATUS_TEXT = 500
+#: The open Apple Music pages the extension reports: how many, and how long an address and a title may be.
+MAX_PAGES = 20
+MAX_PAGE_URL = 2048
+MAX_PAGE_TITLE = 120
+APPLE_MUSIC_HOST = "music.apple.com"
 #: Seconds a new connection has to authenticate before it is dropped.
 AUTH_TIMEOUT_S = 5.0
 #: A pairing code works for this long, for one pairing, and dies after this many wrong guesses.
@@ -57,6 +64,9 @@ QUEUE_KINDS = frozenset(
         "copyright_notice",
         "youtube_url",
         "cover_art",
+        "release_month",
+        "release_day",
+        "release_year",
     }
 )
 SIMPLE_COMMANDS = frozenset({"fill-next", "back", "skip", "pause", "resume", "stop", "get-status"})
@@ -125,6 +135,11 @@ class PairingWindow:
         self._spent = False
         return self.code
 
+    @property
+    def alive(self) -> bool:
+        """Still able to pair: not used, not locked, not expired."""
+        return not self._spent and self._failures < PAIRING_MAX_FAILURES and self._clock() <= self._expires
+
     def check(self, attempt: str) -> bool:
         if self._spent or self._failures >= PAIRING_MAX_FAILURES or self._clock() > self._expires:
             return False
@@ -167,6 +182,72 @@ def _check_state(state: Any) -> dict[str, Any]:
     if not ok:
         raise ProtocolError("status: bad value")
     return state
+
+
+# Invisible marks and the right-to-left overrides that can reorder what is shown; no part of a page's name.
+_HIDDEN_MARKS = frozenset("\u200b\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2060\u2066\u2067\u2068\u2069\ufeff")
+
+
+def _clean_title(raw: str, kind: str) -> str:
+    """A tab's title as one plain line: any kind of space is a space, control, private-use and invisible
+    characters go, and it is cut to ``MAX_PAGE_TITLE``. A title that leaves nothing is named by its kind.
+    Real titles carry no-break spaces and the like, so they are cleaned, never a reason to lose the page."""
+    kept = []
+    for ch in raw:
+        if ch.isspace():
+            kept.append(" ")
+        elif ch in _HIDDEN_MARKS or unicodedata.category(ch) in ("Cc", "Cs", "Co", "Cn"):
+            continue
+        else:
+            kept.append(ch)
+    title = " ".join("".join(kept).split())
+    if len(title) > MAX_PAGE_TITLE:
+        title = title[: MAX_PAGE_TITLE - 1] + "\u2026"
+    return title or ("Apple Music album" if kind == "album" else "Apple Music song")
+
+
+def _page_url(value: Any) -> bool:
+    """An https address on exactly music.apple.com: no other host, no credentials, no port, no spaces."""
+    if not isinstance(value, str) or not 0 < len(value) <= MAX_PAGE_URL or not value.startswith("https://"):
+        return False
+    if any(ch.isspace() or not ch.isprintable() or ch == "\\" for ch in value):
+        return False
+    try:
+        parts = urlsplit(value)
+    except ValueError:
+        return False
+    return parts.netloc == APPLE_MUSIC_HOST
+
+
+def clean_pages(pages: Any) -> list[dict[str, Any]]:
+    """The open pages the extension reports, checked entry by entry. A list of the wrong shape is a protocol
+    error; an entry that is not exactly an album or song page on Apple Music is dropped, and at most
+    ``MAX_PAGES`` are kept. Nothing here starts anything: the list is only ever shown."""
+    if not isinstance(pages, list):
+        raise ProtocolError("pages: not a list")
+    keys = {"url", "title", "kind", "current"}
+    kept: list[dict[str, Any]] = []
+    for entry in pages:
+        if len(kept) >= MAX_PAGES:
+            break
+        if not isinstance(entry, dict) or set(entry) != keys:
+            continue
+        title = entry["title"]
+        if (
+            _page_url(entry["url"])
+            and isinstance(title, str)
+            and entry["kind"] in ("album", "song")
+            and isinstance(entry["current"], bool)
+        ):
+            kept.append(
+                {
+                    "url": entry["url"],
+                    "title": _clean_title(title, entry["kind"]),
+                    "kind": entry["kind"],
+                    "current": entry["current"],
+                }
+            )
+    return kept
 
 
 def _check_error(error: Any) -> dict[str, str]:
@@ -302,6 +383,8 @@ class ClientSession:
             return Reaction()
         if kind == "status":
             return Reaction(events=[("status", _check_state(message.get("state")))])
+        if kind == "pages":
+            return Reaction(events=[("pages", clean_pages(message.get("pages")))])
         if kind == "ack":
             command_id, ok = message.get("id"), message.get("ok")
             if not _is_int(command_id) or not isinstance(ok, bool):
@@ -332,6 +415,7 @@ class Bridge:
         on_status: Callable[[dict[str, Any]], None] | None = None,
         on_connection: Callable[[bool], None] | None = None,
         on_paired: Callable[[str, str], None] | None = None,
+        on_pages: Callable[[list[dict[str, Any]]], None] | None = None,
     ) -> None:
         self.host = HOST
         self.port = 0
@@ -341,6 +425,7 @@ class Bridge:
         self._on_status = on_status
         self._on_connection = on_connection
         self._on_paired = on_paired
+        self._on_pages = on_pages
         self._pairing: PairingWindow | None = None
         self._server: Any = None
         self._loop: asyncio.AbstractEventLoop | None = None
@@ -358,6 +443,16 @@ class Bridge:
             self._pairing = PairingWindow()
             return self._pairing.code
         return self._pairing.renew()
+
+    def cancel_pairing(self) -> None:
+        """Close the pairing window now; the code stops working."""
+        self._pairing = None
+
+    def _window(self) -> PairingWindow | None:
+        """The pairing window while it can still pair; an expired, spent or locked one is dropped."""
+        if self._pairing is not None and not self._pairing.alive:
+            self._pairing = None
+        return self._pairing
 
     def forget_pairing(self) -> None:
         self.secret = None
@@ -469,7 +564,9 @@ class Bridge:
     def _check_handshake(self, connection: Any, request: Any) -> Any:
         if not host_allowed(request.headers.get("Host"), self.port):
             return connection.respond(HTTPStatus.FORBIDDEN, "forbidden\n")
-        if not origin_allowed(request.headers.get("Origin"), self.pinned_origin if self._pairing is None else None):
+        # The pin holds whenever a pairing exists, also while a pairing window is open: pairing another browser
+        # means forgetting the first one.
+        if not origin_allowed(request.headers.get("Origin"), self.pinned_origin):
             return connection.respond(HTTPStatus.FORBIDDEN, "forbidden\n")
         return None
 
@@ -483,7 +580,7 @@ class Bridge:
             return
         session = ClientSession(
             secret=self.secret,
-            pairing=self._pairing,
+            pairing=self._window(),
             origin=origin,
             pinned_origin=self.pinned_origin,
         )
@@ -508,7 +605,7 @@ class Bridge:
         session = self._sessions.get(conn)
         if session is None:
             session = self._sessions[conn] = ClientSession(
-                secret=self.secret, pairing=self._pairing, origin=None, pinned_origin=self.pinned_origin
+                secret=self.secret, pairing=self._window(), origin=None, pinned_origin=self.pinned_origin
             )
         reaction = session.receive(raw)
         for message in reaction.sends:
@@ -529,6 +626,8 @@ class Bridge:
             self._call(self._on_connection, True)
         elif kind == "status":
             self._call(self._on_status, event[1])
+        elif kind == "pages":
+            self._call(self._on_pages, event[1])
         elif kind == "ack":
             future = self._pending.pop(event[1], None)
             if future is not None and not future.done():

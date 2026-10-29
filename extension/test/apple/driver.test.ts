@@ -30,6 +30,11 @@ describe("detectAlbum on the saved album pages", () => {
     expect(info.trackUrls).toHaveLength(info.trackCount);
   });
 
+  it.each(ALBUMS)("$id reports the album's own release date", async ({ id, url }) => {
+    const info = await detectAlbum(loadFixture(id, "page"), url, FAST);
+    expect(info.releaseDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
   it.each(ALBUMS)("$id lists real track titles, never placeholders", async ({ id, url, track_index }) => {
     const info = await detectAlbum(loadFixture(id, "page"), url, FAST);
     expect(info.trackTitles.filter((title) => /^Track \d+$/.test(title))).toEqual([]);
@@ -89,6 +94,7 @@ describe("scrapeTrack on the saved song pages", () => {
     expect(creditMap(result.credits)).toEqual(creditMap(golden.credits));
     expect(result.title).toBe(golden.title);
     expect(result.artist).toBe(golden.artist);
+    expect(result.releaseDate).toBe(golden.release_date);
     expect(result.warnings).toEqual([]);
   });
 

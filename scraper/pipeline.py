@@ -10,6 +10,7 @@ import asyncio
 from scraper import apple_music, deezer, youtube
 from scraper.apple_music import AlbumTrackInfo
 from scraper.models import SongCredits
+from utils.config import settings
 
 
 async def detect(url: str) -> AlbumTrackInfo:
@@ -34,6 +35,10 @@ async def detect(url: str) -> AlbumTrackInfo:
     )
 
 
+async def _nothing() -> str:
+    return ""
+
+
 async def fetch_cover(url: str, title: str, artist: str) -> str:
     """Best-effort 1000x1000 PNG cover for an album or track, or '' when no source has one.
 
@@ -46,7 +51,7 @@ async def fetch_cover(url: str, title: str, artist: str) -> str:
         return exact
     itunes_cover, deezer_cover = await asyncio.gather(
         deezer.fetch_itunes_cover_url(title, artist),
-        deezer.fetch_cover_url(title, artist),
+        deezer.fetch_cover_url(title, artist) if settings.deezer_covers else _nothing(),
     )
     return itunes_cover or deezer_cover
 
@@ -61,16 +66,18 @@ async def fetch_track(url: str, track_index: int, track_title: str, artist: str)
     scrape_task = asyncio.create_task(apple_music.scrape(url, track_index=track_index, track_title=track_title))
     if artist and search_title != "Unknown":
         cover_task = asyncio.create_task(fetch_cover(url, search_title, artist))
-        youtube_task = asyncio.create_task(youtube.fetch_youtube_url(search_title, artist))
-        song, cover_url, yt_result = await asyncio.gather(scrape_task, cover_task, youtube_task)
-        yt_url, yt_kind = yt_result
+        youtube_task = (
+            asyncio.create_task(youtube.fetch_youtube_url(search_title, artist)) if settings.find_youtube else None
+        )
+        song, cover_url = await asyncio.gather(scrape_task, cover_task)
+        yt_url, yt_kind = await youtube_task if youtube_task else ("", None)
     else:
         song = await scrape_task
         cover_url, yt_url, yt_kind = "", "", None
 
     yt_title = song.title or search_title
     yt_artist = song.artist or artist
-    if not yt_url and yt_title and yt_artist and yt_title != "Unknown":
+    if settings.find_youtube and not yt_url and yt_title and yt_artist and yt_title != "Unknown":
         try:
             yt_url, yt_kind = await youtube.fetch_youtube_url(yt_title, yt_artist)
         except Exception:

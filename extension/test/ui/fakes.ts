@@ -1,4 +1,5 @@
 import { IDLE_PASTE, back, pauseAuto, skip, startAuto, startPaste, stop, type PasteState } from "../../src/core/paste";
+import type { BridgeLinkState, BridgeRequest } from "../../src/shared/bridge";
 import type { AlbumInfo, PageScrape, PasteCommand, KeyCheck, Result, YoutubeAnswer } from "../../src/shared/messages";
 import type { KeyValueStore, Stores } from "../../src/shared/storage";
 import type { WorkerApi } from "../../src/ui/api";
@@ -31,6 +32,7 @@ export const ALBUM: AlbumInfo = {
   phonographicCopyright: "℗ 2024 Demo Records",
   copyrightNotice: "© 2024 Demo Publishing",
   coverArtUrl: "https://example.com/album-cover.png",
+  releaseDate: "2024-05-21",
 };
 
 export const SINGLE: AlbumInfo = {
@@ -52,6 +54,7 @@ export function scrapeFor(title: string): PageScrape {
       { role: "Mixing Engineer", artists: ["Mixer One"] },
     ],
     coverArtUrl: "",
+    releaseDate: "2024-05-17",
     warnings: [],
   };
 }
@@ -60,6 +63,8 @@ export interface FakeApi extends WorkerApi {
   calls: string[];
   /** The paste session the fake worker holds. */
   pasteState: PasteState;
+  /** The link the fake worker holds; change it to simulate the desktop app coming or going. */
+  link: BridgeLinkState;
 }
 
 const NO_LINK: YoutubeAnswer = { url: "", isMusicVideo: false, throttled: false, keyProblem: "" };
@@ -70,6 +75,7 @@ export interface ApiScript {
   lookupYoutube?: (title: string, artist: string) => Promise<Result<YoutubeAnswer>>;
   checkYoutubeKey?: (key: string) => Promise<Result<KeyCheck>>;
   paste?: (command: PasteCommand) => Promise<Result<PasteState>>;
+  bridge?: (request: BridgeRequest) => Promise<Result<BridgeLinkState>>;
 }
 
 export function fakeApi(script: ApiScript = {}): FakeApi {
@@ -77,6 +83,14 @@ export function fakeApi(script: ApiScript = {}): FakeApi {
   const api: FakeApi = {
     calls,
     pasteState: { ...IDLE_PASTE },
+    link: { paired: false, connected: false },
+    bridge(request) {
+      calls.push(`bridge:${request.type}`);
+      if (script.bridge) return script.bridge(request);
+      if (request.type === "bridge-pair") api.link = { paired: true, connected: true };
+      if (request.type === "bridge-unpair") api.link = { paired: false, connected: false };
+      return Promise.resolve({ ok: true, data: { ...api.link } });
+    },
     paste(command) {
       calls.push(`paste:${command.type}`);
       if (script.paste) return script.paste(command);

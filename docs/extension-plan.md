@@ -903,7 +903,7 @@ A role the form does not have still gets a new row, and a step without a role fa
 
 ## 39. The companion link to the desktop app
 
-Status: implemented on both sides, not yet wired into `gui/app.py`, not yet seen in a real browser.
+Status: implemented on both sides, wired into the desktop GUI, and checked against the real extension in Chrome 156 (see "Live check" below).
 
 ### Decision and why
 
@@ -968,7 +968,7 @@ The panel side of this (the Settings field and a "Connected" indicator) is **not
 
 ### Permission change
 
-**None, by design, and not yet confirmed in a real browser.** A WebSocket is not subject to CORS, `host_permissions` governs cross-origin `fetch`/XHR from the worker, and the default MV3 extension content security policy sets no `connect-src`, so `new WebSocket("ws://127.0.0.1:47831/")` from the service worker should work with the manifest as it is. If Chrome's Local Network Access rules turn out to demand a permission for loopback sockets, the fallback is `optional_host_permissions: ["http://127.0.0.1/*"]` requested at pairing; that would need a new row in `store/listing.md`, the "never matches every site" and `ALLOWED_OPTIONAL_HOSTS` tests widened for exactly that one pattern, and a line in the privacy policy (which already names `127.0.0.1`). The manifest test now pins today's state: no loopback or `ws:` host, no `nativeMessaging`, `externally_connectable` unset, and every socket address anywhere in `src/` is `ws://` plus the `127.0.0.1` constant.
+**None. Confirmed in Chrome 156.0.8078.49 (headless and headed, throwaway profile, extension loaded unpacked): the service worker opens `ws://127.0.0.1:47831` with the manifest as it is, no prompt and no permission.** A WebSocket is not subject to CORS, `host_permissions` governs cross-origin `fetch`/XHR from the worker, and the default MV3 extension content security policy sets no `connect-src`, so `new WebSocket("ws://127.0.0.1:47831/")` from the service worker should work with the manifest as it is. If Chrome's Local Network Access rules turn out to demand a permission for loopback sockets, the fallback is `optional_host_permissions: ["http://127.0.0.1/*"]` requested at pairing; that would need a new row in `store/listing.md`, the "never matches every site" and `ALLOWED_OPTIONAL_HOSTS` tests widened for exactly that one pattern, and a line in the privacy policy (which already names `127.0.0.1`). The manifest test now pins today's state: no loopback or `ws:` host, no `nativeMessaging`, `externally_connectable` unset, and every socket address anywhere in `src/` is `ws://` plus the `127.0.0.1` constant.
 
 `PRIVACY.md` gains a section ("The optional desktop app on your own computer") and its two absolute sentences are qualified; `store/listing.md` gains a "Companion desktop app (no extra permission)" section. The listing's permission table is unchanged because the manifest is.
 
@@ -986,6 +986,14 @@ The panel side of this (the Settings field and a "Connected" indicator) is **not
 | Flooding | 64 KiB frames, 500 items, one client, 5-second authentication window. |
 | The desktop app is gone mid-run | A run the desktop app started pauses with the new reason `bridge-lost`; a worker that died with the socket pauses it on the next wake-up. A run the user started in the panel is never touched. |
 
+### Fill mode
+
+`link_mode` in the desktop settings decides the `mode` of `begin`. It defaults to **`auto`**: the extension fills the whole track by itself. The Settings switch "Fill automatically" (on by default) turns it off for step-by-step filling with Next or the key. A saved explicit `LINK_MODE` keeps its value; an unreadable one falls back to `auto`.
+
+### Live check
+
+Chrome 156, real `assistant/bridge.py`, real worker: pairing with the one-time code, HMAC reconnect after a desktop restart (about 4 s), a wrong, expired, cancelled and locked code (all refused), origin pinning (another extension id and a web origin get HTTP 403), a second connection (close 1013), a `begin`/`fill-next`/`status` round trip on a local copy of `tests/fixtures/genius-edit-form.html` served for `https://genius.com/*` (real Genius never contacted), an auto run paused with `bridge-lost` when the server was killed, and a garbage frame (extension closes and reconnects). The extension sends `Origin: chrome-extension://<its id>` and `Host: 127.0.0.1:<port>`. Edge was not tried.
+
 ### Known limits
 
 - Nothing can wake a sleeping MV3 worker to connect (`alarms` is not an allowed permission). The link is made when the worker starts, when a Genius page talks to it, or when the panel asks; while connected, the desktop app's pings keep it awake. If the connection drops and the worker then goes idle, it reconnects at the next such event.
@@ -998,7 +1006,7 @@ The desktop module is `assistant/bridge.py`; nothing imports it yet.
 
 1. **Own a `Bridge`** in `App.__init__`: `Bridge(secret=settings.bridge_secret, pinned_origin=settings.bridge_origin, on_status=..., on_connection=..., on_paired=...)`, `start()` at launch, `stop()` on close. The three callbacks run on the bridge's thread, so each must hop to Tk with `self.after(0, ...)`. Persist `bridge_secret` and `bridge_origin` in the settings file (`utils/config.py`), never in logs. If `start()` raises `OSError` (all five ports busy), keep working with hotkeys only.
 2. **Pairing UI** in the settings screen: a "Connect browser extension" button that shows `bridge.begin_pairing()` and its two-minute expiry, and a "Forget" button that calls `forget_pairing()` and clears the settings.
-3. **Starting a track** (`_show_assistant_screen`, line 542, after `self._queue = self._current_queue()`): when `bridge.connected`, call `bridge.send_command("begin", title=..., queue=self._queue, mode="auto" or "manual")` and show the returned `ack` error, if any. The queue strings are exactly what `typed_queue()` yields; the kinds match the extension's list, and the bridge refuses others.
+3. **Starting a track** (`_show_assistant_screen`, line 542, after `self._queue = self._current_queue()`): when `bridge.connected`, call `bridge.send_command("begin", title=..., queue=self._queue, mode=settings.link_mode)` and show the returned `ack` error, if any. The queue strings are exactly what `typed_queue()` yields; the kinds match the extension's list, and the bridge refuses others.
 4. **Who owns F7/F8.** The `keyboard.hook_key(..., suppress=True)` hooks in `_register_assistant_keys` (line 121) swallow the keys before the browser sees them. Decision for the owner: while bridged, **release those hooks** and let the extension's page handler take F7/F8 when focus is on Genius (it already does, and auto mode needs no key); the on-screen Next/Back/Skip buttons send `fill-next`, `back`, `skip`. When `on_connection(False)` fires, re-register the hooks so the blind fallback works again. Both at once would double-step.
 5. **Mirror the position** from `on_status`: set `self._pos = state["position"]` and re-render, instead of advancing it in `_on_hotkey` (line 1102) and `_skip` (line 698) while bridged. The extension is then the only writer of the position.
 6. **Ending**: Esc and leaving the assistant screen send `stop`.
@@ -1013,3 +1021,70 @@ The desktop module is `assistant/bridge.py`; nothing imports it yet.
 - `npm run build:safari` writes `extension/dist-safari/`: same bundles, manifest from `scripts/lib/safari-manifest.mjs` (no `side_panel`, `sidePanel` permission or `minimum_chrome_version`; `action.default_popup` = `ui/panel.html`). The Chrome manifest and `dist/` are unchanged.
 - `src/ui/surface.ts`: the page is a popup when `chrome.sidePanel` is absent; it adds `html.popup` (380px wide) and skips the "panel" port, since a popup closes on every focus loss and would pause an automatic run each time.
 - Not run in Safari. On a Mac next: `xcrun safari-web-extension-converter extension/dist-safari --project-location safari --app-name Geniescraper --bundle-identifier <id>`, then the checks in section 23.
+
+## 41. Pairing card in Settings (extension side of section 39)
+
+Settings gains a "Desktop app" card (last card, after the YouTube key). It is the only UI for the companion link; the worker side (`bridge-pair`, `bridge-unpair`, `bridge-status`) is unchanged.
+
+- **Status** (a polite live region): checking, not paired, paired and connected, or paired with the desktop app not running (with what to do). While Settings is open the controller re-asks `bridge-status` every 2.5 s and stops when Settings closes. A failed check keeps the last known state.
+- **Pairing**: a labelled code box (`autocomplete=off`, Enter submits) and a Pair button. The code is normalised by the same `normaliseCode` the worker uses (any case, dash or spaces) and a malformed one is refused in the panel without a request. A spent code is cleared; a refused one stays so a typo can be fixed. Unpair appears only while paired and hands focus back to the code box.
+- **Errors**: the worker reports one failure for a refused pairing, so the card lists every cause in one message: app not open on ports 47831-47835, wrong or expired code (codes work once, for a short time), and the lock after 5 wrong tries (show a new code). The message sits in an assertive live region and the box gets `aria-invalid`. The existing panel test allows exactly one `role=alert` and one `role=status`, so the card uses `aria-live` instead of roles.
+- **Copy** says pairing links this browser to the desktop app on the same computer (127.0.0.1 only), that no Genius sign-in is shared and the app never sees Genius credentials, and that Unpair cuts the link. `PRIVACY.md` already says this (section "The optional desktop app"), so it is unchanged.
+- **Code**: `WorkerApi.bridge`, `PanelState.bridge`, `PanelController.pairBridge/unpairBridge/refreshBridge`, `PanelView.desktopSettings`. Built with `el()` and `textContent` only. No new colours, so the contrast test is unaffected; no animation.
+- **Tests**: `test/ui/bridge.test.ts` (controller with fake timers, card markup and accessibility), `FakeApi.bridge` and `.link` in `test/ui/fakes.ts`.
+- **Not verified**: the card against a real desktop app (the desktop side is not wired yet, see section 39), and in a real browser.
+
+## 42. Open Apple Music pages on the desktop app's start screen
+
+The desktop app lists the Apple Music album and song pages open in the user's browser, like the panel's "Open in your browser" list (section 38), by receiving them from the paired extension over the companion link of section 39. Without a connected extension nothing is shown and the app works as before.
+
+### The `pages` event (extension to desktop)
+
+`{"type": "pages", "v": 1, "pages": [{"url": "...", "title": "...", "kind": "album" | "song", "current": true | false}]}`
+
+- **When.** Right after the link authenticates (also when the list is empty), and whenever the list changes. Tab events (`tabs.onActivated`, `onRemoved`, and `onUpdated` for a new address, title or a finished load) are debounced by 300 ms; a list equal to the last one sent on this connection is not sent again. Nothing is sent while unpaired or not yet authenticated, and the pending timer is dropped when the link ends.
+- **What.** The panel's own listing (`appleTabEntries`): only album and song pages of `music.apple.com`, one entry per page, the page in view first, titles with Apple's site suffix and invisible marks removed and cut at 120 characters. On top of that: at most 20 entries, and an address longer than 2048 characters is left out. Each entry has exactly `url`, `title`, `kind`, `current`; no tab id, no other tab, no page content.
+- **Permissions.** None added. `chrome.tabs.query({ url: "https://music.apple.com/*" })` returns addresses and titles because of the existing `https://music.apple.com/*` host permission (the panel already relies on this); `active: true` queries need none. The manifest test pins that `tabs` stays out of `permissions`.
+- **Scope.** Only the worker does this. Nothing is scraped, opened or navigated; the desktop app cannot ask for it and cannot send the extension anything because of it.
+
+### Desktop side
+
+- **Validation** (`assistant.bridge.clean_pages`, run by `ClientSession` before any event): `pages` that is not a list closes the connection like any malformed message. Each entry is checked on its own and dropped if it is not exactly an object with those four keys, with: an address of 1 to 2048 characters that starts with `https://`, has no whitespace, control character or backslash, and whose authority is exactly `music.apple.com` (no credentials, port or look-alike host); a title of 1 to 120 printable characters (no line breaks or control characters); `kind` one of `album` or `song`; `current` a real boolean. At most 20 entries are kept. The list is data to show: it never starts a scrape or a run by itself.
+- **State.** `LinkController.pages` (a tuple of `OpenPage`) is set from the event only while connected, and emptied when the link drops or the pairing is forgotten; `on_pages` tells the GUI, once per actual change. Late callbacks from a dropped or replaced bridge are ignored as for every other event.
+- **GUI.** The start screen shows an "Open in your browser" card below the link form (in place of "How it works") only while the extension is connected: rows with an Album or Song tag, the title and "this page" for the page in view (at most 4 rows, then "and N more open"); with nothing open, the extension's own line ("Open an album or song on Apple Music in your browser and it shows up here."). Clicking a row puts its address in the link box and runs the same code path as the Get credits button. A change redraws only this card, so what the user typed is kept; text is shown by labels only.
+
+### Tests
+
+`test/background/bridge.test.ts` (group "open Apple Music pages": sent on connect, not unpaired, not before the handshake, debounce, no repeat, filtering and the 20/120 caps, stops with the link, fresh on reconnect), `test/manifest.test.ts` (no `tabs` permission, the policy texts); `tests/unit/test_bridge.py` (hostile entries, caps, shape), `tests/unit/test_link.py` (controller state), `tests/unit/test_gui_logic.py` (rows), and `tests/gui/test_screens.py` (the card in the walk: listed, updated in place, emptied, hidden, a row starts Get credits).
+
+## 43. One YouTube card, Deezer last, and a shorter Desktop app card
+
+Settings in the extension and the desktop app now follow one order: What to paste, Pasting on Genius, Reading credits, YouTube links, the desktop link, Cover art look-up. The desktop app's own Window options come last.
+
+- **YouTube links** is one card. It holds "Find a YouTube link for each track (recommended)" (the permission box that used to sit in "Look-ups on other sites") and, under it, the optional "Better YouTube links" key setup that used to be a card of its own. The first-run set-up shows the same two cards (YouTube, then Deezer).
+- **Cover art look-up** holds the Deezer box alone, at the very bottom of Settings. The card "Look-ups on other sites" is gone.
+- **Desktop app** (extension) now starts with the pairing code box, then Pair and Unpair, then the status and any message, then a short "What is this?" block: two sentences on what the desktop app is and why to pair, and four short points (how to pair, local only, no Genius password shared, unpair at any time).
+- **Desktop app** (desktop) gets the same two look-up settings as the extension, `find_youtube` and `deezer_covers` (both on by default, in settings.env as FIND_YOUTUBE and DEEZER_COVERS). They now decide whether the pipeline searches YouTube and Deezer at all. The desktop has no YouTube key: that part of the extension's YouTube card has no counterpart there.
+
+## 44. The release date goes into Genius's Release Date dropdowns
+
+Three queue steps after the cover art, only for a song with a release date and with the new setting on (extension `scrapeReleaseDate`, desktop `scrape_release_date`, both on by default): `release_month` (the month's name, "May"), `release_day` ("5", no leading zero), `release_year` ("2024"). Both apps build them the same way (vectors cover all 64 toggle combinations).
+
+The form (saved in `tests/fixtures/genius-release-date.html`): a `fieldset` "Release Date" with three single-select comboboxes, found by `aria-label` "Release Month", "Release Day", "Release Year" (never by their ids). They sit in the collapsible region `#collapsible-tags_albums-content`.
+
+Live check on 29 October 2026 (`npm run live:genius`, installed Chrome, the owner's signed-in profile, a song of the owner's, nothing saved): all checks passed, including a whole 50-step queue (47 credits steps and the three date steps) and the three dropdowns ending on May, 17 and 2024.
+
+Confirmed on the real form:
+
+- The option texts. Month: the full names, January to December. Day: 1 to 31. Year: 2027 down to 1 (2,027 options), newest first. So the plain case works without the fallbacks for numbers or "May - 5" style texts; those stay as a safety net.
+- The chosen value shows in `div[class*="singleValue"]` (for example `<div class="css-1kt6lw4-singleValue">May</div>`), as assumed.
+- The region `#collapsible-tags_albums-content` has `aria-hidden="false"` when open, and its header is a `button` with `aria-controls="collapsible-tags_albums-content"` and `aria-expanded="true"` (its heading reads "Tags, Albums & Metadata"), as assumed.
+
+Not yet confirmed on a live form:
+
+- What the collapsed section looks like and that pressing its control opens it: the section was already open on the test song, so only the fake form covers that path.
+- Skipping a date Genius already has (the owner decided to keep it): covered by the fake form only. The date in the live run was Apple's, so this song had none beforehand.
+
+Decisions kept in the code: the option matching above (an option is chosen only when exactly one matches; otherwise the typed text and the suggestions stay for the user), and a date Genius already has is kept: when any of the dropdowns this run cannot have filled yet holds a value, the date steps skip and say so, so that Apple's date never overwrites Genius's and two dates are never mixed. The month and the day this very run chose do not stop the next step.
+
+The desktop hotkey path pastes the value, waits, and presses Enter, with no Tab sequence (`autotab_steps` has none for these kinds).

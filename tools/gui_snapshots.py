@@ -13,6 +13,7 @@ import sys
 import threading
 import time
 from collections.abc import Callable, Iterator
+from concurrent.futures import Future
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -53,6 +54,40 @@ def _stubbed_side_effects() -> Iterator[None]:
             setattr(config.settings, key, value)
 
 
+OPEN_PAGES = [
+    {"url": "https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134", "title": "HIT ME HARD AND SOFT", "kind": "album", "current": True},
+    {"url": "https://music.apple.com/us/song/chihiro/1739659140", "title": "CHIHIRO", "kind": "song", "current": False},
+    {"url": "https://music.apple.com/us/album/short-n-sweet/1758452684", "title": "Short n' Sweet (Deluxe) by Sabrina Carpenter", "kind": "album", "current": False},
+]  # fmt: skip
+
+
+class FakeBridge:
+    """Stands in for the websocket bridge so the real App can be linked without a socket."""
+
+    def __init__(self) -> None:
+        self.sent: list[tuple[str, Future[Any]]] = []
+
+    def start(self) -> None: ...
+    def stop(self) -> None: ...
+    def forget_pairing(self) -> None: ...
+
+    def begin_pairing(self) -> str:
+        return "ABCD-EFGH"
+
+    def send_command(self, name: str, **fields: Any) -> Future[Any]:
+        future: Future[Any] = Future()
+        self.sent.append((name, future))
+        return future
+
+
+def link_status(total: int, position: int, auto: str, **extra: Any) -> dict[str, Any]:
+    """A status report as the extension sends it."""
+    return {
+        "active": True, "auto": auto, "pauseReason": "", "title": "t", "position": position,
+        "total": total, "awaiting": False, "busy": False, "message": "", "tone": "info", **extra,
+    }  # fmt: skip
+
+
 def _cover() -> Image.Image:
     img = Image.new("RGB", (600, 600), "#1d4e89")
     draw = ImageDraw.Draw(img)
@@ -82,7 +117,7 @@ def _walk(on_screen: Callable[[Any, str], None]) -> None:
         cover_art_url=song.cover_art_url,
     )
     errors: list[BaseException] = []
-    app = App()
+    app = App(start_link=False)
     app.report_callback_exception = lambda exc, val, tb: errors.append(val)
 
     def screen(name: str, window: Any = None) -> None:
@@ -99,6 +134,15 @@ def _walk(on_screen: Callable[[Any, str], None]) -> None:
         screen("02-start-url")
         app._scrape_error("Page not found. Check the URL and try again.")
         screen("03-start-error")
+
+        # An extension is connected and reports the Apple Music pages open in the browser.
+        app.link._handle_connection(True)
+        app.link._handle_pages(OPEN_PAGES)
+        screen("03-start-open-pages")
+        app.link._handle_pages([])
+        screen("03a-start-connected-empty")
+        app.link._handle_connection(False)
+        screen("03b-start-not-connected")
 
         app._open_settings()
         settings_win = app._settings_win
@@ -129,6 +173,35 @@ def _walk(on_screen: Callable[[Any, str], None]) -> None:
         app._pos = 21
         app._render_assistant()
         screen("09-assistant-middle")
+
+        # The Connect button on the manual-mode notice: Settings opens at the link card with a pairing code.
+        app.link._bridge = FakeBridge()
+        app._connect_extension()
+        from_connect = app._settings_win
+        assert from_connect is not None
+        time.sleep(0.3)
+        screen("09a-settings-from-connect", from_connect)
+        from_connect.close()
+
+        # The browser extension is connected: first filling by itself (Auto-paste on), then paused (off).
+        fake = FakeBridge()
+        app.link._bridge = fake
+        app.link._handle_connection(True)
+        fake.sent[0][1].set_result((True, None))
+        app.update()
+        total = len(app._queue)
+        app.link._handle_status(link_status(total, 21, "running"))
+        screen("09b-assistant-linked-auto")
+        app.link._handle_status(link_status(total, 21, "paused", pauseReason="user"))
+        screen("09c-assistant-linked-manual")
+        app.link._handle_status(
+            link_status(total, 21, "paused", message="Pick the suggestion on Genius.", tone="attention")
+        )
+        screen("09d-assistant-linked-message")
+        app.link._handle_connection(False)
+        app.link.end_run()
+        app._sync_hooks()
+        app.update()
         app._show_esc_confirm()
         screen("10-esc-confirm")
 

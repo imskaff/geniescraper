@@ -148,6 +148,7 @@ describe("Start pasting in the button row", () => {
       "scrapeCopyright",
       "scrapeYoutube",
       "scrapeCoverArt",
+      "scrapeReleaseDate",
     ] as const) {
       await panel.setSetting(key, false);
     }

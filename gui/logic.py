@@ -18,6 +18,29 @@ _MODIFIER_KEYS = frozenset({"shift", "ctrl", "alt", "alt gr", "windows", "left w
 
 STEPS = ("Link", "Tracks", "Review", "Paste")
 
+#: The start screen's card of Apple Music pages open in the browser (the extension's own wording).
+OPEN_PAGES_EMPTY = "Open an album or song on Apple Music in your browser and it shows up here."
+OPEN_PAGES_PICK = "Pick one to get its credits."
+MAX_OPEN_ROWS = 4
+_MAX_TITLE_SHOWN = 56
+
+
+def detector_title(count: int) -> str:
+    """The detector's headline: listening while nothing is open, then what was found."""
+    if count == 0:
+        return "Listening for Apple Music pages…"
+    return "Apple Music page detected" if count == 1 else f"{count} Apple Music pages detected"
+
+
+def open_page_rows(pages, limit: int = MAX_OPEN_ROWS) -> tuple[list[tuple[str, str, str]], str]:
+    """(tag, title, note) for each page shown, and a line for the ones that do not fit ('' when all do)."""
+    rows = []
+    for page in list(pages)[:limit]:
+        title = page.title if len(page.title) <= _MAX_TITLE_SHOWN else page.title[: _MAX_TITLE_SHOWN - 1] + "…"
+        rows.append(("Album" if page.kind == "album" else "Song", title, "this page" if page.current else ""))
+    rest = len(pages) - len(rows)
+    return rows, (f"and {rest} more open" if rest > 0 else "")
+
 
 def classify_url(url: str) -> str | None:
     """'album' or 'song' for an Apple Music link the scraper understands, else None."""
@@ -43,6 +66,14 @@ def url_hint(url: str) -> tuple[bool, str]:
 def friendly_error(message: str) -> str:
     """Rewrite a scrape failure into what happened and what to do next."""
     lower = message.lower()
+    if "executable doesn't exist" in lower or "playwright install" in lower:
+        # Playwright's own box of text hides the one useful part: where it looked, which names the browser revision.
+        looked = re.search(r"Executable doesn't exist at\s+(\S.*)", message)
+        where = f" (it looked for {looked.group(1).strip()})" if looked else ""
+        return (
+            f"The browser Géniescraper reads Apple Music with is missing or out of date{where}. "
+            "Close the app, run  uv run playwright install chromium  in the project folder, then start it again."
+        )
     if "page not found" in lower:
         return "Apple Music has no page at this link. Check the link and try again."
     if "timeout" in lower or "timed out" in lower:
@@ -72,6 +103,8 @@ def queue_summary(queue: list[tuple[str, str]]) -> str:
         parts.append("YouTube link")
     if "cover_art" in kinds:
         parts.append("cover art")
+    if "release_year" in kinds:
+        parts.append("release date")
     if not parts:
         return "Nothing to paste. Check which fields are turned on in Settings."
     return f"{_count(len(queue), 'step', 'steps')}: " + ", ".join(parts)
@@ -94,7 +127,7 @@ def hotkey_error(key: str, other_key: str) -> str | None:
 def prefetch_plan(parallel_reads: int) -> tuple[int, int]:
     """(tracks read at once, tracks started ahead) for the "parallel reads" setting; 0 reads every pending track.
 
-    The default of 1 reads one track at a time with two started ahead, as the app always did.
+    The default is 3, as in the extension; 1 reads one track at a time with two started ahead, as the app used to.
     """
     limit = parallel_reads if parallel_reads > 0 else 1000
     return limit, max(2, limit)

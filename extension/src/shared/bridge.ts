@@ -1,6 +1,7 @@
 // The companion link to the desktop app: message shapes and their validators (docs/extension-plan.md section 39).
 // Everything arriving over the socket is data. It is parsed as JSON and checked field by field before anything
 // acts on it; a title or a name in it is never read as an instruction.
+import { appleTabEntries, type OpenTab } from "../core/appleTabs";
 import type { PasteState } from "../core/paste";
 
 export const BRIDGE_VERSION = 1;
@@ -11,6 +12,9 @@ export const MAX_FRAME_CHARS = 64 * 1024;
 export const MAX_QUEUE_ITEMS = 500;
 export const MAX_TEXT = 2000;
 const MAX_STATUS_TEXT = 500;
+/** The most open pages the desktop app is told about, and the longest address it is sent. */
+export const MAX_PAGES = 20;
+const MAX_PAGE_URL = 2048;
 
 export const QUEUE_KINDS: ReadonlySet<string> = new Set([
   "written_by",
@@ -22,6 +26,9 @@ export const QUEUE_KINDS: ReadonlySet<string> = new Set([
   "copyright_notice",
   "youtube_url",
   "cover_art",
+  "release_month",
+  "release_day",
+  "release_year",
 ]);
 
 export type SimpleCommand = "fill-next" | "back" | "skip" | "pause" | "resume" | "stop" | "get-status";
@@ -44,6 +51,25 @@ export interface BridgeStatus {
   busy: boolean;
   message: string;
   tone: "info" | "ok" | "attention";
+}
+
+/** An open Apple Music album or song page, as the desktop app is told of it (docs/extension-plan.md section 42). */
+export interface BridgePage {
+  url: string;
+  title: string;
+  kind: "album" | "song";
+  current: boolean;
+}
+
+/**
+ * The pages for the `pages` event: the same list the panel shows (same filtering, the page in view first, titles
+ * cleaned and capped at 120 characters), at most MAX_PAGES, nothing but address, title, kind and whether it is in view.
+ */
+export function toBridgePages(tabs: readonly OpenTab[]): BridgePage[] {
+  return appleTabEntries(tabs)
+    .filter((entry) => entry.url.length <= MAX_PAGE_URL)
+    .slice(0, MAX_PAGES)
+    .map((entry) => ({ url: entry.url, title: entry.name, kind: entry.kind, current: entry.current }));
 }
 
 /** What an extension page may ask the worker about the link. */
@@ -103,6 +129,10 @@ export function checkCommand(message: Record<string, unknown>): CommandCheck {
     items.push([kind, text]);
   }
   return { ok: true, command: { type: "begin", id, title, queue: items, mode } };
+}
+
+export function isBridgeLinkState(value: unknown): value is BridgeLinkState {
+  return isRecord(value) && typeof value["paired"] === "boolean" && typeof value["connected"] === "boolean";
 }
 
 export function isBridgeRequest(value: unknown): value is BridgeRequest {

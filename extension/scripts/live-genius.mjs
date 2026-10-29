@@ -2,10 +2,10 @@
 // script and a real F8 key press, against live Apple Music and a live, signed-in Genius edit form.
 //
 //   npm run build
-//   node scripts/live-genius.mjs --chrome <chrome.exe> --profile <folder with a Genius sign-in> [--screenshots <folder>]
+//   node scripts/live-genius.mjs --chrome <chrome.exe, installed Chrome or Chromium> --profile <folder with a Genius sign-in> [--screenshots <folder>]
 //        [--mode manual|auto] [--song <the edit page of a song you created>]
 //
-// --mode manual (the default) starts "Step by step" and presses a real F8 for every field.
+// --mode manual (the default) sets the paste mode to one field per key press and presses a real F8 for every field.
 // --mode auto starts Start pasting, lets the run fill the form by itself, and on the way checks that it stops and
 // resumes for Pause, Esc, a real click in the form and the panel closing. Leave the mouse and keyboard alone while it
 // runs: a real click in the Genius window pauses an automatic run, which is the point of the check.
@@ -13,6 +13,9 @@
 // You sign in to Genius yourself, once, in a Chromium window that uses that profile folder; this script never
 // handles a password. It NEVER presses Save: it only fills the open form, watches the network for anything that
 // could be a save, and discards the form by reloading the page at the end.
+//
+// After the run it also reads the three Release Date dropdowns (Month, Day, Year) and prints what their options look
+// like ("release:" lines), so the assumptions about the real option texts can be confirmed.
 //
 // The page used is a song you created (edit it freely); change SONG_URL to one of yours if you run this yourself.
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -75,16 +78,22 @@ const manifest = JSON.parse(readFileSync(manifestFile, "utf-8"));
 manifest.version = `${String(manifest.version).split(".").slice(0, 3).join(".")}.${String(Math.floor(Date.now() / 60000) % 65535)}`;
 writeFileSync(manifestFile, JSON.stringify(manifest));
 
-const browser = launchChromium({ chromePath, dist: loaded, port: 9337, profileDir });
+// The extension is loaded over the debugging port, which works in an installed Chrome as well as in Chromium.
+const browser = launchChromium({ chromePath, dist: loaded, port: 9337, profileDir, loadVia: "protocol" });
 let worker;
 let panel;
 let genius;
 try {
+  await browser.loadExtension();
   const workerTarget = await findServiceWorker(browser);
   worker = await connect(workerTarget.webSocketDebuggerUrl);
   await waitUntilReady(worker);
   // The first-time set-up is not what this check is about: mark it as done.
-  await worker.evaluate("chrome.storage.sync.set({ settings: { onboarded: true } })");
+  // The review screen has one Start pasting button, and the setting decides whether it fills by itself or one field
+  // per key press, so the mode this check is about is set here.
+  await worker.evaluate(
+    `chrome.storage.sync.set({ settings: { onboarded: true, pasteMode: ${JSON.stringify(mode === "auto" ? "auto" : "manual")} } })`,
+  );
   const panelUrl = `chrome-extension://${new URL(workerTarget.url).host}/ui/panel.html`;
 
   // ── Genius: the user's own song, with the edit form open ──
@@ -234,8 +243,8 @@ try {
     "[...document.querySelectorAll('button')].some((b) => b.textContent === 'Start pasting')",
     "the credits",
   );
-  // Start pasting runs by itself; Step by step is the one-press-per-field flow the manual mode checks.
-  await pClick(mode === "auto" ? "Start pasting" : "Step by step");
+  // Automatic or one press per field: the paste mode set above decides which one starts.
+  await pClick("Start pasting");
   await pUntil("document.querySelector('h2')?.textContent === 'Paste into Genius'", "the paste screen");
   check("the paste screen opens", (await pText("h2")) === "Paste into Genius");
   const total = Number(((await pText(".progress")) ?? "").match(/of (\d+)/)?.[1] ?? 0);
@@ -553,6 +562,98 @@ try {
   );
   check("the form is still open and on the same page", state.stillOpen && state.url.startsWith("https://genius.com/"));
   check("nothing that could be a save was sent", state.writes.length === 0, state.writes.join("; "));
+
+  // ── the Release Date dropdowns (Month, Day, Year) ──
+  // The queue pastes the song's release date after the cover art. What the real dropdowns list is not known to the
+  // extension's authors, so this prints what they hold and what their options look like: please read the lines marked
+  // "release:" and compare them with the assumptions in extension/src/genius/fill.ts (releaseOptionMatches) and
+  // selectors.ts (the Tags and Albums region and its opening control).
+  if (golden.release_date) {
+    const [wantYear, wantMonth, wantDay] = golden.release_date.split("-").map(Number);
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const dates = await gEval(`(async () => {
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const region = document.getElementById('collapsible-tags_albums-content');
+      const control = document.querySelector('[aria-controls="collapsible-tags_albums-content"]');
+      const out = {
+        region: region ? { ariaHidden: region.getAttribute('aria-hidden') } : null,
+        control: control ? control.outerHTML.replace(/\\s+/g, ' ').slice(0, 300) : null,
+        controlExpanded: control ? control.getAttribute('aria-expanded') : null,
+        dropdowns: {},
+      };
+      for (const label of ['Release Month', 'Release Day', 'Release Year']) {
+        const input = document.querySelector('input[role="combobox"][aria-label="' + label + '"]');
+        if (!input) { out.dropdowns[label] = null; continue; }
+        // The chosen value, and the element that shows it (its class is what the extension looks for).
+        let box = input;
+        while (box.parentElement && box.parentElement.querySelectorAll('input[role="combobox"]').length === 1) box = box.parentElement;
+        const single = box.querySelector('[class*="singleValue"]');
+        const entry = {
+          value: single ? single.textContent.trim() : '',
+          valueElement: single ? single.outerHTML.slice(0, 200) : null,
+          placeholder: box.querySelector('[id$="-placeholder"]')?.textContent ?? null,
+          options: [],
+        };
+        // Open the list the way a keyboard does (ArrowDown), read it, and close it by leaving the field. Nothing is
+        // chosen: Enter is never pressed.
+        input.focus();
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', code: 'ArrowDown', bubbles: true, cancelable: true }));
+        await wait(400);
+        const list = document.getElementById(input.getAttribute('aria-controls') || '');
+        entry.options = list ? [...list.querySelectorAll('[role="option"]')].map((o) => o.textContent.trim()) : [];
+        input.blur();
+        await wait(150);
+        out.dropdowns[label] = entry;
+      }
+      return out;
+    })()`);
+    console.log(
+      `      release: the Tags and Albums region is ${dates.region ? `aria-hidden=${String(dates.region.ariaHidden)}` : "not on the page"}; its control: ${String(dates.controlExpanded)} ${String(dates.control)}`,
+    );
+    const sample = (options) =>
+      options.length <= 14
+        ? options.join(" | ")
+        : `${options.slice(0, 4).join(" | ")} | ... | ${options.slice(-4).join(" | ")}`;
+    for (const [label, entry] of Object.entries(dates.dropdowns)) {
+      console.log(
+        entry
+          ? `      release: ${label} shows "${entry.value}" (placeholder ${JSON.stringify(entry.placeholder)}), ${String(entry.options.length)} options: ${sample(entry.options)}`
+          : `      release: ${label} is not on the page`,
+      );
+      if (entry?.valueElement) console.log(`      release: ${label} value element: ${entry.valueElement}`);
+    }
+    const shownMonth = dates.dropdowns["Release Month"]?.value ?? "";
+    const shownDay = dates.dropdowns["Release Day"]?.value ?? "";
+    const shownYear = dates.dropdowns["Release Year"]?.value ?? "";
+    const monthWords = words(shownMonth).split(" ");
+    const monthName = words(monthNames[wantMonth - 1]);
+    const monthIsSongs =
+      monthWords.some((w) => w === monthName || w === monthName.slice(0, 3)) ||
+      monthWords.some((w) => /^\d+$/.test(w) && Number(w) === wantMonth);
+    const isSongsDate = monthIsSongs && Number(words(shownDay)) === wantDay && Number(words(shownYear)) === wantYear;
+    // A release date that Genius already had is kept (the steps skip), so a different date is not a failure.
+    check(
+      "the three Release Date dropdowns are filled (the song's date, or the date Genius already had)",
+      shownMonth !== "" && shownDay !== "" && shownYear !== "",
+      `${shownMonth} / ${shownDay} / ${shownYear}`,
+    );
+    console.log(
+      `      release: they hold ${isSongsDate ? "the song's date" : "a different date: expected if this song already had a release date on Genius (it is kept), otherwise a mismatch to look at"}`,
+    );
+  }
 
   // ── back, and the page's own hotkey suppression ──
   const atEnd = await position();

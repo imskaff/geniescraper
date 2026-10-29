@@ -1,6 +1,6 @@
 """
 Pure assistant flow logic: what to tell the user before each hotkey press and
-which keys Auto-Tab sends after a paste. Kept free of GUI and keyboard I/O so
+which keys the hotkey path sends to move between Genius fields after a paste. Kept free of GUI and keyboard I/O so
 it can be unit tested.
 """
 
@@ -8,6 +8,13 @@ from scraper.roles import genius_role_name
 
 # Queue kinds whose value is copied to the clipboard as-is (no autocomplete to confirm).
 CLIPBOARD_ONLY_KINDS = frozenset({"cover_art", "youtube_url"})
+
+# The Release Date dropdowns on Genius's form: kind -> (dropdown name, what is typed).
+_RELEASE_DROPDOWNS = {
+    "release_month": ("Month", "month"),
+    "release_day": ("Day", "day"),
+    "release_year": ("Year", "year"),
+}
 
 # Apple roles Genius spells differently (measured on the live form; same table as the extension's geniusRole).
 _GENIUS_ROLE_NAMES = {
@@ -35,7 +42,7 @@ def _tabs(n: int) -> list[KeyStep]:
 
 
 def autotab_steps(kind: str, next_kind: str | None) -> list[KeyStep]:
-    """Keys Auto-Tab presses after pasting `kind` to land on the field for `next_kind`."""
+    """Keys the hotkey path presses after pasting `kind` to land on the field for `next_kind`."""
     if kind in ("artist", "copyright_notice") and next_kind == "cover_art":
         return _tabs(6)
     if (kind in ("artist", "copyright_notice") and next_kind == "youtube_url") or (
@@ -80,6 +87,11 @@ def instruction_text(queue: list[tuple[str, str]], pos: int, hotkey: str) -> str
         return f"Press {hk} to copy the 1000×1000 PNG cover art URL to clipboard"
     if kind == "youtube_url":
         return f"Press {hk} to copy the YouTube video URL to clipboard"
+    if kind in _RELEASE_DROPDOWNS:
+        # The three dropdowns sit in the Tags and Albums section, which may be collapsed. No Tab sequence leads there.
+        dropdown, noun = _RELEASE_DROPDOWNS[kind]
+        opener = "Open the Tags and Albums section if it is closed. " if kind == "release_month" else ""
+        return f"{opener}Click the Release Date {dropdown} dropdown, then press {hk} to enter the {noun}"
     if prev == "role":
         return f"Tab to Artists in this role, then press {hk}"
     return f"Field is ready. Press {hk} to add the next artist"

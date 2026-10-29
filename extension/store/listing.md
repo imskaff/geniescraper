@@ -67,7 +67,8 @@ Copy song credits from Apple Music into the Genius song edit form.
 
 Optional. If the user pairs the Géniescraper desktop app, the extension's service worker opens a WebSocket to `ws://127.0.0.1` (the user's own computer) and runs the same paste engine from the desktop app's commands.
 A WebSocket to the local machine needs no host permission, so none is requested, and the manifest declares no loopback address.
-The user pairs once with a short code; nothing connects before that; the link never leaves the computer and carries no page content.
+The user pairs once with a short code; nothing connects before that; the link never leaves the computer and carries no Genius page content.
+While paired and connected, the worker also sends the desktop app the titles and addresses of the user's open Apple Music album and song pages (at most 20), so the app can list them. It reads them with the `music.apple.com` host access the extension already has, so no permission is added; nothing else is sent, and nothing goes anywhere but the user's own computer.
 Enter this in the privacy practices tab as: no data sent to servers, local-only link to the user's own desktop app.
 
 ## Remote code
@@ -82,6 +83,7 @@ Suggested answers (check them against the dashboard's current wording at submiss
 
 - Personally identifiable information, health, financial, personal communications, location, web history, user activity: not collected.
 - Authentication information: the optional YouTube key is typed in by the user, stored only on their device and sent only to Google, in a request header, to look up a link. If the dashboard counts that as handled, tick it and say "to give the user the feature they turned on".
+- Web history: not collected. The titles and addresses of the Apple Music pages the user has open are sent only to the user's own desktop app on the same computer, and only if they paired it.
 - Website content: song titles, artist names and credits are read from the Apple Music page the user asked for, and the title and artist are sent to iTunes (always) and to Deezer, YouTube and Google (only when the user turns those on), to find a cover or a link. Tick it if the dashboard counts text sent to those services, with the purpose "core functionality".
 - Certifications: not sold or transferred to third parties apart from the requests above, which the user asked for; not used for anything unrelated to the single purpose; not used for creditworthiness or lending.
 

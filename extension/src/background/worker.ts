@@ -44,6 +44,18 @@ const bridge = new BridgeClient({
     set: (key: string, value: unknown): Promise<void> => chrome.storage.local.set({ [key]: value }),
   },
   session: stores.session,
+  openTabs: async () => {
+    // Only tabs showing Apple Music, which the host permission already covers; nothing else is listed or read.
+    const [tabs, [inView]] = await Promise.all([
+      chrome.tabs.query({ url: "https://music.apple.com/*" }),
+      chrome.tabs.query({ active: true, currentWindow: true }),
+    ]);
+    return tabs.flatMap((tab) =>
+      tab.id !== undefined && tab.url
+        ? [{ tabId: tab.id, url: tab.url, title: tab.title ?? "", current: tab.id === inView?.id }]
+        : [],
+    );
+  },
   randomHex: (bytes) =>
     [...crypto.getRandomValues(new Uint8Array(bytes))].map((b) => b.toString(16).padStart(2, "0")).join(""),
   setTimer: (fn, ms) => setTimeout(fn, ms) as unknown as number,
@@ -55,6 +67,15 @@ void bridge.start();
 chrome.storage.session.onChanged.addListener((changes) => {
   const change = changes[PASTE_KEY];
   if (change) bridge.pushStatus(normalisePaste(change.newValue));
+});
+// The desktop app lists the Apple Music pages open here; follow the tabs the way the panel does.
+const pagesChanged = (): void => {
+  bridge.refreshPages();
+};
+chrome.tabs.onActivated.addListener(pagesChanged);
+chrome.tabs.onRemoved.addListener(pagesChanged);
+chrome.tabs.onUpdated.addListener((_tabId, change) => {
+  if (change.url !== undefined || change.title !== undefined || change.status === "complete") pagesChanged();
 });
 // The user's YouTube key sits in this browser's local storage (never the synced area).
 const secrets = {

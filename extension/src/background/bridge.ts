@@ -2,6 +2,7 @@
 // It connects to 127.0.0.1 only, proves it knows the pairing secret without sending it, and then drives the
 // existing paste session with the commands it receives. It never presses Save, and it forwards nothing to the
 // router: the desktop app can reach the paste commands and nothing else.
+import type { OpenTab } from "../core/appleTabs";
 import { PASTE_KEY, normalisePaste, type PasteState } from "../core/paste";
 import {
   BRIDGE_HOST,
@@ -12,6 +13,7 @@ import {
   normaliseCode,
   parseFrame,
   sameSecret,
+  toBridgePages,
   toBridgeStatus,
   type BridgeCommand,
   type BridgeLinkState,
@@ -22,6 +24,8 @@ import type { KeyValueStore } from "../shared/storage";
 export const PAIRING_KEY = "bridgePairing";
 export const DRIVEN_KEY = "bridgeDriven";
 const CONNECT_TIMEOUT_MS = 3000;
+/** A burst of tab changes (a page loading, a tab dragged) becomes one `pages` event. */
+export const PAGES_DEBOUNCE_MS = 300;
 const BACKOFF_MS = [1000, 2000, 5000, 15000, 30000] as const;
 
 /** The slice of WebSocket the client uses. */
@@ -44,6 +48,8 @@ export interface BridgeDeps {
   /** Where the pairing secret lives: this browser's local storage, never the synced area. */
   local: KeyValueStore;
   session: KeyValueStore;
+  /** The tabs showing Apple Music (addresses and titles only; the extension's host permission already covers them). */
+  openTabs(): Promise<OpenTab[]>;
   randomHex(bytes: number): string;
   setTimer(fn: () => void, ms: number): number;
   clearTimer(id: number): void;
@@ -64,6 +70,8 @@ export class BridgeClient {
   private attemptNo = 0;
   private timer: number | null = null;
   private lastStatus = "";
+  private lastPages = "";
+  private pagesTimer: number | null = null;
   private loopId = 0;
   private reconciling: Promise<void> = Promise.resolve();
   private lost: Promise<void> = Promise.resolve();
@@ -128,6 +136,44 @@ export class BridgeClient {
     this.socket.send(status);
   }
 
+  /** The browser's tabs changed: tell the desktop app which Apple Music pages are open, once the changes settle. */
+  refreshPages(): void {
+    if (!this.ready || !this.socket) return;
+    this.clearPagesTimer();
+    this.pagesTimer = this.deps.setTimer(() => {
+      this.pagesTimer = null;
+      void this.sendPages();
+    }, PAGES_DEBOUNCE_MS);
+  }
+
+  /** Send the open pages when they differ from the last list sent on this connection. */
+  private async sendPages(): Promise<void> {
+    if (!this.linked()) return;
+    let tabs: OpenTab[];
+    try {
+      tabs = await this.deps.openTabs();
+    } catch {
+      return;
+    }
+    // The link may have dropped or been replaced while the tabs were read.
+    const socket = this.linked();
+    if (!socket) return;
+    const message = JSON.stringify({ type: "pages", v: BRIDGE_VERSION, pages: toBridgePages(tabs) });
+    if (message === this.lastPages) return;
+    this.lastPages = message;
+    socket.send(message);
+  }
+
+  /** The open connection, once authenticated; null otherwise. */
+  private linked(): SocketLike | null {
+    return this.ready ? this.socket : null;
+  }
+
+  private clearPagesTimer(): void {
+    if (this.pagesTimer !== null) this.deps.clearTimer(this.pagesTimer);
+    this.pagesTimer = null;
+  }
+
   /** Still wanted: not unpaired, and (when `id` is given) not superseded by a newer loop. */
   private isWanted(id?: number): boolean {
     return this.wanted && (id === undefined || this.loopId === id);
@@ -138,6 +184,7 @@ export class BridgeClient {
     this.loopId++;
     if (this.timer !== null) this.deps.clearTimer(this.timer);
     this.timer = null;
+    this.clearPagesTimer();
     const socket = this.socket;
     this.socket = null;
     this.ready = false;
@@ -229,6 +276,7 @@ export class BridgeClient {
         this.socket = socket;
         this.ready = true;
         this.lastStatus = "";
+        this.lastPages = "";
         this.lost = new Promise<void>((done) => {
           this.markLost = done;
         });
@@ -236,6 +284,7 @@ export class BridgeClient {
         void this.deps.session.get(PASTE_KEY).then((raw) => {
           this.pushStatus(normalisePaste(raw));
         });
+        void this.sendPages();
       };
 
       const handshake = async (message: Record<string, unknown>): Promise<void> => {
@@ -282,6 +331,7 @@ export class BridgeClient {
         if (this.socket === socket) {
           this.socket = null;
           this.ready = false;
+          this.clearPagesTimer();
           this.markLost();
           void this.reconcile();
         }

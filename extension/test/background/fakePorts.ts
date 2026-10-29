@@ -17,6 +17,7 @@ export const ALBUM_INFO: AlbumInfo = {
   phonographicCopyright: "℗ 2024 Taylor Swift",
   copyrightNotice: "",
   coverArtUrl: "",
+  releaseDate: "2024-04-19",
 };
 
 export const PAGE_SCRAPE: PageScrape = {
@@ -24,6 +25,7 @@ export const PAGE_SCRAPE: PageScrape = {
   artist: "Taylor Swift",
   credits: [{ role: "Songwriter", artists: ["Taylor Swift"] }],
   coverArtUrl: "",
+  releaseDate: "2024-04-19",
   warnings: [],
 };
 

@@ -1,6 +1,16 @@
 import pytest
 
-from gui.logic import classify_url, friendly_error, hotkey_error, prefetch_plan, queue_summary, url_hint
+from gui.link import OpenPage
+from gui.logic import (
+    MAX_OPEN_ROWS,
+    classify_url,
+    friendly_error,
+    hotkey_error,
+    open_page_rows,
+    prefetch_plan,
+    queue_summary,
+    url_hint,
+)
 
 
 @pytest.mark.parametrize(
@@ -54,9 +64,12 @@ def test_queue_summary_counts_in_genius_terms():
         ("phonographic_copyright", "Label"),
         ("youtube_url", "https://youtu.be/x"),
         ("cover_art", "https://img"),
+        ("release_month", "May"),
+        ("release_day", "7"),
+        ("release_year", "2024"),
     ]
     assert queue_summary(queue) == (
-        "9 steps: 2 writers, 1 producer, 1 additional role, 1 copyright line, YouTube link, cover art"
+        "12 steps: 2 writers, 1 producer, 1 additional role, 1 copyright line, YouTube link, cover art, release date"
     )
 
 
@@ -93,3 +106,43 @@ def test_hotkey_rules(key, other, ok):
 )
 def test_prefetch_plan(reads, limit, lookahead):
     assert prefetch_plan(reads) == (limit, lookahead)
+
+
+def test_open_page_rows_tag_name_and_mark_the_page_in_view():
+    pages = [
+        OpenPage("https://music.apple.com/us/album/a/1", "Album A", "album", True),
+        OpenPage("https://music.apple.com/us/song/b/2", "Song B", "song", False),
+    ]
+    assert open_page_rows(pages) == ([("Album", "Album A", "this page"), ("Song", "Song B", "")], "")
+
+
+def test_open_page_rows_cut_long_titles_and_say_how_many_more_there_are():
+    pages = [
+        OpenPage(f"https://music.apple.com/us/song/s/{n}", "t" * 120, "song", False) for n in range(MAX_OPEN_ROWS + 3)
+    ]
+    rows, more = open_page_rows(pages)
+    assert len(rows) == MAX_OPEN_ROWS and all(len(title) <= 56 and title.endswith("…") for _, title, _ in rows)
+    assert more == "and 3 more open"
+
+
+PLAYWRIGHT_MISSING = (
+    "BrowserType.launch: Executable doesn't exist at "
+    r"C:\Users\skf\AppData\Local\ms-playwright\chromium_headless_shell-1248\chrome-headless-shell-win64\chrome-headless-shell.exe"
+    "\n+------------------------------------------------+\n"
+    "|| Looks like Playwright was just installed or updated. ||\n"
+    "|| Please run the following command to download new browsers: ||\n"
+    "||     playwright install ||\n"
+    "+------------------------------------------------+"
+)
+
+
+def test_a_missing_playwright_browser_says_where_it_looked_and_how_to_fix_it():
+    text = friendly_error(PLAYWRIGHT_MISSING)
+    assert "chromium_headless_shell-1248" in text  # the revision is the clue to a version mismatch
+    assert "uv run playwright install chromium" in text
+    assert "+---" not in text and "||" not in text  # none of Playwright's box art
+
+
+def test_a_playwright_message_without_a_path_still_gets_the_fix():
+    text = friendly_error("Please run the following command to download new browsers: playwright install")
+    assert "uv run playwright install chromium" in text and "it looked for" not in text

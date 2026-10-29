@@ -2,6 +2,7 @@
 // It is stored so the panel can close and reopen (the side panel is destroyed whenever it is closed)
 // without losing the credits the user is in the middle of pasting.
 import type { Credit, SongCredits } from "../core/models";
+import { splitReleaseDate } from "../core/releaseDate";
 import { isAlbumInfo, type AlbumInfo } from "./messages";
 
 export const SESSION_KEY = "session";
@@ -65,13 +66,25 @@ export function isSongCredits(value: unknown): value is SongCredits {
     typeof value["copyrightNotice"] === "string" &&
     typeof value["coverArtUrl"] === "string" &&
     typeof value["youtubeUrl"] === "string" &&
-    typeof value["youtubeIsMv"] === "boolean"
+    typeof value["youtubeIsMv"] === "boolean" &&
+    typeof value["releaseDate"] === "string"
   );
+}
+
+/** A stored release date that is a real "YYYY-MM-DD" date, else "" (unknown): damaged data never breaks the panel. */
+function validDate(value: unknown): string {
+  return typeof value === "string" && splitReleaseDate(value) ? value : "";
+}
+
+/** The stored record with its release date made valid; saved before release dates were read, it gets "". */
+function withValidDate(value: unknown): unknown {
+  return isRecord(value) ? { ...value, releaseDate: validDate(value["releaseDate"]) } : value;
 }
 
 function toTrackResult(value: unknown): TrackResult | null {
   if (!isRecord(value)) return null;
-  const { index, title, url, status, song, error } = value;
+  const { index, title, url, status, error } = value;
+  const song = value["song"] === null ? null : withValidDate(value["song"]);
   if (typeof index !== "number" || !Number.isInteger(index) || index < 0) return null;
   if (typeof title !== "string" || typeof url !== "string" || typeof error !== "string") return null;
   if (typeof status !== "string" || !STATUSES.has(status)) return null;
@@ -84,8 +97,8 @@ function toTrackResult(value: unknown): TrackResult | null {
 
 /** A session from storage, or an empty one when what is stored is missing, stale or malformed. */
 export function normaliseSession(raw: unknown): Session {
-  if (!isRecord(raw) || !isAlbumInfo(raw["album"])) return { ...EMPTY_SESSION };
-  const album = raw["album"];
+  const album = isRecord(raw) ? withValidDate(raw["album"]) : null;
+  if (!isRecord(raw) || !isAlbumInfo(album)) return { ...EMPTY_SESSION };
   const results = (Array.isArray(raw["results"]) ? raw["results"] : []).map(toTrackResult);
   if (results.some((result) => result === null)) return { ...EMPTY_SESSION };
 

@@ -10,11 +10,12 @@ function toOptions(flags: (typeof vectors.typed_queue)[number]["flags"]): QueueO
     includeCopyright: flags.include_copyright,
     includeYoutube: flags.include_youtube,
     includeCoverArt: flags.include_cover_art,
+    includeReleaseDate: flags.include_release_date,
   };
 }
 
 describe("typedQueue parity with SongCredits.typed_queue", () => {
-  const cases = vectors.typed_queue.map((c, i) => ({ ...c, label: `${c.song} #${String(i % 32)}` }));
+  const cases = vectors.typed_queue.map((c, i) => ({ ...c, label: `${c.song} #${String(i % 64)}` }));
 
   it.each(cases)("$label", ({ song, flags, queue }) => {
     expect(typedQueue(songFromVector(song as SongName), toOptions(flags))).toEqual(queue);

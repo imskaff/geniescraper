@@ -36,6 +36,9 @@ const KINDS: ReadonlySet<string> = new Set([
   "copyright_notice",
   "youtube_url",
   "cover_art",
+  "release_month",
+  "release_day",
+  "release_year",
 ]);
 
 const GAVE_UP: Outcome = {

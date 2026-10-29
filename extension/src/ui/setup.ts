@@ -18,9 +18,9 @@ export interface SetupParts {
   ): HTMLElement;
   heading(text: string): HTMLElement;
   /** The Deezer and YouTube page-reading boxes (each asks Chrome for permission inside its click). */
-  lookupFieldset(): HTMLElement;
+  youtubeFieldset(): HTMLElement;
   /** The YouTube key box with its step-by-step help. */
-  keyFieldset(): HTMLElement;
+  deezerFieldset(): HTMLElement;
   /** True the first time the welcome is drawn, so the intro plays once and a redraw does not replay it. */
   animateWelcome(): boolean;
 }
@@ -92,6 +92,7 @@ export function setupSummary(state: PanelState): string[] {
     settings.scrapeAdditional && "additional credits",
     settings.scrapeCopyright && "copyright lines",
     settings.scrapeCoverArt && "the PNG cover link",
+    settings.scrapeReleaseDate && "the release date",
     settings.scrapeYoutube && "the YouTube link",
   ].filter((part): part is string => typeof part === "string");
   const reads = settings.parallelReads;
@@ -197,6 +198,13 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
           option(
             panel,
             state,
+            "scrapeReleaseDate",
+            "Release date",
+            "The month, day and year, chosen in the three Release Date dropdowns. Recommended.",
+          ),
+          option(
+            panel,
+            state,
             "scrapeYoutube",
             "YouTube link",
             "The official video or audio. It appears once a YouTube look-up is set up in step 4; until then there is nothing to paste for it.",
@@ -266,10 +274,10 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
           text: "These look things up on other websites, so Chrome asks your permission for each one. Skip them and everything else still works.",
         }),
         el("p", {
-          text: "Recommended: tick the Deezer box, which finds a cover when Apple has none. For YouTube links, a free key from Google is the reliable way; the steps below walk you through it.",
+          text: "Recommended: tick the YouTube box to find a link for each track; a free key from Google makes that reliable, and the steps walk you through it. The Deezer box below finds a cover when Apple has none.",
         }),
-        parts.lookupFieldset(),
-        parts.keyFieldset(),
+        parts.youtubeFieldset(),
+        parts.deezerFieldset(),
       );
       break;
     default:

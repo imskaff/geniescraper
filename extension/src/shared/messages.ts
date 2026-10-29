@@ -16,6 +16,8 @@ export interface AlbumInfo {
   copyrightNotice: string;
   /** Artwork from the page header ("" when the header shows only motion artwork). */
   coverArtUrl: string;
+  /** The album's release date ("YYYY-MM-DD"), from its footer; "" when the page shows none. */
+  releaseDate: string;
 }
 
 /** What the in-page driver reads from one song page. */
@@ -24,6 +26,8 @@ export interface PageScrape {
   artist: string;
   credits: Credit[];
   coverArtUrl: string;
+  /** The song's own release date ("YYYY-MM-DD"); "" when the page names none. */
+  releaseDate: string;
   /** Non-fatal problems, for example that the page held no credits. */
   warnings: string[];
 }
@@ -273,7 +277,8 @@ export function isAlbumInfo(value: unknown): value is AlbumInfo {
     isStringArray(value["trackUrls"]) &&
     typeof value["phonographicCopyright"] === "string" &&
     typeof value["copyrightNotice"] === "string" &&
-    typeof value["coverArtUrl"] === "string"
+    typeof value["coverArtUrl"] === "string" &&
+    typeof value["releaseDate"] === "string"
   );
 }
 
@@ -289,6 +294,7 @@ export function isPageScrape(value: unknown): value is PageScrape {
     Array.isArray(value["credits"]) &&
     value["credits"].every(isCredit) &&
     typeof value["coverArtUrl"] === "string" &&
+    typeof value["releaseDate"] === "string" &&
     isStringArray(value["warnings"])
   );
 }
