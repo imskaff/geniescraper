@@ -375,6 +375,7 @@ class SettingsWindow(ctk.CTkToplevel):
             command=self._link_forget,
         )
         self._link_forget_btn.pack(side="left")
+        self._link_box = box
         self._place(box, (theme.SPACE_1, theme.SPACE_2))  # directly under the Auto-paste switch it belongs to
         self.refresh_link()
 
@@ -438,6 +439,20 @@ class SettingsWindow(ctk.CTkToplevel):
     def _link_connect(self) -> None:
         self._link.begin_pairing()
         self.refresh_link()
+
+    def show_link(self) -> None:
+        """Bring the link card to the top of the list and start pairing, so the code and its Copy button show."""
+        self.lift()
+        self._link_connect()
+        self.after(150, self._scroll_to_link)  # a window that was just opened has to be on screen first
+
+    def _scroll_to_link(self) -> None:
+        if not self._link_box.winfo_exists():
+            return
+        self.update_idletasks()
+        canvas = self._body._parent_canvas
+        top = self._link_box.winfo_rooty() - canvas.winfo_rooty() + canvas.canvasy(0)  # the card's place in the list
+        canvas.yview_moveto(max(0.0, (top - theme.SPACE_2) / max(1, self._body.winfo_height())))
 
     def _link_forget(self) -> None:
         self._link.forget()
