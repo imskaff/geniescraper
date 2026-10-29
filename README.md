@@ -49,7 +49,7 @@ It never presses Save: you check the form and save it yourself.
 
 |                           | Browser extension                                   | Desktop app                                                  |
 |---------------------------|-----------------------------------------------------|--------------------------------------------------------------|
-| **Runs on**               | Chrome and Edge, Windows and macOS                  | Windows                                                      |
+| **Runs on**               | Chrome and Edge on Windows (macOS: not tested yet)  | Windows                                                      |
 | **Reads the credits**     | Yes, from the pages you have open                   | Yes, with its own browser (Playwright)                       |
 | **Fills the Genius form** | Yes: Auto-paste or step by step, exact matches only | Through the extension once paired; otherwise manual hotkeys  |
 | **Finds open pages**      | Yes                                                 | Yes, once paired                                             |
@@ -90,6 +90,7 @@ No store and no command line needed.
 - **Updating.** Download the newest zip, unzip it over the same folder (replace the files), then press the reload icon on the extension's card in `chrome://extensions`. The extension does not update itself.
 - **Checking a download.** Compare its SHA-256 with `SHA256SUMS.txt` from the same release.
 - **No release yet?** Build it yourself (needs Node 20 or newer): run `cd extension`, `npm ci` and `npm run build`, then load the `extension/dist` folder in step 3. After changing the code, run `npm run build` again and reload the extension.
+- **macOS.** Not tested yet: no one has run the extension on a Mac. It uses only standard browser extension features, so Chrome and Edge are expected to work with the same steps, but this is unconfirmed.
 - **Safari.** A Safari build exists (`npm run build:safari`) but has not been tested yet; it needs a Mac with Xcode.
 - **Questions and fixes:** [extension/FAQ.md](extension/FAQ.md).
 
