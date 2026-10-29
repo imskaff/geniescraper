@@ -37,6 +37,19 @@ _WAIT_NOTE_EXTENSION = (
     "With the browser extension connected, it picks a suggestion only when it matches the typed name exactly "
     "(ignoring case, accents and symbols). Otherwise it leaves the text and the suggestions for you."
 )
+_HELP_WRAP = 380
+_EXTENSION_WHAT = (
+    "The browser extension is Géniescraper's companion in your browser: it fills the Genius form for you and tells "
+    "this app which Apple Music pages you have open. The desktop app works best with it connected."
+)
+_EXTENSION_BULLETS = (
+    "Once paired you get Auto-paste with exact artist matching that skips names already filled in, and your open "
+    "Apple Music pages on the start screen.",
+    "To pair, choose Connect browser extension and type the code in the extension's settings.",
+    "The link stays on this computer (127.0.0.1) and never goes over the internet. Your Genius password is never "
+    "shared: you stay signed in in your browser.",
+    "Without it the app falls back to the hotkeys below, which cannot see Genius.",
+)
 _COLLECT = (
     ("scrape_core", "Songwriters and producers", "Written By and Produced By"),
     ("scrape_additional", "Additional credits", "Every other role, such as engineers and musicians"),
@@ -90,16 +103,20 @@ class SettingsWindow(ctk.CTkToplevel):
         self._box: ctk.CTkFrame | ctk.CTkScrollableFrame = body  # where the current card's rows go
         self._row = 0
         self.headings: list[str] = []
+        self.cards: list[ctk.CTkFrame] = []  # the cards, in the order of `headings`
 
-        # The extension's Settings, in the same order: what to collect, then pasting (with the link to the browser
-        # extension that does the pasting for you), reading, and the desktop-only window options last.
+        # The browser extension comes first, since the app works best with it; then, in the extension's order, what to
+        # collect, pasting by hotkey, reading, and the desktop-only window options last.
+        self._card("Browser extension (recommended)")
+        self._auto_paste()
+        self._link_area()
+        self._extension_help()
+
         self._card("What to paste")
         for key, label, hint in _COLLECT:
             self._switch(key, label, hint)
 
         self._card("Pasting on Genius")
-        self._auto_paste()
-        self._link_area()
         self._subgroup("Keys")
         self._hotkeys()
         self._subgroup("Hotkeys without the browser extension")
@@ -148,6 +165,7 @@ class SettingsWindow(ctk.CTkToplevel):
         )
         card.grid(row=self._body_row, column=0, sticky="ew", padx=theme.SPACE_3, pady=(0, theme.SPACE_5))
         card.grid_columnconfigure(0, weight=1)
+        self.cards.append(card)
         self._body_row += 1
         ctk.CTkLabel(card, text=title, font=theme.font(15, "bold"), text_color=theme.TEXT, anchor="w").grid(
             row=0, column=0, sticky="w", padx=theme.SPACE_4, pady=(theme.SPACE_4, theme.SPACE_2)
@@ -378,6 +396,37 @@ class SettingsWindow(ctk.CTkToplevel):
         self._link_box = box
         self._place(box, (theme.SPACE_1, theme.SPACE_2))  # directly under the Auto-paste switch it belongs to
         self.refresh_link()
+
+    def _extension_help(self) -> None:
+        """'What is this?', worded as in the extension's own settings: what it is, why use it, and what stays private."""
+        self._subgroup("What is this?")
+        self._place(
+            ctk.CTkLabel(
+                self._box,
+                text=_EXTENSION_WHAT,
+                font=theme.font(12),
+                text_color=theme.TEXT,
+                anchor="w",
+                justify="left",
+                wraplength=_HELP_WRAP,
+            ),
+            (0, theme.SPACE_2),
+        )
+        for bullet in _EXTENSION_BULLETS:
+            row = ctk.CTkFrame(self._box, fg_color="transparent", corner_radius=0)
+            ctk.CTkLabel(row, text="•", width=14, font=theme.font(12), text_color=theme.MUTED).pack(
+                side="left", anchor="n"
+            )
+            ctk.CTkLabel(
+                row,
+                text=bullet,
+                font=theme.font(11),
+                text_color=theme.MUTED,
+                anchor="w",
+                justify="left",
+                wraplength=_HELP_WRAP - 20,
+            ).pack(side="left", anchor="n")
+            self._place(row, (0, theme.SPACE_1))
 
     def refresh_link(self) -> None:
         link = self._link
