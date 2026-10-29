@@ -2,7 +2,7 @@
 // script and a real F8 key press, against live Apple Music and a live, signed-in Genius edit form.
 //
 //   npm run build
-//   node scripts/live-genius.mjs --chrome <chrome.exe> --profile <folder with a Genius sign-in> [--screenshots <folder>]
+//   node scripts/live-genius.mjs --chrome <chrome.exe, installed Chrome or Chromium> --profile <folder with a Genius sign-in> [--screenshots <folder>]
 //        [--mode manual|auto] [--song <the edit page of a song you created>]
 //
 // --mode manual (the default) starts "Step by step" and presses a real F8 for every field.
@@ -78,11 +78,13 @@ const manifest = JSON.parse(readFileSync(manifestFile, "utf-8"));
 manifest.version = `${String(manifest.version).split(".").slice(0, 3).join(".")}.${String(Math.floor(Date.now() / 60000) % 65535)}`;
 writeFileSync(manifestFile, JSON.stringify(manifest));
 
-const browser = launchChromium({ chromePath, dist: loaded, port: 9337, profileDir });
+// The extension is loaded over the debugging port, which works in an installed Chrome as well as in Chromium.
+const browser = launchChromium({ chromePath, dist: loaded, port: 9337, profileDir, loadVia: "protocol" });
 let worker;
 let panel;
 let genius;
 try {
+  await browser.loadExtension();
   const workerTarget = await findServiceWorker(browser);
   worker = await connect(workerTarget.webSocketDebuggerUrl);
   await waitUntilReady(worker);

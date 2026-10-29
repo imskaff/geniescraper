@@ -1,7 +1,7 @@
 // Minimal Chrome DevTools Protocol helpers for the opt-in live checks. No automation framework is used on
 // purpose: Playwright and similar tools force pages to report as visible and focused, which hides the
 // hidden-tab behaviour these checks exist to measure.
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -11,16 +11,23 @@ export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 /**
  * Launch Chromium with the unpacked extension. By default the profile is a throwaway; pass `profileDir` to reuse
  * one (for example a scratch profile the user signed in to by hand), which is left in place afterwards.
+ *
+ * `loadVia: "flag"` (the default) loads the extension with --load-extension, which a plain Chromium honours.
+ * `loadVia: "protocol"` leaves that out and loads it over the debugging port instead (call `loadExtension()`
+ * after launching): installed, branded Chrome ignores --load-extension but accepts this.
  */
-export function launchChromium({ chromePath, dist, port, profileDir }) {
+export function launchChromium({ chromePath, dist, port, profileDir, loadVia = "flag" }) {
   const profile = profileDir ?? mkdtempSync(join(tmpdir(), "geniescraper-live-"));
+  const viaProtocol = loadVia === "protocol";
+  let keepOpen;
   const chrome = spawn(
     chromePath,
     [
       `--remote-debugging-port=${String(port)}`,
       `--user-data-dir=${profile}`,
-      `--disable-extensions-except=${dist}`,
-      `--load-extension=${dist}`,
+      ...(viaProtocol
+        ? ["--enable-unsafe-extension-debugging"]
+        : [`--disable-extensions-except=${dist}`, `--load-extension=${dist}`]),
       "--no-first-run",
       "--no-default-browser-check",
       "about:blank",
@@ -43,8 +50,29 @@ export function launchChromium({ chromePath, dist, port, profileDir }) {
       const response = await fetch(`http://127.0.0.1:${String(port)}/json/new?${url}`, { method: "PUT" });
       return response.json();
     },
+    /** Load the unpacked extension over the debugging port (for `loadVia: "protocol"`); resolves to its id. */
+    async loadExtension() {
+      let version;
+      for (let attempt = 0; attempt < 100 && !version; attempt++) {
+        try {
+          version = await (await fetch(`http://127.0.0.1:${String(port)}/json/version`)).json();
+        } catch {
+          await sleep(200);
+        }
+      }
+      if (!version) throw new Error("The browser's debugging port never answered.");
+      // The connection stays open for as long as the browser runs: the extension is tied to it.
+      keepOpen = await connect(version.webSocketDebuggerUrl);
+      const loaded = await keepOpen.send("Extensions.loadUnpacked", { path: dist });
+      return loaded.id;
+    },
     async stop() {
-      chrome.kill();
+      // The browser starts helper processes of its own; on Windows end the whole tree.
+      if (process.platform === "win32" && chrome.pid) {
+        spawnSync("taskkill", ["/PID", String(chrome.pid), "/T", "/F"], { stdio: "ignore" });
+      } else {
+        chrome.kill();
+      }
       await sleep(500);
       if (!profileDir) rmSync(profile, { recursive: true, force: true });
     },
