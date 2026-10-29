@@ -308,7 +308,14 @@ export function instruction(state: PasteState, hotkey: string): string {
 const KINDS: ReadonlySet<string> = new Set(Object.keys(STEP_LABELS));
 const TONES: ReadonlySet<string> = new Set(["info", "ok", "attention"]);
 const AUTO_MODES: ReadonlySet<string> = new Set(["off", "running", "paused"]);
-const PAUSE_REASONS: ReadonlySet<string> = new Set(["user", "input", "panel-closed", "page-changed", "problem", "bridge-lost"]);
+const PAUSE_REASONS: ReadonlySet<string> = new Set([
+  "user",
+  "input",
+  "panel-closed",
+  "page-changed",
+  "problem",
+  "bridge-lost",
+]);
 
 function isItem(value: unknown): value is QueueItem {
   return (
