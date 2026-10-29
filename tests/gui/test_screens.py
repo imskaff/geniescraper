@@ -172,6 +172,13 @@ def walk() -> dict[str, Any]:
             seen["applied"] = window._apply()
             seen["changed_on_apply"] = settings.auto_tab is (not original)
             settings.auto_tab = original
+            seen["copy_button_before"] = window._link_copy_btn.cget("text")
+            window._copy_code("ABCD-EFGH")
+            seen["copied_to_clipboard"] = window.clipboard_get()
+            seen["copy_button_after"] = window._link_copy_btn.cget("text")
+            window._copy_code("")  # nothing to copy: the clipboard and the button stay as they were
+            seen["clipboard_after_empty"] = window.clipboard_get()
+            window.clipboard_clear()
             seen["auto_paste_state"] = str(window._auto_switch.cget("state"))
             seen["auto_paste_hint"] = window._auto_hint.cget("text")
         elif name == "07-credits":
@@ -263,6 +270,13 @@ def test_a_change_waits_for_the_window_to_close(walk):
     assert walk["unchanged_while_open"]
     assert walk["staged_value"] is not None
     assert walk["applied"] and walk["changed_on_apply"]
+
+
+def test_the_pairing_code_has_a_copy_button(walk):
+    assert walk["copy_button_before"] == "Copy"
+    assert walk["copied_to_clipboard"] == "ABCD-EFGH"
+    assert walk["copy_button_after"] == "Copied ✓"
+    assert walk["clipboard_after_empty"] == "ABCD-EFGH"
 
 
 def test_auto_paste_is_grayed_out_until_an_extension_is_connected(walk):

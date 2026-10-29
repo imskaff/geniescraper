@@ -20,6 +20,8 @@ from utils import config
 from utils.config import settings
 
 _AUTO_START_DELAYS = ("5", "10", "15", "30")
+_COPY = "Copy"
+_COPIED = "Copied ✓"
 _READS_ALL = "All at once"
 _READS_ONE = "1 (one by one)"
 _AUTO_PASTE_HINT_ON = (
@@ -198,7 +200,7 @@ class SettingsWindow(ctk.CTkToplevel):
 
     def _wait_slider(self) -> None:
         _, control = self._setting_row(
-            "Wait for suggestions to settle (seconds)",
+            "Wait for suggestions to settle",
             "Raise this if Genius is slow to show suggestions.",
             wrap=220,
         )
@@ -309,7 +311,22 @@ class SettingsWindow(ctk.CTkToplevel):
         self._link_code_lbl = ctk.CTkLabel(
             self._link_code_box, text="", font=theme.display(30), text_color=theme.ACCENT, anchor="center"
         )
-        self._link_code_lbl.pack(padx=theme.SPACE_4, pady=theme.SPACE_2)
+        self._link_code_lbl.pack(side="left", padx=(theme.SPACE_4, theme.SPACE_2), pady=theme.SPACE_2)
+        self._link_copy_btn = ctk.CTkButton(
+            self._link_code_box,
+            text=_COPY,
+            width=80,
+            height=30,
+            font=theme.font(12),
+            fg_color="transparent",
+            border_width=1,
+            border_color=theme.BORDER,
+            text_color=theme.TEXT,
+            hover_color=theme.SURFACE_HI,
+            command=lambda: self._copy_code(self._link.pairing_code or ""),
+        )
+        self._link_copy_btn.pack(side="left", padx=(0, theme.SPACE_4), pady=theme.SPACE_2)
+        self._copied_code: str | None = None  # the code the button last copied; a new code resets the button
         self._link_code_row = 2
         buttons = ctk.CTkFrame(box, fg_color="transparent")
         buttons.grid(row=3, column=0, columnspan=2, sticky="w", padx=theme.SPACE_4, pady=(theme.SPACE_2, theme.SPACE_4))
@@ -359,6 +376,8 @@ class SettingsWindow(ctk.CTkToplevel):
             hint = state_hint(state, code=code, seconds_left=left)
         self._link_hint_lbl.configure(text=hint)
         self._link_code_lbl.configure(text=code or "")
+        if code != self._copied_code:
+            self._link_copy_btn.configure(text=_COPY)
         if code:
             self._link_code_box.grid(row=self._link_code_row, column=0, columnspan=2, sticky="w", padx=theme.SPACE_4)
         else:
@@ -383,6 +402,16 @@ class SettingsWindow(ctk.CTkToplevel):
             button_color=theme.TEXT if connected else theme.FAINT,
         )
         self._auto_hint.configure(text=_AUTO_PASTE_HINT_ON if connected else _AUTO_PASTE_HINT_OFF)
+
+    def _copy_code(self, code: str) -> None:
+        """Put the pairing code on the clipboard, so it can be pasted into the extension."""
+        if not code:
+            return
+        self.clipboard_clear()
+        self.clipboard_append(code)
+        self.update()  # hands the text to Windows now, not when the app next idles
+        self._copied_code = code
+        self._link_copy_btn.configure(text=_COPIED)
 
     def _link_connect(self) -> None:
         self._link.begin_pairing()
