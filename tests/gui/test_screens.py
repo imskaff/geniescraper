@@ -206,7 +206,7 @@ def walk() -> dict[str, Any]:
 
 def test_open_pages_card_lists_what_the_extension_reports(walk):
     texts = walk["open_pages"]["texts"]
-    assert texts[0] == "OPEN IN YOUR BROWSER"
+    assert texts[:2] == ["3 Apple Music pages detected", "Pick one to get its credits."]
     assert "Album" in texts and "Song" in texts
     assert "HIT ME HARD AND SOFT" in texts and "this page" in texts
     assert texts.count("this page") == 1
@@ -219,7 +219,7 @@ def test_open_pages_card_updates_in_place_without_touching_the_link_box(walk):
     assert (
         "CHIHIRO" in seen["after_update"] and "Short n' Sweet (Deluxe) by Sabrina Carpenter" not in seen["after_update"]
     )
-    assert seen["empty"] == ["OPEN IN YOUR BROWSER", seen["empty_text"]]
+    assert seen["empty"] == ["Listening for Apple Music pages…", seen["empty_text"]]
 
 
 def test_open_pages_card_is_hidden_without_a_connected_extension(walk):

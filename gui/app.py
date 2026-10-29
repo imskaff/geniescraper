@@ -15,14 +15,16 @@ from gui import theme
 from gui.link import LinkController, OpenPage, RunStatus, describe_status
 from gui.logic import (
     OPEN_PAGES_EMPTY,
-    OPEN_PAGES_TITLE,
+    OPEN_PAGES_PICK,
     STEPS,
+    detector_title,
     friendly_error,
     open_page_rows,
     prefetch_plan,
     queue_summary,
     url_hint,
 )
+from gui.radar import FOUND, LISTENING, Radar
 from gui.settings_window import SettingsWindow
 from scraper import apple_music, pipeline
 from scraper.apple_music import AlbumTrackInfo
@@ -401,17 +403,39 @@ class App(ctk.CTk):
             return
         # The card takes the place of 'How it works', which a user with the extension connected no longer needs.
         how.pack_forget()
-        card = ctk.CTkFrame(how.master, fg_color=theme.SURFACE, corner_radius=8)
+        found = bool(link.pages)
+        card = ctk.CTkFrame(
+            how.master,
+            fg_color=theme.SURFACE,
+            corner_radius=10,
+            border_width=1,
+            border_color=theme.ACCENT if found else theme.BORDER,  # a find lights the card's edge, as in the extension
+        )
         card.pack(fill="x", pady=(theme.SPACE_4, 0), after=self._status_lbl)
         self._pages_card = card
-        ctk.CTkLabel(card, text=OPEN_PAGES_TITLE, font=_f(11, "bold"), text_color=theme.FAINT).pack(
-            anchor="w", padx=theme.SPACE_4, pady=(theme.SPACE_3, theme.SPACE_2)
+        # The detector: a radar that listens while nothing is open and pings once when something is found.
+        head = ctk.CTkFrame(card, fg_color="transparent")
+        head.pack(fill="x", padx=theme.SPACE_3, pady=theme.SPACE_3)
+        Radar(head, state=FOUND if found else LISTENING, accent=theme.ACCENT, ground=theme.SURFACE).pack(
+            side="left", padx=(0, theme.SPACE_3)
         )
+        text = ctk.CTkFrame(head, fg_color="transparent")
+        text.pack(side="left", fill="x", expand=True)
+        ctk.CTkLabel(
+            text, text=detector_title(len(link.pages)), font=_f(14, "bold"), text_color=theme.TEXT, anchor="w", height=0
+        ).pack(anchor="w")
+        ctk.CTkLabel(
+            text,
+            text=OPEN_PAGES_PICK if found else OPEN_PAGES_EMPTY,
+            font=_f(12),
+            text_color=theme.MUTED,
+            anchor="w",
+            justify="left",
+            wraplength=420,
+            height=0,
+        ).pack(anchor="w", pady=(theme.SPACE_1, 0))
         rows, more = open_page_rows(link.pages)
         if not rows:
-            ctk.CTkLabel(
-                card, text=OPEN_PAGES_EMPTY, font=_f(13), text_color=theme.MUTED, anchor="w", justify="left"
-            ).pack(anchor="w", fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_3))
             return
         for page, (tag, title, note) in zip(link.pages, rows, strict=False):
             self._open_page_row(card, page, tag, title, note)
@@ -419,7 +443,7 @@ class App(ctk.CTk):
             ctk.CTkLabel(card, text=more, font=_f(12), text_color=theme.FAINT, anchor="w").pack(
                 anchor="w", padx=theme.SPACE_4, pady=(0, theme.SPACE_2)
             )
-        ctk.CTkFrame(card, height=theme.SPACE_1, fg_color="transparent").pack()
+        ctk.CTkFrame(card, height=theme.SPACE_2, fg_color="transparent").pack()
 
     def _open_page_row(self, card: ctk.CTkFrame, page: OpenPage, tag: str, title: str, note: str) -> None:
         """One open page: its kind, its title and 'this page' for the one in view. Clicking it gets its credits."""

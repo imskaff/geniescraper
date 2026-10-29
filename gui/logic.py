@@ -19,10 +19,17 @@ _MODIFIER_KEYS = frozenset({"shift", "ctrl", "alt", "alt gr", "windows", "left w
 STEPS = ("Link", "Tracks", "Review", "Paste")
 
 #: The start screen's card of Apple Music pages open in the browser (the extension's own wording).
-OPEN_PAGES_TITLE = "OPEN IN YOUR BROWSER"
 OPEN_PAGES_EMPTY = "Open an album or song on Apple Music in your browser and it shows up here."
+OPEN_PAGES_PICK = "Pick one to get its credits."
 MAX_OPEN_ROWS = 4
 _MAX_TITLE_SHOWN = 56
+
+
+def detector_title(count: int) -> str:
+    """The detector's headline: listening while nothing is open, then what was found."""
+    if count == 0:
+        return "Listening for Apple Music pages…"
+    return "Apple Music page detected" if count == 1 else f"{count} Apple Music pages detected"
 
 
 def open_page_rows(pages, limit: int = MAX_OPEN_ROWS) -> tuple[list[tuple[str, str, str]], str]:
