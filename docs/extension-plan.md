@@ -1065,3 +1065,17 @@ Settings in the extension and the desktop app now follow one order: What to past
 - **Cover art look-up** holds the Deezer box alone, at the very bottom of Settings. The card "Look-ups on other sites" is gone.
 - **Desktop app** (extension) now starts with the pairing code box, then Pair and Unpair, then the status and any message, then a short "What is this?" block: two sentences on what the desktop app is and why to pair, and four short points (how to pair, local only, no Genius password shared, unpair at any time).
 - **Desktop app** (desktop) gets the same two look-up settings as the extension, `find_youtube` and `deezer_covers` (both on by default, in settings.env as FIND_YOUTUBE and DEEZER_COVERS). They now decide whether the pipeline searches YouTube and Deezer at all. The desktop has no YouTube key: that part of the extension's YouTube card has no counterpart there.
+
+## 44. The release date goes into Genius's Release Date dropdowns
+
+Three queue steps after the cover art, only for a song with a release date and with the new setting on (extension `scrapeReleaseDate`, desktop `scrape_release_date`, both on by default): `release_month` (the month's name, "May"), `release_day` ("5", no leading zero), `release_year` ("2024"). Both apps build them the same way (vectors cover all 64 toggle combinations).
+
+The form (saved in `tests/fixtures/genius-release-date.html`): a `fieldset` "Release Date" with three single-select comboboxes, found by `aria-label` "Release Month", "Release Day", "Release Year" (never by their ids). They sit in the collapsible region `#collapsible-tags_albums-content`.
+
+Assumed, not yet seen on a live form (the live check `scripts/live-genius.mjs` prints what is really there, lines marked "release:"):
+
+- The option texts. A month option counts when it is the month's name, its three-letter form or its number, alone or as "May - 5" / "5 May"; a day or year option counts by numeric equality ("05" is 5). The fill types the name first and, for a month, the number if the name found nothing. It chooses an option only when exactly one matches. With none, the typed text and the suggestions stay for the user, with the normal "no exact match, choose yourself" message.
+- The chosen value shows in an element whose class contains `singleValue` (react-select's own). A dropdown that already holds the value is skipped; one that holds another value is changed.
+- A closed section has `aria-hidden="true"` on the region, and the control that opens it has `aria-controls` with the region's id and `aria-expanded="false"`. The fill presses that control only when the section is closed, never to close it, and says so in the step message. Without such a control the step stops with "Open the Tags and Albums section, then press Next."
+
+The desktop hotkey path pastes the value, waits, and presses Enter, with no Tab sequence (`autotab_steps` has none for these kinds).

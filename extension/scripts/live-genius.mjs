@@ -14,6 +14,9 @@
 // handles a password. It NEVER presses Save: it only fills the open form, watches the network for anything that
 // could be a save, and discards the form by reloading the page at the end.
 //
+// After the run it also reads the three Release Date dropdowns (Month, Day, Year) and prints what their options look
+// like ("release:" lines), so the assumptions about the real option texts can be confirmed.
+//
 // The page used is a song you created (edit it freely); change SONG_URL to one of yours if you run this yourself.
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -553,6 +556,99 @@ try {
   );
   check("the form is still open and on the same page", state.stillOpen && state.url.startsWith("https://genius.com/"));
   check("nothing that could be a save was sent", state.writes.length === 0, state.writes.join("; "));
+
+  // ── the Release Date dropdowns (Month, Day, Year) ──
+  // The queue pastes the song's release date after the cover art. What the real dropdowns list is not known to the
+  // extension's authors, so this prints what they hold and what their options look like: please read the lines marked
+  // "release:" and compare them with the assumptions in extension/src/genius/fill.ts (releaseOptionMatches) and
+  // selectors.ts (the Tags and Albums region and its opening control).
+  if (golden.release_date) {
+    const [wantYear, wantMonth, wantDay] = golden.release_date.split("-").map(Number);
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const dates = await gEval(`(async () => {
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const region = document.getElementById('collapsible-tags_albums-content');
+      const control = document.querySelector('[aria-controls="collapsible-tags_albums-content"]');
+      const out = {
+        region: region ? { ariaHidden: region.getAttribute('aria-hidden') } : null,
+        control: control ? control.outerHTML.replace(/\\s+/g, ' ').slice(0, 300) : null,
+        controlExpanded: control ? control.getAttribute('aria-expanded') : null,
+        dropdowns: {},
+      };
+      for (const label of ['Release Month', 'Release Day', 'Release Year']) {
+        const input = document.querySelector('input[role="combobox"][aria-label="' + label + '"]');
+        if (!input) { out.dropdowns[label] = null; continue; }
+        // The chosen value, and the element that shows it (its class is what the extension looks for).
+        let box = input;
+        while (box.parentElement && box.parentElement.querySelectorAll('input[role="combobox"]').length === 1) box = box.parentElement;
+        const single = box.querySelector('[class*="singleValue"]');
+        const entry = {
+          value: single ? single.textContent.trim() : '',
+          valueElement: single ? single.outerHTML.slice(0, 200) : null,
+          placeholder: box.querySelector('[id$="-placeholder"]')?.textContent ?? null,
+          options: [],
+        };
+        // Open the list the way a keyboard does (ArrowDown), read it, and close it by leaving the field. Nothing is
+        // chosen: Enter is never pressed.
+        input.focus();
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', code: 'ArrowDown', bubbles: true, cancelable: true }));
+        await wait(400);
+        const list = document.getElementById(input.getAttribute('aria-controls') || '');
+        entry.options = list ? [...list.querySelectorAll('[role="option"]')].map((o) => o.textContent.trim()) : [];
+        input.blur();
+        await wait(150);
+        out.dropdowns[label] = entry;
+      }
+      return out;
+    })()`);
+    console.log(
+      `      release: the Tags and Albums region is ${dates.region ? `aria-hidden=${String(dates.region.ariaHidden)}` : "not on the page"}; its control: ${String(dates.controlExpanded)} ${String(dates.control)}`,
+    );
+    const sample = (options) =>
+      options.length <= 14
+        ? options.join(" | ")
+        : `${options.slice(0, 4).join(" | ")} | ... | ${options.slice(-4).join(" | ")}`;
+    for (const [label, entry] of Object.entries(dates.dropdowns)) {
+      console.log(
+        entry
+          ? `      release: ${label} shows "${entry.value}" (placeholder ${JSON.stringify(entry.placeholder)}), ${String(entry.options.length)} options: ${sample(entry.options)}`
+          : `      release: ${label} is not on the page`,
+      );
+      if (entry?.valueElement) console.log(`      release: ${label} value element: ${entry.valueElement}`);
+    }
+    const shownMonth = dates.dropdowns["Release Month"]?.value ?? "";
+    const monthWords = words(shownMonth).split(" ");
+    const monthName = words(monthNames[wantMonth - 1]);
+    check(
+      "Release Month holds the song's month",
+      monthWords.some((w) => w === monthName || w === monthName.slice(0, 3) || w === String(wantMonth)) ||
+        monthWords.some((w) => /^\d+$/.test(w) && Number(w) === wantMonth),
+      shownMonth,
+    );
+    check(
+      "Release Day holds the song's day",
+      Number(words(dates.dropdowns["Release Day"]?.value ?? "")) === wantDay,
+      dates.dropdowns["Release Day"]?.value ?? "",
+    );
+    check(
+      "Release Year holds the song's year",
+      Number(words(dates.dropdowns["Release Year"]?.value ?? "")) === wantYear,
+      dates.dropdowns["Release Year"]?.value ?? "",
+    );
+  }
 
   // ── back, and the page's own hotkey suppression ──
   const atEnd = await position();
