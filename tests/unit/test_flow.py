@@ -73,3 +73,50 @@ class TestInstructionText:
 
     def test_role_steps(self):
         assert instruction_text(self.queue, 3, "f9").endswith("3. Press F9")
+
+
+class TestGeniusQueue:
+    """The queue is typed under the names Genius uses, as the extension's panel does (geniusRole)."""
+
+    @pytest.mark.parametrize(
+        ("apple", "genius"),
+        [
+            ("Additional Producer", "Additional Production"),
+            ("additional producer", "Additional Production"),
+            ("Vocal Recording Engineer", "Vocal Engineer"),
+            ("Programming", "Programmer"),
+            ("Drum Programming", "Drum Programmer"),
+            ("Mixing Engineer", "Mixing Engineer"),
+            ("Editing Engineer", "Editing Engineer"),
+        ],
+    )
+    def test_role_steps_use_genius_names(self, apple, genius):
+        from assistant.flow import genius_queue
+
+        assert genius_queue([("role", apple)]) == [("role", genius)]
+
+    def test_only_role_steps_are_renamed(self):
+        from assistant.flow import genius_queue
+
+        queue = [
+            ("written_by", "Additional Producer"),
+            ("role", "Additional Producer"),
+            ("artist", "Vocal Recording Engineer"),
+            ("copyright_role", "Copyright"),
+            ("youtube_url", "https://www.youtube.com/watch?v=abcdefghijk"),
+        ]
+        assert genius_queue(queue) == [
+            ("written_by", "Additional Producer"),
+            ("role", "Additional Production"),
+            ("artist", "Vocal Recording Engineer"),
+            ("copyright_role", "Copyright"),
+            ("youtube_url", "https://www.youtube.com/watch?v=abcdefghijk"),
+        ]
+
+    def test_is_idempotent_and_keeps_length(self):
+        from assistant.flow import genius_queue
+
+        queue = [("role", "Additional Producer"), ("artist", "A"), ("role", "Vocal Recording Engineer")]
+        once = genius_queue(queue)
+        assert genius_queue(once) == once
+        assert len(once) == len(queue)
