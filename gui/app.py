@@ -12,6 +12,7 @@ from PIL import Image as PILImage
 
 from assistant import flow
 from gui import theme
+from gui.link import LinkController, RunStatus, describe_status
 from gui.logic import STEPS, friendly_error, prefetch_plan, queue_summary, url_hint
 from gui.settings_window import SettingsWindow
 from scraper import apple_music, pipeline
@@ -51,7 +52,7 @@ _NESTED_KINDS = frozenset({"artist", "phonographic_copyright", "copyright_notice
 
 
 class App(ctk.CTk):
-    def __init__(self) -> None:
+    def __init__(self, *, start_link: bool = True) -> None:
         super().__init__()
         self.title("Géniescraper v0.5")
         pos = f"+{settings.win_x}+{settings.win_y}" if settings.win_x >= 0 and settings.win_y >= 0 else ""
@@ -97,6 +98,27 @@ class App(ctk.CTk):
         self._chip_label: dict[str, str] = {}
         self._app_focused: bool = False
 
+        self._pasting_hint_lbl: ctk.CTkLabel | None = None
+        self._link_lbl: ctk.CTkLabel | None = None
+        self._link_btns: ctk.CTkFrame | None = None
+        self._link_before: ctk.CTkFrame | None = None
+
+        # Companion link to the browser extension; its callbacks arrive on the bridge's thread and hop to Tk here.
+        self.link = LinkController(
+            secret=settings.bridge_secret,
+            origin=settings.bridge_origin,
+            persist=self._persist_pairing,
+            erase=self._erase_pairing,
+            schedule=self._on_tk_thread,
+        )
+        self.link.on_change = self._link_changed
+        self.link.on_status = self._link_status
+        self.link.on_finished = self._link_finished
+        self.link.on_run_ended = self._link_run_ended
+        self.link.on_connection = self._link_connection
+        if start_link:
+            self.link.start()
+
         self.bind("<FocusIn>", lambda _: setattr(self, "_app_focused", True))
         self.bind("<FocusOut>", lambda _: setattr(self, "_app_focused", False))
 
@@ -122,6 +144,8 @@ class App(ctk.CTk):
 
     def _register_assistant_keys(self) -> None:
         self._clear_kb_hooks()
+        if self.link.bridged:
+            return  # the extension owns the keys while it runs the paste; both at once would double-step
 
         def _on_fwd(e):
             if e.event_type == "down":
@@ -171,17 +195,21 @@ class App(ctk.CTk):
             self._settings_win.lift()
             self._settings_win.focus_force()
             return
-        self._settings_win = SettingsWindow(self, on_change=self._settings_changed)
+        self._settings_win = SettingsWindow(self, on_change=self._settings_changed, link=self.link)
 
     def _settings_changed(self) -> None:
         """Apply a setting the moment it changes, on whatever screen is showing."""
         self.attributes("-topmost", settings.always_on_top)
         if self._screen == "assistant":
-            pos = self._pos
-            self._show_assistant_screen()
+            pos, old_queue = self._pos, list(self._queue)
+            self._show_assistant_screen(keep_run=True)
             with self._lock:
                 self._pos = min(pos, len(self._queue))
+            if self._queue != old_queue and (self.link.run_active or self.link.connected):
+                self._begin_link_run(self._pos)  # the extension holds the old queue: start it over, caught up
+                self._sync_hooks()
             self._render_assistant()
+            self._render_link()
         elif self._screen == "credits":
             self._show_credits_screen()
         elif self._screen == "start":
@@ -227,6 +255,8 @@ class App(ctk.CTk):
         )
 
     def destroy(self) -> None:
+        self.link.end_run()
+        self.link.stop()
         try:
             settings.win_x = self.winfo_x()
             settings.win_y = self.winfo_y()
@@ -542,9 +572,10 @@ class App(ctk.CTk):
         else:
             self._show_scrape_screen()
 
-    def _show_assistant_screen(self) -> None:
+    def _show_assistant_screen(self, *, keep_run: bool = False) -> None:
         self._screen = "assistant"
         self._credits_in_countdown = False
+        self._pasting_hint_lbl = self._link_lbl = self._link_btns = None
         self._clear()
         self._queue = self._current_queue()
         self._pos = 0
@@ -581,12 +612,16 @@ class App(ctk.CTk):
         self._progress_bar = ctk.CTkProgressBar(self, height=4, progress_color=theme.ACCENT)
         self._progress_bar.pack(fill="x", padx=20, pady=(0, 8))
         self._progress_bar.set(0)
+        self._link_lbl = ctk.CTkLabel(
+            self, text="", font=_f(12), text_color=theme.MUTED, anchor="w", justify="left", wraplength=560
+        )
 
         # ── Hero card: the value the next hotkey press pastes ───────────
         self._hero_card = ctk.CTkFrame(
             self, corner_radius=12, fg_color=theme.SURFACE, border_width=1, border_color=theme.ACCENT
         )
         self._hero_card.pack(fill="x", padx=20, pady=(0, 6))
+        self._link_before = self._hero_card
         badge_row = ctk.CTkFrame(self._hero_card, fg_color="transparent")
         badge_row.pack(fill="x", padx=16, pady=(14, 0))
         self._hero_badge = ctk.CTkLabel(
@@ -626,6 +661,8 @@ class App(ctk.CTk):
                 text_color=theme.TEXT,
                 command=command,
             ).pack(side="left", padx=(0, 6))
+        self._link_btns = ctk.CTkFrame(controls, fg_color="transparent")
+        self._link_btns.pack(side="left")
         self._chips = {}
         for key, label in (("auto_enter", "Auto-confirm"), ("auto_tab", "Auto-tab")):
             chip = ctk.CTkButton(
@@ -645,9 +682,8 @@ class App(ctk.CTk):
 
         if not settings.compact_mode:
             hint = f"Press {settings.hotkey.upper()} to paste.  Esc ends pasting.  Click a step to jump to it."
-            ctk.CTkLabel(self, text=hint, font=_f(11), text_color=theme.FAINT, anchor="w").pack(
-                fill="x", padx=22, pady=(0, 2)
-            )
+            self._pasting_hint_lbl = ctk.CTkLabel(self, text=hint, font=_f(11), text_color=theme.FAINT, anchor="w")
+            self._pasting_hint_lbl.pack(fill="x", padx=22, pady=(0, 2))
             self._queue_sf = theme.scroll_frame(self, fg_color=theme.SURFACE, corner_radius=8)
             self._queue_sf.pack(fill="both", expand=True, padx=20, pady=(0, 12))
             self._queue_sf.grid_columnconfigure(0, weight=1)
@@ -677,7 +713,10 @@ class App(ctk.CTk):
                     w.configure(cursor="hand2")
                 self._row_widgets.append((row_frame, m, t, v, kind))
 
+        if not keep_run:
+            self._begin_link_run(0)
         self._render_assistant()
+        self._render_link()
         self._register_assistant_keys()
         threading.Thread(target=self._wait_esc, daemon=True).start()
 
@@ -700,6 +739,9 @@ class App(ctk.CTk):
 
     def _skip(self) -> None:
         """Move to the next step without pasting, for a field that is already filled on Genius."""
+        if self.link.bridged:
+            self.link.command("skip")  # the extension moves; its status updates the position
+            return
         with self._lock:
             if self._pos >= len(self._queue):
                 return
@@ -711,6 +753,9 @@ class App(ctk.CTk):
             self._render_assistant()
 
     def _jump_to(self, index: int) -> None:
+        if self.link.bridged:
+            self.link.jump(index - self._pos)
+            return
         with self._lock:
             self._pos = max(0, min(index, len(self._queue) - 1))
         self._render_assistant()
@@ -1025,6 +1070,7 @@ class App(ctk.CTk):
         self._button(box, "Cancel", self._cancel_scrape, width=110).pack()
 
     def _advance_album_queue(self) -> None:
+        self.link.end_run()
         self._clear_kb_hooks()
         self.geometry("620x700")
         if not self._album_queue_pending:
@@ -1117,6 +1163,9 @@ class App(ctk.CTk):
     # ── hotkey assistant ─────────────────────────────────────────────────
 
     def _on_back_hotkey(self) -> None:
+        if self.link.bridged:
+            self.link.command("back")
+            return
         with self._lock:
             if self._pos > 0:
                 self._pos -= 1
@@ -1193,6 +1242,8 @@ class App(ctk.CTk):
                 v.configure(text_color=theme.MUTED, font=_f(12))
 
     def _instruction_text(self) -> str:
+        if self.link.bridged:
+            return "The browser extension fills this step. Press Next here, or the key on the Genius page."
         return flow.instruction_text(self._queue, self._pos, settings.hotkey)
 
     def _show_done_screen(self) -> None:
@@ -1296,6 +1347,7 @@ class App(ctk.CTk):
         self._go_to_main()
 
     def _go_to_main(self) -> None:
+        self.link.end_run()
         self._in_countdown = False
         self._song = None
         self._cover_image = None
@@ -1311,6 +1363,115 @@ class App(ctk.CTk):
         with self._prefetch_cache_lock:
             self._prefetch_cache.clear()
         self._show_scrape_screen()
+
+    # ── companion link ───────────────────────────────────────────────────
+
+    def _on_tk_thread(self, fn) -> None:
+        self.after(0, fn)
+
+    def _persist_pairing(self, secret: str, origin: str) -> None:
+        settings.bridge_secret, settings.bridge_origin = secret, origin
+        settings.save()
+
+    def _erase_pairing(self) -> None:
+        settings.bridge_secret = settings.bridge_origin = ""
+        settings.save()
+
+    def _begin_link_run(self, resume_at: int) -> None:
+        """Give the current queue to the extension, when it is connected. Otherwise the hotkeys do the work."""
+        self.link.end_run()
+        song = self._song
+        if song is not None and self.link.connected:
+            self.link.start_run(f"{song.title} · {song.artist}", self._queue, settings.link_mode, resume_at)
+
+    def _sync_hooks(self) -> None:
+        """The extension owns F7/F8 while it runs the paste; otherwise the desktop's keys are registered."""
+        if self._screen == "assistant" and not self._esc_overlay_open():
+            self._register_assistant_keys()
+
+    def _link_connection(self, up: bool) -> None:
+        if up and self._screen == "assistant" and not self.link.run_active and not self._esc_overlay_open():
+            self._begin_link_run(self._pos)  # it connected mid-song: carry on from the current step
+        self._sync_hooks()
+        self._render_link()
+
+    def _link_run_ended(self) -> None:
+        """The extension refused or ended the run: the desktop's keys come back."""
+        self._sync_hooks()
+        self._render_link()
+        if self.link.notice:
+            self._toast(self.link.notice, error=True)
+
+    def _link_status(self, status: RunStatus) -> None:
+        if self._screen != "assistant":
+            return
+        with self._lock:
+            self._pos = max(0, min(status.position, len(self._queue)))
+        self._render_assistant()
+        self._render_link()
+
+    def _link_finished(self) -> None:
+        if self._screen == "assistant":
+            self._finish_song()
+
+    def _link_changed(self) -> None:
+        self._render_link()
+        win = self._settings_win
+        if win is not None and win.winfo_exists():
+            win.refresh_link()
+
+    def _link_button(self, text: str, command) -> None:
+        assert self._link_btns is not None
+        ctk.CTkButton(
+            self._link_btns,
+            text=text,
+            width=84,
+            height=28,
+            font=_f(12),
+            fg_color=theme.SURFACE,
+            hover_color=theme.SURFACE_HI,
+            text_color=theme.TEXT,
+            command=command,
+        ).pack(side="left", padx=(0, 6))
+
+    def _render_link(self) -> None:
+        """Status line and Next/Pause/Resume buttons for a linked run; nothing at all when it is not linked."""
+        lbl, btns, before = self._link_lbl, self._link_btns, self._link_before
+        if self._screen != "assistant" or lbl is None or btns is None or before is None or not lbl.winfo_exists():
+            return
+        link = self.link
+        status = link.status
+        if link.bridged:
+            text, tone = describe_status(status) if status else ("", "info")
+            text = link.notice or text or "Linked to the browser extension."
+            tone = "attention" if link.notice else tone
+        elif link.run_active:
+            text, tone = "Link lost. The hotkeys work again until the extension reconnects.", "attention"
+        else:
+            text, tone = link.notice, "attention"
+        colour = {"ok": theme.DONE, "attention": theme.WARN}.get(tone, theme.MUTED)
+        if text:
+            lbl.configure(text=text, text_color=colour)
+            lbl.pack(fill="x", padx=22, pady=(0, 4), before=before)
+        else:
+            lbl.pack_forget()
+        for child in btns.winfo_children():
+            child.destroy()
+        if link.bridged:
+            auto = status.auto if status else "off"
+            if auto != "running":
+                self._link_button("Next ›", lambda: self.link.command("fill-next"))
+            if auto == "running":
+                self._link_button("Pause", lambda: self.link.command("pause"))
+            elif auto == "paused":
+                self._link_button("Resume", lambda: self.link.command("resume"))
+        for chip in self._chips.values():
+            chip.configure(state="disabled" if link.bridged else "normal")
+        if self._pasting_hint_lbl is not None and self._pasting_hint_lbl.winfo_exists():
+            keys = f"Press {settings.hotkey.upper()} to paste.  Esc ends pasting.  Click a step to jump to it."
+            linked = "Linked to the browser extension.  Esc ends pasting.  Click a step to jump to it."
+            self._pasting_hint_lbl.configure(text=linked if link.bridged else keys)
+        self._card_instr_lbl.configure(text=self._instruction_text())
 
     def _wait_esc(self) -> None:
         while True:
@@ -1365,6 +1526,10 @@ class App(ctk.CTk):
             command=self._confirm_esc_quit,
             font=_f(13, "bold"),
         ).pack(side="left")
+
+    def _esc_overlay_open(self) -> bool:
+        overlay = getattr(self, "_esc_overlay", None)
+        return overlay is not None and overlay.winfo_exists()
 
     def _dismiss_esc_confirm(self) -> None:
         """User chose to resume - remove overlay and re-register hotkeys."""

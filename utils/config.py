@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -47,6 +47,12 @@ class Settings(BaseSettings):
     # Tracks of an album read at once while the one before is being pasted: 1 (the default), 2, 3, 5 or 0 for all
     parallel_reads: int = 1
 
+    # Companion link to the browser extension (assistant/bridge.py). The secret is written to this file only,
+    # never logged or printed: repr=False keeps it out of repr(settings) and out of tracebacks.
+    bridge_secret: str = Field(default="", repr=False)
+    bridge_origin: str = ""  # the extension id it was paired with (trust on first use)
+    link_mode: str = "manual"  # how the extension fills a run the desktop starts: "manual" or "auto"
+
     # Window position (-1 = not yet saved, use default centering)
     win_x: int = -1
     win_y: int = -1
@@ -60,6 +66,11 @@ class Settings(BaseSettings):
         except ValueError:
             return 1
         return reads if reads in PARALLEL_CHOICES else 1
+
+    @field_validator("link_mode", mode="before")
+    @classmethod
+    def _link_mode_choice(cls, value: object) -> str:
+        return "auto" if str(value).strip().lower() == "auto" else "manual"
 
     def save(self) -> None:
         """Persist current settings to the per-user settings file."""
@@ -94,6 +105,12 @@ class Settings(BaseSettings):
             "",
             "# Album tracks read at once while pasting: 1, 2, 3, 5, or 0 for all",
             f"PARALLEL_READS={self.parallel_reads}",
+            "",
+            "# Companion link to the browser extension. BRIDGE_SECRET is a password: do not share this file.",
+            "# Use Forget in Settings to remove the pairing.",
+            f"BRIDGE_SECRET={self.bridge_secret}",
+            f"BRIDGE_ORIGIN={self.bridge_origin}",
+            f"LINK_MODE={self.link_mode}",
             "",
             "# Last window position (set automatically on close)",
             f"WIN_X={self.win_x}",

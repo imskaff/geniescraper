@@ -82,7 +82,7 @@ def _walk(on_screen: Callable[[Any, str], None]) -> None:
         cover_art_url=song.cover_art_url,
     )
     errors: list[BaseException] = []
-    app = App()
+    app = App(start_link=False)
     app.report_callback_exception = lambda exc, val, tb: errors.append(val)
 
     def screen(name: str, window: Any = None) -> None:

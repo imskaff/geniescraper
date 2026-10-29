@@ -12,6 +12,7 @@ import customtkinter as ctk
 import keyboard
 
 from gui import theme
+from gui.link import LinkController, LinkState, state_hint, state_label
 from gui.logic import hotkey_error
 from utils import config
 from utils.config import settings
@@ -28,9 +29,10 @@ _COLLECT = (
 
 
 class SettingsWindow(ctk.CTkToplevel):
-    def __init__(self, master: ctk.CTk, on_change: Callable[[], None]) -> None:
+    def __init__(self, master: ctk.CTk, on_change: Callable[[], None], link: LinkController) -> None:
         super().__init__(master)
         self._on_change = on_change
+        self._link = link
         self._capture_hook: object | None = None
         self._reset_armed = False
         self.title("Géniescraper settings")
@@ -78,6 +80,9 @@ class SettingsWindow(ctk.CTkToplevel):
         self._heading("Hotkeys")
         self._hotkeys()
 
+        self._heading("Browser extension")
+        self._link_area()
+
         self._heading("What to collect")
         for key, label, hint in _COLLECT:
             self._switch(key, label, hint)
@@ -122,7 +127,8 @@ class SettingsWindow(ctk.CTkToplevel):
 
     def _switch(self, key: str, label: str, hint: str) -> None:
         _, control = self._setting_row(label, hint)
-        var = ctk.BooleanVar(value=getattr(settings, key))
+        value = settings.link_mode == "auto" if key == "link_mode_auto" else getattr(settings, key)
+        var = ctk.BooleanVar(value=value)
         ctk.CTkSwitch(
             control,
             text="",
@@ -205,6 +211,90 @@ class SettingsWindow(ctk.CTkToplevel):
         self._hk_msg.grid(row=2, column=0, columnspan=2, sticky="w", padx=14, pady=(2, 10))
         self._place(box, (0, 6))
 
+    def _link_area(self) -> None:
+        """Pair with the browser extension and show the link's state; the pairing secret is never displayed."""
+        box = ctk.CTkFrame(self._body, fg_color=theme.SURFACE, corner_radius=8)
+        box.grid_columnconfigure(0, weight=1)
+        self._link_state_lbl = ctk.CTkLabel(
+            box, text="", font=theme.font(13, "bold"), text_color=theme.TEXT, anchor="w"
+        )
+        self._link_state_lbl.grid(row=0, column=0, sticky="w", padx=14, pady=(10, 0))
+        self._link_hint_lbl = ctk.CTkLabel(
+            box, text="", font=theme.font(11), text_color=theme.MUTED, anchor="w", justify="left", wraplength=400
+        )
+        self._link_hint_lbl.grid(row=1, column=0, columnspan=2, sticky="w", padx=14, pady=(2, 4))
+        self._link_code_lbl = ctk.CTkLabel(box, text="", font=theme.display(30), text_color=theme.ACCENT, anchor="w")
+        self._link_code_lbl.grid(row=2, column=0, columnspan=2, sticky="w", padx=14)
+        buttons = ctk.CTkFrame(box, fg_color="transparent")
+        buttons.grid(row=3, column=0, columnspan=2, sticky="w", padx=14, pady=(4, 10))
+        self._link_connect_btn = ctk.CTkButton(
+            buttons,
+            text="Connect browser extension",
+            height=30,
+            font=theme.font(12),
+            fg_color=theme.ACCENT,
+            text_color=theme.ACCENT_INK,
+            command=self._link_connect,
+        )
+        self._link_connect_btn.pack(side="left", padx=(0, 8))
+        self._link_forget_btn = ctk.CTkButton(
+            buttons,
+            text="Forget pairing",
+            height=30,
+            font=theme.font(12),
+            fg_color="transparent",
+            border_width=1,
+            border_color=theme.BORDER,
+            text_color=theme.MUTED,
+            hover_color=theme.SURFACE_HI,
+            command=self._link_forget,
+        )
+        self._link_forget_btn.pack(side="left")
+        self._place(box, (0, 6))
+        self._switch(
+            "link_mode_auto",
+            "Fill automatically",
+            "When linked, the extension fills every step by itself. Off, you press Next or the key for each step.",
+        )
+        self.refresh_link()
+
+    def refresh_link(self) -> None:
+        link = self._link
+        if not self._link_state_lbl.winfo_exists():
+            return
+        state = link.state
+        code = link.pairing_code
+        left = link.pairing_seconds_left()
+        colour = {
+            LinkState.CONNECTED: theme.DONE,
+            LinkState.LOST: theme.WARN,
+        }.get(state, theme.TEXT)
+        self._link_state_lbl.configure(text=state_label(state), text_color=colour)
+        if link.unavailable:
+            hint = "Ports 47831 to 47835 are all in use, so the extension cannot connect. The hotkeys still work."
+        else:
+            hint = state_hint(state, code=code, seconds_left=left)
+        self._link_hint_lbl.configure(text=hint)
+        self._link_code_lbl.configure(text=code or "")
+        self._link_connect_btn.configure(
+            text="New code" if code else "Connect browser extension",
+            state="disabled" if link.unavailable else "normal",
+        )
+        if link.paired or code:
+            self._link_forget_btn.configure(state="normal")
+        else:
+            self._link_forget_btn.configure(state="disabled")
+        if code:
+            self.after(1000, self.refresh_link)  # the countdown; stops by itself once the code is gone
+
+    def _link_connect(self) -> None:
+        self._link.begin_pairing()
+        self.refresh_link()
+
+    def _link_forget(self) -> None:
+        self._link.forget()
+        self.refresh_link()
+
     def _auto_start(self) -> None:
         _, control = self._setting_row(
             "Start the assistant automatically",
@@ -269,6 +359,8 @@ class SettingsWindow(ctk.CTkToplevel):
     # ── actions ──────────────────────────────────────────────────────────
 
     def _set(self, key: str, value: object) -> None:
+        if key == "link_mode_auto":  # the switch is a boolean, the setting is a word
+            key, value = "link_mode", "auto" if value else "manual"
         setattr(settings, key, value)
         settings.save()
         self._on_change()
@@ -319,7 +411,12 @@ class SettingsWindow(ctk.CTkToplevel):
             self._reset_btn.configure(text="Click again to reset", text_color=theme.DANGER, border_color=theme.DANGER)
             self.after(3000, self._disarm_reset)
             return
-        keep = {"win_x": settings.win_x, "win_y": settings.win_y}
+        keep = {
+            "win_x": settings.win_x,
+            "win_y": settings.win_y,
+            "bridge_secret": settings.bridge_secret,  # a reset of preferences is not "Forget pairing"
+            "bridge_origin": settings.bridge_origin,
+        }
         for name, field in config.Settings.model_fields.items():
             setattr(settings, name, keep.get(name, field.default))
         settings.save()

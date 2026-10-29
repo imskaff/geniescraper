@@ -8,6 +8,7 @@ records its result during one walk and the tests below assert on those results.
 
 import ctypes
 import sys
+from concurrent.futures import Future
 from typing import Any
 
 import pytest
@@ -29,6 +30,59 @@ def _dark_title_bar_attr(window: Any) -> int:
     value = ctypes.c_int(-1)
     ctypes.windll.dwmapi.DwmGetWindowAttribute(hwnd, 20, ctypes.byref(value), ctypes.sizeof(value))
     return value.value
+
+
+class _FakeBridge:
+    """Stands in for the websocket bridge so the real App can be linked without a socket."""
+
+    def __init__(self) -> None:
+        self.sent: list[tuple[str, Future[Any]]] = []
+
+    def start(self) -> None: ...
+    def stop(self) -> None: ...
+    def forget_pairing(self) -> None: ...
+
+    def begin_pairing(self) -> str:
+        return "ABCD-EFGH"
+
+    def send_command(self, name: str, **fields: Any) -> Future[Any]:
+        future: Future[Any] = Future()
+        self.sent.append((name, future))
+        return future
+
+
+def _drive_link(window: Any) -> dict[str, Any]:
+    """Connect a fake extension to the pasting screen and record how the screen and its hotkeys react."""
+    seen: dict[str, Any] = {}
+    fake = _FakeBridge()
+    link = window.link
+    link._bridge = fake
+    seen["hooks_unlinked"] = len(window._kb_hooks)
+    link._handle_connection(True)  # connects mid-song: the run starts from the current step
+    seen["begin_sent"] = [name for name, _ in fake.sent]
+    fake.sent[0][1].set_result((True, None))
+    window.update()
+    seen["hooks_linked"] = len(window._kb_hooks)
+    before = window._pos
+    window._skip()
+    seen["skip_command"] = fake.sent[-1][0]
+    seen["pos_unchanged_by_skip"] = window._pos == before
+    total = len(window._queue)
+    link._handle_status(
+        {
+            "active": True, "auto": "paused", "pauseReason": "bridge-lost", "title": "t", "position": 4,
+            "total": total, "awaiting": False, "busy": False, "message": "", "tone": "info",
+        }
+    )  # fmt: skip
+    seen["pos_from_status"] = window._pos
+    seen["status_line"] = window._link_lbl.cget("text")
+    seen["resume_button"] = [w.cget("text") for w in window._link_btns.winfo_children()]
+    link._handle_connection(False)
+    seen["hooks_after_drop"] = len(window._kb_hooks)
+    link.end_run()
+    window._pos = 21
+    window._render_link()
+    return seen
 
 
 @pytest.fixture(scope="module")
@@ -63,6 +117,7 @@ def walk() -> dict[str, Any]:
             seen["chip_text"], seen["auto_tab_now"] = window._chips["auto_tab"].cget("text"), settings.auto_tab
             window._pos = 21
             window._render_assistant()
+            seen["link"] = _drive_link(window)
 
     walk_screens(on_screen)
     return seen
@@ -95,3 +150,18 @@ def test_main_and_settings_windows_have_dark_title_bars(walk):
     """transient() replaces the Settings window frame; the dark title bar must survive it."""
     assert walk["main_dark_title_bar"] == 1
     assert walk["settings_dark_title_bar"] == 1
+
+
+def test_a_connected_extension_owns_the_keys_and_drives_the_screen(walk):
+    link = walk["link"]
+    assert link["hooks_unlinked"] > 0
+    assert link["begin_sent"] == ["begin"]
+    assert link["hooks_linked"] == 0, "desktop and extension must not both step"
+    assert link["skip_command"] == "skip" and link["pos_unchanged_by_skip"]
+    assert link["pos_from_status"] == 4
+    assert "link to the desktop app was lost" in link["status_line"]
+    assert any("Resume" in text for text in link["resume_button"])
+
+
+def test_dropping_the_link_gives_the_keys_back(walk):
+    assert walk["link"]["hooks_after_drop"] > 0
