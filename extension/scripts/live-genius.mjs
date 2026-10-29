@@ -5,7 +5,7 @@
 //   node scripts/live-genius.mjs --chrome <chrome.exe, installed Chrome or Chromium> --profile <folder with a Genius sign-in> [--screenshots <folder>]
 //        [--mode manual|auto] [--song <the edit page of a song you created>]
 //
-// --mode manual (the default) starts "Step by step" and presses a real F8 for every field.
+// --mode manual (the default) sets the paste mode to one field per key press and presses a real F8 for every field.
 // --mode auto starts Start pasting, lets the run fill the form by itself, and on the way checks that it stops and
 // resumes for Pause, Esc, a real click in the form and the panel closing. Leave the mouse and keyboard alone while it
 // runs: a real click in the Genius window pauses an automatic run, which is the point of the check.
@@ -89,7 +89,11 @@ try {
   worker = await connect(workerTarget.webSocketDebuggerUrl);
   await waitUntilReady(worker);
   // The first-time set-up is not what this check is about: mark it as done.
-  await worker.evaluate("chrome.storage.sync.set({ settings: { onboarded: true } })");
+  // The review screen has one Start pasting button, and the setting decides whether it fills by itself or one field
+  // per key press, so the mode this check is about is set here.
+  await worker.evaluate(
+    `chrome.storage.sync.set({ settings: { onboarded: true, pasteMode: ${JSON.stringify(mode === "auto" ? "auto" : "manual")} } })`,
+  );
   const panelUrl = `chrome-extension://${new URL(workerTarget.url).host}/ui/panel.html`;
 
   // ── Genius: the user's own song, with the edit form open ──
@@ -239,8 +243,8 @@ try {
     "[...document.querySelectorAll('button')].some((b) => b.textContent === 'Start pasting')",
     "the credits",
   );
-  // Start pasting runs by itself; Step by step is the one-press-per-field flow the manual mode checks.
-  await pClick(mode === "auto" ? "Start pasting" : "Step by step");
+  // Automatic or one press per field: the paste mode set above decides which one starts.
+  await pClick("Start pasting");
   await pUntil("document.querySelector('h2')?.textContent === 'Paste into Genius'", "the paste screen");
   check("the paste screen opens", (await pText("h2")) === "Paste into Genius");
   const total = Number(((await pText(".progress")) ?? "").match(/of (\d+)/)?.[1] ?? 0);
