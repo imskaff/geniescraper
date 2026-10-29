@@ -163,7 +163,6 @@ def test_settings_follow_the_extensions_order(walk):
         "What to collect",
         "Pasting into Genius",
         "Reading tracks",
-        "Browser extension",
         "Window",
     ]
 

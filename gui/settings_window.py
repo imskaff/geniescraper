@@ -1,8 +1,9 @@
 """
-Settings window: opens over any screen, applies and saves each change immediately.
+Settings window: opens over any screen and applies and saves what was changed when it closes.
 
-There is no Save button, so leaving the window can never lose a change, and the
-assistant keeps running underneath while settings are adjusted.
+There is no Save button, so leaving the window by any route can never lose a change, and the
+assistant keeps running underneath while settings are adjusted. The layout follows the
+browser extension's Settings: a bordered card per section, with titled groups inside a card.
 """
 
 import os
@@ -20,6 +21,11 @@ from utils.config import settings
 
 _AUTO_START_DELAYS = ("5", "10", "15", "30")
 _READS_ALL = "All"
+_AUTO_PASTE_HINT_ON = (
+    "The extension fills every field by itself and pauses if you touch Genius. "
+    "Off, you press Next or the key for each step."
+)
+_AUTO_PASTE_HINT_OFF = "Needs the browser extension: connect it below to turn this on."
 _COLLECT = (
     ("scrape_core", "Writers and producers", "Written By and Produced By"),
     ("scrape_additional", "Additional credits", "Every other role, such as engineers and musicians"),
@@ -65,16 +71,23 @@ class SettingsWindow(ctk.CTkToplevel):
         body.pack(fill="both", expand=True, padx=8, pady=(8, 0))
         body.grid_columnconfigure(0, weight=1)
         self._body = body
+        self._body_row = 0
+        self._box: ctk.CTkFrame | ctk.CTkScrollableFrame = body  # where the current card's rows go
         self._row = 0
         self.headings: list[str] = []
 
-        self._heading("What to collect")
+        # The extension's Settings, in the same order: what to collect, then pasting (with the link to the browser
+        # extension that does the pasting for you), reading, and the desktop-only window options last.
+        self._card("What to collect")
         for key, label, hint in _COLLECT:
             self._switch(key, label, hint)
 
-        self._heading("Pasting into Genius")
+        self._card("Pasting into Genius")
         self._auto_paste()
+        self._link_area()
+        self._subgroup("Keys")
         self._hotkeys()
+        self._subgroup("Typing into Genius")
         self._switch(
             "auto_tab",
             "Auto-tab",
@@ -87,13 +100,10 @@ class SettingsWindow(ctk.CTkToplevel):
         )
         self._wait_slider()
 
-        self._heading("Reading tracks")
+        self._card("Reading tracks")
         self._parallel_reads()
 
-        self._heading("Browser extension")
-        self._link_area()
-
-        self._heading("Window")
+        self._card("Window")
         self._switch("always_on_top", "Always on top", "Keeps this window above the browser while you paste.")
         self._switch(
             "compact_mode",
@@ -104,33 +114,48 @@ class SettingsWindow(ctk.CTkToplevel):
 
         self._footer(footer)
 
-    def _place(self, widget: ctk.CTkBaseClass, pady: tuple[int, int] = (0, 0)) -> None:
-        widget.grid(row=self._row, column=0, sticky="ew", padx=12, pady=pady)
+    def _place(self, widget: ctk.CTkBaseClass, pady: tuple[int, int] = (0, 0), padx: int = 16) -> None:
+        widget.grid(row=self._row, column=0, sticky="ew", padx=padx, pady=pady)
         self._row += 1
 
-    def _heading(self, text: str) -> None:
-        self.headings.append(text)
-        pad = (6, 6) if self._row == 0 else (22, 6)
+    def _card(self, title: str) -> None:
+        """A section, drawn as in the extension: a bordered card with its own heading."""
+        self.headings.append(title)
+        card = ctk.CTkFrame(
+            self._body, fg_color=theme.SURFACE, border_width=1, border_color=theme.BORDER, corner_radius=8
+        )
+        card.grid(row=self._body_row, column=0, sticky="ew", padx=12, pady=(0, 16))
+        card.grid_columnconfigure(0, weight=1)
+        self._body_row += 1
+        ctk.CTkLabel(card, text=title, font=theme.font(15, "bold"), text_color=theme.TEXT, anchor="w").grid(
+            row=0, column=0, sticky="w", padx=16, pady=(14, 4)
+        )
+        self._box = card
+        self._row = 1
+
+    def _subgroup(self, title: str) -> None:
+        """A titled group inside a card, set off from the one before it by a line."""
+        self._place(ctk.CTkFrame(self._box, height=1, fg_color=theme.BORDER, corner_radius=0), (12, 0))
         self._place(
             ctk.CTkLabel(
-                self._body, text=text.upper(), font=theme.font(11, "bold"), text_color=theme.FAINT, anchor="w"
+                self._box, text=title.upper(), font=theme.font(11, "bold"), text_color=theme.MUTED, anchor="w"
             ),
-            pad,
+            (10, 2),
         )
 
     def _setting_row(self, label: str, hint: str, wrap: int = 300) -> tuple[ctk.CTkFrame, ctk.CTkFrame]:
-        row = ctk.CTkFrame(self._body, fg_color=theme.SURFACE, corner_radius=8)
+        row = ctk.CTkFrame(self._box, fg_color="transparent", corner_radius=0)
         row.grid_columnconfigure(0, weight=1)
         text = ctk.CTkFrame(row, fg_color="transparent")
-        text.grid(row=0, column=0, sticky="ew", padx=(14, 8), pady=10)
+        text.grid(row=0, column=0, sticky="ew", padx=(0, 8), pady=6)
         ctk.CTkLabel(text, text=label, font=theme.font(13, "bold"), text_color=theme.TEXT, anchor="w").pack(anchor="w")
         self._last_hint = ctk.CTkLabel(
             text, text=hint, font=theme.font(11), text_color=theme.MUTED, anchor="w", justify="left", wraplength=wrap
         )
         self._last_hint.pack(anchor="w")
         control = ctk.CTkFrame(row, fg_color="transparent")
-        control.grid(row=0, column=1, sticky="e", padx=(0, 14))
-        self._place(row, (0, 6))
+        control.grid(row=0, column=1, sticky="e")
+        self._place(row)
         return row, control
 
     def _switch(self, key: str, label: str, hint: str) -> None:
@@ -185,12 +210,12 @@ class SettingsWindow(ctk.CTkToplevel):
         menu.pack()
 
     def _hotkeys(self) -> None:
-        box = ctk.CTkFrame(self._body, fg_color=theme.SURFACE, corner_radius=8)
+        box = ctk.CTkFrame(self._box, fg_color="transparent", corner_radius=0)
         box.grid_columnconfigure(1, weight=1)
         self._hk_buttons: dict[str, ctk.CTkButton] = {}
         for i, (key, label) in enumerate((("hotkey", "Paste next"), ("back_hotkey", "Go back one step"))):
             ctk.CTkLabel(box, text=label, font=theme.font(13, "bold"), text_color=theme.TEXT, anchor="w").grid(
-                row=i, column=0, sticky="w", padx=14, pady=(10 if i == 0 else 4, 4)
+                row=i, column=0, sticky="w", padx=0, pady=(6 if i == 0 else 4, 4)
             )
             btn = ctk.CTkButton(
                 box,
@@ -205,7 +230,7 @@ class SettingsWindow(ctk.CTkToplevel):
                 border_color=theme.BORDER,
                 command=lambda k=key: self._capture(k),
             )
-            btn.grid(row=i, column=1, sticky="e", padx=14, pady=(10 if i == 0 else 4, 4))
+            btn.grid(row=i, column=1, sticky="e", padx=0, pady=(6 if i == 0 else 4, 4))
             self._hk_buttons[key] = btn
         self._hk_msg = ctk.CTkLabel(
             box,
@@ -216,12 +241,12 @@ class SettingsWindow(ctk.CTkToplevel):
             justify="left",
             wraplength=400,
         )
-        self._hk_msg.grid(row=2, column=0, columnspan=2, sticky="w", padx=14, pady=(2, 10))
-        self._place(box, (0, 6))
+        self._hk_msg.grid(row=2, column=0, columnspan=2, sticky="w", padx=0, pady=(2, 6))
+        self._place(box)
 
     def _auto_paste(self) -> None:
         """The Auto-paste switch; it only works through the extension, so it stays grayed out until one is connected."""
-        _, control = self._setting_row("Auto-paste", "", wrap=300)
+        _, control = self._setting_row("Auto-paste", _AUTO_PASTE_HINT_OFF, wrap=300)
         self._auto_hint = self._last_hint
         self._auto_var = ctk.BooleanVar(value=settings.link_mode == "auto")
         self._auto_switch = ctk.CTkSwitch(
@@ -236,7 +261,7 @@ class SettingsWindow(ctk.CTkToplevel):
 
     def _link_area(self) -> None:
         """Pair with the browser extension and show the link's state; the pairing secret is never displayed."""
-        box = ctk.CTkFrame(self._body, fg_color=theme.SURFACE, corner_radius=8)
+        box = ctk.CTkFrame(self._box, fg_color=theme.SURFACE_HI, corner_radius=8)
         box.grid_columnconfigure(0, weight=1)
         head = ctk.CTkFrame(box, fg_color="transparent")
         head.grid(row=0, column=0, columnspan=2, sticky="ew", padx=14, pady=(12, 0))
@@ -247,10 +272,10 @@ class SettingsWindow(ctk.CTkToplevel):
         )
         self._link_state_lbl.pack(side="left", padx=(4, 0))
         self._link_hint_lbl = ctk.CTkLabel(
-            box, text="", font=theme.font(11), text_color=theme.MUTED, anchor="w", justify="left", wraplength=400
+            box, text="", font=theme.font(11), text_color=theme.MUTED, anchor="w", justify="left", wraplength=360
         )
         self._link_hint_lbl.grid(row=1, column=0, columnspan=2, sticky="w", padx=14, pady=(4, 6))
-        self._link_code_box = ctk.CTkFrame(box, fg_color=theme.SURFACE_HI, corner_radius=8)
+        self._link_code_box = ctk.CTkFrame(box, fg_color=theme.SURFACE, corner_radius=8)
         self._link_code_lbl = ctk.CTkLabel(
             self._link_code_box, text="", font=theme.display(30), text_color=theme.ACCENT, anchor="center"
         )
@@ -281,7 +306,7 @@ class SettingsWindow(ctk.CTkToplevel):
             command=self._link_forget,
         )
         self._link_forget_btn.pack(side="left")
-        self._place(box, (0, 6))
+        self._place(box, (2, 8))  # directly under the Auto-paste switch it belongs to
         self.refresh_link()
 
     def refresh_link(self) -> None:
@@ -322,15 +347,12 @@ class SettingsWindow(ctk.CTkToplevel):
         if not self._auto_switch.winfo_exists():
             return
         connected = self._link.state is LinkState.CONNECTED
-        self._auto_switch.configure(state="normal" if connected else "disabled")
-        self._auto_hint.configure(
-            text=(
-                "The extension fills every field by itself and pauses if you touch Genius. "
-                "Off, you press Next or the key for each step."
-                if connected
-                else "Needs the browser extension. Connect it below to turn this on."
-            )
+        self._auto_switch.configure(
+            state="normal" if connected else "disabled",
+            progress_color=theme.ACCENT if connected else theme.BORDER,  # a disabled switch must not look on
+            button_color=theme.TEXT if connected else theme.FAINT,
         )
+        self._auto_hint.configure(text=_AUTO_PASTE_HINT_ON if connected else _AUTO_PASTE_HINT_OFF)
 
     def _link_connect(self) -> None:
         self._link.begin_pairing()
