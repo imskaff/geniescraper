@@ -33,8 +33,19 @@ from scraper.deezer import (
 )
 from scraper.models import Credit, SongCredits, _extract_labels  # pyright: ignore[reportPrivateUsage]
 from scraper.text import core_title_words, words
+from scraper.track_health import track_health
+from scraper.youtube import (
+    _iter_videos,  # pyright: ignore[reportPrivateUsage]
+    _score_audio,  # pyright: ignore[reportPrivateUsage]
+    _score_lyric,  # pyright: ignore[reportPrivateUsage]
+    _score_mv,  # pyright: ignore[reportPrivateUsage]
+)
+from scraper.youtube_link import parse_youtube_link, youtube_search_url
 
-OUTPUT = Path(__file__).resolve().parent.parent / "extension" / "test" / "vectors.json"
+ROOT = Path(__file__).resolve().parent.parent
+OUTPUT = ROOT / "extension" / "test" / "vectors.json"
+YOUTUBE_GOLDEN = ROOT / "tests" / "golden" / "youtube.json"
+YOUTUBE_FIXTURES = ROOT / "tests" / "fixtures" / "lookups" / "youtube"
 
 QUEUE_KINDS = [
     "written_by",
@@ -229,6 +240,121 @@ def _instruction_cases() -> list[dict[str, Any]]:
     return cases
 
 
+_VIDEO = "BY_XwvKogC8"
+YOUTUBE_LINKS = [
+    f"https://www.youtube.com/watch?v={_VIDEO}",
+    f"  https://www.youtube.com/watch?v={_VIDEO}  ",
+    f"http://www.youtube.com/watch?v={_VIDEO}",
+    f"https://youtube.com/watch?v={_VIDEO}&t=42s&list=PL123",
+    f"https://m.youtube.com/watch?v={_VIDEO}",
+    f"https://music.youtube.com/watch?v={_VIDEO}&si=abc",
+    f"https://youtu.be/{_VIDEO}",
+    f"https://youtu.be/{_VIDEO}?si=xyz&t=3",
+    f"youtu.be/{_VIDEO}",
+    f"www.youtube.com/watch?v={_VIDEO}",
+    f"https://www.youtube.com/shorts/{_VIDEO}",
+    f"https://www.youtube.com/embed/{_VIDEO}",
+    f"https://www.youtube.com/live/{_VIDEO}?feature=share",
+    f"HTTPS://WWW.YOUTUBE.COM/watch?v={_VIDEO}",
+    f"https://www.youtube.com:443/watch?v={_VIDEO}",
+    f"https://www.youtube.com\\watch?v={_VIDEO}",
+    f"https://www.youtube.com/watch?v={_VIDEO}\n",
+    f"https://www.you\ttube.com/watch?v={_VIDEO}",
+    f"https://www.youtube.com/watch?v=&v={_VIDEO}",
+    f"https://www.youtube.com/watch?x=1&v={_VIDEO}#t=3",
+    "",
+    "   ",
+    "hello",
+    f"https://example.com/watch?v={_VIDEO}",
+    f"https://www.youtube.com.evil.example/watch?v={_VIDEO}",
+    f"https://evil.example/https://www.youtube.com/watch?v={_VIDEO}",
+    f"https://user:pass@www.youtube.com/watch?v={_VIDEO}",
+    "https://www.youtube.com/watch",
+    "https://www.youtube.com/watch?v=short",
+    f"https://www.youtube.com/watch?v={_VIDEO}extra",
+    "https://www.youtube.com/watch?v=BY_XwvKogC!",
+    "https://www.youtube.com/playlist?list=PLabcdefghijk",
+    "https://www.youtube.com/results?search_query=billie",
+    "https://www.youtube.com/@BillieEilish",
+    "https://youtu.be/",
+    "https://youtu.be",
+    "javascript:alert(1)",
+    f"ftp://www.youtube.com/watch?v={_VIDEO}",
+    '<script>alert("x")</script>',
+    f"https://www.youtube.com/watch?v={_VIDEO}" + "a" * 400,
+    f"https://www.youtube.com:99999/watch?v={_VIDEO}",
+    f"https://www.youtube.com:abc/watch?v={_VIDEO}",
+    f"https://[::1/watch?v={_VIDEO}",
+    f"https://www.youtube.com./watch?v={_VIDEO}",
+]
+
+YOUTUBE_SEARCHES = [
+    ("Don't Smile & Go", "Billie  Eilish"),
+    ("//evil.example/?x=1#", "a/b"),
+    ("a~b*c", "d e"),
+    ("DÁKITI", "Bad Bunny & Jhay Cortez"),
+    ("FE!N", "Travis Scott"),
+    ("", ""),
+]
+
+
+def _track_health_cases() -> list[dict[str, Any]]:
+    cases: list[dict[str, Any]] = []
+    for status in ("pending", "loading", "error", "unavailable"):
+        cases.append({"status": status, "song": None, "wants": [True, True, True], "searching": False})
+    cases.append({"status": "done", "song": None, "wants": [True, True, True], "searching": False})
+    for name in SONGS:
+        for wants in itertools.product([True, False], repeat=3):
+            for searching in (False, True):
+                cases.append({"status": "done", "song": name, "wants": list(wants), "searching": searching})
+    for case in cases:
+        song = SONGS[case["song"]] if case["song"] else None
+        copyright_on, cover_on, youtube_on = case["wants"]
+        health = track_health(
+            case["status"],
+            song,
+            wants_copyright=copyright_on,
+            wants_cover_art=cover_on,
+            wants_youtube=youtube_on,
+            youtube_searching=case["searching"],
+        )
+        case["output"] = {"level": health.level, "label": health.label, "missing": list(health.missing)}
+    return cases
+
+
+def _youtube_scores() -> dict[str, dict[str, list[int]]]:
+    """For every golden song, the [lyric, audio, music video] score of each video of its saved search results.
+
+    The extension reads the same saved pages, so a scorer that drifts from the reference fails there. Inputs are not
+    repeated here: they are the pages under tests/fixtures/lookups/youtube.
+    """
+    golden = json.loads(YOUTUBE_GOLDEN.read_text(encoding="utf-8"))
+    scores: dict[str, dict[str, list[int]]] = {}
+    for entry in golden:
+        fixture = json.loads((YOUTUBE_FIXTURES / f"{entry['id']}.json").read_text(encoding="utf-8"))
+        title, artist = entry["title"], entry["artist"]
+        rows: dict[str, list[int]] = {}
+        for query in sorted(fixture["searches"]):
+            for video in list(_iter_videos(fixture["searches"][query]))[:10]:
+                rows.setdefault(
+                    video.id,
+                    [
+                        _score_lyric(video.title, video.channel, artist, title, official_artist=video.official_artist),
+                        _score_audio(
+                            video.title,
+                            video.channel,
+                            artist,
+                            title,
+                            official_artist=video.official_artist,
+                            snippet=video.snippet,
+                        ),
+                        _score_mv(video.title, video.channel, artist, title, verified=video.verified),
+                    ],
+                )
+        scores[entry["id"]] = rows
+    return scores
+
+
 def build_vectors() -> dict[str, Any]:
     return {
         "songs": {name: song.model_dump() for name, song in SONGS.items()},
@@ -262,6 +388,13 @@ def build_vectors() -> dict[str, Any]:
         ],
         "words": [{"input": t, "output": words(t)} for t in TITLES],
         "core_title_words": [{"input": t, "output": core_title_words(t)} for t in TITLES],
+        "parse_youtube_link": [{"input": u, "output": parse_youtube_link(u)} for u in YOUTUBE_LINKS],
+        "youtube_search_url": [
+            {"title": title, "artist": artist, "output": youtube_search_url(title, artist)}
+            for title, artist in YOUTUBE_SEARCHES
+        ],
+        "track_health": _track_health_cases(),
+        "youtube_scores": _youtube_scores(),
     }
 
 

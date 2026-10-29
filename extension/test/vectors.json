@@ -9871,5 +9871,3544 @@
    "input": "",
    "output": []
   }
- ]
+ ],
+ "parse_youtube_link": [
+  {
+   "input": "https://www.youtube.com/watch?v=BY_XwvKogC8",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "  https://www.youtube.com/watch?v=BY_XwvKogC8  ",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "http://www.youtube.com/watch?v=BY_XwvKogC8",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "https://youtube.com/watch?v=BY_XwvKogC8&t=42s&list=PL123",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "https://m.youtube.com/watch?v=BY_XwvKogC8",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "https://music.youtube.com/watch?v=BY_XwvKogC8&si=abc",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "https://youtu.be/BY_XwvKogC8",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "https://youtu.be/BY_XwvKogC8?si=xyz&t=3",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "youtu.be/BY_XwvKogC8",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "www.youtube.com/watch?v=BY_XwvKogC8",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "https://www.youtube.com/shorts/BY_XwvKogC8",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "https://www.youtube.com/embed/BY_XwvKogC8",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "https://www.youtube.com/live/BY_XwvKogC8?feature=share",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "HTTPS://WWW.YOUTUBE.COM/watch?v=BY_XwvKogC8",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "https://www.youtube.com:443/watch?v=BY_XwvKogC8",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "https://www.youtube.com\\watch?v=BY_XwvKogC8",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "https://www.youtube.com/watch?v=BY_XwvKogC8\n",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "https://www.you\ttube.com/watch?v=BY_XwvKogC8",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "https://www.youtube.com/watch?v=&v=BY_XwvKogC8",
+   "output": null
+  },
+  {
+   "input": "https://www.youtube.com/watch?x=1&v=BY_XwvKogC8#t=3",
+   "output": "https://www.youtube.com/watch?v=BY_XwvKogC8"
+  },
+  {
+   "input": "",
+   "output": null
+  },
+  {
+   "input": "   ",
+   "output": null
+  },
+  {
+   "input": "hello",
+   "output": null
+  },
+  {
+   "input": "https://example.com/watch?v=BY_XwvKogC8",
+   "output": null
+  },
+  {
+   "input": "https://www.youtube.com.evil.example/watch?v=BY_XwvKogC8",
+   "output": null
+  },
+  {
+   "input": "https://evil.example/https://www.youtube.com/watch?v=BY_XwvKogC8",
+   "output": null
+  },
+  {
+   "input": "https://user:pass@www.youtube.com/watch?v=BY_XwvKogC8",
+   "output": null
+  },
+  {
+   "input": "https://www.youtube.com/watch",
+   "output": null
+  },
+  {
+   "input": "https://www.youtube.com/watch?v=short",
+   "output": null
+  },
+  {
+   "input": "https://www.youtube.com/watch?v=BY_XwvKogC8extra",
+   "output": null
+  },
+  {
+   "input": "https://www.youtube.com/watch?v=BY_XwvKogC!",
+   "output": null
+  },
+  {
+   "input": "https://www.youtube.com/playlist?list=PLabcdefghijk",
+   "output": null
+  },
+  {
+   "input": "https://www.youtube.com/results?search_query=billie",
+   "output": null
+  },
+  {
+   "input": "https://www.youtube.com/@BillieEilish",
+   "output": null
+  },
+  {
+   "input": "https://youtu.be/",
+   "output": null
+  },
+  {
+   "input": "https://youtu.be",
+   "output": null
+  },
+  {
+   "input": "javascript:alert(1)",
+   "output": null
+  },
+  {
+   "input": "ftp://www.youtube.com/watch?v=BY_XwvKogC8",
+   "output": null
+  },
+  {
+   "input": "<script>alert(\"x\")</script>",
+   "output": null
+  },
+  {
+   "input": "https://www.youtube.com/watch?v=BY_XwvKogC8aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "output": null
+  },
+  {
+   "input": "https://www.youtube.com:99999/watch?v=BY_XwvKogC8",
+   "output": null
+  },
+  {
+   "input": "https://www.youtube.com:abc/watch?v=BY_XwvKogC8",
+   "output": null
+  },
+  {
+   "input": "https://[::1/watch?v=BY_XwvKogC8",
+   "output": null
+  },
+  {
+   "input": "https://www.youtube.com./watch?v=BY_XwvKogC8",
+   "output": null
+  }
+ ],
+ "youtube_search_url": [
+  {
+   "title": "Don't Smile & Go",
+   "artist": "Billie  Eilish",
+   "output": "https://www.youtube.com/results?search_query=Billie+Eilish+Don%27t+Smile+%26+Go+official+music+video"
+  },
+  {
+   "title": "//evil.example/?x=1#",
+   "artist": "a/b",
+   "output": "https://www.youtube.com/results?search_query=a%2Fb+%2F%2Fevil.example%2F%3Fx%3D1%23+official+music+video"
+  },
+  {
+   "title": "a~b*c",
+   "artist": "d e",
+   "output": "https://www.youtube.com/results?search_query=d+e+a%7Eb*c+official+music+video"
+  },
+  {
+   "title": "DÁKITI",
+   "artist": "Bad Bunny & Jhay Cortez",
+   "output": "https://www.youtube.com/results?search_query=Bad+Bunny+%26+Jhay+Cortez+D%C3%81KITI+official+music+video"
+  },
+  {
+   "title": "FE!N",
+   "artist": "Travis Scott",
+   "output": "https://www.youtube.com/results?search_query=Travis+Scott+FE%21N+official+music+video"
+  },
+  {
+   "title": "",
+   "artist": "",
+   "output": "https://www.youtube.com/results?search_query=official+music+video"
+  }
+ ],
+ "track_health": [
+  {
+   "status": "pending",
+   "song": null,
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "waiting",
+    "label": "Waiting",
+    "missing": []
+   }
+  },
+  {
+   "status": "loading",
+   "song": null,
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "working",
+    "label": "Reading",
+    "missing": []
+   }
+  },
+  {
+   "status": "error",
+   "song": null,
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "error",
+    "label": "Failed",
+    "missing": []
+   }
+  },
+  {
+   "status": "unavailable",
+   "song": null,
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "none",
+    "label": "No page",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": null,
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "error",
+    "label": "Failed",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "empty",
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, copyright, cover art, YouTube link",
+    "missing": [
+     "credits",
+     "copyright",
+     "cover art",
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "empty",
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, copyright, cover art",
+    "missing": [
+     "credits",
+     "copyright",
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "empty",
+   "wants": [
+    true,
+    true,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, copyright, cover art",
+    "missing": [
+     "credits",
+     "copyright",
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "empty",
+   "wants": [
+    true,
+    true,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, copyright, cover art",
+    "missing": [
+     "credits",
+     "copyright",
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "empty",
+   "wants": [
+    true,
+    false,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, copyright, YouTube link",
+    "missing": [
+     "credits",
+     "copyright",
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "empty",
+   "wants": [
+    true,
+    false,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, copyright",
+    "missing": [
+     "credits",
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "empty",
+   "wants": [
+    true,
+    false,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, copyright",
+    "missing": [
+     "credits",
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "empty",
+   "wants": [
+    true,
+    false,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, copyright",
+    "missing": [
+     "credits",
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "empty",
+   "wants": [
+    false,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, cover art, YouTube link",
+    "missing": [
+     "credits",
+     "cover art",
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "empty",
+   "wants": [
+    false,
+    true,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, cover art",
+    "missing": [
+     "credits",
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "empty",
+   "wants": [
+    false,
+    true,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, cover art",
+    "missing": [
+     "credits",
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "empty",
+   "wants": [
+    false,
+    true,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, cover art",
+    "missing": [
+     "credits",
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "empty",
+   "wants": [
+    false,
+    false,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, YouTube link",
+    "missing": [
+     "credits",
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "empty",
+   "wants": [
+    false,
+    false,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits",
+    "missing": [
+     "credits"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "empty",
+   "wants": [
+    false,
+    false,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits",
+    "missing": [
+     "credits"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "empty",
+   "wants": [
+    false,
+    false,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits",
+    "missing": [
+     "credits"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "core_only",
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: copyright, cover art, YouTube link",
+    "missing": [
+     "copyright",
+     "cover art",
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "core_only",
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: copyright, cover art",
+    "missing": [
+     "copyright",
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "core_only",
+   "wants": [
+    true,
+    true,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: copyright, cover art",
+    "missing": [
+     "copyright",
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "core_only",
+   "wants": [
+    true,
+    true,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: copyright, cover art",
+    "missing": [
+     "copyright",
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "core_only",
+   "wants": [
+    true,
+    false,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: copyright, YouTube link",
+    "missing": [
+     "copyright",
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "core_only",
+   "wants": [
+    true,
+    false,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: copyright",
+    "missing": [
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "core_only",
+   "wants": [
+    true,
+    false,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: copyright",
+    "missing": [
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "core_only",
+   "wants": [
+    true,
+    false,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: copyright",
+    "missing": [
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "core_only",
+   "wants": [
+    false,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art, YouTube link",
+    "missing": [
+     "cover art",
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "core_only",
+   "wants": [
+    false,
+    true,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "core_only",
+   "wants": [
+    false,
+    true,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "core_only",
+   "wants": [
+    false,
+    true,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "core_only",
+   "wants": [
+    false,
+    false,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: YouTube link",
+    "missing": [
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "core_only",
+   "wants": [
+    false,
+    false,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "working",
+    "label": "Finding YouTube link",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "core_only",
+   "wants": [
+    false,
+    false,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "core_only",
+   "wants": [
+    false,
+    false,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "full",
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "full",
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "full",
+   "wants": [
+    true,
+    true,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "full",
+   "wants": [
+    true,
+    true,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "full",
+   "wants": [
+    true,
+    false,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "full",
+   "wants": [
+    true,
+    false,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "full",
+   "wants": [
+    true,
+    false,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "full",
+   "wants": [
+    true,
+    false,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "full",
+   "wants": [
+    false,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "full",
+   "wants": [
+    false,
+    true,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "full",
+   "wants": [
+    false,
+    true,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "full",
+   "wants": [
+    false,
+    true,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "full",
+   "wants": [
+    false,
+    false,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "full",
+   "wants": [
+    false,
+    false,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "full",
+   "wants": [
+    false,
+    false,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "full",
+   "wants": [
+    false,
+    false,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "padded_roles",
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: copyright, cover art, YouTube link",
+    "missing": [
+     "copyright",
+     "cover art",
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "padded_roles",
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: copyright, cover art",
+    "missing": [
+     "copyright",
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "padded_roles",
+   "wants": [
+    true,
+    true,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: copyright, cover art",
+    "missing": [
+     "copyright",
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "padded_roles",
+   "wants": [
+    true,
+    true,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: copyright, cover art",
+    "missing": [
+     "copyright",
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "padded_roles",
+   "wants": [
+    true,
+    false,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: copyright, YouTube link",
+    "missing": [
+     "copyright",
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "padded_roles",
+   "wants": [
+    true,
+    false,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: copyright",
+    "missing": [
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "padded_roles",
+   "wants": [
+    true,
+    false,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: copyright",
+    "missing": [
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "padded_roles",
+   "wants": [
+    true,
+    false,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: copyright",
+    "missing": [
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "padded_roles",
+   "wants": [
+    false,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art, YouTube link",
+    "missing": [
+     "cover art",
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "padded_roles",
+   "wants": [
+    false,
+    true,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "padded_roles",
+   "wants": [
+    false,
+    true,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "padded_roles",
+   "wants": [
+    false,
+    true,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "padded_roles",
+   "wants": [
+    false,
+    false,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: YouTube link",
+    "missing": [
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "padded_roles",
+   "wants": [
+    false,
+    false,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "working",
+    "label": "Finding YouTube link",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "padded_roles",
+   "wants": [
+    false,
+    false,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "padded_roles",
+   "wants": [
+    false,
+    false,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "phono_only",
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art, YouTube link",
+    "missing": [
+     "cover art",
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "phono_only",
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "phono_only",
+   "wants": [
+    true,
+    true,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "phono_only",
+   "wants": [
+    true,
+    true,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "phono_only",
+   "wants": [
+    true,
+    false,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: YouTube link",
+    "missing": [
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "phono_only",
+   "wants": [
+    true,
+    false,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "working",
+    "label": "Finding YouTube link",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "phono_only",
+   "wants": [
+    true,
+    false,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "phono_only",
+   "wants": [
+    true,
+    false,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "phono_only",
+   "wants": [
+    false,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art, YouTube link",
+    "missing": [
+     "cover art",
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "phono_only",
+   "wants": [
+    false,
+    true,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "phono_only",
+   "wants": [
+    false,
+    true,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "phono_only",
+   "wants": [
+    false,
+    true,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "phono_only",
+   "wants": [
+    false,
+    false,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: YouTube link",
+    "missing": [
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "phono_only",
+   "wants": [
+    false,
+    false,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "working",
+    "label": "Finding YouTube link",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "phono_only",
+   "wants": [
+    false,
+    false,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "phono_only",
+   "wants": [
+    false,
+    false,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "media_only",
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, copyright",
+    "missing": [
+     "credits",
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "media_only",
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, copyright",
+    "missing": [
+     "credits",
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "media_only",
+   "wants": [
+    true,
+    true,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, copyright",
+    "missing": [
+     "credits",
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "media_only",
+   "wants": [
+    true,
+    true,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, copyright",
+    "missing": [
+     "credits",
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "media_only",
+   "wants": [
+    true,
+    false,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, copyright",
+    "missing": [
+     "credits",
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "media_only",
+   "wants": [
+    true,
+    false,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, copyright",
+    "missing": [
+     "credits",
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "media_only",
+   "wants": [
+    true,
+    false,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, copyright",
+    "missing": [
+     "credits",
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "media_only",
+   "wants": [
+    true,
+    false,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits, copyright",
+    "missing": [
+     "credits",
+     "copyright"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "media_only",
+   "wants": [
+    false,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits",
+    "missing": [
+     "credits"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "media_only",
+   "wants": [
+    false,
+    true,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits",
+    "missing": [
+     "credits"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "media_only",
+   "wants": [
+    false,
+    true,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits",
+    "missing": [
+     "credits"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "media_only",
+   "wants": [
+    false,
+    true,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits",
+    "missing": [
+     "credits"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "media_only",
+   "wants": [
+    false,
+    false,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits",
+    "missing": [
+     "credits"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "media_only",
+   "wants": [
+    false,
+    false,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits",
+    "missing": [
+     "credits"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "media_only",
+   "wants": [
+    false,
+    false,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits",
+    "missing": [
+     "credits"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "media_only",
+   "wants": [
+    false,
+    false,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: credits",
+    "missing": [
+     "credits"
+    ]
+   }
+  }
+ ],
+ "youtube_scores": {
+  "sza-sos-t1": {
+   "WxflcXmtVTM": [
+    -1,
+    2,
+    1
+   ],
+   "tafAB36p2sc": [
+    -1,
+    1,
+    1
+   ],
+   "KVOUJe1-1Ro": [
+    -1,
+    -1,
+    -1
+   ],
+   "GpDhsfSQVeE": [
+    3,
+    -1,
+    -1
+   ],
+   "rwwsLML-mSM": [
+    -1,
+    -1,
+    -1
+   ],
+   "Sv5yCzPCkv8": [
+    -1,
+    -1,
+    -1
+   ],
+   "MtUefXEQRAY": [
+    -1,
+    -1,
+    -1
+   ],
+   "jCyXLGhU4KU": [
+    -1,
+    -1,
+    -1
+   ],
+   "Z-T_O_vl-8Y": [
+    -1,
+    -1,
+    -1
+   ],
+   "90MtTz2zwA0": [
+    -1,
+    -1,
+    -1
+   ],
+   "Yd0IYrgrss4": [
+    -1,
+    -1,
+    -1
+   ],
+   "zc0vRDh1ECA": [
+    -1,
+    -1,
+    -1
+   ],
+   "hASam1pnc2U": [
+    -1,
+    -1,
+    -1
+   ],
+   "uHhtISjO6WI": [
+    -1,
+    -1,
+    -1
+   ],
+   "MSRcC626prw": [
+    -1,
+    -1,
+    -1
+   ],
+   "s8EU5Sm9GQY": [
+    -1,
+    -1,
+    -1
+   ],
+   "LDY_XyxBu8A": [
+    -1,
+    -1,
+    -1
+   ],
+   "NNd_ufPG3x4": [
+    -1,
+    -1,
+    -1
+   ],
+   "1Wdzodfx87s": [
+    -1,
+    -1,
+    -1
+   ],
+   "2p3zZoraK9g": [
+    -1,
+    -1,
+    -1
+   ],
+   "COntxzQBqPo": [
+    -1,
+    -1,
+    -1
+   ],
+   "fC06V0ZLGwg": [
+    -1,
+    -1,
+    -1
+   ],
+   "MIOtiFP4GHI": [
+    -1,
+    -1,
+    -1
+   ],
+   "5yq5HtfzAIs": [
+    -1,
+    -1,
+    -1
+   ],
+   "IXmF4GbA86E": [
+    -1,
+    -1,
+    -1
+   ],
+   "hdFDrjfW548": [
+    -1,
+    -1,
+    -1
+   ],
+   "8RdnZpZUmCA": [
+    -1,
+    -1,
+    -1
+   ]
+  },
+  "rodrigo-sour-t6": {
+   "gNi_6U5Pm_o": [
+    -1,
+    -1,
+    3
+   ],
+   "tmIO0eSAXrw": [
+    -1,
+    -1,
+    -1
+   ],
+   "7yab-tkkH_Y": [
+    -1,
+    -1,
+    -1
+   ],
+   "aeDdS9aIpck": [
+    -1,
+    1,
+    1
+   ],
+   "AdoLMCnU1F0": [
+    -1,
+    -1,
+    -1
+   ],
+   "jiFDWd8dn1o": [
+    -1,
+    -1,
+    -1
+   ],
+   "o6Tf-xcVB_o": [
+    3,
+    -1,
+    -1
+   ],
+   "V9GaVBdrZ78": [
+    -1,
+    -1,
+    -1
+   ],
+   "hSmdRtQDKvw": [
+    -1,
+    -1,
+    -1
+   ],
+   "e6gTvKBD91U": [
+    -1,
+    -1,
+    -1
+   ],
+   "bkB-zCn9EVU": [
+    -1,
+    -1,
+    -1
+   ],
+   "b6uS9pwPzuc": [
+    -1,
+    -1,
+    -1
+   ],
+   "DDAqLSCvA4A": [
+    -1,
+    -1,
+    -1
+   ],
+   "wZA6ZojCwK8": [
+    -1,
+    -1,
+    -1
+   ],
+   "uF1x3WuWN1g": [
+    -1,
+    -1,
+    -1
+   ],
+   "XBSZ5yvB5mo": [
+    -1,
+    -1,
+    -1
+   ],
+   "tNJhkrpLGT8": [
+    -1,
+    -1,
+    -1
+   ]
+  },
+  "eilish-hmhas-t3": {
+   "BY_XwvKogC8": [
+    -1,
+    -1,
+    3
+   ],
+   "e_AZJzYe7CU": [
+    3,
+    -1,
+    -1
+   ],
+   "s0Ru5mgwXXM": [
+    -1,
+    -1,
+    -1
+   ],
+   "eoe4KVFKjuM": [
+    -1,
+    -1,
+    -1
+   ],
+   "soL9nvyKJrk": [
+    -1,
+    -1,
+    -1
+   ],
+   "lehnJSUINEU": [
+    -1,
+    -1,
+    -1
+   ],
+   "R7hRQUYStJM": [
+    -1,
+    -1,
+    -1
+   ],
+   "M2_7WerxGAM": [
+    -1,
+    -1,
+    -1
+   ],
+   "wHbC6LqCNjg": [
+    -1,
+    -1,
+    -1
+   ],
+   "O-VJ1-hBYk8": [
+    -1,
+    -1,
+    -1
+   ],
+   "dhcNUYw-OoU": [
+    -1,
+    -1,
+    -1
+   ],
+   "2ac6ljMN_Wo": [
+    -1,
+    -1,
+    -1
+   ],
+   "hRUOWjt1FO4": [
+    -1,
+    -1,
+    -1
+   ],
+   "eczkCvwCx2w": [
+    -1,
+    -1,
+    -1
+   ],
+   "CUhQYaXm7Ok": [
+    -1,
+    -1,
+    -1
+   ],
+   "ZnU9IaMzYKA": [
+    -1,
+    -1,
+    -1
+   ],
+   "uuRvV8HcgKg": [
+    -1,
+    -1,
+    -1
+   ]
+  },
+  "swift-ttpd-t1": {
+   "b7kmP1fsGg8": [
+    -1,
+    2,
+    1
+   ],
+   "q3zqJs7JUCQ": [
+    -1,
+    -1,
+    3
+   ],
+   "HzsQHfBA3MY": [
+    3,
+    -1,
+    -1
+   ],
+   "V-iZOohyftg": [
+    -1,
+    -1,
+    -1
+   ],
+   "HZIg5sQrPAM": [
+    -1,
+    -1,
+    -1
+   ],
+   "0GQ_QeZxdzo": [
+    -1,
+    -1,
+    -1
+   ],
+   "iW7Xl7Kon_s": [
+    -1,
+    -1,
+    -1
+   ],
+   "KJXP13hqf2I": [
+    -1,
+    -1,
+    -1
+   ],
+   "w04K8z_nfDI": [
+    -1,
+    -1,
+    -1
+   ],
+   "7shQ44GxAPU": [
+    -1,
+    -1,
+    -1
+   ],
+   "VCqtap77PGs": [
+    -1,
+    -1,
+    -1
+   ],
+   "ge0Ho6JVHJs": [
+    -1,
+    -1,
+    3
+   ],
+   "0PaQ4QsRa44": [
+    -1,
+    -1,
+    -1
+   ],
+   "d_kisEzQ9vE": [
+    -1,
+    -1,
+    -1
+   ],
+   "GiIFOgQsiws": [
+    -1,
+    -1,
+    -1
+   ],
+   "h1T4ZKkSu3g": [
+    -1,
+    -1,
+    -1
+   ]
+  },
+  "kendrick-nlu-single": {
+   "H58vbez_m4E": [
+    -1,
+    2,
+    1
+   ],
+   "3wkNLqetX0M": [
+    -1,
+    -1,
+    -1
+   ],
+   "c82oYGeWTx4": [
+    -1,
+    -1,
+    -1
+   ],
+   "T6eK-2OQtew": [
+    -1,
+    2,
+    1
+   ],
+   "U0HhKFBhVTA": [
+    -1,
+    -1,
+    -1
+   ],
+   "2uFPwJWu_xk": [
+    -1,
+    -1,
+    -1
+   ],
+   "Gi5D4UVM5TQ": [
+    -1,
+    -1,
+    -1
+   ],
+   "KDorKy-13ak": [
+    -1,
+    -1,
+    -1
+   ],
+   "QAPZCRQhHVI": [
+    -1,
+    -1,
+    -1
+   ],
+   "gNBE0Mcsp9k": [
+    -1,
+    -1,
+    -1
+   ],
+   "myalRbYti6A": [
+    -1,
+    -1,
+    -1
+   ],
+   "eRGbycX4nQw": [
+    -1,
+    -1,
+    -1
+   ],
+   "Xx1SrbxH1JU": [
+    -1,
+    1,
+    1
+   ],
+   "Yar-WWUnDlw": [
+    -1,
+    -1,
+    -1
+   ],
+   "VJdHSaWd-EU": [
+    -1,
+    -1,
+    -1
+   ],
+   "U0KTVVMvcc4": [
+    -1,
+    -1,
+    -1
+   ],
+   "fAqa1ozCuj8": [
+    -1,
+    -1,
+    -1
+   ],
+   "so7xOJZC6Qk": [
+    -1,
+    -1,
+    -1
+   ],
+   "9cXzzKFN0j0": [
+    -1,
+    -1,
+    -1
+   ],
+   "zB1AWliaWuM": [
+    -1,
+    -1,
+    -1
+   ],
+   "_HtmXTNn2Rw": [
+    -1,
+    -1,
+    -1
+   ],
+   "WLJb_zyigQo": [
+    -1,
+    -1,
+    -1
+   ]
+  },
+  "kendrick-nlu-song": {
+   "H58vbez_m4E": [
+    -1,
+    2,
+    1
+   ],
+   "3wkNLqetX0M": [
+    -1,
+    -1,
+    -1
+   ],
+   "c82oYGeWTx4": [
+    -1,
+    -1,
+    -1
+   ],
+   "U0HhKFBhVTA": [
+    -1,
+    -1,
+    -1
+   ],
+   "T6eK-2OQtew": [
+    -1,
+    2,
+    1
+   ],
+   "2uFPwJWu_xk": [
+    -1,
+    -1,
+    -1
+   ],
+   "Gi5D4UVM5TQ": [
+    -1,
+    -1,
+    -1
+   ],
+   "KDorKy-13ak": [
+    -1,
+    -1,
+    -1
+   ],
+   "QAPZCRQhHVI": [
+    -1,
+    -1,
+    -1
+   ],
+   "gNBE0Mcsp9k": [
+    -1,
+    -1,
+    -1
+   ],
+   "myalRbYti6A": [
+    -1,
+    -1,
+    -1
+   ],
+   "eRGbycX4nQw": [
+    -1,
+    -1,
+    -1
+   ],
+   "Xx1SrbxH1JU": [
+    -1,
+    1,
+    1
+   ],
+   "Yar-WWUnDlw": [
+    -1,
+    -1,
+    -1
+   ],
+   "VJdHSaWd-EU": [
+    -1,
+    -1,
+    -1
+   ],
+   "U0KTVVMvcc4": [
+    -1,
+    -1,
+    -1
+   ],
+   "9cXzzKFN0j0": [
+    -1,
+    -1,
+    -1
+   ],
+   "so7xOJZC6Qk": [
+    -1,
+    -1,
+    -1
+   ],
+   "d6WiBXd3xfI": [
+    -1,
+    -1,
+    -1
+   ],
+   "zB1AWliaWuM": [
+    -1,
+    -1,
+    -1
+   ],
+   "_HtmXTNn2Rw": [
+    -1,
+    -1,
+    -1
+   ],
+   "WLJb_zyigQo": [
+    -1,
+    -1,
+    -1
+   ]
+  },
+  "rosalia-con-altura": {
+   "p7bfOZek9t4": [
+    -1,
+    -1,
+    3
+   ],
+   "FELWPcA2q5s": [
+    -1,
+    -1,
+    -1
+   ],
+   "Hcu-fkIMHFY": [
+    -1,
+    -1,
+    -1
+   ],
+   "1_J8-pySqVg": [
+    -1,
+    -1,
+    -1
+   ],
+   "z--dRfi3tMk": [
+    -1,
+    -1,
+    -1
+   ],
+   "WmRisl6VDg4": [
+    -1,
+    -1,
+    -1
+   ],
+   "jPEouX2ZCf8": [
+    -1,
+    -1,
+    -1
+   ],
+   "st85WPu0PVU": [
+    -1,
+    -1,
+    -1
+   ],
+   "kpCSDdTBfYA": [
+    -1,
+    -1,
+    -1
+   ],
+   "EdUA60L6HBg": [
+    -1,
+    -1,
+    -1
+   ],
+   "fIasOtecoGw": [
+    -1,
+    -1,
+    -1
+   ],
+   "2nMi72fSUdE": [
+    -1,
+    -1,
+    -1
+   ],
+   "d2Qhvj3B8qY": [
+    -1,
+    -1,
+    -1
+   ],
+   "S6vRPYEKtt4": [
+    -1,
+    -1,
+    -1
+   ],
+   "ZJ9uQ8plAoU": [
+    -1,
+    -1,
+    -1
+   ],
+   "xsfXBHrXOT8": [
+    -1,
+    -1,
+    -1
+   ],
+   "D9xXXEBrJe8": [
+    -1,
+    -1,
+    -1
+   ],
+   "8jqBCtJ2HPs": [
+    -1,
+    -1,
+    -1
+   ],
+   "OtQmHqAz6Vk": [
+    -1,
+    -1,
+    -1
+   ],
+   "AhkBFAigjLI": [
+    -1,
+    -1,
+    -1
+   ],
+   "I4uvEtLlSF8": [
+    -1,
+    -1,
+    -1
+   ],
+   "Mq8FOjugWdQ": [
+    -1,
+    -1,
+    -1
+   ],
+   "OtIZO-CYUH0": [
+    -1,
+    -1,
+    -1
+   ]
+  },
+  "extra-adele-hello": {
+   "YQHsXMglC9A": [
+    -1,
+    -1,
+    3
+   ],
+   "8fIUkINS1uo": [
+    -1,
+    -1,
+    -1
+   ],
+   "T1tl66trXTQ": [
+    -1,
+    1,
+    1
+   ],
+   "DfG6VKnjrVw": [
+    -1,
+    -1,
+    -1
+   ],
+   "rI1ZAIFHD20": [
+    -1,
+    -1,
+    -1
+   ],
+   "doWWkG2gPPE": [
+    -1,
+    -1,
+    -1
+   ],
+   "-yL7VP4-kP4": [
+    -1,
+    -1,
+    -1
+   ],
+   "zfEV8Z3tnkw": [
+    -1,
+    -1,
+    -1
+   ],
+   "xFMbKIGp6Lg": [
+    -1,
+    -1,
+    -1
+   ],
+   "os223N4rU80": [
+    -1,
+    -1,
+    -1
+   ],
+   "t071Wm45qWM": [
+    -1,
+    -1,
+    -1
+   ],
+   "hLQl3WQQoQ0": [
+    -1,
+    -1,
+    -1
+   ],
+   "-n9pTdz8HQQ": [
+    -1,
+    -1,
+    -1
+   ],
+   "60gOJYc93J8": [
+    -1,
+    -1,
+    -1
+   ],
+   "tQw1_sX9ipc": [
+    -1,
+    -1,
+    -1
+   ],
+   "dJg4_rL9h7Q": [
+    -1,
+    -1,
+    -1
+   ],
+   "TvijgPEe9YU": [
+    -1,
+    -1,
+    -1
+   ],
+   "UWPf7buYKnA": [
+    -1,
+    -1,
+    -1
+   ]
+  },
+  "extra-laroi-stay": {
+   "kTJczUoc26U": [
+    -1,
+    -1,
+    3
+   ],
+   "rkYlZnIbe2E": [
+    -1,
+    1,
+    1
+   ],
+   "yWHrYNP6j4k": [
+    -1,
+    -1,
+    -1
+   ],
+   "T9-SKaDfXUw": [
+    -1,
+    1,
+    1
+   ],
+   "pd1_SxHh2vo": [
+    3,
+    -1,
+    -1
+   ],
+   "Qb8q4ijHk_M": [
+    -1,
+    -1,
+    -1
+   ],
+   "uMt12Zh6mhM": [
+    -1,
+    -1,
+    -1
+   ],
+   "sNqRc5pj1sc": [
+    -1,
+    -1,
+    -1
+   ],
+   "ar4G0xF16oE": [
+    -1,
+    -1,
+    -1
+   ],
+   "K2SpP0u8qA4": [
+    -1,
+    -1,
+    -1
+   ],
+   "J41JVFDc4B0": [
+    -1,
+    -1,
+    -1
+   ],
+   "7dNEONGdfWs": [
+    -1,
+    -1,
+    -1
+   ],
+   "2Z26F-hF8XA": [
+    -1,
+    -1,
+    -1
+   ],
+   "SL3hTbjGpss": [
+    -1,
+    -1,
+    -1
+   ],
+   "-EoPafnCAE8": [
+    -1,
+    -1,
+    -1
+   ],
+   "EIXZGfM6XoY": [
+    -1,
+    -1,
+    -1
+   ],
+   "4K9NxHwQ4nQ": [
+    -1,
+    -1,
+    2
+   ],
+   "bjULIqIAeak": [
+    -1,
+    -1,
+    -1
+   ],
+   "3KKaI4hunzM": [
+    -1,
+    -1,
+    -1
+   ],
+   "Ak9rCD9ooi4": [
+    -1,
+    -1,
+    -1
+   ],
+   "Ec7TN_11az8": [
+    -1,
+    -1,
+    -1
+   ]
+  },
+  "extra-badbunny-dakiti": {
+   "TmKh7lAwnBI": [
+    -1,
+    -1,
+    3
+   ],
+   "30YlLGeUReY": [
+    -1,
+    -1,
+    -1
+   ],
+   "x4at2O0dWvI": [
+    -1,
+    -1,
+    -1
+   ],
+   "rSPnrtPpnbk": [
+    -1,
+    -1,
+    -1
+   ],
+   "N2PbBEZzy6w": [
+    -1,
+    -1,
+    -1
+   ],
+   "ccCaRETk1g0": [
+    -1,
+    -1,
+    -1
+   ],
+   "kQ6x1138JS4": [
+    -1,
+    -1,
+    -1
+   ],
+   "gODz4fyflvo": [
+    -1,
+    -1,
+    -1
+   ],
+   "nGOcpZrlTFc": [
+    -1,
+    -1,
+    -1
+   ],
+   "J1tofJaoa9w": [
+    -1,
+    -1,
+    -1
+   ],
+   "jAn_zglNauk": [
+    -1,
+    -1,
+    -1
+   ],
+   "My__nB4EOek": [
+    -1,
+    -1,
+    -1
+   ],
+   "YvQVaBLvxjM": [
+    -1,
+    -1,
+    -1
+   ],
+   "apg7gmq9H_c": [
+    -1,
+    -1,
+    -1
+   ],
+   "o8oKjbsZQl8": [
+    -1,
+    -1,
+    -1
+   ],
+   "xn6Qm5Wr-PE": [
+    -1,
+    -1,
+    -1
+   ],
+   "HO6EB0Iqxjo": [
+    -1,
+    -1,
+    -1
+   ],
+   "z0gcip-ecTM": [
+    -1,
+    -1,
+    -1
+   ],
+   "RfrxDdcmpN4": [
+    -1,
+    -1,
+    -1
+   ],
+   "UJ-PW5b9M6Q": [
+    -1,
+    -1,
+    -1
+   ],
+   "haO5ObF9sLg": [
+    -1,
+    -1,
+    -1
+   ],
+   "cyiKTc4XQlI": [
+    -1,
+    -1,
+    -1
+   ],
+   "luqdGL79Y3A": [
+    -1,
+    -1,
+    -1
+   ],
+   "fI3pu8aq3kY": [
+    -1,
+    -1,
+    -1
+   ],
+   "w2C6RhQBYlg": [
+    -1,
+    -1,
+    -1
+   ],
+   "_bsG-p3DFO0": [
+    -1,
+    -1,
+    -1
+   ],
+   "4A9x1223vn4": [
+    -1,
+    -1,
+    -1
+   ]
+  },
+  "extra-beyonce-halo": {
+   "bnVUHWCynig": [
+    -1,
+    2,
+    1
+   ],
+   "aWIWe7alFno": [
+    -1,
+    -1,
+    -1
+   ],
+   "T2Dk0HRcen4": [
+    -1,
+    -1,
+    -1
+   ],
+   "1XgTKgsnrbI": [
+    -1,
+    -1,
+    -1
+   ],
+   "pLfoJQWl0qk": [
+    -1,
+    -1,
+    -1
+   ],
+   "T6FDAX6p83g": [
+    -1,
+    -1,
+    -1
+   ],
+   "yW8qsL1nDPM": [
+    -1,
+    -1,
+    -1
+   ],
+   "pB6KV01evl8": [
+    -1,
+    -1,
+    -1
+   ],
+   "xs-hqTHMjJY": [
+    -1,
+    -1,
+    -1
+   ],
+   "rmfmdKOLzVI": [
+    -1,
+    -1,
+    -1
+   ],
+   "wkABWE-WUC8": [
+    -1,
+    -1,
+    -1
+   ],
+   "Euw1q3Zw4BQ": [
+    -1,
+    -1,
+    -1
+   ],
+   "L6X0PqIWfzQ": [
+    -1,
+    -1,
+    -1
+   ],
+   "60gOJYc93J8": [
+    -1,
+    -1,
+    -1
+   ],
+   "cLXMddTRrxY": [
+    -1,
+    -1,
+    -1
+   ],
+   "x2GVLf1FPSw": [
+    -1,
+    -1,
+    -1
+   ],
+   "VuEtXAMHv2E": [
+    -1,
+    -1,
+    -1
+   ],
+   "Nw8LyN21OO8": [
+    -1,
+    -1,
+    -1
+   ],
+   "xBjUn9rY1yo": [
+    -1,
+    -1,
+    -1
+   ],
+   "fgDR5AbSXDI": [
+    -1,
+    -1,
+    -1
+   ],
+   "gFDTOn94dr4": [
+    -1,
+    -1,
+    -1
+   ],
+   "ZUNVY880JuY": [
+    -1,
+    -1,
+    -1
+   ],
+   "t3Ex4mFWZo4": [
+    -1,
+    -1,
+    -1
+   ]
+  },
+  "extra-frankocean-pink-white": {
+   "uzS3WG6__G4": [
+    -1,
+    2,
+    -1
+   ],
+   "bDMiokRScq4": [
+    -1,
+    -1,
+    -1
+   ],
+   "SXHpcYneDeM": [
+    -1,
+    -1,
+    -1
+   ],
+   "4xZV9WkNHhA": [
+    -1,
+    -1,
+    -1
+   ],
+   "uaLV003llhY": [
+    -1,
+    -1,
+    -1
+   ],
+   "_UnBtcP5QAg": [
+    -1,
+    -1,
+    -1
+   ],
+   "CM5ODLih6vc": [
+    -1,
+    -1,
+    -1
+   ],
+   "soNUBTM30Zg": [
+    -1,
+    -1,
+    -1
+   ],
+   "F5WWyyYG018": [
+    -1,
+    -1,
+    -1
+   ],
+   "MYDC8Fou5d0": [
+    -1,
+    -1,
+    -1
+   ],
+   "RTowZ5tibWY": [
+    -1,
+    -1,
+    -1
+   ],
+   "Tk827zo-7-k": [
+    -1,
+    -1,
+    -1
+   ],
+   "d1xBiTnc7v0": [
+    -1,
+    -1,
+    -1
+   ],
+   "eufZleXB_co": [
+    -1,
+    -1,
+    -1
+   ],
+   "Ed8foDwan0U": [
+    -1,
+    -1,
+    -1
+   ],
+   "U8CpzdEz7iw": [
+    -1,
+    -1,
+    -1
+   ],
+   "l0T_0EATF9I": [
+    -1,
+    -1,
+    -1
+   ],
+   "fBvqktr6mh0": [
+    -1,
+    -1,
+    -1
+   ],
+   "KTnXj4uCvK0": [
+    -1,
+    -1,
+    -1
+   ],
+   "J3DWAJGaf7o": [
+    -1,
+    -1,
+    -1
+   ],
+   "VWsVL4FjWXQ": [
+    -1,
+    -1,
+    -1
+   ],
+   "YG9Ggy-C5VU": [
+    -1,
+    -1,
+    -1
+   ],
+   "6JHu3b-pbh8": [
+    -1,
+    -1,
+    -1
+   ],
+   "Wn1_CAzPG0E": [
+    -1,
+    -1,
+    -1
+   ],
+   "3DYo_Xizdp0": [
+    -1,
+    -1,
+    -1
+   ],
+   "_tzRIzvj5X4": [
+    -1,
+    -1,
+    -1
+   ],
+   "_KgjdAly2is": [
+    -1,
+    -1,
+    -1
+   ]
+  },
+  "extra-fonsi-despacito": {
+   "kJQP7kiw5Fk": [
+    -1,
+    2,
+    1
+   ],
+   "2bHBUs-k3ac": [
+    -1,
+    2,
+    1
+   ],
+   "t3IyUATcAbE": [
+    -1,
+    1,
+    1
+   ],
+   "gm3-m2CFVWM": [
+    -1,
+    -1,
+    -1
+   ],
+   "72UO0v5ESUo": [
+    -1,
+    -1,
+    -1
+   ],
+   "V5BdX30DilE": [
+    -1,
+    -1,
+    -1
+   ],
+   "TfkP5ubz1z4": [
+    -1,
+    -1,
+    -1
+   ],
+   "dr_GAJZviR0": [
+    -1,
+    -1,
+    -1
+   ],
+   "mxkcSWjNILc": [
+    -1,
+    -1,
+    -1
+   ],
+   "8qSlRSd1w2E": [
+    -1,
+    -1,
+    -1
+   ],
+   "h6vj8Ryu0LI": [
+    -1,
+    -1,
+    -1
+   ],
+   "Q4a9uwV4nmo": [
+    -1,
+    -1,
+    -1
+   ],
+   "tQDV9WzHcds": [
+    -1,
+    -1,
+    -1
+   ],
+   "VNVP4L81az4": [
+    -1,
+    -1,
+    -1
+   ],
+   "UCQg99qha8g": [
+    -1,
+    -1,
+    -1
+   ],
+   "DWir_XczIE8": [
+    -1,
+    -1,
+    -1
+   ],
+   "7YJCp6J9H8E": [
+    -1,
+    -1,
+    -1
+   ],
+   "GFE9UeS_xDg": [
+    -1,
+    -1,
+    -1
+   ],
+   "r4aeD8PYYOQ": [
+    -1,
+    -1,
+    -1
+   ],
+   "8cI_4eApbIg": [
+    -1,
+    -1,
+    -1
+   ]
+  },
+  "extra-tyla-water": {
+   "XoiOOiuH8iI": [
+    -1,
+    -1,
+    3
+   ],
+   "TSsFB241BHs": [
+    -1,
+    -1,
+    -1
+   ],
+   "-DkJMa7QkGY": [
+    -1,
+    -1,
+    -1
+   ],
+   "g5va6Ue0GM4": [
+    -1,
+    -1,
+    -1
+   ],
+   "jVduVnNMBRg": [
+    -1,
+    -1,
+    -1
+   ],
+   "wlmUnWLaeog": [
+    -1,
+    2,
+    1
+   ],
+   "mS21K_GzSnI": [
+    -1,
+    -1,
+    -1
+   ],
+   "DjvkMIFlOwA": [
+    -1,
+    -1,
+    -1
+   ],
+   "Vc9oHmEM0Bg": [
+    -1,
+    -1,
+    -1
+   ],
+   "eCAYx2MydI0": [
+    -1,
+    -1,
+    -1
+   ],
+   "88a7rr8KXcE": [
+    -1,
+    -1,
+    -1
+   ],
+   "al7j8rwDF3I": [
+    3,
+    -1,
+    -1
+   ],
+   "1zNmYAp5xUw": [
+    -1,
+    -1,
+    -1
+   ],
+   "PBAMcKXcBKE": [
+    3,
+    -1,
+    -1
+   ],
+   "p0IkbTKJKa8": [
+    -1,
+    -1,
+    -1
+   ],
+   "9ZHqr8IiY5Q": [
+    -1,
+    -1,
+    2
+   ],
+   "uLK2r3sG4lE": [
+    -1,
+    -1,
+    -1
+   ],
+   "xiZUf98A1Ts": [
+    -1,
+    -1,
+    -1
+   ]
+  },
+  "extra-bts-dynamite": {
+   "gdZLi9oWNZg": [
+    -1,
+    -1,
+    2
+   ],
+   "e81ad5MpfQ0": [
+    -1,
+    -1,
+    -1
+   ],
+   "jWRMXiHhDjc": [
+    -1,
+    -1,
+    -1
+   ],
+   "kK29Q_LpVUw": [
+    -1,
+    -1,
+    -1
+   ],
+   "CN4fffh7gmk": [
+    -1,
+    -1,
+    -1
+   ],
+   "BflFNMl_UWY": [
+    -1,
+    -1,
+    -1
+   ],
+   "E3nWu1VgRJU": [
+    -1,
+    -1,
+    -1
+   ],
+   "c4V0FNZfEv0": [
+    -1,
+    -1,
+    -1
+   ],
+   "BV2FdDmGiW0": [
+    -1,
+    -1,
+    2
+   ],
+   "J8fQMq4T8Yg": [
+    -1,
+    -1,
+    -1
+   ],
+   "oxoWhyS9buA": [
+    -1,
+    -1,
+    -1
+   ],
+   "_K2v-MmAj7E": [
+    -1,
+    -1,
+    -1
+   ],
+   "kwAhKmSWdx8": [
+    -1,
+    -1,
+    -1
+   ],
+   "eOGHYnhEABA": [
+    -1,
+    1,
+    1
+   ],
+   "OiMWFojB9Ok": [
+    -1,
+    -1,
+    -1
+   ],
+   "0rUO0pxJKdw": [
+    -1,
+    -1,
+    -1
+   ],
+   "aGfWRMDMf1Q": [
+    -1,
+    -1,
+    -1
+   ],
+   "bqv8_7Parj4": [
+    -1,
+    -1,
+    -1
+   ],
+   "fgk2KxK4iAo": [
+    -1,
+    -1,
+    -1
+   ],
+   "5YkZOS4Vt4A": [
+    -1,
+    -1,
+    -1
+   ],
+   "gzJBaC9P2Eg": [
+    -1,
+    -1,
+    -1
+   ],
+   "WhDsAW1ZzZ8": [
+    -1,
+    -1,
+    -1
+   ]
+  }
+ }
 }
