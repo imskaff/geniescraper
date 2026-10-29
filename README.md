@@ -70,10 +70,13 @@ Use the extension alone, or pair it with the desktop app: the app reads and revi
 
 <img src="img/extension-demo.gif" alt="The side panel listening for Apple Music pages, finding one, reading the album and pasting the credits automatically" width="720">
 
+The steps are the same on **Windows** and **macOS**, apart from how you unzip the download (step 2) and how you check it.
+
 1. **Download.** Open the [Releases page](https://github.com/imskaff/geniescraper/releases), pick the newest **Géniescraper extension** and download `geniescraper-extension-<version>.zip`.
-2. **Unzip it into a folder you will keep**, for example `Documents\Geniescraper-extension` (right-click the zip, then **Extract All**).
-   The browser runs the extension from that folder, so do not delete or move it afterwards.
-3. **Add it to your browser.**
+2. **Unzip it into a folder you will keep.** The browser runs the extension from that folder, so do not delete or move it afterwards.
+   - **Windows:** right-click the zip, choose **Extract All…** and pick a place you will keep, for example `Documents\Geniescraper-extension`.
+   - **macOS:** double-click the zip in Finder: a folder with the same name appears next to it. Drag that folder into `Documents` (or any place you will keep) rather than leaving it in `Downloads`.
+3. **Add it to your browser** (the same on both systems).
    - **Chrome:** open `chrome://extensions`, switch on **Developer mode** (top right), click **Load unpacked** and choose the folder from step 2, the one that contains `manifest.json`.
    - **Edge:** open `edge://extensions`, switch on **Developer mode** (left side), click **Load unpacked** and choose the same folder.
 4. **Open it.** Click the puzzle-piece icon in the toolbar, pin Géniescraper, then click it. The side panel opens and a short set-up walks you through the options.
@@ -81,13 +84,21 @@ Use the extension alone, or pair it with the desktop app: the app reads and revi
 > [!NOTE]
 > Chrome may show **Disable developer mode extensions** when it starts. Choose to keep them: it is Chrome's standard notice for any extension that does not come from the store.
 
+> [!TIP]
+> **On a Mac,** the `F7` and `F8` keys are usually media keys. Hold `Fn` while you press them, or turn on **Use F1, F2, etc. keys as standard function keys** in **System Settings → Keyboard → Keyboard Shortcuts… → Function Keys**. The **Next**, **Previous** and **Skip** buttons in the panel work without the keys.
+
 **Good to know**
 
-- **Updating.** Download the newest zip, unzip it over the same folder (replace the files), then press the reload icon on the extension's card in `chrome://extensions`. The extension does not update itself.
+- **Updating.** Download the newest zip and unzip it over the same folder, replacing the files (on macOS, choose **Replace** when Finder asks), then press the reload icon on the extension's card in `chrome://extensions`. The extension does not update itself.
 - **Checking a download.** Compare its SHA-256 with `SHA256SUMS.txt` from the same release.
+  - **Windows** (PowerShell): `Get-FileHash .\geniescraper-extension-<version>.zip -Algorithm SHA256`
+  - **macOS** (Terminal): `shasum -a 256 geniescraper-extension-<version>.zip`
 - **Questions and fixes:** [extension/FAQ.md](extension/FAQ.md).
 
 ### Desktop app (Windows)
+
+> [!NOTE]
+> The desktop app runs on **Windows only**. On a Mac, use the browser extension above: it does everything on its own.
 
 **You need:** Windows, **Python 3.10 or newer** and **[uv](https://docs.astral.sh/uv/)** (`pip install uv`).
 
