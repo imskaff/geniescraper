@@ -1088,3 +1088,16 @@ Not yet confirmed on a live form:
 Decisions kept in the code: the option matching above (an option is chosen only when exactly one matches; otherwise the typed text and the suggestions stay for the user), and a date Genius already has is kept: when any of the dropdowns this run cannot have filled yet holds a value, the date steps skip and say so, so that Apple's date never overwrites Genius's and two dates are never mixed. The month and the day this very run chose do not stop the next step.
 
 The desktop hotkey path pastes the value, waits, and presses Enter, with no Tab sequence (`autotab_steps` has none for these kinds).
+
+## 45. The extension on macOS, checked on a real Mac in CI
+
+No Mac was available, and macOS cannot be run in a virtual machine on other hardware, so `.github/workflows/macos.yml` runs the extension on GitHub's macOS runners (real Macs). It runs weekly (Mondays 06:30 UTC) and on demand, not on every push, because it reads live Apple Music.
+
+First run, 29 October 2026, macOS 26.6.2 on Apple silicon (arm64):
+
+- **Chrome 155 and Edge 155** (both installed on the runner): `npm test` passes in full (2,460 tests, with none of the line-ending failures a Windows checkout shows), and `scripts/live-smoke.mjs` passes: the extension's service worker starts and reports `os: mac`, the panel lists an album's tracks, reads one track's credits from live Apple Music, and shows the track, three credits, the ℗ line and the release date exactly as the golden file expects, then opens the paste screen (50 steps) and leaves no Apple Music tab open.
+- **Safari build:** `npm run build:safari`, then `xcrun safari-web-extension-converter` produces an Xcode project and `xcodebuild` compiles it unsigned. The first attempt failed because the bundle identifier was spelled in lowercase: Xcode requires the extension's id (`<identifier>.Extension`) to start with the app's id, and the converter spells the app's id from the app name, so the identifier must end with `Geniescraper` exactly (the docs' examples now say so).
+
+What the helper change was for: installed, branded Chrome and Edge ignore `--load-extension`, so `scripts/lib/cdp.mjs` now loads the extension over the debugging port by default (`Extensions.loadUnpacked`), which also works in a plain Chromium. `live-smoke.mjs` is a small, current check made for CI; the long `live-panel.mjs` still has checks written for older screens of the panel (its first half passes, it stops at the paste screen's styling checks) and is not used in CI.
+
+Not covered: pasting into a signed-in Genius form on a Mac, Intel Macs, a physical Mac keyboard (on many Macs F7 and F8 are media keys unless Fn is held), and running the Safari extension inside Safari (enabling an unsigned extension needs interactive steps).

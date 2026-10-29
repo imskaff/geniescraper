@@ -12,8 +12,6 @@ on:
   schedule:
     - cron: "30 6 * * 1"
   workflow_dispatch:
-  push:
-    branches: [ci/macos-check]
 
 permissions:
   contents: read
