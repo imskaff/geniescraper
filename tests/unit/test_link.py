@@ -464,3 +464,19 @@ def test_the_pages_go_when_the_pairing_is_forgotten():
     assert rig.link.pages == ()
     old.cb["on_pages"](REPORT)  # the old bridge's late callbacks are ignored
     assert rig.link.pages == ()
+
+
+def test_a_new_code_cannot_be_asked_for_while_the_first_is_still_good():
+    rig = rig_started()
+    assert rig.link.begin_pairing() == "ABCD-EFGH"
+    rig.clock += 30
+    assert rig.link.begin_pairing() == "ABCD-EFGH"
+    rig.clock += 89  # 1:59 after the first
+    assert rig.link.begin_pairing() == "ABCD-EFGH"
+    assert rig.bridge.pairings == 1  # the bridge was asked once
+    assert rig.link.pairing_seconds_left() == 1  # and the clock was not restarted
+    rig.clock += 1  # the two minutes are up
+    assert rig.link.pairing_code is None
+    assert rig.link.begin_pairing() == "ABCD-EFGH"
+    assert rig.bridge.pairings == 2
+    assert rig.link.pairing_seconds_left() == 120

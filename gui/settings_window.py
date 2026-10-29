@@ -14,7 +14,7 @@ import customtkinter as ctk
 import keyboard
 
 from gui import theme
-from gui.link import LinkController, LinkState, state_hint, state_label
+from gui.link import LinkController, LinkState, clock_text, state_hint, state_label
 from gui.logic import hotkey_error
 from utils import config
 from utils.config import settings
@@ -454,9 +454,13 @@ class SettingsWindow(ctk.CTkToplevel):
             self._link_code_box.grid(row=self._link_code_row, column=0, columnspan=2, sticky="w", padx=theme.SPACE_4)
         else:
             self._link_code_box.grid_remove()
+        # While a code is good the button waits, showing how long: a new code only comes after it has run out.
+        can_connect = not (link.unavailable or state is LinkState.CONNECTED or code)
         self._link_connect_btn.configure(
-            text="New code" if code else "Connect browser extension",
-            state="disabled" if link.unavailable or state is LinkState.CONNECTED else "normal",
+            text=f"New code in {clock_text(left)}" if code else "Connect browser extension",
+            state="normal" if can_connect else "disabled",
+            fg_color=theme.ACCENT if can_connect else theme.SURFACE_HI,  # a disabled button must not look clickable
+            text_color_disabled=theme.FAINT,
         )
         self._link_forget_btn.configure(state="normal" if link.paired or code else "disabled")
         self._refresh_auto_paste()

@@ -125,7 +125,7 @@ def state_label(state: LinkState) -> str:
     return state.value
 
 
-def _clock_text(seconds: int) -> str:
+def clock_text(seconds: int) -> str:
     return f"{seconds // 60}:{seconds % 60:02d}"
 
 
@@ -135,7 +135,7 @@ def state_hint(state: LinkState, *, code: str | None, seconds_left: int) -> str:
     if state is LinkState.WAITING:
         if code:
             return (
-                f"Type {code} into the extension (Settings, Desktop app) within {_clock_text(seconds_left)}. "
+                f"Type {code} into the extension (Settings, Desktop app) within {clock_text(seconds_left)}. "
                 "The code works once."
             )
         return "Open Genius in your browser. The extension connects by itself."
@@ -271,6 +271,8 @@ class LinkController:
     def begin_pairing(self) -> str | None:
         if self.unavailable:
             return None
+        if self.pairing_code is not None:
+            return self.pairing_code  # a code that is still good stays: a new one only after it has run out
         self._code = self._bridge.begin_pairing()
         self._deadline = self._clock() + PAIRING_TTL_S
         self._changed()

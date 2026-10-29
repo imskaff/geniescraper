@@ -179,6 +179,8 @@ def _check_connect(settings_win: Any) -> dict[str, Any]:
         "code_shown": bool(settings_win._link_code_box.winfo_ismapped()),
         "copy_in_view": top <= settings_win._link_copy_btn.winfo_rooty() < top + body._parent_canvas.winfo_height(),
         "copy_text": settings_win._link_copy_btn.cget("text"),
+        "button_state": str(settings_win._link_connect_btn.cget("state")),
+        "button_text": settings_win._link_connect_btn.cget("text"),
     }
 
 
@@ -672,3 +674,9 @@ def test_the_notice_follows_the_connection_without_rebuilding_the_screen(walk):
 def test_connect_opens_settings_at_the_link_card_and_starts_pairing(walk):
     seen = walk["connect"]
     assert seen["code"] == "ABCD-EFGH" and seen["code_shown"] and seen["copy_in_view"]
+
+
+def test_the_new_code_button_waits_for_the_code_to_run_out(walk):
+    seen = walk["connect"]
+    assert seen["button_state"] == "disabled"
+    assert seen["button_text"].startswith("New code in ") and seen["button_text"][-4:].count(":") == 1
