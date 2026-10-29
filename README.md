@@ -7,7 +7,7 @@
 <p><b>Apple Music metadata straight into Genius</b></p>
 
 <p>
-Géniescraper reads the credits of an Apple Music album or song and fills them into the Genius song metadata form for you:<br>
+Géniescraper reads the credits of an Apple Music page and fills them into the Genius song metadata form for you:<br>
 songwriters, producers, every additional role, the ℗ and © lines, the exact cover art and the official YouTube video.<br>
 It never presses Save: you check the form and save it yourself.
 </p>
@@ -24,7 +24,7 @@ It never presses Save: you check the form and save it yourself.
 </div>
 
 > [!TIP]
-> **[RECOMMENDED] <ins>Start with the browser extension.</ins>** It does everything inside your browser, fills the form by itself (***Auto-paste***), skips names that are already filled in and only ever picks an exact artist match.
+> **<ins>Start with the browser extension.</ins>** It does everything inside your browser, fills the form by itself (***Auto-paste***), skips names that are already filled in and only ever picks an exact artist match.
 > The desktop app works best with the extension connected; on its own it can only paste with hotkeys into whichever field you click.
 
 ## Features
@@ -86,9 +86,6 @@ The steps are the same on **Windows** and **macOS**, apart from how you unzip th
 
 > [!NOTE]
 > **Safari support is coming soon.**
-
-> [!TIP]
-> **On a Mac,** the `F7` and `F8` keys are usually media keys. Hold `Fn` while you press them, or turn on **Use F1, F2, etc. keys as standard function keys** in **System Settings → Keyboard → Keyboard Shortcuts… → Function Keys**. The **Next**, **Previous** and **Skip** buttons in the panel work without the keys.
 
 **Good to know**
 
@@ -159,6 +156,9 @@ Pair them once; the pairing is remembered. This is optional but recommended: it 
 6. **Check the form and save it on Genius yourself.** Nothing is saved for you.
 
 When Genius has no exact match for a name or a role, the text stays typed and nothing is chosen for you: pick a suggestion yourself or press **Skip**. A few Apple roles have no Genius equivalent; those steps are left for you.
+
+> [!TIP]
+> **On a Mac,** the `F7` and `F8` keys are usually media keys. Hold `Fn` while you press them, or turn on **Use F1, F2, etc. keys as standard function keys** in **System Settings → Keyboard → Keyboard Shortcuts… → Function Keys**. The **Next**, **Previous** and **Skip** buttons in the panel work without the keys.
 
 > [!TIP]
 > The first time the panel opens, a short set-up walks you through what to paste, the speed and keys, and the optional lookups. Everything in it can be changed later in **Settings**.
