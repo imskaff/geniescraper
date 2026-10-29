@@ -23,7 +23,11 @@ _COLLECT = (
     ("scrape_core", "Writers and producers", "Written By and Produced By"),
     ("scrape_additional", "Additional credits", "Every other role, such as engineers and musicians"),
     ("scrape_copyright", "Copyright lines", "℗ and © labels, from album links"),
-    ("scrape_youtube", "YouTube link", "Official music video, or the official audio"),
+    (
+        "scrape_youtube",
+        "Find a YouTube link for each track (recommended)",
+        "Official music video, lyric video or official audio",
+    ),
     ("scrape_cover_art", "Cover art", "1000×1000 PNG of the exact release"),
 )
 
@@ -60,8 +64,15 @@ class SettingsWindow(ctk.CTkToplevel):
         body.grid_columnconfigure(0, weight=1)
         self._body = body
         self._row = 0
+        self.headings: list[str] = []
+
+        self._heading("What to collect")
+        for key, label, hint in _COLLECT:
+            self._switch(key, label, hint)
 
         self._heading("Pasting into Genius")
+        self._auto_paste()
+        self._hotkeys()
         self._switch(
             "auto_tab",
             "Auto-tab",
@@ -77,15 +88,8 @@ class SettingsWindow(ctk.CTkToplevel):
         self._heading("Reading tracks")
         self._parallel_reads()
 
-        self._heading("Hotkeys")
-        self._hotkeys()
-
         self._heading("Browser extension")
         self._link_area()
-
-        self._heading("What to collect")
-        for key, label, hint in _COLLECT:
-            self._switch(key, label, hint)
 
         self._heading("Window")
         self._switch("always_on_top", "Always on top", "Keeps this window above the browser while you paste.")
@@ -103,6 +107,7 @@ class SettingsWindow(ctk.CTkToplevel):
         self._row += 1
 
     def _heading(self, text: str) -> None:
+        self.headings.append(text)
         pad = (6, 6) if self._row == 0 else (22, 6)
         self._place(
             ctk.CTkLabel(
@@ -117,9 +122,10 @@ class SettingsWindow(ctk.CTkToplevel):
         text = ctk.CTkFrame(row, fg_color="transparent")
         text.grid(row=0, column=0, sticky="ew", padx=(14, 8), pady=10)
         ctk.CTkLabel(text, text=label, font=theme.font(13, "bold"), text_color=theme.TEXT, anchor="w").pack(anchor="w")
-        ctk.CTkLabel(
+        self._last_hint = ctk.CTkLabel(
             text, text=hint, font=theme.font(11), text_color=theme.MUTED, anchor="w", justify="left", wraplength=wrap
-        ).pack(anchor="w")
+        )
+        self._last_hint.pack(anchor="w")
         control = ctk.CTkFrame(row, fg_color="transparent")
         control.grid(row=0, column=1, sticky="e", padx=(0, 14))
         self._place(row, (0, 6))
@@ -127,7 +133,7 @@ class SettingsWindow(ctk.CTkToplevel):
 
     def _switch(self, key: str, label: str, hint: str) -> None:
         _, control = self._setting_row(label, hint)
-        value = settings.link_mode == "auto" if key == "link_mode_auto" else getattr(settings, key)
+        value = getattr(settings, key)
         var = ctk.BooleanVar(value=value)
         ctk.CTkSwitch(
             control,
@@ -211,27 +217,50 @@ class SettingsWindow(ctk.CTkToplevel):
         self._hk_msg.grid(row=2, column=0, columnspan=2, sticky="w", padx=14, pady=(2, 10))
         self._place(box, (0, 6))
 
+    def _auto_paste(self) -> None:
+        """The Auto-paste switch; it only works through the extension, so it stays grayed out until one is connected."""
+        _, control = self._setting_row("Auto-paste", "", wrap=300)
+        self._auto_hint = self._last_hint
+        self._auto_var = ctk.BooleanVar(value=settings.link_mode == "auto")
+        self._auto_switch = ctk.CTkSwitch(
+            control,
+            text="",
+            width=46,
+            variable=self._auto_var,
+            progress_color=theme.ACCENT,
+            command=lambda: self._set("link_mode_auto", self._auto_var.get()),
+        )
+        self._auto_switch.pack()
+
     def _link_area(self) -> None:
         """Pair with the browser extension and show the link's state; the pairing secret is never displayed."""
         box = ctk.CTkFrame(self._body, fg_color=theme.SURFACE, corner_radius=8)
         box.grid_columnconfigure(0, weight=1)
+        head = ctk.CTkFrame(box, fg_color="transparent")
+        head.grid(row=0, column=0, columnspan=2, sticky="ew", padx=14, pady=(12, 0))
+        self._link_dot = ctk.CTkLabel(head, text="●", font=theme.font(14), text_color=theme.FAINT, width=16)
+        self._link_dot.pack(side="left")
         self._link_state_lbl = ctk.CTkLabel(
-            box, text="", font=theme.font(13, "bold"), text_color=theme.TEXT, anchor="w"
+            head, text="", font=theme.font(13, "bold"), text_color=theme.TEXT, anchor="w"
         )
-        self._link_state_lbl.grid(row=0, column=0, sticky="w", padx=14, pady=(10, 0))
+        self._link_state_lbl.pack(side="left", padx=(4, 0))
         self._link_hint_lbl = ctk.CTkLabel(
             box, text="", font=theme.font(11), text_color=theme.MUTED, anchor="w", justify="left", wraplength=400
         )
-        self._link_hint_lbl.grid(row=1, column=0, columnspan=2, sticky="w", padx=14, pady=(2, 4))
-        self._link_code_lbl = ctk.CTkLabel(box, text="", font=theme.display(30), text_color=theme.ACCENT, anchor="w")
-        self._link_code_lbl.grid(row=2, column=0, columnspan=2, sticky="w", padx=14)
+        self._link_hint_lbl.grid(row=1, column=0, columnspan=2, sticky="w", padx=14, pady=(4, 6))
+        self._link_code_box = ctk.CTkFrame(box, fg_color=theme.SURFACE_HI, corner_radius=8)
+        self._link_code_lbl = ctk.CTkLabel(
+            self._link_code_box, text="", font=theme.display(30), text_color=theme.ACCENT, anchor="center"
+        )
+        self._link_code_lbl.pack(padx=18, pady=8)
+        self._link_code_row = 2
         buttons = ctk.CTkFrame(box, fg_color="transparent")
-        buttons.grid(row=3, column=0, columnspan=2, sticky="w", padx=14, pady=(4, 10))
+        buttons.grid(row=3, column=0, columnspan=2, sticky="w", padx=14, pady=(8, 12))
         self._link_connect_btn = ctk.CTkButton(
             buttons,
             text="Connect browser extension",
-            height=30,
-            font=theme.font(12),
+            height=32,
+            font=theme.font(12, "bold"),
             fg_color=theme.ACCENT,
             text_color=theme.ACCENT_INK,
             command=self._link_connect,
@@ -240,7 +269,7 @@ class SettingsWindow(ctk.CTkToplevel):
         self._link_forget_btn = ctk.CTkButton(
             buttons,
             text="Forget pairing",
-            height=30,
+            height=32,
             font=theme.font(12),
             fg_color="transparent",
             border_width=1,
@@ -251,11 +280,6 @@ class SettingsWindow(ctk.CTkToplevel):
         )
         self._link_forget_btn.pack(side="left")
         self._place(box, (0, 6))
-        self._switch(
-            "link_mode_auto",
-            "Fill automatically",
-            "When linked, the extension fills every step by itself. Off, you press Next or the key for each step.",
-        )
         self.refresh_link()
 
     def refresh_link(self) -> None:
@@ -268,24 +292,43 @@ class SettingsWindow(ctk.CTkToplevel):
         colour = {
             LinkState.CONNECTED: theme.DONE,
             LinkState.LOST: theme.WARN,
-        }.get(state, theme.TEXT)
-        self._link_state_lbl.configure(text=state_label(state), text_color=colour)
+            LinkState.WAITING: theme.ACCENT,
+        }.get(state, theme.FAINT)
+        self._link_dot.configure(text_color=colour)
+        self._link_state_lbl.configure(text=state_label(state), text_color=theme.TEXT)
         if link.unavailable:
             hint = "Ports 47831 to 47835 are all in use, so the extension cannot connect. The hotkeys still work."
         else:
             hint = state_hint(state, code=code, seconds_left=left)
         self._link_hint_lbl.configure(text=hint)
         self._link_code_lbl.configure(text=code or "")
+        if code:
+            self._link_code_box.grid(row=self._link_code_row, column=0, columnspan=2, sticky="w", padx=14)
+        else:
+            self._link_code_box.grid_remove()
         self._link_connect_btn.configure(
             text="New code" if code else "Connect browser extension",
-            state="disabled" if link.unavailable else "normal",
+            state="disabled" if link.unavailable or state is LinkState.CONNECTED else "normal",
         )
-        if link.paired or code:
-            self._link_forget_btn.configure(state="normal")
-        else:
-            self._link_forget_btn.configure(state="disabled")
+        self._link_forget_btn.configure(state="normal" if link.paired or code else "disabled")
+        self._refresh_auto_paste()
         if code:
             self.after(1000, self.refresh_link)  # the countdown; stops by itself once the code is gone
+
+    def _refresh_auto_paste(self) -> None:
+        """Auto-paste is the extension's doing: usable only while connected, and it says what is missing otherwise."""
+        if not self._auto_switch.winfo_exists():
+            return
+        connected = self._link.state is LinkState.CONNECTED
+        self._auto_switch.configure(state="normal" if connected else "disabled")
+        self._auto_hint.configure(
+            text=(
+                "The extension fills every field by itself and pauses if you touch Genius. "
+                "Off, you press Next or the key for each step."
+                if connected
+                else "Needs the browser extension. Connect it below to turn this on."
+            )
+        )
 
     def _link_connect(self) -> None:
         self._link.begin_pairing()

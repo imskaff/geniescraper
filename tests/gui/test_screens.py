@@ -100,6 +100,9 @@ def walk() -> dict[str, Any]:
             seen["settings_dark_title_bar"] = _dark_title_bar_attr(window)
             seen["settings_icon_set"] = window._iconbitmap_method_called
             seen["settings_scroll_increment"] = int(window._body._parent_canvas.cget("yscrollincrement"))
+            seen["settings_headings"] = window.headings
+            seen["auto_paste_state"] = str(window._auto_switch.cget("state"))
+            seen["auto_paste_hint"] = window._auto_hint.cget("text")
         elif name == "07-credits":
             seen["review_hooks_before_back"] = len(window._kb_hooks)
             window._back_from_credits()
@@ -144,6 +147,21 @@ def test_leaving_review_screen_releases_its_f8_hotkey(walk):
 def test_settings_window_uses_app_icon_and_fast_scroll(walk):
     assert walk["settings_icon_set"], "the app icon replaces customtkinter's default"
     assert walk["settings_scroll_increment"] == 3
+
+
+def test_settings_follow_the_extensions_order(walk):
+    assert walk["settings_headings"] == [
+        "What to collect",
+        "Pasting into Genius",
+        "Reading tracks",
+        "Browser extension",
+        "Window",
+    ]
+
+
+def test_auto_paste_is_grayed_out_until_an_extension_is_connected(walk):
+    assert walk["auto_paste_state"] == "disabled"
+    assert "browser extension" in walk["auto_paste_hint"]
 
 
 def test_main_and_settings_windows_have_dark_title_bars(walk):

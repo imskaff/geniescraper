@@ -1325,7 +1325,7 @@ export class PanelView {
       ),
       ...box(
         "youtube",
-        "Find a YouTube link for each track",
+        "Find a YouTube link for each track (recommended)",
         "Searches www.youtube.com's pages for the song, as the desktop app does. Off until you allow it, and it needs the YouTube link ticked above to be pasted. Chrome asks first; take the permission back here or in chrome://extensions.",
       ),
     );
