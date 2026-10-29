@@ -26,7 +26,7 @@ from collections.abc import Callable
 from concurrent.futures import Future
 from hashlib import sha256
 from http import HTTPStatus
-from typing import Any
+from typing import Any, TypeGuard
 
 PROTOCOL_VERSION = 1
 HOST = "127.0.0.1"
@@ -142,7 +142,7 @@ def _is_int(value: Any) -> bool:
     return isinstance(value, int) and not isinstance(value, bool)
 
 
-def _text(value: Any, limit: int) -> bool:
+def _text(value: Any, limit: int) -> TypeGuard[str]:
     return isinstance(value, str) and len(value) <= limit
 
 
