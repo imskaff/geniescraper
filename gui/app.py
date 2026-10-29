@@ -199,7 +199,19 @@ class App(ctk.CTk):
 
     def _settings_changed(self) -> None:
         """Apply a setting the moment it changes, on whatever screen is showing."""
-        self.attributes("-topmost", settings.always_on_top)
+        try:
+            if bool(self.attributes("-topmost")) != settings.always_on_top:  # re-applying it would raise this window
+                self.attributes("-topmost", settings.always_on_top)
+            self._apply_settings()
+        finally:
+            self._raise_settings()  # without this, the change can leave the Settings window behind this one
+
+    def _raise_settings(self) -> None:
+        win = self._settings_win
+        if win is not None and win.winfo_exists():
+            win.lift()
+
+    def _apply_settings(self) -> None:
         if self._screen == "assistant":
             pos, old_queue = self._pos, list(self._queue)
             self._show_assistant_screen(keep_run=True)
