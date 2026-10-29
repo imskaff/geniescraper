@@ -635,6 +635,11 @@ export class PanelController {
     this.bridgeTimer = undefined;
   }
 
+  /** Show a message under the pairing code box (the view uses it when the browser refuses to read the clipboard). */
+  noteBridgeMessage(message: string): void {
+    this.setBridge({ message, tone: "error" });
+  }
+
   private setBridge(patch: Partial<PanelState["bridge"]>): void {
     this.update({ bridge: { ...this.current.bridge, ...patch } });
   }

@@ -178,6 +178,38 @@ describe("desktop app link: card", () => {
     expect(root.querySelector('[data-key="bridge-unpair"]')).toBeNull();
   });
 
+  it("has a Paste button inside the code box that fills it from the clipboard", async () => {
+    const { root } = await mount();
+    const field = q(root, ".field-action");
+    expect(field.contains(q(root, "#bridge-code"))).toBe(true);
+    expect(field.contains(q(root, '[data-key="bridge-paste"]'))).toBe(true);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { readText: () => Promise.resolve("  ABCD-EFGH \n") },
+      configurable: true,
+    });
+    (q(root, '[data-key="bridge-paste"]') as HTMLButtonElement).click();
+    await flush();
+    expect((q(root, "#bridge-code") as HTMLInputElement).value).toBe("ABCD-EFGH");
+  });
+
+  it("says so when the clipboard is empty or the browser will not let it be read", async () => {
+    const { root } = await mount();
+    Object.defineProperty(navigator, "clipboard", {
+      value: { readText: () => Promise.resolve("   ") },
+      configurable: true,
+    });
+    (q(root, '[data-key="bridge-paste"]') as HTMLButtonElement).click();
+    await flush();
+    expect(q(root, "#bridge-message").textContent).toContain("clipboard is empty");
+    Object.defineProperty(navigator, "clipboard", {
+      value: { readText: () => Promise.reject(new Error("denied")) },
+      configurable: true,
+    });
+    (q(root, '[data-key="bridge-paste"]') as HTMLButtonElement).click();
+    await flush();
+    expect(q(root, "#bridge-message").textContent).toContain("did not let the extension read the clipboard");
+  });
+
   it("announces status through a status region and errors through an alert", async () => {
     const { root } = await mount();
     expect(q(root, "#bridge-status").getAttribute("aria-live")).toBe("polite");

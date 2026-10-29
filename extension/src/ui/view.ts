@@ -1394,6 +1394,23 @@ export class PanelView {
       },
     });
     input.value = this.codeDraft;
+    // Paste sits inside the right end of the box; Chrome may ask before the extension reads the clipboard, or refuse.
+    const pasteCode = async (): Promise<void> => {
+      try {
+        const text = (await navigator.clipboard.readText()).trim();
+        if (text) {
+          input.value = text;
+          this.codeDraft = text;
+          input.focus();
+          return;
+        }
+        this.panel.noteBridgeMessage("The clipboard is empty. Copy the code from the desktop app first.");
+      } catch {
+        this.panel.noteBridgeMessage(
+          "Chrome did not let the extension read the clipboard. Click in the box and press Ctrl+V (Cmd+V on a Mac) instead.",
+        );
+      }
+    };
     const message = el(
       "p",
       {
@@ -1419,7 +1436,12 @@ export class PanelView {
       "settings-desktop",
       "Desktop app",
       el("label", { text: "Pairing code", attrs: { for: "bridge-code" } }),
-      input,
+      el(
+        "div",
+        { class: "field-action" },
+        input,
+        this.button("Paste", "quiet", "bridge-paste", () => void pasteCode(), bridge.busy),
+      ),
       el(
         "div",
         { class: "row" },
