@@ -576,3 +576,43 @@ async def test_a_second_client_is_refused_while_one_is_connected(running):
             with pytest.raises(websockets.exceptions.ConnectionClosed):
                 while True:
                     await asyncio.wait_for(second.recv(), 2)
+
+
+async def test_an_expired_pairing_window_is_dropped_and_the_pin_holds():
+    now = {"t": 0.0}
+    bridge = b.Bridge(secret=SECRET, pinned_origin=EXT_ORIGIN, ports=(0,))
+    bridge._pairing = b.PairingWindow(clock=lambda: now["t"])
+    await bridge.start_async()
+    try:
+        with pytest.raises(websockets.exceptions.InvalidStatus):
+            await connect(bridge.port, origin=OTHER_ORIGIN)  # pinned even while a window is open
+        now["t"] = b.PAIRING_TTL_S + 1
+        with pytest.raises(websockets.exceptions.InvalidStatus):
+            await connect(bridge.port, origin=OTHER_ORIGIN)
+        async with await connect(bridge.port) as ws:
+            await authenticate(ws)  # the paired extension still gets in
+        assert bridge._pairing is None  # the dead window is gone, not just ignored
+    finally:
+        await bridge.stop_async()
+
+
+async def test_a_cancelled_pairing_code_no_longer_pairs():
+    bridge = b.Bridge(secret=None, ports=(0,))
+    code = bridge.begin_pairing()
+    bridge.cancel_pairing()
+    await bridge.start_async()
+    try:
+        async with await connect(bridge.port) as ws:
+            await ws.recv()
+            await ws.send(json.dumps({"type": "pair", "v": 1, "code": code}))
+            with pytest.raises(websockets.exceptions.ConnectionClosed):
+                await asyncio.wait_for(ws.recv(), 2)
+    finally:
+        await bridge.stop_async()
+
+
+def test_a_locked_pairing_window_is_not_alive():
+    w = b.PairingWindow()
+    for _ in range(b.PAIRING_MAX_FAILURES):
+        w.check("WRONG-CODE")
+    assert not w.alive

@@ -986,6 +986,10 @@ The panel side of this (the Settings field and a "Connected" indicator) is **not
 | Flooding | 64 KiB frames, 500 items, one client, 5-second authentication window. |
 | The desktop app is gone mid-run | A run the desktop app started pauses with the new reason `bridge-lost`; a worker that died with the socket pauses it on the next wake-up. A run the user started in the panel is never touched. |
 
+### Fill mode
+
+`link_mode` in the desktop settings decides the `mode` of `begin`. It defaults to **`auto`**: the extension fills the whole track by itself. The Settings switch "Fill automatically" (on by default) turns it off for step-by-step filling with Next or the key. A saved explicit `LINK_MODE` keeps its value; an unreadable one falls back to `auto`.
+
 ### Known limits
 
 - Nothing can wake a sleeping MV3 worker to connect (`alarms` is not an allowed permission). The link is made when the worker starts, when a Genius page talks to it, or when the panel asks; while connected, the desktop app's pings keep it awake. If the connection drops and the worker then goes idle, it reconnects at the next such event.
@@ -998,7 +1002,7 @@ The desktop module is `assistant/bridge.py`; nothing imports it yet.
 
 1. **Own a `Bridge`** in `App.__init__`: `Bridge(secret=settings.bridge_secret, pinned_origin=settings.bridge_origin, on_status=..., on_connection=..., on_paired=...)`, `start()` at launch, `stop()` on close. The three callbacks run on the bridge's thread, so each must hop to Tk with `self.after(0, ...)`. Persist `bridge_secret` and `bridge_origin` in the settings file (`utils/config.py`), never in logs. If `start()` raises `OSError` (all five ports busy), keep working with hotkeys only.
 2. **Pairing UI** in the settings screen: a "Connect browser extension" button that shows `bridge.begin_pairing()` and its two-minute expiry, and a "Forget" button that calls `forget_pairing()` and clears the settings.
-3. **Starting a track** (`_show_assistant_screen`, line 542, after `self._queue = self._current_queue()`): when `bridge.connected`, call `bridge.send_command("begin", title=..., queue=self._queue, mode="auto" or "manual")` and show the returned `ack` error, if any. The queue strings are exactly what `typed_queue()` yields; the kinds match the extension's list, and the bridge refuses others.
+3. **Starting a track** (`_show_assistant_screen`, line 542, after `self._queue = self._current_queue()`): when `bridge.connected`, call `bridge.send_command("begin", title=..., queue=self._queue, mode=settings.link_mode)` and show the returned `ack` error, if any. The queue strings are exactly what `typed_queue()` yields; the kinds match the extension's list, and the bridge refuses others.
 4. **Who owns F7/F8.** The `keyboard.hook_key(..., suppress=True)` hooks in `_register_assistant_keys` (line 121) swallow the keys before the browser sees them. Decision for the owner: while bridged, **release those hooks** and let the extension's page handler take F7/F8 when focus is on Genius (it already does, and auto mode needs no key); the on-screen Next/Back/Skip buttons send `fill-next`, `back`, `skip`. When `on_connection(False)` fires, re-register the hooks so the blind fallback works again. Both at once would double-step.
 5. **Mirror the position** from `on_status`: set `self._pos = state["position"]` and re-render, instead of advancing it in `_on_hotkey` (line 1102) and `_skip` (line 698) while bridged. The extension is then the only writer of the position.
 6. **Ending**: Esc and leaving the assistant screen send `stop`.

@@ -125,6 +125,11 @@ class PairingWindow:
         self._spent = False
         return self.code
 
+    @property
+    def alive(self) -> bool:
+        """Still able to pair: not used, not locked, not expired."""
+        return not self._spent and self._failures < PAIRING_MAX_FAILURES and self._clock() <= self._expires
+
     def check(self, attempt: str) -> bool:
         if self._spent or self._failures >= PAIRING_MAX_FAILURES or self._clock() > self._expires:
             return False
@@ -359,6 +364,16 @@ class Bridge:
             return self._pairing.code
         return self._pairing.renew()
 
+    def cancel_pairing(self) -> None:
+        """Close the pairing window now; the code stops working."""
+        self._pairing = None
+
+    def _window(self) -> PairingWindow | None:
+        """The pairing window while it can still pair; an expired, spent or locked one is dropped."""
+        if self._pairing is not None and not self._pairing.alive:
+            self._pairing = None
+        return self._pairing
+
     def forget_pairing(self) -> None:
         self.secret = None
         self.pinned_origin = None
@@ -469,7 +484,9 @@ class Bridge:
     def _check_handshake(self, connection: Any, request: Any) -> Any:
         if not host_allowed(request.headers.get("Host"), self.port):
             return connection.respond(HTTPStatus.FORBIDDEN, "forbidden\n")
-        if not origin_allowed(request.headers.get("Origin"), self.pinned_origin if self._pairing is None else None):
+        # The pin holds whenever a pairing exists, also while a pairing window is open: pairing another browser
+        # means forgetting the first one.
+        if not origin_allowed(request.headers.get("Origin"), self.pinned_origin):
             return connection.respond(HTTPStatus.FORBIDDEN, "forbidden\n")
         return None
 
@@ -483,7 +500,7 @@ class Bridge:
             return
         session = ClientSession(
             secret=self.secret,
-            pairing=self._pairing,
+            pairing=self._window(),
             origin=origin,
             pinned_origin=self.pinned_origin,
         )
@@ -508,7 +525,7 @@ class Bridge:
         session = self._sessions.get(conn)
         if session is None:
             session = self._sessions[conn] = ClientSession(
-                secret=self.secret, pairing=self._pairing, origin=None, pinned_origin=self.pinned_origin
+                secret=self.secret, pairing=self._window(), origin=None, pinned_origin=self.pinned_origin
             )
         reaction = session.receive(raw)
         for message in reaction.sends:

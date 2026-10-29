@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     # never logged or printed: repr=False keeps it out of repr(settings) and out of tracebacks.
     bridge_secret: str = Field(default="", repr=False)
     bridge_origin: str = ""  # the extension id it was paired with (trust on first use)
-    link_mode: str = "manual"  # how the extension fills a run the desktop starts: "manual" or "auto"
+    link_mode: str = "auto"  # how the extension fills a run the desktop starts: "auto" (default) or "manual"
 
     # Window position (-1 = not yet saved, use default centering)
     win_x: int = -1
@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     @field_validator("link_mode", mode="before")
     @classmethod
     def _link_mode_choice(cls, value: object) -> str:
-        return "auto" if str(value).strip().lower() == "auto" else "manual"
+        return "manual" if str(value).strip().lower() == "manual" else "auto"
 
     def save(self) -> None:
         """Persist current settings to the per-user settings file."""

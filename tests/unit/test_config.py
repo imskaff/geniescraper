@@ -26,7 +26,7 @@ def test_save_round_trips_every_field(tmp_path, monkeypatch):
             "auto_start_delay": 7,
             "bridge_secret": "ab" * 32,
             "bridge_origin": "chrome-extension://" + "a" * 32,
-            "link_mode": "auto",
+            "link_mode": "manual",
             "win_x": 10,
             "win_y": 20,
         }
@@ -99,4 +99,10 @@ def test_pairing_secret_stays_out_of_repr():
 
 def test_link_mode_only_accepts_the_two_modes():
     assert config.Settings(link_mode="AUTO").link_mode == "auto"  # pyright: ignore[reportCallIssue]
-    assert config.Settings(link_mode="whatever").link_mode == "manual"  # pyright: ignore[reportCallIssue]
+    assert config.Settings(link_mode="Manual").link_mode == "manual"  # pyright: ignore[reportCallIssue]
+    assert config.Settings(link_mode="whatever").link_mode == "auto"  # pyright: ignore[reportCallIssue]
+
+
+def test_link_mode_defaults_to_auto_and_a_saved_manual_is_kept():
+    assert _settings(None).link_mode == "auto"
+    assert config.Settings(link_mode="manual").link_mode == "manual"  # pyright: ignore[reportCallIssue]
