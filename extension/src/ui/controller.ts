@@ -830,7 +830,12 @@ export class PanelController {
     if (keyMessage) this.keyNote = keyMessage;
     if (answer.ok && answer.data.url) {
       await this.setResult(index, {
-        song: { ...current.song, youtubeUrl: answer.data.url, youtubeIsMv: answer.data.isMusicVideo },
+        song: {
+          ...current.song,
+          youtubeUrl: answer.data.url,
+          youtubeIsMv: answer.data.isMusicVideo,
+          ...(answer.data.kind ? { youtubeKind: answer.data.kind } : {}),
+        },
       });
       this.note(index, "");
       if (announce) this.update({ status: keyMessage });
@@ -875,9 +880,9 @@ export class PanelController {
     }
     this.update({ youtubeLinkError: "" });
     this.note(index, "");
-    await this.setResult(index, {
-      song: { ...result.song, youtubeUrl: link, youtubeIsMv: false, youtubeByUser: true },
-    });
+    const song = { ...result.song, youtubeUrl: link, youtubeIsMv: false, youtubeByUser: true };
+    delete song.youtubeKind;
+    await this.setResult(index, { song });
     return true;
   }
 
@@ -887,6 +892,7 @@ export class PanelController {
     if (!result?.song) return;
     const song = { ...result.song, youtubeUrl: "", youtubeIsMv: false };
     delete song.youtubeByUser;
+    delete song.youtubeKind;
     this.update({ youtubeLinkError: "" });
     await this.setResult(index, { song });
   }

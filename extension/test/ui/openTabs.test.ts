@@ -171,8 +171,52 @@ describe("the open Apple Music pages on the link screen", () => {
 });
 
 describe("the link screen layout", () => {
-  it("reserves room for the help text, so the detector below it does not move when the text changes length", () => {
-    const css = readFileSync(join(import.meta.dirname, "..", "..", "src", "ui", "panel.css"), "utf-8");
-    expect(css).toMatch(/#link-help\s*\{[^}]*min-height:\s*4\.5em/);
+  const css = readFileSync(join(import.meta.dirname, "..", "..", "src", "ui", "panel.css"), "utf-8");
+
+  it("puts Get credits right under the help text, and keeps the room for the longest help text below it", () => {
+    // The help text takes the room its words need, so the button sits directly under it ...
+    expect(css).not.toMatch(/#link-help\s*\{[^}]*min-height/);
+    // ... and the form as a whole keeps a fixed height, so the detector below does not move with the text.
+    expect(css).toMatch(/\.link-form\s*\{[^}]*min-height:\s*\d+(\.\d+)?em/);
+  });
+
+  it("leaves a gap between Get credits and the detector", () => {
+    expect(css).toMatch(/\.detector\s*\{[^}]*margin:\s*var\(--space-4\)/);
+  });
+});
+
+describe("the Get credits button needs a link", () => {
+  const go = (root: HTMLElement): HTMLButtonElement => $(root, '[data-key="go"]') as HTMLButtonElement;
+  const type = (root: HTMLElement, text: string): void => {
+    const input = $(root, "#link") as HTMLInputElement;
+    input.value = text;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+
+  it("cannot be pressed while the link box is empty", async () => {
+    const { root } = await mount();
+    expect(go(root).disabled).toBe(true);
+  });
+
+  it("can be pressed once something is typed, and not again when it is cleared or only spaces", async () => {
+    const { root } = await mount();
+    type(root, "https://music.apple.com/us/album/x/1");
+    expect(go(root).disabled).toBe(false);
+    type(root, "   ");
+    expect(go(root).disabled).toBe(true);
+    type(root, "");
+    expect(go(root).disabled).toBe(true);
+  });
+
+  it("can be pressed at once when the link is filled in from the page the user is on", async () => {
+    const { root } = await mount({ tab: { tabId: 3, url: ALBUM.url } });
+    expect(go(root).disabled).toBe(false);
+  });
+
+  it("does not start a read when Enter is pressed in an empty box", async () => {
+    const { root, env } = await mount();
+    ($(root, "form") as HTMLFormElement).requestSubmit();
+    await flush();
+    expect(env.api.calls.some((call) => call.startsWith("detect:"))).toBe(false);
   });
 });

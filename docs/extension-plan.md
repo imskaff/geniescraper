@@ -880,6 +880,8 @@ The lookup used to rank the auto-generated "Artist - Topic" upload above the art
 `scoreAudio` now gives the artist's own audio 2 and the Topic upload 1, and the new `scoreLyric` gives a lyric video on the artist's own channel 3 (the Official Artist badge counts when the title names the artist; remixes, live versions and other songs never do).
 The music video phase is unchanged and still wins.
 The same search results are scored, so no search was added; a Topic upload alone no longer ends the search, so a song whose first search finds only that goes on to the next one, and the request caps in the tests still hold.
+The panel names what it found next to the link, from the track's credits: "YouTube (music video)", "(lyric video)", "(official audio)" or "(auto-generated)", and "(your link)" for one the user pasted.
+The lookup's answer carries it as `kind`, kept on the song as `youtubeKind`; a link saved before that was recorded still shows "music video" or "audio" from the older flag.
 The Python app (`scraper/youtube.py`) has the same rules.
 In the golden set only `sza-sos-t1` changed: its results hold "SZA - SOS (Lyric Video)" on SZA's channel, which by this order beats the audio and the Topic upload it accepted before (the entry was reviewed and updated by hand).
 Not checked live: the saved pages replay all five queries per song, but how often a lyric video turns up in the live top ten is only measured by a live run.
