@@ -377,6 +377,10 @@ def walk() -> dict[str, Any]:
             seen["auto_paste_state"] = str(window._auto_switch.cget("state"))
             seen["auto_paste_hint"] = window._auto_hint.cget("text")
         elif name == "07-credits":
+            seen["credits_texts"] = _texts(window)
+            window._song = window._song.model_copy(update={"release_date": ""})
+            window._show_credits_screen()
+            seen["credits_texts_without_date"] = _texts(window)
             seen["review_hooks_before_back"] = len(window._kb_hooks)
             window._back_from_credits()
             seen["review_hooks_after_back"] = len(window._kb_hooks)
@@ -451,6 +455,13 @@ def test_pressing_a_row_starts_get_credits_for_that_page(walk):
 
 def test_every_screen_renders(walk):
     assert walk["screens"] == EXPECTED_SCREENS
+
+
+def test_the_credits_screen_shows_the_release_date_and_hides_it_when_unknown(walk):
+    assert "Released" in walk["credits_texts"]
+    assert "May 17, 2024" in walk["credits_texts"]
+    assert "Released" not in walk["credits_texts_without_date"]
+    assert not any("2024" in t and "May" in t for t in walk["credits_texts_without_date"])
 
 
 def test_assistant_controls_skip_jump_and_toggle(walk):

@@ -656,6 +656,8 @@ class App(ctk.CTk):
             line(credit.role, ", ".join(credit.artists))
 
         section("Release")
+        if released := song.release_date_text():
+            line("Released", released)
         phono, notice = song.phonographic_copyright, song.copyright_notice
         line("℗ Phonographic", phono or "Not found", missing=not phono)
         if notice and notice != phono:
