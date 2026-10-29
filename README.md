@@ -49,7 +49,7 @@ It never presses Save: you check the form and save it yourself.
 
 |                           | Browser extension                                   | Desktop app                                                  |
 |---------------------------|-----------------------------------------------------|--------------------------------------------------------------|
-| **Runs on**               | Chrome and Edge, Windows and macOS                  | Windows                                                      |
+| **Runs on**               | Chrome and Edge, Windows and macOS (Safari soon)    | Windows                                                      |
 | **Reads the credits**     | Yes, from the pages you have open                   | Yes, with its own browser (Playwright)                       |
 | **Fills the Genius form** | Yes: Auto-paste or step by step, exact matches only | Through the extension once paired; otherwise manual hotkeys  |
 | **Finds open pages**      | Yes                                                 | Yes, once paired                                             |
@@ -83,6 +83,9 @@ The steps are the same on **Windows** and **macOS**, apart from how you unzip th
 
 > [!NOTE]
 > Chrome may show **Disable developer mode extensions** when it starts. Choose to keep them: it is Chrome's standard notice for any extension that does not come from the store.
+
+> [!NOTE]
+> **Safari support is coming soon.**
 
 > [!TIP]
 > **On a Mac,** the `F7` and `F8` keys are usually media keys. Hold `Fn` while you press them, or turn on **Use F1, F2, etc. keys as standard function keys** in **System Settings → Keyboard → Keyboard Shortcuts… → Function Keys**. The **Next**, **Previous** and **Skip** buttons in the panel work without the keys.
