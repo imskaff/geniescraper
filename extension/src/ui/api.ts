@@ -1,5 +1,6 @@
 // The panel's side of the worker protocol: send one request, check the answer's shape.
 import { normalisePaste, type PasteState } from "../core/paste";
+import { isBridgeLinkState, type BridgeLinkState, type BridgeRequest } from "../shared/bridge";
 import {
   isAlbumInfo,
   isKeyCheck,
@@ -25,13 +26,19 @@ export interface WorkerApi {
   checkYoutubeKey(key: string): Promise<Result<KeyCheck>>;
   /** Change the paste session. The worker is its only writer; the answer is the state afterwards. */
   paste(command: PasteCommand): Promise<Result<PasteState>>;
+  /** The link to the desktop app: pair with a code, unpair, or ask how it stands. The answer is the link afterwards. */
+  bridge(request: BridgeRequest): Promise<Result<BridgeLinkState>>;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
-export type Send = (request: WorkerRequest) => Promise<unknown>;
+export type Send = (request: WorkerRequest | BridgeRequest) => Promise<unknown>;
 
-async function ask<T>(send: Send, request: WorkerRequest, isData: (value: unknown) => value is T): Promise<Result<T>> {
+async function ask<T>(
+  send: Send,
+  request: WorkerRequest | BridgeRequest,
+  isData: (value: unknown) => value is T,
+): Promise<Result<T>> {
   let response: unknown;
   try {
     response = await send(request);
@@ -56,6 +63,7 @@ export function createWorkerApi(send: Send): WorkerApi {
     scrapeTrack: (url, trackTitle) => ask(send, { type: "scrape-track", url, trackTitle }, isPageScrape),
     checkYoutubeKey: (key) => ask(send, { type: "youtube-key-check", key }, isKeyCheck),
     lookupYoutube: (title, artist) => ask(send, { type: "youtube-lookup", title, artist }, isYoutubeAnswer),
+    bridge: (request) => ask(send, request, isBridgeLinkState),
     async paste(command) {
       const answer = await ask(send, command, isRecord);
       return answer.ok ? { ok: true, data: normalisePaste(answer.data) } : answer;

@@ -105,6 +105,10 @@ export function checkCommand(message: Record<string, unknown>): CommandCheck {
   return { ok: true, command: { type: "begin", id, title, queue: items, mode } };
 }
 
+export function isBridgeLinkState(value: unknown): value is BridgeLinkState {
+  return isRecord(value) && typeof value["paired"] === "boolean" && typeof value["connected"] === "boolean";
+}
+
 export function isBridgeRequest(value: unknown): value is BridgeRequest {
   if (!isRecord(value)) return false;
   if (value["type"] === "bridge-unpair" || value["type"] === "bridge-status") return true;
