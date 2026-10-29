@@ -2,6 +2,14 @@
 
 Things we know are worth doing and have not done. Newest first within each section. Each item says what is wrong, what we measured, and where to start.
 
+## 0. Direction (decided by the owner, 29 October 2026)
+
+- **The manual hotkey version of the desktop app is frozen.** What the desktop does without a connected browser extension (paste with F7/F8 into whatever field the user clicked, no view of Genius) stays exactly as it is. It is not developed further: no new features, no attempt to make it smarter. It exists as a fallback, and the app says so ("Manual mode").
+- **Focus mainly on the browser extension, on both Windows and Mac** (Chrome and Edge, and the Safari build, which still needs a Mac with Xcode to test and sign).
+- **Then the desktop app**, built around the extension link: connection, open Apple Music pages, status of the run, and reading credits. The GUI performance work in section 1 belongs to this step.
+
+The desktop app already leads users to the extension: a glowing "Connect your browser extension" card on the start screen while none is connected, and a "Browser extension (recommended)" card at the top of Settings.
+
 ## 1. The desktop GUI is slow and probably needs a redesign (reported by the owner)
 
 **Problem.** The desktop app feels very laggy: opening Settings, moving between screens and stepping through a song while pasting all take visible time. The owner's view is that it likely needs a complete redesign, possibly on a different GUI toolkit.
