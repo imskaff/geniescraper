@@ -230,6 +230,22 @@ describe("the companion link to the desktop app", () => {
     expect(read("store/listing.md")).toContain("127.0.0.1");
   });
 
+  it("says in the privacy policy and the store listing that open Apple Music pages go to the desktop app", () => {
+    expect(read("PRIVACY.md")).toContain("title and address of each such page");
+    expect(read("PRIVACY.md")).toContain("does not list or send any other tab");
+    expect(read("store/listing.md")).toContain(
+      "titles and addresses of the user's open Apple Music album and song pages",
+    );
+  });
+
+  it("asks for no permission to list the open Apple Music pages", () => {
+    const manifest = JSON.parse(read("manifest.json")) as { permissions: string[]; host_permissions: string[] };
+    expect(manifest.permissions).not.toContain("tabs");
+    expect(manifest.host_permissions).toContain("https://music.apple.com/*");
+    // The worker queries only Apple Music tabs, by address filter.
+    expect(read("src/background/worker.ts")).toContain('chrome.tabs.query({ url: "https://music.apple.com/*" })');
+  });
+
   it("keeps the secret out of the synced area and out of logs", () => {
     const source = read("src/background/bridge.ts");
     expect(source).not.toMatch(/console\./);

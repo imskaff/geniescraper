@@ -91,6 +91,8 @@ uv run python gui_main.py
    - Click any step in the list to jump to it.
    - Press **Esc** to end pasting for the song.
 
+With the browser extension paired (Settings, Desktop app), the Link screen also lists the Apple Music albums and songs open in your browser; click one to get its credits.
+
 **⚙ Settings** is on every screen, including while you paste, and every change applies and saves immediately.
 Auto-tab and Auto-confirm can also be switched on or off from the pasting screen.
 

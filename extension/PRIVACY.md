@@ -37,7 +37,7 @@ Requests carry no cookies and no referrer.
 Apple Music pages are opened in a minimized window of your own browser (a background tab if that is not possible), as if you had visited them, and closed again when read.
 Because that is a real visit, Apple Music sees it as it would see any visit from your browser, including any cookies you already have for it; the extension reads only the page's public credits text.
 The side panel also lists the Apple Music album and song pages you already have open (their addresses and titles, read from your own tabs with the access to `music.apple.com` the extension already has), so you can pick one.
-That list stays in the panel; it is not stored and not sent anywhere.
+That list stays in the panel; it is not stored and not sent anywhere, except to your own desktop app on your own computer if you have paired it (see below).
 If you add the optional YouTube link by pasting one yourself, nothing is sent anywhere: the link is only copied into the Genius form.
 The extension does not send anything to the developer or to any other party.
 The one other place it can talk to is the optional desktop app on your own computer, described next.
@@ -48,6 +48,8 @@ If you also run the Géniescraper desktop app and pair the two, the extension op
 You pair once by typing a short code the desktop app shows; the extension then keeps a secret in `chrome.storage.local`, on this device only, never synced, and uses it only to prove to the desktop app that it is you (the secret itself is never sent again).
 Over that connection the desktop app sends the list of credits to paste (the same text you would see in the side panel) and commands such as fill next, back, skip and pause.
 The extension sends back only where the paste stands: a step count, whether it is running or paused, and its own plain status message.
+It also tells the desktop app which Apple Music album and song pages are open in your browser, so the app can list them for you to pick from: the title and address of each such page (at most 20), whether it is the one you are looking at, and nothing else.
+It sends this list when the link is made and again when your open pages change, and only to the desktop app on your own computer; it does not list or send any other tab.
 It does not send the Genius page's content, your Genius account, cookies, passwords or anything else, and the desktop app never sees your Genius sign-in: you stay signed in in your own browser.
 Nothing on this connection leaves your computer, and the extension never connects until you pair.
 You can unpair at any time, which deletes the secret.

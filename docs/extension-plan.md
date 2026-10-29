@@ -1033,3 +1033,26 @@ Settings gains a "Desktop app" card (last card, after the YouTube key). It is th
 - **Code**: `WorkerApi.bridge`, `PanelState.bridge`, `PanelController.pairBridge/unpairBridge/refreshBridge`, `PanelView.desktopSettings`. Built with `el()` and `textContent` only. No new colours, so the contrast test is unaffected; no animation.
 - **Tests**: `test/ui/bridge.test.ts` (controller with fake timers, card markup and accessibility), `FakeApi.bridge` and `.link` in `test/ui/fakes.ts`.
 - **Not verified**: the card against a real desktop app (the desktop side is not wired yet, see section 39), and in a real browser.
+
+## 42. Open Apple Music pages on the desktop app's start screen
+
+The desktop app lists the Apple Music album and song pages open in the user's browser, like the panel's "Open in your browser" list (section 38), by receiving them from the paired extension over the companion link of section 39. Without a connected extension nothing is shown and the app works as before.
+
+### The `pages` event (extension to desktop)
+
+`{"type": "pages", "v": 1, "pages": [{"url": "...", "title": "...", "kind": "album" | "song", "current": true | false}]}`
+
+- **When.** Right after the link authenticates (also when the list is empty), and whenever the list changes. Tab events (`tabs.onActivated`, `onRemoved`, and `onUpdated` for a new address, title or a finished load) are debounced by 300 ms; a list equal to the last one sent on this connection is not sent again. Nothing is sent while unpaired or not yet authenticated, and the pending timer is dropped when the link ends.
+- **What.** The panel's own listing (`appleTabEntries`): only album and song pages of `music.apple.com`, one entry per page, the page in view first, titles with Apple's site suffix and invisible marks removed and cut at 120 characters. On top of that: at most 20 entries, and an address longer than 2048 characters is left out. Each entry has exactly `url`, `title`, `kind`, `current`; no tab id, no other tab, no page content.
+- **Permissions.** None added. `chrome.tabs.query({ url: "https://music.apple.com/*" })` returns addresses and titles because of the existing `https://music.apple.com/*` host permission (the panel already relies on this); `active: true` queries need none. The manifest test pins that `tabs` stays out of `permissions`.
+- **Scope.** Only the worker does this. Nothing is scraped, opened or navigated; the desktop app cannot ask for it and cannot send the extension anything because of it.
+
+### Desktop side
+
+- **Validation** (`assistant.bridge.clean_pages`, run by `ClientSession` before any event): `pages` that is not a list closes the connection like any malformed message. Each entry is checked on its own and dropped if it is not exactly an object with those four keys, with: an address of 1 to 2048 characters that starts with `https://`, has no whitespace, control character or backslash, and whose authority is exactly `music.apple.com` (no credentials, port or look-alike host); a title of 1 to 120 printable characters (no line breaks or control characters); `kind` one of `album` or `song`; `current` a real boolean. At most 20 entries are kept. The list is data to show: it never starts a scrape or a run by itself.
+- **State.** `LinkController.pages` (a tuple of `OpenPage`) is set from the event only while connected, and emptied when the link drops or the pairing is forgotten; `on_pages` tells the GUI, once per actual change. Late callbacks from a dropped or replaced bridge are ignored as for every other event.
+- **GUI.** The start screen shows an "Open in your browser" card below the link form (in place of "How it works") only while the extension is connected: rows with an Album or Song tag, the title and "this page" for the page in view (at most 4 rows, then "and N more open"); with nothing open, the extension's own line ("Open an album or song on Apple Music in your browser and it shows up here."). Clicking a row puts its address in the link box and runs the same code path as the Get credits button. A change redraws only this card, so what the user typed is kept; text is shown by labels only.
+
+### Tests
+
+`test/background/bridge.test.ts` (group "open Apple Music pages": sent on connect, not unpaired, not before the handshake, debounce, no repeat, filtering and the 20/120 caps, stops with the link, fresh on reconnect), `test/manifest.test.ts` (no `tabs` permission, the policy texts); `tests/unit/test_bridge.py` (hostile entries, caps, shape), `tests/unit/test_link.py` (controller state), `tests/unit/test_gui_logic.py` (rows), and `tests/gui/test_screens.py` (the card in the walk: listed, updated in place, emptied, hidden, a row starts Get credits).
