@@ -1,60 +1,101 @@
 <div align="center">
-<img src="img/geniescraper.png" alt="Géniescraper logo" width="400">
 
-# Géniescraper
+<img src="img/geniescraper.png" alt="Géniescraper logo" width="360">
 
-**Géniescraper** is a Python-based tool that bridges Apple Music credits and Genius.com metadata entry. It uses stealth browser automation to extract songwriters, producers, roles, copyrights, and cover art, then provides a hotkey-driven GUI assistant to paste everything directly into Genius - 100% in accordance with the guidelines.
+<h1>Géniescraper</h1>
 
-🧩 **The browser extension is recommended.** It fills the Genius form for you (Auto-paste), skips names already filled in, only picks an exact artist match and lists the Apple Music pages you have open. It works in Chrome and Edge on Windows and macOS, and the desktop app works best with it connected: see [Install the browser extension](#install-the-browser-extension). Without it the desktop app falls back to manual hotkeys.
+<p><b>Apple Music credits, straight into Genius.</b></p>
+
+<p>
+Géniescraper reads the credits of an Apple Music album or song and fills them into the Genius song edit form for you:<br>
+songwriters, producers, every additional role, the ℗ and © lines, the exact cover art and the official YouTube video.<br>
+It never presses Save: you check the form and save it yourself.
+</p>
+
+<p>
+<a href="#features">Features</a> ·
+<a href="#installation">Installation</a> ·
+<a href="#usage">Usage</a> ·
+<a href="#configuration">Configuration</a> ·
+<a href="extension/FAQ.md">FAQ</a> ·
+<a href="extension/PRIVACY.md">Privacy</a>
+</p>
 
 </div>
 
+> [!TIP]
+> **Start with the browser extension.** It does the whole job inside your browser, fills the Genius form by itself (Auto-paste), skips names that are already filled in and only ever picks an exact artist match.
+> The desktop app works best with the extension connected; on its own it can only paste with hotkeys into whichever field you click.
+
 ## Features
 
-- ⚡ **Fast**: about 5 seconds from link to credits per track, with the next tracks of an album scraped in the background while you paste.
-- 🕵️ **Accurate Extraction**: Playwright with stealth patches reads songwriters, producers, every additional role and the ℗ / © lines from Apple Music albums and songs.
-- 🖼️ **Exact Cover Art**: the 1000×1000 PNG of the exact release you opened, looked up by its Apple Music catalog ID.
-- ▶️ **Official YouTube Link**: in Genius's order: the artist's official music video, else the official lyric video, else the official audio, else the auto-generated upload.
-- ⌨️ **Hotkey Assistant**: press `F8` to paste each field into Genius and `F7` to go back; Back and Skip buttons and a clickable step list work with the mouse too.
-- 🤖 **Tabbing and confirming**: the hotkeys move between Genius fields and press Enter on the autocomplete suggestion for you, so you rarely touch the keyboard. With the browser extension connected it does the pasting, and only picks a suggestion that matches the typed name exactly.
-- ⚙️ **Settings Everywhere**: a Settings window over any screen; every change applies and saves immediately and is shared by every copy of the app.
+### Reading the credits
+
+- 🔍 **Finds what you have open.** The extension listens for Apple Music albums and songs already open in your browser and offers each one in a single press. The desktop app lists them too once the two are paired.
+- 🎼 **Complete credits.** Songwriters, producers, every additional role and the ℗ / © lines of an album or a song, with roles named the way Genius names them.
+- 🖼️ **Exact cover art.** The 1000×1000 PNG of the exact release you opened, found by its Apple Music catalog ID.
+- ▶️ **The right YouTube link.** In Genius's own order: the official music video, then the official lyric video, then the official audio, then the auto-generated upload. The credits say which kind was found.
+- ⚡ **Fast.** The credits of a track take a few seconds, and the next tracks of an album are read in the background while you paste (three at a time by default).
+
+### Pasting into Genius
+
+- 🤖 **Auto-paste.** The whole track is filled in field by field while you watch. It pauses the moment you click or type in the form, press `Esc` or close the panel, and carries on from the same step when you turn it back on.
+- 👣 **Step by step.** Prefer control? One field per press of `F8`, `F7` to go back, **Skip** for a field you want to leave alone.
+- 🎯 **Exact matches only.** A suggestion is chosen only when it matches the typed name exactly (ignoring case, accents and symbols). Otherwise the text stays typed and the choice is yours, so a near match never ends up on a song.
+- ♻️ **Knows what is already there.** Names already filled in are skipped, empty rows are reused and artists are added to roles Genius already lists, instead of creating duplicates.
+- 🛡️ **Never saves for you.** The extension never clicks Save or Cancel.
+
+### One workflow, two apps
+
+|                           | Browser extension                                   | Desktop app                                                  |
+|---------------------------|-----------------------------------------------------|--------------------------------------------------------------|
+| **Runs on**               | Chrome and Edge, Windows and macOS                  | Windows                                                      |
+| **Reads the credits**     | Yes, from the pages you have open                   | Yes, with its own browser (Playwright)                       |
+| **Fills the Genius form** | Yes: Auto-paste or step by step, exact matches only | Through the extension once paired; otherwise manual hotkeys  |
+| **Finds open pages**      | Yes                                                 | Yes, once paired                                             |
+| **Install**               | Download, unzip, load                               | Clone, `uv sync`                                             |
+
+Use the extension alone, or pair it with the desktop app: the app reads and reviews the credits, and the extension fills Genius.
+
+### Private by design
+
+- No accounts, no analytics, no servers of ours. Everything stays in your browser and on your computer.
+- The link between the extension and the desktop app stays on your computer (`127.0.0.1`), needs a one-time pairing code and never shares your Genius sign-in: you stay signed in to Genius in your own browser.
+- Lookups on other sites (YouTube, Deezer) are optional and ask your permission first. An optional YouTube key stays in your browser and is sent only to Google.
+- Details: [extension/PRIVACY.md](extension/PRIVACY.md).
 
 ## Installation
 
-Géniescraper comes in two forms: the **browser extension** (recommended; nothing to install but the extension itself) and the **desktop app** (Windows, Python), which works best with the extension connected.
+Géniescraper comes in two forms. Install the **browser extension** first; add the **desktop app** if you want it.
 
-### Install the browser extension
+### Browser extension (recommended)
 
 <img src="img/extension-demo.gif" alt="The side panel listening for Apple Music pages, finding one, reading the album and pasting the credits automatically" width="720">
 
-The panel listens for Apple Music pages you already have open and offers them in one press, reads the credits, and can fill the Genius form by itself (Auto-paste) while you watch; it never presses Save.
-
 No store and no command line needed.
 
-1. **Download.** Open the [Releases page](https://github.com/imskaff/geniescraper/releases), pick the newest **Géniescraper extension**, and download `geniescraper-extension-<version>.zip`.
-2. **Unzip it into a folder you will keep**, for example `Documents\Geniescraper-extension` (right-click the zip, then Extract All).
-   Chrome runs the extension from that folder, so do not delete or move it afterwards.
+1. **Download.** Open the [Releases page](https://github.com/imskaff/geniescraper/releases), pick the newest **Géniescraper extension** and download `geniescraper-extension-<version>.zip`.
+2. **Unzip it into a folder you will keep**, for example `Documents\Geniescraper-extension` (right-click the zip, then **Extract All**).
+   The browser runs the extension from that folder, so do not delete or move it afterwards.
 3. **Add it to your browser.**
-   - Chrome: open `chrome://extensions`, switch on **Developer mode** (top right), click **Load unpacked**, and choose the folder from step 2 (the one that contains `manifest.json`).
-   - Edge: open `edge://extensions`, switch on **Developer mode** (left side), click **Load unpacked**, and choose the same folder.
-4. **Open it.** Click the puzzle-piece icon in the toolbar and pin Géniescraper, then click it: the side panel opens, and a short set-up walks you through the options.
+   - **Chrome:** open `chrome://extensions`, switch on **Developer mode** (top right), click **Load unpacked** and choose the folder from step 2, the one that contains `manifest.json`.
+   - **Edge:** open `edge://extensions`, switch on **Developer mode** (left side), click **Load unpacked** and choose the same folder.
+4. **Open it.** Click the puzzle-piece icon in the toolbar, pin Géniescraper, then click it. The side panel opens and a short set-up walks you through the options.
 
-Good to know:
+> [!NOTE]
+> Chrome may show **Disable developer mode extensions** when it starts. Choose to keep them: it is Chrome's standard notice for any extension that does not come from the store.
 
-- Chrome may show "Disable developer mode extensions" when it starts; choose to keep them. This is Chrome's standard notice for any extension that is not from the store.
-- **To update**, download the newest zip, unzip it over the same folder (replace the files), then press the reload icon on the extension's card in `chrome://extensions`. The extension does not update itself.
-- To check a download, compare its SHA-256 with `SHA256SUMS.txt` from the same release.
-- If there is no release yet, build it yourself: `cd extension`, `npm ci`, `npm run build`, and load the `extension/dist` folder in step 3.
-- Questions and fixes: [extension/FAQ.md](extension/FAQ.md). What the extension sends where: [extension/PRIVACY.md](extension/PRIVACY.md).
+**Good to know**
 
-### Install the desktop app
+- **Updating.** Download the newest zip, unzip it over the same folder (replace the files), then press the reload icon on the extension's card in `chrome://extensions`. The extension does not update itself.
+- **Checking a download.** Compare its SHA-256 with `SHA256SUMS.txt` from the same release.
+- **No release yet?** Build it yourself (needs Node 20 or newer): run `cd extension`, `npm ci` and `npm run build`, then load the `extension/dist` folder in step 3. After changing the code, run `npm run build` again and reload the extension.
+- **Safari.** A Safari build exists (`npm run build:safari`) but has not been tested yet; it needs a Mac with Xcode.
+- **Questions and fixes:** [extension/FAQ.md](extension/FAQ.md).
 
-#### Prerequisites
-- **Windows**
-- **Python 3.10+**
-- **[uv](https://docs.astral.sh/uv/)** (`pip install uv`)
+### Desktop app (Windows)
 
-#### Setup
+**You need:** Windows, **Python 3.10 or newer** and **[uv](https://docs.astral.sh/uv/)** (`pip install uv`).
 
 1. **Clone the repository:**
    ```bash
@@ -62,174 +103,142 @@ Good to know:
    cd geniescraper
    ```
 
-2. **Install dependencies** (creates `.venv` from the locked versions in `uv.lock`):
+2. **Install the dependencies** (creates `.venv` from the locked versions in `uv.lock`):
    ```bash
    uv sync
    ```
    Without uv, `pip install -r requirements.txt` also works, with unpinned versions.
 
-3. **Install the Playwright browser:**
+3. **Install the browser the app reads Apple Music with:**
    ```bash
    uv run playwright install chromium
    ```
 
+4. **Start it:**
+   ```bash
+   uv run python gui_main.py
+   ```
+
+### Connect the desktop app to the extension
+
+Pair them once; the pairing is remembered. This is optional but recommended: it gives the desktop app Auto-paste, exact artist matching and the list of Apple Music pages you have open.
+
+1. In the desktop app, press **Connect browser extension** (on the start screen, or at the top of **Settings**). A code like `ABCD-EFGH` appears, with a **Copy** button.
+2. In the extension, open **Settings**, scroll to **Desktop app**, paste the code (the **Paste** button in the box does it) and press **Pair**.
+3. Both sides show **Connected**.
+
+> [!IMPORTANT]
+> The code is valid for two minutes and works once; a new one can be requested only after it has run out. Pairing shares no Genius password and the link never leaves your computer. **Unpair** (extension) or **Forget pairing** (desktop app) cuts it at any time.
+
 ## Usage
+
+### With the browser extension
+
+1. **Open an album or a song on Apple Music** and click the Géniescraper icon. The panel offers the page you are on, and any other Apple Music pages you have open appear under **Listening for Apple Music pages…**. Pick one, or paste a link and press **Get credits**.
+2. **Choose the tracks** of an album with **Select all** or by ticking them (none are ticked for you). Their credits are read in the background.
+3. **Review** each track: the credits, the ℗ / © lines, the cover and the YouTube link that will be pasted. A track that says **Needs a look** is missing something; open it to see what.
+4. **Open the song's Edit Metadata form on Genius** (signed in, in the same browser) and press **Start pasting**.
+5. **Paste.** The panel shows the current step and these controls:
+
+   | Control                | What it does                                                                                      |
+   |------------------------|---------------------------------------------------------------------------------------------------|
+   | **Auto-paste: ON/OFF** | ON fills the whole track by itself; OFF hands the steps to you. Pauses when you touch the form.   |
+   | **Next** (`F8`)        | Fills the next field. Shown while Auto-paste is off.                                              |
+   | **Previous** (`F7`)    | Goes back one step.                                                                               |
+   | **Skip**               | Leaves the current field alone.                                                                   |
+   | **Back to credits**    | Stops pasting and returns to the credits.                                                         |
+
+6. **Check the form and save it on Genius yourself.** Nothing is saved for you.
+
+When Genius has no exact match for a name or a role, the text stays typed and nothing is chosen for you: pick a suggestion yourself or press **Skip**. A few Apple roles have no Genius equivalent; those steps are left for you.
+
+> [!TIP]
+> The first time the panel opens, a short set-up walks you through what to paste, the speed and keys, and the optional lookups. Everything in it can be changed later in **Settings**.
+
+### With the desktop app
 
 ```bash
 uv run python gui_main.py
 ```
 
-1. **Link** - Paste an Apple Music album or song link and click **Get credits**.
-   The app tells you right away if the link is not one it can read.
-   Album links are best, because they include the copyright lines (℗ and ©).
-2. **Tracks** - For an album, tick the songs to paste, or choose all of them.
-3. **Review** - Check the credits, copyright lines, YouTube link and cover art that were found, then click **Start pasting** (or press **F8**).
-4. **Paste** - Open the song's edit page on Genius, click **Written By**, and follow the on-screen instruction for each step:
-   - Press **F8** to paste the current value and move on.
-   - Press **F7** or click **Back** to go back one step.
-   - Click **Skip** for a field that is already filled on Genius.
-   - Click any step in the list to jump to it.
-   - Press **Esc** to end pasting for the song.
+1. **Link.** Paste an Apple Music album or song link and press **Get credits**. With the extension paired, the albums and songs open in your browser are listed here: click one to get its credits. Album links are best, because they include the copyright lines.
+2. **Tracks.** For an album, tick the songs to paste, or choose all of them.
+3. **Review.** Check the credits, copyright lines, YouTube link and cover art that were found, then press **Start pasting**.
+4. **Paste.** Open the song's Edit Metadata form on Genius. The pasting screen follows the extension's: **Auto-paste: ON/OFF**, **Next** (`F8`), **Previous** (`F7`), **Skip** and **Back to credits**, with the steps below.
+   - **Extension connected:** Auto-paste is available and the extension fills the form; the desktop app shows the progress.
+   - **No extension connected:** the screen shows a **Manual mode** card with a **Connect browser extension** button, and the hotkeys work as described below.
 
-With the browser extension paired (Settings, Desktop app), the Link screen also lists the Apple Music albums and songs open in your browser; click one to get its credits.
+A glowing **Connect your browser extension** card on the start screen appears whenever no extension is connected.
 
-**⚙ Settings** is on every screen, including while you paste, and every change applies and saves immediately.
-With the browser extension connected, the pasting screen has an **Auto-paste** button like the extension's: on, the extension fills each field in turn; off, you press **Next** for each one. Without the extension the button is greyed out and the hotkeys (or **Next**) do the pasting.
+### Manual mode (desktop app without the extension)
+
+> [!WARNING]
+> Without the extension the app cannot see Genius. You click each field yourself, then press `F8`; it cannot tell what is already filled in (use **Skip** for those), and it presses Enter on whatever suggestion Genius shows first, so it cannot check that an artist with that name exists. This mode is kept as it is and is not being developed further.
+
+- Click the field on Genius, then press `F8` to paste the current value and move on. `F7` goes back, **Skip** leaves a field alone, `Esc` ends pasting for the song.
+- After each paste the app moves between Genius fields and confirms the suggestion for you:
+
+  | After pasting…                 | Action                                   |
+  |--------------------------------|------------------------------------------|
+  | Last songwriter                | `Tab` → Produced By field                |
+  | Last songwriter (no producers) | `Tab` × 2 + `Enter` → Add additional credits |
+  | Last producer                  | `Tab` + `Enter` → Add additional credits |
+  | Last artist in a role          | `Tab` + `Enter` → Add additional credits |
+  | Last copyright label           | `Tab` × 3 → YouTube URL field            |
+  | YouTube URL                    | `Tab` × 3 → Cover Art field              |
 
 ### Field order
 
-The assistant pastes fields in the order Genius expects them:
+Fields are pasted in the order Genius expects them:
 
-| # | Field | Notes |
-|---|-------|-------|
-| 1 | Written By | One artist per press |
-| 2 | Produced By | One artist per press |
-| 3 | Additional Credits | Role name, then each artist in that role |
-| 4 | Phonographic Copyright (℗) | Role name typed, then each label |
-| 5 | Copyright (©) | Role name typed, then each label |
-| 6 | YouTube URL | Copied to clipboard |
-| 7 | Cover Art URL | 1000×1000 PNG, copied to clipboard |
-
-### Moving between fields
-
-With the hotkeys, the assistant always moves between Genius fields after each paste, and presses Enter on the autocomplete suggestion:
-
-| After pasting… | Action |
-|---------------|--------|
-| Last songwriter | Tab → Produced By field |
-| Last songwriter (no producers) | Tab × 2 + Enter → Add additional credits |
-| Last producer | Tab + Enter → Add additional credits |
-| Last artist in a role | Tab + Enter → Add additional credits |
-| Last copyright label | Tab × 3 → YouTube URL field |
-| YouTube URL | Tab × 3 → Cover Art field |
-
-Without the browser extension the app cannot see Genius, so Enter takes whatever Genius suggests first; it cannot check that an artist with that name exists. The extension can: it picks a suggestion only when it matches the typed name exactly (ignoring case, accents and symbols), and otherwise leaves the text and the suggestions for you.
+| #   | Field                      | Notes                                    |
+|-----|----------------------------|------------------------------------------|
+| 1   | Written By                 | One artist per press                     |
+| 2   | Produced By                | One artist per press                     |
+| 3   | Additional Credits         | Role name, then each artist in that role |
+| 4   | Phonographic Copyright (℗) | Role name typed, then each label         |
+| 5   | Copyright (©)              | Role name typed, then each label         |
+| 6   | YouTube URL                | Pasted, or copied to the clipboard       |
+| 7   | Cover Art URL              | 1000×1000 PNG, pasted or copied          |
 
 ## Configuration
 
-Open **⚙ Settings** from any screen:
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| Hotkey (Next) | F8 | Paste current field and advance |
-| Hotkey (Back) | F7 | Step back one field |
-| Wait for suggestions to settle | 0.6 s | Hotkeys only: how long to wait for Genius's suggestions before pressing Enter |
-| Compact mode | Off | Hide queue list and shrink the window |
-| Always on top | On | Keep the window above the browser |
-| Auto-start assistant | Off | Start automatically after a countdown |
-| Auto-start delay | 15 s | Seconds before auto-start fires |
-| Scrape core credits | On | Songwriters and producers |
-| Scrape additional credits | On | All other roles |
-| Scrape copyright | On | ℗ and © |
-| Scrape YouTube | On | YouTube video/MV link |
-| Scrape cover art | On | Album cover at 1000×1000 PNG |
-| Find a YouTube link for each track | On | Looks the link up on YouTube (recommended); off skips the search |
-| Search Deezer for a cover | On | Only asked when Apple Music has no cover of its own |
-
-Settings are saved per user in `%APPDATA%\Geniescraper\settings.env`, so every copy of the app shares them.
-A `.env` in the project root from older versions is still read until the first save.
-
-## Development
-
-Install the git hooks once per clone (all worktrees of a clone share them):
-
-```bash
-uv run pre-commit install
-```
-
-Every commit then runs ruff check, ruff format --check, basedpyright and the offline `pytest` suite, and for changes under `extension/` also its lint, type check, tests and build, the same checks CI runs on each push and pull request.
-The offline suite includes the fixture parsers, so run `uv run playwright install chromium` first.
-Never skip the hooks with `--no-verify`; fix the failure instead.
-CI (`.github/workflows/ci.yml`, `windows-latest`) runs the same checks on every push and pull request; the live tests run weekly and on manual dispatch, so Apple Music markup changes show up without blocking pushes.
-
-```bash
-uv run ruff check . && uv run ruff format --check .
-```
-
-```bash
-uv run basedpyright
-```
-
-```bash
-uv run pytest
-```
-
-```bash
-uv run pytest -m live
-```
-
-```bash
-uv run python -m bench.run
-```
-
-- `basedpyright` type checks the project in `standard` mode (configured in `pyproject.toml`).
-  Known errors in `gui/app.py` are recorded in `.basedpyright/baseline.json`, so only new errors fail; fixed ones drop out of the baseline automatically on the next run.
-  Never regenerate the baseline (`--writebaseline`) to hide a new error; fix it instead.
-- `uv run pytest` runs the fast offline suite: unit tests, the real parsers against saved Apple Music HTML in `tests/fixtures/`, and the lookups against saved responses.
-- `-m live` runs the full scrape flow against live Apple Music and compares it with the hand-reviewed expectations in `tests/golden/`.
-- `bench.run` measures latency, accuracy and run-to-run stability over the cases in `bench/cases.json`.
-- `uv run python -m bench.capture` refreshes fixtures when Apple changes its markup; it never overwrites a golden file.
-- `uv run python -m bench.lookups` measures the YouTube and cover art lookups alone: accuracy against the hand-verified videos in `tests/golden/youtube.json` and the golden cover artwork, plus latency.
-- `uv run python -m bench.capture_lookups` refreshes the saved YouTube, Deezer and iTunes responses in `tests/fixtures/lookups/` that the offline lookup tests replay.
+Both apps have a **Settings** screen. In the desktop app it opens over any screen, and changes are applied and saved when you close it.
 
 ### Browser extension
 
-The Chrome extension lives in `extension/` (TypeScript, built with esbuild, tested with Vitest); see [docs/extension-plan.md](docs/extension-plan.md) for the design and slices.
-It needs Node 20 or newer and is installed from the lockfile:
+| Card                   | What you can set                                                                                                                      |
+|------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| **What to paste**      | Songwriters and producers, additional credits, copyright lines, YouTube link, PNG cover art link.                                      |
+| **Pasting on Genius**  | Auto-paste on or off, the pause between fields (0.6 s by default), the keys (`F8` and `F7`), how long to wait for suggestions, what happens after a track. |
+| **Reading credits**    | How many tracks are read at the same time (3 by default).                                                                              |
+| **YouTube links**      | Find a YouTube link for each track (recommended), and an optional free YouTube key for more reliable links; the panel walks you through getting one. |
+| **Desktop app**        | Pair with the desktop app: pairing code, **Paste**, **Pair**, **Unpair**.                                                              |
+| **Cover art look-up**  | Search Deezer for a cover when Apple has none.                                                                                         |
 
-```bash
-cd extension && npm ci && npm run check
-```
+The YouTube and Deezer lookups are off until you tick them; the browser then asks for permission to contact `www.youtube.com` or `api.deezer.com`, and you can take it back in Settings or in `chrome://extensions`.
 
-`npm run check` runs Prettier (`npm run format` fixes), ESLint, `tsc`, Vitest and the build; `dist/` is the unpacked extension.
-`extension/data/roles.json` and `extension/test/vectors.json` are generated from the Python code and must never be edited by hand:
+### Desktop app
 
-```bash
-uv run python -m tools.export_roles && uv run python -m tools.export_vectors
-```
+| Setting                            | Default | Description                                                          |
+|------------------------------------|---------|----------------------------------------------------------------------|
+| **Auto-paste**                     | On      | Needs the extension to be connected; greyed out otherwise            |
+| Songwriters and producers          | On      | Written By and Produced By                                           |
+| Additional credits                 | On      | Every other role                                                     |
+| Copyright lines (℗ and ©)          | On      | From album links                                                     |
+| YouTube link                       | On      | Pasted into Genius's YouTube field                                   |
+| PNG cover art link                 | On      | 1000×1000 PNG of the exact release                                   |
+| Keys                               | F8 / F7 | Paste next / go back one step                                        |
+| Wait for suggestions to settle     | 0.6 s   | Hotkeys only: how long to wait before pressing Enter                 |
+| Tracks read at the same time       | 3       | How many album tracks are read while you paste                       |
+| Find a YouTube link for each track | On      | Looks the link up on YouTube (recommended); off skips the search     |
+| Search Deezer for a cover          | On      | Only asked when Apple Music has no cover of its own                  |
+| Always on top                      | On      | Keep the window above the browser                                    |
+| Compact assistant                  | Off     | Hide the step list and shrink the window                             |
+| Start the assistant automatically  | Off     | Start pasting after a countdown (15 s by default)                    |
 
-A Python test fails when either file is stale, so run both after changing `scraper/roles.py`, `scraper/models.py`, `scraper/apple_music.py`, `scraper/deezer.py`, `scraper/text.py` or `assistant/flow.py`.
-
-To try the extension, run `npm run build`, open `chrome://extensions`, switch on Developer mode, choose Load unpacked and pick `extension/dist`.
-The toolbar button opens the side panel: paste an Apple Music album or song link (or open one and the panel offers it), choose tracks with **Select all** or by ticking them (none are ticked for you), and review the credits and the paste queue (collapsed until you open it).
-**Start pasting** is in the header next to Settings, and **Back to main menu** returns to the start.
-The cover is Apple's exact 1000x1000 PNG for the album you opened, looked up by its catalog id on `itunes.apple.com`, and it is filled into Genius's Song Art field.
-Review the credits, open the song's **Edit Metadata** form on Genius, and click **Start pasting**: the extension fills the fields by itself, with a short pause between them (the pace is in Settings).
-**Step by step** is the other way: one field per press of **F8** (**F7** goes back); Settings can make it the main way instead.
-Automatic pasting pauses when you click or type in the form, press Esc or turn the **Auto-paste: ON** switch off, or close the panel, and turning it back on carries on from the same step; it never clicks Save, so you check the form and save it yourself.
-When Genius has no exact match for a name or role the text stays typed and nothing is chosen for you: pick a suggestion yourself, or press Skip in the panel.
-The first time the panel opens, a short set-up walks you through what to paste, speed and keys, and the optional look-ups.
-Keys, auto-confirm, the suggestion wait and how many tracks are read at once (3 by default) are in the panel's Settings.
-A Deezer cover fallback and the YouTube link look-up are off until you tick them in Settings; Chrome then asks for permission to contact api.deezer.com or www.youtube.com, and you can take it back there or in chrome://extensions.
-The YouTube look-up reads YouTube's own pages (it has no API for this), which its terms do not allow for automated use: it is optional for that reason.
-For reliable YouTube links you can add your own free YouTube Data API key in Settings ("Better YouTube links"): the panel walks you through getting one, step by step, with a link to each Google page.
-The key stays in this browser, is sent only to Google, and is not synced.
-
-`npm run live:panel -- --chrome <path to Chromium> --screenshots <folder>` drives the real panel with real key presses against the real service worker and live Apple Music (a whole 10-track album), checks the result against the golden file, and saves screenshots in both color schemes and at 320 px.
-`npm run live:sidepanel -- --chrome <path to Chromium>` checks the way the extension is really used: a genuine side panel next to a visible album tab, reading that tab in place.
-
-`npm run live:genius -- --chrome <path to Chromium> --profile <folder>` drives the real extension through a whole paste into a live Genius edit form of a song you created, with a Chromium profile you signed in to by hand; `--mode auto` starts the automatic run and checks that the Auto-paste switch, Esc, a real click in the form and the panel closing each pause it and that turning it back on carries on; it never presses Save.
-`npm run live:hidden-tab -- --chrome <path to Chromium>` is an opt-in live check against Apple Music that the extension can read song pages in a genuinely hidden tab; run `npm run build` first, and find a Chromium with `uv run python -c "from playwright.sync_api import sync_playwright as s; p = s().start(); print(p.chromium.executable_path); p.stop()"`.
+Settings are saved per user in `%APPDATA%\Geniescraper\settings.env`, so every copy of the app shares them.
+A `.env` in the project root from older versions is still read until the first save.
 
 ## License
 

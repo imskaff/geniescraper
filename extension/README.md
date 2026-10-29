@@ -27,7 +27,7 @@ You do not need the Chrome Web Store, a command line or Node.js to use the exten
 
 To update, unzip the newest zip over the same folder and press the reload icon on the extension's card.
 Chrome may show "Disable developer mode extensions" at start-up for any extension that is not from the store; keep it enabled.
-The same steps are in the [main README](../README.md#install-the-browser-extension).
+The same steps are in the [main README](../README.md#browser-extension-recommended).
 
 ## Requirements (to build it yourself)
 
