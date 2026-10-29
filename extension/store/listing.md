@@ -63,6 +63,13 @@ Copy song credits from Apple Music into the Genius song edit form.
 | Optional host `https://www.youtube.com/*`    | Finds a YouTube link for the song; requested only when the user turns it on.                                                                                      |
 | Optional host `https://www.googleapis.com/*` | Finds the YouTube link through Google's official service with the user's own key; requested only when the user adds a key.                                        |
 
+## Companion desktop app (no extra permission)
+
+Optional. If the user pairs the Géniescraper desktop app, the extension's service worker opens a WebSocket to `ws://127.0.0.1` (the user's own computer) and runs the same paste engine from the desktop app's commands.
+A WebSocket to the local machine needs no host permission, so none is requested, and the manifest declares no loopback address.
+The user pairs once with a short code; nothing connects before that; the link never leaves the computer and carries no page content.
+Enter this in the privacy practices tab as: no data sent to servers, local-only link to the user's own desktop app.
+
 ## Remote code
 
 No. All code ships in the package; nothing is downloaded and run.
