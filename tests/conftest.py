@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -11,7 +12,7 @@ async def browser():
     from playwright.async_api import async_playwright
 
     async with async_playwright() as pw:
-        b = await pw.chromium.launch(headless=True)
+        b = await pw.chromium.launch(headless=True, channel=os.environ.get("GENIESCRAPER_BROWSER_CHANNEL") or None)
         yield b
         await b.close()
 

@@ -1,5 +1,6 @@
 """
-Scrapes song credits from Apple Music using the UI navigation path:
+Scrapes song credits from Apple Music.  Album tracks are read from the track's own song page
+(direct, the default); the fallback is the UI navigation path:
   Album/song page → MORE button (aria-label="MORE") → "View Credits"
 
 This is more reliable than API interception because the dedicated credits
@@ -11,6 +12,7 @@ Accepted URL formats:
 """
 
 import asyncio
+import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -356,6 +358,55 @@ async def _click_view_credits(page: Page, nth_index: int = 1) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Direct song-page reading: album row -> that track's own /song/ page
+# ---------------------------------------------------------------------------
+
+# Which path reads album-track credits: the song page of each row (True) or MORE -> View Credits (False).
+# GENIESCRAPER_CREDITS_PATH=direct|click overrides it; scrape(direct=...) overrides both.
+# Direct is the default: bench.compare matched the golden files 18/18 on both paths and was ~6-9% faster.
+DIRECT_DEFAULT = True
+
+
+class TrackUnavailableError(Exception):
+    """The album row has no song page (Apple lists the track but gives it no link)."""
+
+
+def use_direct_song_pages(direct: bool | None = None) -> bool:
+    if direct is not None:
+        return direct
+    choice = os.environ.get("GENIESCRAPER_CREDITS_PATH", "").strip().lower()
+    if choice in ("direct", "click"):
+        return choice == "direct"
+    return DIRECT_DEFAULT
+
+
+# One entry per tracklist row, in order: the row's own song link, or '' for a row without one.
+_ROW_SONG_LINKS_JS = """() => {
+    const rows = document.querySelectorAll('[data-testid="track-list-item"]');
+    return Array.from(rows, (row) => {
+        const a = row.querySelector('a[href*="/song/"]');
+        return a ? a.href : '';
+    });
+}"""
+
+
+async def _extract_song_links(page: Page) -> list[str]:
+    """Song-page URL of every album row ('' for unavailable rows); [] when the page has no tracklist."""
+    try:
+        links: list[str] = await page.evaluate(_ROW_SONG_LINKS_JS)
+    except Exception:
+        return []
+    return [u if catalog_id(u)[0] else "" for u in links]
+
+
+def pick_song_link(links: list[str], track_index: int) -> str:
+    """Song-page URL of the 1-based track_index row; raises TrackUnavailableError if it has none."""
+    if not 1 <= track_index <= len(links) or not links[track_index - 1]:
+        raise TrackUnavailableError(f"Track {track_index} has no song page on Apple Music.")
+    return links[track_index - 1]
+
+
+# ---------------------------------------------------------------------------
 # Shared browser context helper
 # ---------------------------------------------------------------------------
 
@@ -425,7 +476,9 @@ async def _get_browser():
 
             _global_playwright = await async_playwright().start()
         if _global_browser is None:
-            _global_browser = await _global_playwright.chromium.launch(headless=True)
+            # GENIESCRAPER_BROWSER_CHANNEL=chrome|msedge uses an installed browser instead of Playwright's Chromium.
+            channel = os.environ.get("GENIESCRAPER_BROWSER_CHANNEL") or None
+            _global_browser = await _global_playwright.chromium.launch(headless=True, channel=channel)
         return _global_browser
 
 
@@ -635,13 +688,17 @@ def _write_debug_html(debug_dir: Path, html: str) -> None:
     (debug_dir / "page.html").write_text(html, encoding="utf-8")
 
 
-async def scrape(url: str, *, track_index: int = 1, track_title: str = "", debug: bool = False) -> SongCredits:
+async def scrape(
+    url: str, *, track_index: int = 1, track_title: str = "", debug: bool = False, direct: bool | None = None
+) -> SongCredits:
     """
     Scrape credits from an Apple Music page.
 
     Accepts both /us/song/ and /us/album/ URLs.
     track_index (1-based) selects which song's MORE button to click on album pages.
     track_title overrides the title extracted from page.title() when already known.
+    direct selects the album-track path (see use_direct_song_pages): read the track's own song page
+    instead of clicking MORE -> View Credits.  If the song page yields no credits the click path runs.
     """
     title, artist = "", ""
 
@@ -673,17 +730,28 @@ async def scrape(url: str, *, track_index: int = 1, track_title: str = "", debug
         if "/album/" in url:
             phonographic_copyright, copyright_notice = await _extract_copyright(page)
 
-        # Album pages require MORE → View Credits navigation.
-        # Song pages expose credits directly via CSS selectors on the page.
+        credits: list[Credit] = []
         if "/album/" in url:
-            navigated = await _click_view_credits(page, nth_index=track_index)
-            if not navigated:
-                print("[warn] Could not find/click 'View Credits'. Saving debug files.")
-                debug = True
-
-        # For /song/ pages only use the CSS-selector strategy - the page body
-        # contains lyrics and navigation that Strategy 1 would misparse as credits.
-        credits = await _parse_credits_page(page, strategy_0_only="/song/" in url)
+            credits_ready = False
+            if use_direct_song_pages(direct):
+                # Raises TrackUnavailableError for a row without a song page.
+                song_url = pick_song_link(await _extract_song_links(page), track_index)
+                await _open(page, song_url)
+                credits = await _parse_credits_page(page, strategy_0_only=True)
+                credits_ready = bool(credits)
+                if not credits:
+                    # Song page gave nothing: go back to the album and use the click path.
+                    await _open(page, url)
+            if not credits_ready:
+                # Album pages need MORE -> View Credits navigation.
+                if not await _click_view_credits(page, nth_index=track_index):
+                    print("[warn] Could not find/click 'View Credits'. Saving debug files.")
+                    debug = True
+                credits = await _parse_credits_page(page)
+        else:
+            # Song pages expose credits directly via CSS selectors; only that strategy is safe there
+            # (the body holds lyrics and navigation that the text walk would misparse as credits).
+            credits = await _parse_credits_page(page, strategy_0_only=True)
 
         if debug or not credits:
             debug_dir = Path("debug")
