@@ -16,7 +16,7 @@ from gui.logic import STEPS, friendly_error, queue_summary, url_hint
 from gui.settings_window import SettingsWindow
 from scraper import apple_music, pipeline
 from scraper.apple_music import AlbumTrackInfo
-from scraper.models import SongCredits
+from scraper.models import SongCredits, youtube_label
 from utils.config import settings
 
 theme.apply()
@@ -511,7 +511,7 @@ class App(ctk.CTk):
         else:
             line("© Copyright", "Not found", missing=True)
         if song.youtube_url:
-            line("YouTube", "Music video" if song.youtube_is_mv else "Official audio", link=song.youtube_url)
+            line("YouTube", youtube_label(song.youtube_kind), link=song.youtube_url)
         else:
             line("YouTube", "Not found", missing=True)
         if song.cover_art_url:

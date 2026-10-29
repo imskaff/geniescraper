@@ -9,7 +9,7 @@
    "copyright_notice": "",
    "cover_art_url": "",
    "youtube_url": "",
-   "youtube_is_mv": false
+   "youtube_kind": null
   },
   "core_only": {
    "title": "T",
@@ -34,7 +34,7 @@
    "copyright_notice": "",
    "cover_art_url": "",
    "youtube_url": "",
-   "youtube_is_mv": false
+   "youtube_kind": null
   },
   "full": {
    "title": "T",
@@ -94,7 +94,7 @@
    "copyright_notice": "© 2022 Top Dawg Entertainment",
    "cover_art_url": "https://example.com/cover.png",
    "youtube_url": "https://www.youtube.com/watch?v=abc",
-   "youtube_is_mv": false
+   "youtube_kind": null
   },
   "padded_roles": {
    "title": "T",
@@ -124,7 +124,7 @@
    "copyright_notice": "",
    "cover_art_url": "",
    "youtube_url": "",
-   "youtube_is_mv": false
+   "youtube_kind": null
   },
   "phono_only": {
    "title": "T",
@@ -142,7 +142,7 @@
    "copyright_notice": "",
    "cover_art_url": "",
    "youtube_url": "",
-   "youtube_is_mv": false
+   "youtube_kind": null
   },
   "media_only": {
    "title": "T",
@@ -153,7 +153,7 @@
    "copyright_notice": "",
    "cover_art_url": "https://example.com/c.png",
    "youtube_url": "https://www.youtube.com/watch?v=abc",
-   "youtube_is_mv": false
+   "youtube_kind": "music-video"
   }
  },
  "typed_queue": [

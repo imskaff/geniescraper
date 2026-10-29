@@ -62,7 +62,7 @@ async def run_once(case: Case, mode: str) -> SongCredits:
 
 
 def fingerprint(song: SongCredits) -> str:
-    return song.model_dump_json(exclude={"youtube_is_mv"})
+    return song.model_dump_json(exclude={"youtube_kind"})
 
 
 async def bench_case(case: Case, mode: str, reps: int) -> CaseResult:

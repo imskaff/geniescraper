@@ -6,6 +6,7 @@ from typing import NamedTuple
 
 import httpx
 
+from scraper.models import VideoKind
 from scraper.text import core_title_words, words
 
 _HEADERS = {
@@ -387,9 +388,19 @@ def _mv_queries(title: str, artist: str) -> tuple[str, ...]:
     )
 
 
-# Watch pages fetched at once for description checks. They start after the searches,
-# which run at most two at a time (one per phase), so YouTube never sees more than three.
+# Watch pages fetched at once for description checks. The searches run one after the other, so YouTube never sees
+# more than three requests at the same time.
 _MAX_PARALLEL_DESCRIPTIONS = 3
+
+# Descriptions read per kind of candidate: the best few are enough to confirm a video, and every page read is a
+# request Google may answer with its "sorry" page. The same numbers as the extension's.
+_MAX_MV_DESCRIPTIONS = 2
+_MAX_PROVISIONAL_DESCRIPTIONS = 2
+_MAX_LABEL_DESCRIPTIONS = 1
+_MAX_AUDIO_DESCRIPTIONS = 2
+
+# What an audio-phase score means: 3 a lyric video, 2 the artist's own audio, 1 the auto-generated upload.
+_AUDIO_KINDS: dict[int, VideoKind] = {3: "lyric-video", 2: "official-audio", 1: "auto-generated"}
 
 _Candidate = tuple[int, int, str]  # (score, rank, url)
 
@@ -503,73 +514,79 @@ def _description_bonus(desc: str) -> int:
 # ── public API ────────────────────────────────────────────────────────────────
 
 
-async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
-    """Search YouTube for a song. Returns (url, is_music_video).
+async def fetch_youtube_url(title: str, artist: str) -> tuple[str, VideoKind | None]:
+    """Search YouTube for a song. Returns (url, kind), kind being what the link is, in Genius's order:
+    "music-video", "lyric-video", "official-audio" or "auto-generated".
 
-    Phase 1 - lyric video and audio:
+    Phase 2 - official music video, searched first:
+      Searches specifically for the MV.  VEVO and artist-channel uploads with MV
+      signals (keywords, "official" without audio tag) score highest.
+
+    Phase 1 - lyric video and audio, searched only when Phase 2 found no confirmed music video:
       Searches for the plain song.  A lyric video on the artist's channel ranks
       first, then the artist's own audio ("Song" or "Artist - Song"), then the
       auto-generated "Artist - Topic" upload.  Explicit MV results are excluded here.
 
-    Phase 2 - official music video:
-      Searches specifically for the MV.  VEVO and artist-channel uploads with MV
-      signals (keywords, "official" without audio tag) score highest.
+    A music video wins over audio whatever the audio scores, so the audio search would change nothing when a
+    confirmed one is found. Then the descriptions of the few candidates that need confirming are fetched together.
 
-    The two phases search concurrently, then the descriptions of the candidates
-    that need confirming are fetched together.
-
-    Returns, in Genius's order: the MV URL (is_music_video=True) when Phase 2
-    succeeds, otherwise the lyric video, the official audio, or the Topic upload
-    (is_music_video=False).  Returns ("", False) if nothing reliable is found.
+    Returns the MV URL ("music-video") when Phase 2 succeeds, otherwise the lyric video, the official audio or the
+    Topic upload.  Returns ("", None) if nothing reliable is found.
     """
     if not title or not artist:
-        return "", False
+        return "", None
 
     async with httpx.AsyncClient(timeout=12.0, headers=_HEADERS, follow_redirects=True) as client:
-        audio_candidates, (mv_candidates, provisional_mv, label_mv) = await asyncio.gather(
-            _audio_phase(client, title, artist), _mv_phase(client, title, artist)
-        )
+        mv_candidates, provisional_mv, label_mv = await _mv_phase(client, title, artist)
+        audio_candidates = [] if mv_candidates else await _audio_phase(client, title, artist)
 
         # Every description the checks below may read, each fetched once.
         mv_ids = {_video_id(u) for _, _, u in mv_candidates}
-        wanted = [_video_id(u) for _, _, u in mv_candidates[:3]]
-        wanted += [_video_id(u) for _, _, u in provisional_mv[:3] if _video_id(u) not in mv_ids]
-        wanted += [_video_id(u) for _, _, u in label_mv[:2]]
-        wanted += [_video_id(u) for s, _, u in audio_candidates[:5] if s == 2 and _video_id(u) not in mv_ids]
+        wanted = [_video_id(u) for _, _, u in mv_candidates[:_MAX_MV_DESCRIPTIONS]]
+        wanted += [i for _, _, u in provisional_mv[:_MAX_PROVISIONAL_DESCRIPTIONS] if (i := _video_id(u)) not in mv_ids]
+        wanted += [_video_id(u) for _, _, u in label_mv[:_MAX_LABEL_DESCRIPTIONS]]
+        wanted += [
+            _video_id(u)
+            for s, _, u in audio_candidates[:_MAX_AUDIO_DESCRIPTIONS]
+            if s == 2 and _video_id(u) not in mv_ids
+        ]
         descriptions = await _fetch_descriptions(client, list(dict.fromkeys(wanted)))
 
+    def described(url: str) -> str:
+        return descriptions.get(_video_id(url), "")
+
     # ── Description boost for MV candidates ───────────────────────
-    # Up to 3 top candidates get a bonus when the description confirms
+    # The top candidates get a bonus when the description confirms
     # this is a real music video.
-    for i, (score, rank, url) in enumerate(mv_candidates[:3]):
-        mv_candidates[i] = (score + _description_bonus(descriptions[_video_id(url)]), rank, url)
+    for i, (score, rank, url) in enumerate(mv_candidates[:_MAX_MV_DESCRIPTIONS]):
+        mv_candidates[i] = (score + _description_bonus(described(url)), rank, url)
 
     # ── Provisional promotion (Phase 2 plain-title hits) ──────────
     # Artist-channel videos found in Phase 2 with plain titles: only
     # add to mv_candidates when the description confirms MV.
-    for score, rank, url in provisional_mv[:3]:
+    for score, rank, url in provisional_mv[:_MAX_PROVISIONAL_DESCRIPTIONS]:
         if _video_id(url) in mv_ids:
             continue
-        bonus = _description_bonus(descriptions[_video_id(url)])
+        bonus = _description_bonus(described(url))
         if bonus:
             mv_candidates.append((score + bonus, rank, url))
 
     # ── Label-channel videos ──────────────────────────────────────
     # Kept at score 2, so any confirmed artist-channel video still wins.
-    for score, rank, url in label_mv[:2]:
-        if any(kw in descriptions[_video_id(url)] for kw in _MV_CREW_KEYWORDS):
+    for score, rank, url in label_mv[:_MAX_LABEL_DESCRIPTIONS]:
+        if any(kw in described(url) for kw in _MV_CREW_KEYWORDS):
             mv_candidates.append((score, rank, url))
 
     # ── Audio-to-MV promotion (Phase 1 plain-title hits) ──────────
-    # Artist-channel (score=2) audio hits may not appear in Phase 2
-    # search results at all; check their descriptions here and
-    # reclassify as MV if confirmed.
-    mv_ids = {_video_id(u) for _, _, u in mv_candidates}
-    for score, rank, url in audio_candidates[:5]:
+    # An artist-channel (score=2) audio hit may not appear in Phase 2
+    # search results at all; check its description and reclassify as MV
+    # if confirmed.
+    now_mv = {_video_id(u) for _, _, u in mv_candidates}
+    for score, rank, url in audio_candidates[:_MAX_AUDIO_DESCRIPTIONS]:
         # Lyric videos (3) and Topic uploads (1) are not reclassified
-        if score != 2 or _video_id(url) in mv_ids or _video_id(url) not in descriptions:
+        if score != 2 or _video_id(url) in now_mv or _video_id(url) not in descriptions:
             continue
-        bonus = _description_bonus(descriptions[_video_id(url)])
+        bonus = _description_bonus(described(url))
         if bonus:
             # Scored as it was before audio moved up a point, so an MV it turns out to be ranks the same.
             mv_candidates.append((score - 1 + bonus, rank, url))
@@ -577,10 +594,11 @@ async def fetch_youtube_url(title: str, artist: str) -> tuple[str, bool]:
     # MV takes priority; then the lyric video, the official audio and the Topic upload by score
     if mv_candidates:
         mv_candidates.sort(key=lambda x: (-x[0], x[1]))
-        return mv_candidates[0][2], True
+        return mv_candidates[0][2], "music-video"
 
     if audio_candidates:
         audio_candidates.sort(key=lambda x: (-x[0], x[1]))
-        return audio_candidates[0][2], False
+        best = audio_candidates[0]
+        return best[2], _AUDIO_KINDS[best[0]]
 
-    return "", False
+    return "", None

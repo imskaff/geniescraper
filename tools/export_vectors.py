@@ -187,7 +187,11 @@ SONGS: dict[str, SongCredits] = {
         credits=[Credit(role="Songwriter", artists=["W1"])],
         phonographic_copyright="℗ 2021 Label A",
     ),
-    "media_only": _song(youtube_url="https://www.youtube.com/watch?v=abc", cover_art_url="https://example.com/c.png"),
+    "media_only": _song(
+        youtube_url="https://www.youtube.com/watch?v=abc",
+        youtube_kind="music-video",
+        cover_art_url="https://example.com/c.png",
+    ),
 }
 
 QUEUE_FLAGS = ["include_core", "include_additional", "include_copyright", "include_youtube", "include_cover_art"]

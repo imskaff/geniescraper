@@ -7,7 +7,7 @@ Benchmark the best-effort external lookups against hand-verified truth.
 
 YouTube: youtube.fetch_youtube_url() for every entry in tests/golden/youtube.json.
   correct   the returned video is in the entry's accepted set
-  mv_flag   is_music_video matches the truth
+  kind_ok   the kind of video (music-video, lyric-video, official-audio, auto-generated) matches the truth
 Covers: pipeline.fetch_cover() for every case in bench/cases.json, compared with
 the artwork in the case's golden credits file (same artwork, 1000x1000 PNG).
 
@@ -37,10 +37,10 @@ def video_id(url: str) -> str:
     return url.rpartition("v=")[2] if url else ""
 
 
-def youtube_verdict(entry: dict, url: str, is_mv: bool) -> tuple[bool, bool]:
-    """(correct video, correct music-video flag) for one lookup result."""
+def youtube_verdict(entry: dict, url: str, kind: str | None) -> tuple[bool, bool]:
+    """(correct video, correct kind) for one lookup result."""
     correct = video_id(url) in entry["accept"]
-    return correct, correct and is_mv == entry["is_music_video"]
+    return correct, correct and kind == entry["kind"]
 
 
 def cover_correct(url: str, golden_url: str) -> bool:
@@ -61,16 +61,16 @@ async def bench_youtube(entries: list[dict], reps: int) -> tuple[list[dict], dic
         print(f"youtube {entry['id']} …", flush=True)
         for _ in range(reps):
             start = time.perf_counter()
-            url, is_mv = await youtube.fetch_youtube_url(entry["title"], entry["artist"])
+            url, kind = await youtube.fetch_youtube_url(entry["title"], entry["artist"])
             elapsed = time.perf_counter() - start
-            correct, mv_ok = youtube_verdict(entry, url, is_mv)
+            correct, kind_ok = youtube_verdict(entry, url, kind)
             rows.append(
-                {"id": entry["id"], "latency_s": round(elapsed, 2), "got": video_id(url), "is_mv": is_mv}
-                | {"expected": entry["video_id"], "correct": correct, "mv_flag": mv_ok}
+                {"id": entry["id"], "latency_s": round(elapsed, 2), "got": video_id(url), "kind": kind}
+                | {"expected": entry["video_id"], "correct": correct, "kind_ok": kind_ok}
             )
     summary = {
         "accuracy": round(sum(r["correct"] for r in rows) / len(rows), 4) if rows else 0.0,
-        "mv_flag_accuracy": round(sum(r["mv_flag"] for r in rows) / len(rows), 4) if rows else 0.0,
+        "kind_accuracy": round(sum(r["kind_ok"] for r in rows) / len(rows), 4) if rows else 0.0,
         **_latency_summary([r["latency_s"] for r in rows]),
         "runs": len(rows),
     }
@@ -103,8 +103,8 @@ async def bench_covers(case_ids: list[str], reps: int) -> tuple[list[dict], dict
 def print_rows(name: str, rows: list[dict], summary: dict) -> None:
     print(f"\n{name:<30}{'s':>6}  ok  got")
     for r in rows:
-        mark = "yes" if r["correct"] and r.get("mv_flag", True) else "NO"
-        extra = f" mv={r['is_mv']}" if "is_mv" in r else ""
+        mark = "yes" if r["correct"] and r.get("kind_ok", True) else "NO"
+        extra = f" kind={r['kind']}" if "kind" in r else ""
         print(f"{r['id']:<30}{r['latency_s']:>6.1f}  {mark:<4}{r['got'] or '-'}{extra}")
         if mark == "NO":
             print(f"{'':<42}expected {r['expected']}")

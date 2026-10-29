@@ -55,7 +55,7 @@ async def capture_fixtures(case: Case) -> None:
 
 async def capture_golden(case: Case) -> None:
     song = await apple_music.scrape(case.url, track_index=case.track_index)
-    data = song.model_dump(exclude={"youtube_url", "youtube_is_mv"})
+    data = song.model_dump(exclude={"youtube_url", "youtube_kind"})
     target = GOLDEN_DIR / f"{case.id}.json"
     if target.exists():
         target = GOLDEN_DIR / f"{case.id}.candidate.json"
