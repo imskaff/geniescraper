@@ -41,6 +41,8 @@ Load the built `dist/` folder as an unpacked extension (`chrome://extensions` or
 | Chrome  | [ ]     | [ ]   |
 | Edge    | [ ]     | [ ]   |
 
+The macOS workflow (`.github/workflows/macos.yml`, weekly and on demand) runs the extension's tests and a live smoke check in Chrome and Edge on a real Mac, and compiles the Safari build. It covers the reading of Apple Music, the credits and the paste screen on macOS, so on a Mac only the signed-in Genius pass and the keys need doing by hand.
+
 At least one cell per release, Chrome on Windows first; do the others when the change touches browser-specific behaviour (windows, the side panel, permissions, hotkeys).
 
 The pass, using a public album with several tracks and a Genius song you can open the edit form for:

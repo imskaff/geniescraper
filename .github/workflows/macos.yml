@@ -1,0 +1,95 @@
+name: macOS
+
+# Runs the extension on a real Mac (GitHub's macOS runner), in the Chrome and Edge that come installed on it: the
+# extension's tests, a live smoke check against Apple Music through the real panel (see scripts/live-smoke.mjs), and
+# the Safari build's conversion into an Xcode project that compiles. Weekly and on demand, like the live tests in CI,
+# so a change on Apple's side shows up without blocking pushes.
+#
+# What it cannot cover: the signed-in Genius form (the fill logic is tested against saved forms), a physical Mac
+# keyboard, and running the Safari extension inside Safari.
+
+on:
+  schedule:
+    - cron: "30 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  extension:
+    name: Extension on macOS (${{ matrix.browser }})
+    runs-on: macos-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - browser: Chrome
+            path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+          - browser: Edge
+            path: /Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+      - name: System
+        run: |
+          sw_vers
+          uname -m
+          test -x "${{ matrix.path }}" && "${{ matrix.path }}" --version
+      - name: Install dependencies
+        run: npm ci
+      - name: Tests
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Smoke check in ${{ matrix.browser }}
+        run: node scripts/live-smoke.mjs --chrome "${{ matrix.path }}" --expect-os mac
+
+  safari:
+    name: Safari build converts and compiles
+    runs-on: macos-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Build the Safari variant
+        run: npm run build:safari
+      # The identifier's last part must be spelled like the app name: Xcode requires the extension's id
+      # (<identifier>.Extension) to start with the app's id, and the converter spells the app's id from the app name.
+      - name: Convert it into an Xcode project
+        run: |
+          xcodebuild -version
+          xcrun safari-web-extension-converter dist-safari \
+            --project-location "$RUNNER_TEMP/safari" \
+            --app-name Geniescraper \
+            --bundle-identifier io.github.imskaff.Geniescraper \
+            --macos-only --no-open --no-prompt --force
+          find "$RUNNER_TEMP/safari" -maxdepth 3 -name "*.xcodeproj"
+      - name: Compile it (unsigned)
+        run: |
+          project="$(find "$RUNNER_TEMP/safari" -maxdepth 3 -name '*.xcodeproj' | head -n 1)"
+          xcodebuild -project "$project" -list
+          xcodebuild -project "$project" -scheme Geniescraper \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build

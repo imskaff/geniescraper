@@ -4,10 +4,10 @@
 
 <h1>Géniescraper</h1>
 
-<p><b>Apple Music credits, straight into Genius.</b></p>
+<p><b>Apple Music metadata straight into Genius</b></p>
 
 <p>
-Géniescraper reads the credits of an Apple Music album or song and fills them into the Genius song edit form for you:<br>
+Géniescraper reads the credits of an Apple Music page and fills them into the Genius song metadata form for you:<br>
 songwriters, producers, every additional role, the ℗ and © lines, the exact cover art and the official YouTube video.<br>
 It never presses Save: you check the form and save it yourself.
 </p>
@@ -24,32 +24,32 @@ It never presses Save: you check the form and save it yourself.
 </div>
 
 > [!TIP]
-> **Start with the browser extension.** It does the whole job inside your browser, fills the Genius form by itself (Auto-paste), skips names that are already filled in and only ever picks an exact artist match.
+> **<ins>Start with the browser extension.</ins>** It does everything inside your browser, fills the form by itself (***Auto-paste***), skips names that are already filled in and only ever picks an exact artist match.
 > The desktop app works best with the extension connected; on its own it can only paste with hotkeys into whichever field you click.
 
 ## Features
 
 ### Reading the credits
 
-- 🔍 **Finds what you have open.** The extension listens for Apple Music albums and songs already open in your browser and offers each one in a single press. The desktop app lists them too once the two are paired.
-- 🎼 **Complete credits.** Songwriters, producers, every additional role, the ℗ / © lines and the release date (day, month and year) of an album or a song, with roles named the way Genius names them.
-- 🖼️ **Exact cover art.** The 1000×1000 PNG of the exact release you opened, found by its Apple Music catalog ID.
-- ▶️ **The right YouTube link.** In Genius's own order: the official music video, then the official lyric video, then the official audio, then the auto-generated upload. The credits say which kind was found.
-- ⚡ **Fast.** The credits of a track take a few seconds, and the next tracks of an album are read in the background while you paste (three at a time by default).
+- 🔍 **Finds what you have open** – The extension listens for Apple Music albums and songs already open in your browser and offers each one in a single press. The desktop app lists them too once the two are paired.
+- 🎼 **Complete credits** – Songwriters, producers, every additional role, the ℗ / © lines and the release date of an album or a song, with roles named the way Genius names them.
+- 🖼️ **Exact cover art** – The 1000×1000 PNG of the exact release you opened, found by its Apple Music catalog ID.
+- ▶️ **The right YouTube link** – No more manual search for the correct YouTube link.
+- ⚡ ***Extremely fast*** – The credits of a track take a few seconds and the next tracks of an album are read in the background while you paste.
 
 ### Pasting into Genius
 
-- 🤖 **Auto-paste.** The whole track is filled in field by field while you watch. It pauses the moment you click or type in the form, press `Esc` or close the panel, and carries on from the same step when you turn it back on.
-- 👣 **Step by step.** Prefer control? One field per press of `F8`, `F7` to go back, **Skip** for a field you want to leave alone.
-- 🎯 **Exact matches only.** A suggestion is chosen only when it matches the typed name exactly (ignoring case, accents and symbols). Otherwise the text stays typed and the choice is yours, so a near match never ends up on a song.
-- ♻️ **Knows what is already there.** Names already filled in are skipped, empty rows are reused and artists are added to roles Genius already lists, instead of creating duplicates.
-- 🛡️ **Never saves for you.** The extension never clicks Save or Cancel.
+- 🤖 **Auto-paste** – The whole track is filled in field by field while you watch. It pauses the moment you click or type in the form, press `Esc` or close the panel, and carries on from the same step when you turn it back on.
+- 👣 **Step by step** – Prefer control? Use the customizable shortcuts for pasting, going back or skipping a field in the form.
+- 🎯 **Exact matches only** – A suggestion is chosen only when it matches the typed name exactly (ignoring case, accents and symbols). Otherwise the text stays typed and the choice is yours, so a near match never ends up on a song.
+- ♻️ **Knows what is already there** – Names already filled in are skipped, empty rows are reused and artists are added to roles Genius already lists, instead of creating duplicates.
+- 🛡️ **Never saves for you** – The extension never clicks Save or Cancel, making *you* in control.
 
 ### One workflow, two apps
 
 |                           | Browser extension                                   | Desktop app                                                  |
 |---------------------------|-----------------------------------------------------|--------------------------------------------------------------|
-| **Runs on**               | Chrome and Edge on Windows (macOS: not tested yet)  | Windows                                                      |
+| **Runs on**               | Chrome and Edge, Windows and macOS (Safari soon)    | Windows                                                      |
 | **Reads the credits**     | Yes, from the pages you have open                   | Yes, with its own browser (Playwright)                       |
 | **Fills the Genius form** | Yes: Auto-paste or step by step, exact matches only | Through the extension once paired; otherwise manual hotkeys  |
 | **Finds open pages**      | Yes                                                 | Yes, once paired                                             |
@@ -66,18 +66,17 @@ Use the extension alone, or pair it with the desktop app: the app reads and revi
 
 ## Installation
 
-Géniescraper comes in two forms. Install the **browser extension** first; add the **desktop app** if you want it.
-
-### Browser extension (recommended)
+### Browser extension <ins>(recommended)</ins>
 
 <img src="img/extension-demo.gif" alt="The side panel listening for Apple Music pages, finding one, reading the album and pasting the credits automatically" width="720">
 
-No store and no command line needed.
+The steps are the same on **Windows** and **macOS**, apart from how you unzip the download (step 2) and how you check it.
 
 1. **Download.** Open the [Releases page](https://github.com/imskaff/geniescraper/releases), pick the newest **Géniescraper extension** and download `geniescraper-extension-<version>.zip`.
-2. **Unzip it into a folder you will keep**, for example `Documents\Geniescraper-extension` (right-click the zip, then **Extract All**).
-   The browser runs the extension from that folder, so do not delete or move it afterwards.
-3. **Add it to your browser.**
+2. **Unzip it into a folder you will keep.** The browser runs the extension from that folder, so do not delete or move it afterwards.
+   - **Windows:** right-click the zip, choose **Extract All…** and pick a place you will keep, for example `Documents\Geniescraper-extension`.
+   - **macOS:** double-click the zip in Finder: a folder with the same name appears next to it. Drag that folder into `Documents` (or any place you will keep) rather than leaving it in `Downloads`.
+3. **Add it to your browser** (the same on both systems).
    - **Chrome:** open `chrome://extensions`, switch on **Developer mode** (top right), click **Load unpacked** and choose the folder from step 2, the one that contains `manifest.json`.
    - **Edge:** open `edge://extensions`, switch on **Developer mode** (left side), click **Load unpacked** and choose the same folder.
 4. **Open it.** Click the puzzle-piece icon in the toolbar, pin Géniescraper, then click it. The side panel opens and a short set-up walks you through the options.
@@ -85,16 +84,21 @@ No store and no command line needed.
 > [!NOTE]
 > Chrome may show **Disable developer mode extensions** when it starts. Choose to keep them: it is Chrome's standard notice for any extension that does not come from the store.
 
+> [!NOTE]
+> **Safari support is coming soon.**
+
 **Good to know**
 
-- **Updating.** Download the newest zip, unzip it over the same folder (replace the files), then press the reload icon on the extension's card in `chrome://extensions`. The extension does not update itself.
+- **Updating.** Download the newest zip and unzip it over the same folder, replacing the files (on macOS, choose **Replace** when Finder asks), then press the reload icon on the extension's card in `chrome://extensions`. The extension does not update itself.
 - **Checking a download.** Compare its SHA-256 with `SHA256SUMS.txt` from the same release.
-- **No release yet?** Build it yourself (needs Node 20 or newer): run `cd extension`, `npm ci` and `npm run build`, then load the `extension/dist` folder in step 3. After changing the code, run `npm run build` again and reload the extension.
-- **macOS.** Not tested yet: no one has run the extension on a Mac. It uses only standard browser extension features, so Chrome and Edge are expected to work with the same steps, but this is unconfirmed.
-- **Safari.** A Safari build exists (`npm run build:safari`) but has not been tested yet; it needs a Mac with Xcode.
+  - **Windows** (PowerShell): `Get-FileHash .\geniescraper-extension-<version>.zip -Algorithm SHA256`
+  - **macOS** (Terminal): `shasum -a 256 geniescraper-extension-<version>.zip`
 - **Questions and fixes:** [extension/FAQ.md](extension/FAQ.md).
 
 ### Desktop app (Windows)
+
+> [!NOTE]
+> The desktop app runs on **Windows only**. On a Mac, use the browser extension above: it does everything on its own.
 
 **You need:** Windows, **Python 3.10 or newer** and **[uv](https://docs.astral.sh/uv/)** (`pip install uv`).
 
@@ -152,6 +156,9 @@ Pair them once; the pairing is remembered. This is optional but recommended: it 
 6. **Check the form and save it on Genius yourself.** Nothing is saved for you.
 
 When Genius has no exact match for a name or a role, the text stays typed and nothing is chosen for you: pick a suggestion yourself or press **Skip**. A few Apple roles have no Genius equivalent; those steps are left for you.
+
+> [!TIP]
+> **On a Mac,** the `F7` and `F8` keys are usually media keys. Hold `Fn` while you press them, or turn on **Use F1, F2, etc. keys as standard function keys** in **System Settings → Keyboard → Keyboard Shortcuts… → Function Keys**. The **Next**, **Previous** and **Skip** buttons in the panel work without the keys.
 
 > [!TIP]
 > The first time the panel opens, a short set-up walks you through what to paste, the speed and keys, and the optional lookups. Everything in it can be changed later in **Settings**.
