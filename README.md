@@ -32,7 +32,7 @@ It never presses Save: you check the form and save it yourself.
 ### Reading the credits
 
 - 🔍 **Finds what you have open.** The extension listens for Apple Music albums and songs already open in your browser and offers each one in a single press. The desktop app lists them too once the two are paired.
-- 🎼 **Complete credits.** Songwriters, producers, every additional role and the ℗ / © lines of an album or a song, with roles named the way Genius names them.
+- 🎼 **Complete credits.** Songwriters, producers, every additional role, the ℗ / © lines and the release date (day, month and year) of an album or a song, with roles named the way Genius names them.
 - 🖼️ **Exact cover art.** The 1000×1000 PNG of the exact release you opened, found by its Apple Music catalog ID.
 - ▶️ **The right YouTube link.** In Genius's own order: the official music video, then the official lyric video, then the official audio, then the auto-generated upload. The credits say which kind was found.
 - ⚡ **Fast.** The credits of a track take a few seconds, and the next tracks of an album are read in the background while you paste (three at a time by default).
