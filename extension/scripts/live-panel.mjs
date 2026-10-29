@@ -289,7 +289,7 @@ try {
     ),
   );
   await panel.evaluate(
-    "(() => { const box = document.querySelector('#youtube-link'); box.value = 'https://youtu.be/BY_XwvKogC8'; box.dispatchEvent(new Event('input', { bubbles: true })); [...document.querySelectorAll('button')].find((b) => b.textContent === 'Use this link').click(); })()",
+    "(() => { const box = document.querySelector('#youtube-link'); box.value = 'https://youtu.be/BY_XwvKogC8'; box.dispatchEvent(new Event('input', { bubbles: true })); document.querySelector('[data-key=youtube-use]').click(); })()",
   );
   await until(
     "[...document.querySelectorAll('dl.credits dt')].some((d) => d.textContent === 'YouTube (your link)')",

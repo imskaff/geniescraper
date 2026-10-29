@@ -12,14 +12,16 @@ export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * Launch Chromium with the unpacked extension. By default the profile is a throwaway; pass `profileDir` to reuse
  * one (for example a scratch profile the user signed in to by hand), which is left in place afterwards.
  *
- * `loadVia: "flag"` (the default) loads the extension with --load-extension, which a plain Chromium honours.
- * `loadVia: "protocol"` leaves that out and loads it over the debugging port instead (call `loadExtension()`
- * after launching): installed, branded Chrome ignores --load-extension but accepts this.
+ * `loadVia: "protocol"` (the default) loads the extension over the debugging port: installed, branded Chrome and Edge
+ * ignore --load-extension but accept this, and so does a plain Chromium. `findServiceWorker` loads it the first time
+ * it is asked for the worker, or call `loadExtension()` yourself; it loads once.
+ * `loadVia: "flag"` loads it with --load-extension instead, which only a plain Chromium honours.
  */
-export function launchChromium({ chromePath, dist, port, profileDir, loadVia = "flag" }) {
+export function launchChromium({ chromePath, dist, port, profileDir, loadVia = "protocol" }) {
   const profile = profileDir ?? mkdtempSync(join(tmpdir(), "geniescraper-live-"));
   const viaProtocol = loadVia === "protocol";
   let keepOpen;
+  let loading;
   const chrome = spawn(
     chromePath,
     [
@@ -50,21 +52,25 @@ export function launchChromium({ chromePath, dist, port, profileDir, loadVia = "
       const response = await fetch(`http://127.0.0.1:${String(port)}/json/new?${url}`, { method: "PUT" });
       return response.json();
     },
-    /** Load the unpacked extension over the debugging port (for `loadVia: "protocol"`); resolves to its id. */
-    async loadExtension() {
-      let version;
-      for (let attempt = 0; attempt < 100 && !version; attempt++) {
-        try {
-          version = await (await fetch(`http://127.0.0.1:${String(port)}/json/version`)).json();
-        } catch {
-          await sleep(200);
+    /** Load the unpacked extension over the debugging port (for `loadVia: "protocol"`), once; resolves to its id. */
+    loadExtension() {
+      if (!viaProtocol) return Promise.resolve(undefined);
+      loading ??= (async () => {
+        let version;
+        for (let attempt = 0; attempt < 150 && !version; attempt++) {
+          try {
+            version = await (await fetch(`http://127.0.0.1:${String(port)}/json/version`)).json();
+          } catch {
+            await sleep(200);
+          }
         }
-      }
-      if (!version) throw new Error("The browser's debugging port never answered.");
-      // The connection stays open for as long as the browser runs: the extension is tied to it.
-      keepOpen = await connect(version.webSocketDebuggerUrl);
-      const loaded = await keepOpen.send("Extensions.loadUnpacked", { path: dist });
-      return loaded.id;
+        if (!version) throw new Error("The browser's debugging port never answered.");
+        // The connection stays open for as long as the browser runs: the extension is tied to it.
+        keepOpen = await connect(version.webSocketDebuggerUrl);
+        const loaded = await keepOpen.send("Extensions.loadUnpacked", { path: dist });
+        return loaded.id;
+      })();
+      return loading;
     },
     async stop() {
       // The browser starts helper processes of its own; on Windows end the whole tree.
@@ -81,6 +87,7 @@ export function launchChromium({ chromePath, dist, port, profileDir, loadVia = "
 
 /** The extension's service worker target, once it has started. */
 export async function findServiceWorker(browser) {
+  await browser.loadExtension?.();
   for (let attempt = 0; attempt < 100; attempt++) {
     const worker = (await browser.targets()).find(
       (t) => t.type === "service_worker" && t.url.endsWith("background/worker.js"),
