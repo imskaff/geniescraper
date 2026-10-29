@@ -1,11 +1,11 @@
 <div align="center">
 <img src="img/geniescraper.png" alt="Géniescraper logo" width="400">
 
-🧩 **Prefer the browser?** Géniescraper also comes as a Chrome and Edge extension for Windows and macOS: see [Install the browser extension](#install-the-browser-extension).
-
 # Géniescraper
 
 **Géniescraper** is a Python-based tool that bridges Apple Music credits and Genius.com metadata entry. It uses stealth browser automation to extract songwriters, producers, roles, copyrights, and cover art, then provides a hotkey-driven GUI assistant to paste everything directly into Genius - 100% in accordance with the guidelines.
+
+🧩 **The browser extension is recommended.** It fills the Genius form for you (Auto-paste), skips names already filled in, only picks an exact artist match and lists the Apple Music pages you have open. It works in Chrome and Edge on Windows and macOS, and the desktop app works best with it connected: see [Install the browser extension](#install-the-browser-extension). Without it the desktop app falls back to manual hotkeys.
 
 </div>
 
@@ -21,7 +21,7 @@
 
 ## Installation
 
-Géniescraper comes in two forms, and you only need one: the **browser extension** (nothing to install but the extension itself) or the **desktop app** (Windows, Python).
+Géniescraper comes in two forms: the **browser extension** (recommended; nothing to install but the extension itself) and the **desktop app** (Windows, Python), which works best with the extension connected.
 
 ### Install the browser extension
 
