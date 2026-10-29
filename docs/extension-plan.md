@@ -903,7 +903,7 @@ A role the form does not have still gets a new row, and a step without a role fa
 
 ## 39. The companion link to the desktop app
 
-Status: implemented on both sides, not yet wired into `gui/app.py`, not yet seen in a real browser.
+Status: implemented on both sides, wired into the desktop GUI, and checked against the real extension in Chrome 156 (see "Live check" below).
 
 ### Decision and why
 
@@ -968,7 +968,7 @@ The panel side of this (the Settings field and a "Connected" indicator) is **not
 
 ### Permission change
 
-**None, by design, and not yet confirmed in a real browser.** A WebSocket is not subject to CORS, `host_permissions` governs cross-origin `fetch`/XHR from the worker, and the default MV3 extension content security policy sets no `connect-src`, so `new WebSocket("ws://127.0.0.1:47831/")` from the service worker should work with the manifest as it is. If Chrome's Local Network Access rules turn out to demand a permission for loopback sockets, the fallback is `optional_host_permissions: ["http://127.0.0.1/*"]` requested at pairing; that would need a new row in `store/listing.md`, the "never matches every site" and `ALLOWED_OPTIONAL_HOSTS` tests widened for exactly that one pattern, and a line in the privacy policy (which already names `127.0.0.1`). The manifest test now pins today's state: no loopback or `ws:` host, no `nativeMessaging`, `externally_connectable` unset, and every socket address anywhere in `src/` is `ws://` plus the `127.0.0.1` constant.
+**None. Confirmed in Chrome 156.0.8078.49 (headless and headed, throwaway profile, extension loaded unpacked): the service worker opens `ws://127.0.0.1:47831` with the manifest as it is, no prompt and no permission.** A WebSocket is not subject to CORS, `host_permissions` governs cross-origin `fetch`/XHR from the worker, and the default MV3 extension content security policy sets no `connect-src`, so `new WebSocket("ws://127.0.0.1:47831/")` from the service worker should work with the manifest as it is. If Chrome's Local Network Access rules turn out to demand a permission for loopback sockets, the fallback is `optional_host_permissions: ["http://127.0.0.1/*"]` requested at pairing; that would need a new row in `store/listing.md`, the "never matches every site" and `ALLOWED_OPTIONAL_HOSTS` tests widened for exactly that one pattern, and a line in the privacy policy (which already names `127.0.0.1`). The manifest test now pins today's state: no loopback or `ws:` host, no `nativeMessaging`, `externally_connectable` unset, and every socket address anywhere in `src/` is `ws://` plus the `127.0.0.1` constant.
 
 `PRIVACY.md` gains a section ("The optional desktop app on your own computer") and its two absolute sentences are qualified; `store/listing.md` gains a "Companion desktop app (no extra permission)" section. The listing's permission table is unchanged because the manifest is.
 
@@ -989,6 +989,10 @@ The panel side of this (the Settings field and a "Connected" indicator) is **not
 ### Fill mode
 
 `link_mode` in the desktop settings decides the `mode` of `begin`. It defaults to **`auto`**: the extension fills the whole track by itself. The Settings switch "Fill automatically" (on by default) turns it off for step-by-step filling with Next or the key. A saved explicit `LINK_MODE` keeps its value; an unreadable one falls back to `auto`.
+
+### Live check
+
+Chrome 156, real `assistant/bridge.py`, real worker: pairing with the one-time code, HMAC reconnect after a desktop restart (about 4 s), a wrong, expired, cancelled and locked code (all refused), origin pinning (another extension id and a web origin get HTTP 403), a second connection (close 1013), a `begin`/`fill-next`/`status` round trip on a local copy of `tests/fixtures/genius-edit-form.html` served for `https://genius.com/*` (real Genius never contacted), an auto run paused with `bridge-lost` when the server was killed, and a garbage frame (extension closes and reconnects). The extension sends `Origin: chrome-extension://<its id>` and `Host: 127.0.0.1:<port>`. Edge was not tried.
 
 ### Known limits
 
