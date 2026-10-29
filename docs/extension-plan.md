@@ -899,3 +899,9 @@ A role the form does not have still gets a new row, and a step without a role fa
   The pace, the opt-in start and the pauses are the mitigations; check the guidelines again before release.
 - Genius may change its form markup; the existing live check is the guard.
 - The pause on the user's input must not fire on the extension's own typing; the `isTrusted` test and a live run cover this.
+
+## 25. Safari popup fallback (Windows-side groundwork)
+
+- `npm run build:safari` writes `extension/dist-safari/`: same bundles, manifest from `scripts/lib/safari-manifest.mjs` (no `side_panel`, `sidePanel` permission or `minimum_chrome_version`; `action.default_popup` = `ui/panel.html`). The Chrome manifest and `dist/` are unchanged.
+- `src/ui/surface.ts`: the page is a popup when `chrome.sidePanel` is absent; it adds `html.popup` (380px wide) and skips the "panel" port, since a popup closes on every focus loss and would pause an automatic run each time.
+- Not run in Safari. On a Mac next: `xcrun safari-web-extension-converter extension/dist-safari --project-location safari --app-name Geniescraper --bundle-identifier <id>`, then the checks in section 23.
