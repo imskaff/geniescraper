@@ -630,23 +630,22 @@ try {
       if (entry?.valueElement) console.log(`      release: ${label} value element: ${entry.valueElement}`);
     }
     const shownMonth = dates.dropdowns["Release Month"]?.value ?? "";
+    const shownDay = dates.dropdowns["Release Day"]?.value ?? "";
+    const shownYear = dates.dropdowns["Release Year"]?.value ?? "";
     const monthWords = words(shownMonth).split(" ");
     const monthName = words(monthNames[wantMonth - 1]);
+    const monthIsSongs =
+      monthWords.some((w) => w === monthName || w === monthName.slice(0, 3)) ||
+      monthWords.some((w) => /^\d+$/.test(w) && Number(w) === wantMonth);
+    const isSongsDate = monthIsSongs && Number(words(shownDay)) === wantDay && Number(words(shownYear)) === wantYear;
+    // A release date that Genius already had is kept (the steps skip), so a different date is not a failure.
     check(
-      "Release Month holds the song's month",
-      monthWords.some((w) => w === monthName || w === monthName.slice(0, 3) || w === String(wantMonth)) ||
-        monthWords.some((w) => /^\d+$/.test(w) && Number(w) === wantMonth),
-      shownMonth,
+      "the three Release Date dropdowns are filled (the song's date, or the date Genius already had)",
+      shownMonth !== "" && shownDay !== "" && shownYear !== "",
+      `${shownMonth} / ${shownDay} / ${shownYear}`,
     );
-    check(
-      "Release Day holds the song's day",
-      Number(words(dates.dropdowns["Release Day"]?.value ?? "")) === wantDay,
-      dates.dropdowns["Release Day"]?.value ?? "",
-    );
-    check(
-      "Release Year holds the song's year",
-      Number(words(dates.dropdowns["Release Year"]?.value ?? "")) === wantYear,
-      dates.dropdowns["Release Year"]?.value ?? "",
+    console.log(
+      `      release: they hold ${isSongsDate ? "the song's date" : "a different date: expected if this song already had a release date on Genius (it is kept), otherwise a mismatch to look at"}`,
     );
   }
 

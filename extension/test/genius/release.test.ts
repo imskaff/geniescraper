@@ -96,8 +96,9 @@ describe("the three dropdowns", () => {
     const { fake, run } = setup({ release: { paddedDays: true } });
     expect(await run(DAY)).toMatchObject({ status: "filled" });
     expect(fake.chosen).toEqual(["Release Day: 05"]);
-    expect(await run(["release_day", "17"])).toMatchObject({ status: "filled" });
-    expect(fake.chosen.at(-1)).toBe("Release Day: 17");
+    const other = setup({ release: { paddedDays: true } });
+    expect(await other.run(["release_day", "17"])).toMatchObject({ status: "filled" });
+    expect(other.fake.chosen).toEqual(["Release Day: 17"]);
   });
 });
 
@@ -110,9 +111,42 @@ describe("a value that is already there", () => {
     expect(fake.enters).toEqual([]);
   });
 
-  it("replaces a different value with the one wanted", async () => {
+  it("leaves a different date alone: all three steps skip when Genius already has one", async () => {
+    const { fake, run } = setup({
+      release: { preset: { "Release Month": "June", "Release Day": "9", "Release Year": "2023" } },
+    });
+    const message = "Genius already has a release date (June 9, 2023), so it was left as it is.";
+    expect(await run(MONTH)).toEqual({ status: "filled", message });
+    expect(await run(DAY)).toEqual({ status: "filled", message });
+    expect(await run(YEAR)).toEqual({ status: "filled", message });
+    expect([shown(fake, "Release Month"), shown(fake, "Release Day"), shown(fake, "Release Year")]).toEqual([
+      "June",
+      "9",
+      "2023",
+    ]);
+    expect(fake.chosen).toEqual(["Release Month: June", "Release Day: 9", "Release Year: 2023"]); // only the presets
+    expect(fake.enters).toEqual([]);
+    expectSafe(fake);
+  });
+
+  it("keeps a partly filled date too, so that two dates are never mixed", async () => {
     const { fake, run } = setup({ release: { preset: { "Release Year": "2023" } } });
-    expect(await run(YEAR)).toMatchObject({ status: "filled" });
+    for (const step of [MONTH, DAY, YEAR]) {
+      expect(await run(step)).toEqual({
+        status: "filled",
+        message: "Genius already has a release date (2023), so it was left as it is.",
+      });
+    }
+    expect(shown(fake, "Release Year")).toBe("2023");
+    expect(shown(fake, "Release Month")).toBe("");
+    expect(shown(fake, "Release Day")).toBe("");
+  });
+
+  it("is not stopped by the month or the day this very run chose a moment before", async () => {
+    const { fake, run } = setup();
+    expect(await run(MONTH)).toMatchObject({ message: "Set the release month to May." });
+    expect(await run(DAY)).toMatchObject({ message: "Set the release day to 5." });
+    expect(await run(YEAR)).toMatchObject({ message: "Set the release year to 2024." });
     expect(shown(fake, "Release Year")).toBe("2024");
   });
 });
@@ -207,8 +241,9 @@ describe("what a step holds, and when it is done", () => {
     expect(stepSnapshot(fake.doc, MONTH)).toEqual(["April"]);
     expect(stepSnapshot(fake.doc, YEAR)).toEqual([]);
     expect(isStepDone(ctx.doc, MONTH, ["April"])).toBe(false); // still what it was
-    await run(MONTH);
-    expect(isStepDone(ctx.doc, MONTH, ["April"])).toBe(true);
+    await run(MONTH); // a date Genius already has is kept, so the dropdown is not changed
+    expect(shown(fake, "Release Month")).toBe("April");
+    expect(isStepDone(ctx.doc, MONTH, ["April"])).toBe(false);
   });
 
   it("counts the step done when the user picks another value where there was none", () => {
@@ -218,13 +253,14 @@ describe("what a step holds, and when it is done", () => {
   });
 
   it("takes back typed text when the step is skipped, and leaves a chosen value alone", async () => {
-    const { fake, ctx, run } = setup({ release: { months: "odd", preset: { "Release Year": "2022" } } }, true);
+    const { fake, ctx, run } = setup({ release: { months: "odd" } }, true);
     await run(MONTH); // leaves text typed
+    await run(YEAR); // chooses a value
     expect(input(fake, "Release Month").value).not.toBe("");
     clearTyped(ctx.doc, MONTH);
     expect(input(fake, "Release Month").value).toBe("");
     clearTyped(ctx.doc, YEAR);
-    expect(shown(fake, "Release Year")).toBe("2022");
+    expect(shown(fake, "Release Year")).toBe("2024");
   });
 });
 

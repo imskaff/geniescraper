@@ -225,6 +225,27 @@ async function openTags(doc: Document, ctx: FillContext, label: string): Promise
   return true;
 }
 
+/**
+ * The dropdowns whose value means Genius already had a date before this run. The steps run month, day, year, so the
+ * month may have been chosen a moment ago by this very run and must not stop the day, and a day not the year.
+ */
+const KEPT_BY: Record<ReleaseKind, readonly ReleaseKind[]> = {
+  release_month: ["release_month", "release_day", "release_year"],
+  release_day: ["release_day", "release_year"],
+  release_year: ["release_year"],
+};
+
+/** What the form already shows as its release date, as text ("June 9, 2023"), or "" when none of the relevant dropdowns holds one. */
+function existingDate(doc: Document, kind: ReleaseKind): string {
+  const shownOf = (k: ReleaseKind): string => {
+    const input = releaseInput(doc, RELEASE_LABELS[k]);
+    return input ? singleValueText(dropdownBox(input)) : "";
+  };
+  if (!KEPT_BY[kind].some((k) => shownOf(k) !== "")) return "";
+  const [month, day, year] = [shownOf("release_month"), shownOf("release_day"), shownOf("release_year")];
+  return [[month, day].filter(Boolean).join(" "), year].filter(Boolean).join(", ");
+}
+
 async function fillRelease(kind: ReleaseKind, value: string, ctx: FillContext): Promise<StepOutcome> {
   const label = RELEASE_LABELS[kind];
   const noun = RELEASE_NOUN[kind];
@@ -237,6 +258,15 @@ async function fillRelease(kind: ReleaseKind, value: string, ctx: FillContext): 
   const current = singleValueText(box);
   if (releaseOptionMatches(kind, value, current)) {
     return { status: "filled", message: `${prefix}The ${noun} was already ${current}.` };
+  }
+  // A date Genius already has is kept: it may be a better one than Apple's, and half of one date with half of
+  // another would be wrong. Only dropdowns this run cannot have filled yet are looked at (see KEPT_BY).
+  const kept = existingDate(ctx.doc, kind);
+  if (kept) {
+    return {
+      status: "filled",
+      message: `${prefix}Genius already has a release date (${kept}), so it was left as it is.`,
+    };
   }
   bringIntoView(input);
 
