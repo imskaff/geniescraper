@@ -18,6 +18,22 @@ _MODIFIER_KEYS = frozenset({"shift", "ctrl", "alt", "alt gr", "windows", "left w
 
 STEPS = ("Link", "Tracks", "Review", "Paste")
 
+#: The start screen's card of Apple Music pages open in the browser (the extension's own wording).
+OPEN_PAGES_TITLE = "OPEN IN YOUR BROWSER"
+OPEN_PAGES_EMPTY = "Open an album or song on Apple Music in your browser and it shows up here."
+MAX_OPEN_ROWS = 4
+_MAX_TITLE_SHOWN = 56
+
+
+def open_page_rows(pages, limit: int = MAX_OPEN_ROWS) -> tuple[list[tuple[str, str, str]], str]:
+    """(tag, title, note) for each page shown, and a line for the ones that do not fit ('' when all do)."""
+    rows = []
+    for page in list(pages)[:limit]:
+        title = page.title if len(page.title) <= _MAX_TITLE_SHOWN else page.title[: _MAX_TITLE_SHOWN - 1] + "…"
+        rows.append(("Album" if page.kind == "album" else "Song", title, "this page" if page.current else ""))
+    rest = len(pages) - len(rows)
+    return rows, (f"and {rest} more open" if rest > 0 else "")
+
 
 def classify_url(url: str) -> str | None:
     """'album' or 'song' for an Apple Music link the scraper understands, else None."""

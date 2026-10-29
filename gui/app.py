@@ -12,8 +12,17 @@ from PIL import Image as PILImage
 
 from assistant import flow
 from gui import theme
-from gui.link import LinkController, RunStatus, describe_status
-from gui.logic import STEPS, friendly_error, prefetch_plan, queue_summary, url_hint
+from gui.link import LinkController, OpenPage, RunStatus, describe_status
+from gui.logic import (
+    OPEN_PAGES_EMPTY,
+    OPEN_PAGES_TITLE,
+    STEPS,
+    friendly_error,
+    open_page_rows,
+    prefetch_plan,
+    queue_summary,
+    url_hint,
+)
 from gui.settings_window import SettingsWindow
 from scraper import apple_music, pipeline
 from scraper.apple_music import AlbumTrackInfo
@@ -102,6 +111,10 @@ class App(ctk.CTk):
         self._link_lbl: ctk.CTkLabel | None = None
         self._link_btns: ctk.CTkFrame | None = None
         self._link_before: ctk.CTkFrame | None = None
+        # The 'Open in your browser' card on the start screen, and what it currently shows.
+        self._pages_card: ctk.CTkFrame | None = None
+        self._how_card: ctk.CTkFrame | None = None
+        self._pages_shown: tuple[bool, tuple[OpenPage, ...]] | None = None
 
         # Companion link to the browser extension; its callbacks arrive on the bridge's thread and hop to Tk here.
         self.link = LinkController(
@@ -116,6 +129,7 @@ class App(ctk.CTk):
         self.link.on_finished = self._link_finished
         self.link.on_run_ended = self._link_run_ended
         self.link.on_connection = self._link_connection
+        self.link.on_pages = self._render_open_pages
         if start_link:
             self.link.start()
 
@@ -342,6 +356,8 @@ class App(ctk.CTk):
 
         how = ctk.CTkFrame(body, fg_color=theme.SURFACE, corner_radius=8)
         how.pack(fill="x", pady=(theme.SPACE_5, 0))
+        self._pages_card, self._how_card, self._pages_shown = None, how, None
+        self._render_open_pages()
         ctk.CTkLabel(how, text="HOW IT WORKS", font=_f(11, "bold"), text_color=theme.FAINT).pack(
             anchor="w", padx=theme.SPACE_4, pady=(theme.SPACE_3, theme.SPACE_2)
         )
@@ -366,6 +382,69 @@ class App(ctk.CTk):
 
         self._settings_summary(self).pack(side="bottom", pady=(0, theme.SPACE_4))
         self._check_url_loop()
+
+    def _render_open_pages(self) -> None:
+        """The 'Open in your browser' card: only while an extension is connected, and only this card is redrawn."""
+        how = self._how_card
+        if self._screen != "start" or how is None or not how.winfo_exists():
+            return
+        link = self.link
+        shown = (link.connected, link.pages)
+        if shown == self._pages_shown:
+            return
+        self._pages_shown = shown
+        if self._pages_card is not None:
+            self._pages_card.destroy()
+            self._pages_card = None
+        if not link.connected:
+            how.pack(fill="x", pady=(theme.SPACE_5, 0))
+            return
+        # The card takes the place of 'How it works', which a user with the extension connected no longer needs.
+        how.pack_forget()
+        card = ctk.CTkFrame(how.master, fg_color=theme.SURFACE, corner_radius=8)
+        card.pack(fill="x", pady=(theme.SPACE_4, 0), after=self._status_lbl)
+        self._pages_card = card
+        ctk.CTkLabel(card, text=OPEN_PAGES_TITLE, font=_f(11, "bold"), text_color=theme.FAINT).pack(
+            anchor="w", padx=theme.SPACE_4, pady=(theme.SPACE_3, theme.SPACE_2)
+        )
+        rows, more = open_page_rows(link.pages)
+        if not rows:
+            ctk.CTkLabel(
+                card, text=OPEN_PAGES_EMPTY, font=_f(13), text_color=theme.MUTED, anchor="w", justify="left"
+            ).pack(anchor="w", fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_3))
+            return
+        for page, (tag, title, note) in zip(link.pages, rows, strict=False):
+            self._open_page_row(card, page, tag, title, note)
+        if more:
+            ctk.CTkLabel(card, text=more, font=_f(12), text_color=theme.FAINT, anchor="w").pack(
+                anchor="w", padx=theme.SPACE_4, pady=(0, theme.SPACE_2)
+            )
+        ctk.CTkFrame(card, height=theme.SPACE_1, fg_color="transparent").pack()
+
+    def _open_page_row(self, card: ctk.CTkFrame, page: OpenPage, tag: str, title: str, note: str) -> None:
+        """One open page: its kind, its title and 'this page' for the one in view. Clicking it gets its credits."""
+        row = ctk.CTkFrame(card, fg_color="transparent", corner_radius=6, cursor="hand2")
+        row.pack(fill="x", padx=theme.SPACE_2, pady=(0, theme.SPACE_1))
+        parts = [
+            ctk.CTkLabel(row, text=tag, width=52, font=_f(11, "bold"), text_color=theme.FAINT, anchor="w"),
+            ctk.CTkLabel(row, text=title, font=_f(13), text_color=theme.TEXT, anchor="w"),
+            ctk.CTkLabel(row, text=note, font=_f(12), text_color=theme.ACCENT, anchor="e"),
+        ]
+        parts[0].pack(side="left", padx=(theme.SPACE_2, 0), pady=theme.SPACE_1)
+        parts[1].pack(side="left", fill="x", expand=True, pady=theme.SPACE_1)
+        parts[2].pack(side="right", padx=(theme.SPACE_2, theme.SPACE_2), pady=theme.SPACE_1)
+        for widget in (row, *parts):
+            widget.bind("<Button-1>", lambda _, url=page.url: self._get_credits_for(url))
+            widget.bind("<Enter>", lambda _, r=row: r.configure(fg_color=theme.SURFACE_HI))
+            widget.bind("<Leave>", lambda _, r=row: r.configure(fg_color="transparent"))
+
+    def _get_credits_for(self, url: str) -> None:
+        """Same path as typing the link and pressing Get credits."""
+        if self._busy or self._screen != "start":
+            return
+        self._url_entry.delete(0, "end")
+        self._url_entry.insert(0, url)
+        self._start_scrape()
 
     def _settings_summary(self, master) -> ctk.CTkButton:
         """One clickable line with the settings that change how pasting behaves."""
@@ -1407,6 +1486,7 @@ class App(ctk.CTk):
             self._begin_link_run(self._pos)  # it connected mid-song: carry on from the current step
         self._sync_hooks()
         self._render_link()
+        self._render_open_pages()
 
     def _link_run_ended(self) -> None:
         """The extension refused or ended the run: the desktop's keys come back."""

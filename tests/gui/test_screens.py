@@ -19,7 +19,7 @@ pytestmark = [
 ]
 
 EXPECTED_SCREENS = [
-    "01-start", "02-start-url", "03-start-error", "04-settings", "05-tracks", "06-loading",
+    "01-start", "02-start-url", "03-start-error", "03-start-open-pages", "04-settings", "05-tracks", "06-loading",
     "07-credits", "08-assistant-start", "09-assistant-middle", "10-esc-confirm",
     "11-assistant-compact", "12-done",
 ]  # fmt: skip
@@ -49,6 +49,66 @@ class _FakeBridge:
         future: Future[Any] = Future()
         self.sent.append((name, future))
         return future
+
+
+def _card_texts(window: Any) -> list[str]:
+    """Every label's text inside the 'Open in your browser' card, or [] when it is not shown."""
+    import customtkinter as ctk
+
+    card = window._pages_card
+    if card is None or not card.winfo_exists():
+        return []
+    found: list[str] = []
+
+    def walk(widget: Any) -> None:
+        for child in widget.winfo_children():
+            if isinstance(child, ctk.CTkLabel) and child.cget("text"):
+                found.append(child.cget("text"))
+            walk(child)
+
+    walk(card)
+    return found
+
+
+def _report(*pages: Any) -> list[dict[str, Any]]:
+    return [{"url": p.url, "title": p.title, "kind": p.kind, "current": p.current} for p in pages]
+
+
+def _check_open_pages(window: Any) -> dict[str, Any]:
+    """The start screen's card of pages open in the browser: shown, updated in place, emptied and hidden."""
+    from gui.logic import OPEN_PAGES_EMPTY
+
+    seen: dict[str, Any] = {"empty_text": OPEN_PAGES_EMPTY}
+    link, entry = window.link, window._url_entry
+    typed = entry.get()
+    seen["texts"] = _card_texts(window)
+    link._handle_pages(_report(*link.pages[1:2]))  # the list changes: the card is redrawn, the screen is not
+    window.update()
+    seen["entry_kept"] = window._url_entry is entry and entry.get() == typed
+    seen["after_update"] = _card_texts(window)
+    link._handle_pages([])
+    window.update()
+    seen["empty"] = _card_texts(window)
+    link._handle_connection(False)
+    window.update()
+    seen["hidden"] = window._pages_card is None
+    link._handle_connection(True)
+    chihiro = "https://music.apple.com/us/song/chihiro/1739659140"
+    link._handle_pages([{"url": chihiro, "title": "CHIHIRO", "kind": "song", "current": False}])
+    window.update()
+    # Pressing a row fills the link box and starts Get credits, as the button does.
+    started: list[str] = []
+    window._detect_thread = lambda u, job: started.append(u)
+    window._get_credits_for(chihiro)
+    for _ in range(20):
+        window.update()
+        if started:
+            break
+    seen["started"], seen["busy"], seen["typed_by_row"] = started, window._busy, entry.get()
+    window._set_busy(False)
+    entry.delete(0, "end")
+    link._handle_pages([])
+    return seen
 
 
 def _drive_link(window: Any) -> dict[str, Any]:
@@ -96,6 +156,8 @@ def walk() -> dict[str, Any]:
         seen["screens"].append(name)
         if name == "01-start":
             seen["main_dark_title_bar"] = _dark_title_bar_attr(window)
+        elif name == "03-start-open-pages":
+            seen["open_pages"] = _check_open_pages(window)
         elif name == "04-settings":
             seen["settings_dark_title_bar"] = _dark_title_bar_attr(window)
             seen["settings_icon_set"] = window._iconbitmap_method_called
@@ -133,6 +195,35 @@ def walk() -> dict[str, Any]:
 
     walk_screens(on_screen)
     return seen
+
+
+def test_open_pages_card_lists_what_the_extension_reports(walk):
+    texts = walk["open_pages"]["texts"]
+    assert texts[0] == "OPEN IN YOUR BROWSER"
+    assert "Album" in texts and "Song" in texts
+    assert "HIT ME HARD AND SOFT" in texts and "this page" in texts
+    assert texts.count("this page") == 1
+    assert "Short n' Sweet (Deluxe) by Sabrina Carpenter" in texts
+
+
+def test_open_pages_card_updates_in_place_without_touching_the_link_box(walk):
+    seen = walk["open_pages"]
+    assert seen["entry_kept"]
+    assert (
+        "CHIHIRO" in seen["after_update"] and "Short n' Sweet (Deluxe) by Sabrina Carpenter" not in seen["after_update"]
+    )
+    assert seen["empty"] == ["OPEN IN YOUR BROWSER", seen["empty_text"]]
+
+
+def test_open_pages_card_is_hidden_without_a_connected_extension(walk):
+    assert walk["open_pages"]["hidden"]
+
+
+def test_pressing_a_row_starts_get_credits_for_that_page(walk):
+    seen = walk["open_pages"]
+    assert seen["started"] == ["https://music.apple.com/us/song/chihiro/1739659140"]
+    assert seen["typed_by_row"] == seen["started"][0]
+    assert seen["busy"]
 
 
 def test_every_screen_renders(walk):

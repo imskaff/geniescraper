@@ -53,6 +53,13 @@ def _stubbed_side_effects() -> Iterator[None]:
             setattr(config.settings, key, value)
 
 
+OPEN_PAGES = [
+    {"url": "https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134", "title": "HIT ME HARD AND SOFT", "kind": "album", "current": True},
+    {"url": "https://music.apple.com/us/song/chihiro/1739659140", "title": "CHIHIRO", "kind": "song", "current": False},
+    {"url": "https://music.apple.com/us/album/short-n-sweet/1758452684", "title": "Short n' Sweet (Deluxe) by Sabrina Carpenter", "kind": "album", "current": False},
+]  # fmt: skip
+
+
 def _cover() -> Image.Image:
     img = Image.new("RGB", (600, 600), "#1d4e89")
     draw = ImageDraw.Draw(img)
@@ -99,6 +106,12 @@ def _walk(on_screen: Callable[[Any, str], None]) -> None:
         screen("02-start-url")
         app._scrape_error("Page not found. Check the URL and try again.")
         screen("03-start-error")
+
+        # An extension is connected and reports the Apple Music pages open in the browser.
+        app.link._handle_connection(True)
+        app.link._handle_pages(OPEN_PAGES)
+        screen("03-start-open-pages")
+        app.link._handle_connection(False)
 
         app._open_settings()
         settings_win = app._settings_win

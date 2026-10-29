@@ -1,6 +1,16 @@
 import pytest
 
-from gui.logic import classify_url, friendly_error, hotkey_error, prefetch_plan, queue_summary, url_hint
+from gui.link import OpenPage
+from gui.logic import (
+    MAX_OPEN_ROWS,
+    classify_url,
+    friendly_error,
+    hotkey_error,
+    open_page_rows,
+    prefetch_plan,
+    queue_summary,
+    url_hint,
+)
 
 
 @pytest.mark.parametrize(
@@ -93,3 +103,20 @@ def test_hotkey_rules(key, other, ok):
 )
 def test_prefetch_plan(reads, limit, lookahead):
     assert prefetch_plan(reads) == (limit, lookahead)
+
+
+def test_open_page_rows_tag_name_and_mark_the_page_in_view():
+    pages = [
+        OpenPage("https://music.apple.com/us/album/a/1", "Album A", "album", True),
+        OpenPage("https://music.apple.com/us/song/b/2", "Song B", "song", False),
+    ]
+    assert open_page_rows(pages) == ([("Album", "Album A", "this page"), ("Song", "Song B", "")], "")
+
+
+def test_open_page_rows_cut_long_titles_and_say_how_many_more_there_are():
+    pages = [
+        OpenPage(f"https://music.apple.com/us/song/s/{n}", "t" * 120, "song", False) for n in range(MAX_OPEN_ROWS + 3)
+    ]
+    rows, more = open_page_rows(pages)
+    assert len(rows) == MAX_OPEN_ROWS and all(len(title) <= 56 and title.endswith("…") for _, title, _ in rows)
+    assert more == "and 3 more open"
