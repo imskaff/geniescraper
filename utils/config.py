@@ -23,7 +23,9 @@ PARALLEL_DEFAULT = 3  # the extension's default too
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=(str(_LEGACY_ENV_PATH), str(_ENV_PATH)), env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=(str(_LEGACY_ENV_PATH), str(_ENV_PATH)), env_file_encoding="utf-8", extra="ignore"
+    )
 
     hotkey: str = "f8"
     back_hotkey: str = "f7"
@@ -41,12 +43,10 @@ class Settings(BaseSettings):
     find_youtube: bool = True  # Search YouTube for each track's link
     deezer_covers: bool = True  # Search Deezer for a cover when Apple has none
 
-    # Assistant behavior
+    # Assistant behavior. Old files may still hold AUTO_TAB and AUTO_ENTER: both are ignored, the hotkeys always do both.
     compact_mode: bool = False  # Hide queue list and shrink window during scraping
-    auto_enter: bool = True  # Press Enter after pasting to confirm autocomplete
     auto_start_assistant: bool = False  # Auto-start assistant after countdown on credits screen
     auto_start_delay: int = 15  # Seconds before auto-starting assistant
-    auto_tab: bool = False  # Auto-press Tab after role/artist to navigate Genius fields
     always_on_top: bool = True  # Keep the window above the browser while pasting
 
     # Tracks of an album read at once while the one before is being pasted: 1 (the default), 2, 3, 5 or 0 for all
@@ -90,7 +90,7 @@ class Settings(BaseSettings):
             "# Increase if autocomplete is slow to respond",
             f"TYPING_DELAY={self.typing_delay}",
             "",
-            "# Delay after typing before pressing Down+Enter to select from dropdown (seconds)",
+            "# How long the hotkeys wait for Genius's suggestions before pressing Enter (seconds)",
             f"AUTOCOMPLETE_WAIT={self.autocomplete_wait}",
             "",
             "# Scrape feature toggles (true/false)",
@@ -106,10 +106,8 @@ class Settings(BaseSettings):
             "",
             "# Assistant behavior",
             f"COMPACT_MODE={str(self.compact_mode).lower()}",
-            f"AUTO_ENTER={str(self.auto_enter).lower()}",
             f"AUTO_START_ASSISTANT={str(self.auto_start_assistant).lower()}",
             f"AUTO_START_DELAY={self.auto_start_delay}",
-            f"AUTO_TAB={str(self.auto_tab).lower()}",
             f"ALWAYS_ON_TOP={str(self.always_on_top).lower()}",
             "",
             "# Album tracks read at once while pasting: 1, 2, 3, 5, or 0 for all",

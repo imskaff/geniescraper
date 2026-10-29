@@ -29,6 +29,14 @@ _AUTO_PASTE_HINT_ON = (
     "Off, you press the key or Next for each step."
 )
 _AUTO_PASTE_HINT_OFF = "Needs the browser extension: connect it below to turn this on."
+_WAIT_NOTE_HOTKEYS = (
+    "With the hotkeys alone, the app cannot see Genius: after each paste it waits this long, presses Enter and "
+    "takes whatever Genius suggests first. It does not check that an artist with that name exists."
+)
+_WAIT_NOTE_EXTENSION = (
+    "With the browser extension connected, it picks a suggestion only when it matches the typed name exactly "
+    "(ignoring case, accents and symbols). Otherwise it leaves the text and the suggestions for you."
+)
 _COLLECT = (
     ("scrape_core", "Songwriters and producers", "Written By and Produced By"),
     ("scrape_additional", "Additional credits", "Every other role, such as engineers and musicians"),
@@ -94,17 +102,7 @@ class SettingsWindow(ctk.CTkToplevel):
         self._link_area()
         self._subgroup("Keys")
         self._hotkeys()
-        self._subgroup("Typing into Genius")
-        self._switch(
-            "auto_tab",
-            "Auto-tab",
-            "Moves to the next Genius field for you after each paste, so you only press the hotkey.",
-        )
-        self._switch(
-            "auto_enter",
-            "Auto-confirm",
-            "Presses Enter after each paste to pick Genius's autocomplete suggestion.",
-        )
+        self._subgroup("Hotkeys without the browser extension")
         self._wait_slider()
 
         self._card("Reading credits")
@@ -212,7 +210,7 @@ class SettingsWindow(ctk.CTkToplevel):
     def _wait_slider(self) -> None:
         _, control = self._setting_row(
             "Wait for suggestions to settle",
-            "Raise this if Genius is slow to show suggestions.",
+            "Used by the hotkeys only. Raise it if Genius is slow to show suggestions.",
             wrap=220,
         )
         value = ctk.CTkLabel(control, text=f"{settings.autocomplete_wait:.1f} s", width=44, font=theme.font(12))
@@ -230,6 +228,19 @@ class SettingsWindow(ctk.CTkToplevel):
         slider.bind("<ButtonRelease-1>", lambda _: self._set("autocomplete_wait", round(slider.get(), 1)))
         slider.pack(side="left")
         value.pack(side="left", padx=(theme.SPACE_2, 0))
+        for line in (_WAIT_NOTE_HOTKEYS, _WAIT_NOTE_EXTENSION):
+            self._place(
+                ctk.CTkLabel(
+                    self._box,
+                    text=line,
+                    font=theme.font(11),
+                    text_color=theme.MUTED,
+                    anchor="w",
+                    justify="left",
+                    wraplength=340,
+                ),
+                (0, theme.SPACE_2),
+            )
 
     def _parallel_reads(self) -> None:
         _, control = self._setting_row(
@@ -280,7 +291,7 @@ class SettingsWindow(ctk.CTkToplevel):
             text_color=theme.MUTED,
             anchor="w",
             justify="left",
-            wraplength=400,
+            wraplength=340,
         )
         self._hk_msg.grid(row=2, column=0, columnspan=2, sticky="w", padx=0, pady=(0, theme.SPACE_2))
         self._place(box)

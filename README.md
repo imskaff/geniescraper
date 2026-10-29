@@ -16,7 +16,7 @@
 - 🖼️ **Exact Cover Art**: the 1000×1000 PNG of the exact release you opened, looked up by its Apple Music catalog ID.
 - ▶️ **Official YouTube Link**: in Genius's order: the artist's official music video, else the official lyric video, else the official audio, else the auto-generated upload.
 - ⌨️ **Hotkey Assistant**: press `F8` to paste each field into Genius and `F7` to go back; Back and Skip buttons and a clickable step list work with the mouse too.
-- 🤖 **Auto-Tab and Auto-Confirm**: moves between Genius fields and picks the autocomplete suggestion for you, so you rarely touch the keyboard. Both can be switched on or off while pasting.
+- 🤖 **Tabbing and confirming**: the hotkeys move between Genius fields and press Enter on the autocomplete suggestion for you, so you rarely touch the keyboard. With the browser extension connected it does the pasting, and only picks a suggestion that matches the typed name exactly.
 - ⚙️ **Settings Everywhere**: a Settings window over any screen; every change applies and saves immediately and is shared by every copy of the app.
 
 ## Installation
@@ -94,7 +94,7 @@ uv run python gui_main.py
 With the browser extension paired (Settings, Desktop app), the Link screen also lists the Apple Music albums and songs open in your browser; click one to get its credits.
 
 **⚙ Settings** is on every screen, including while you paste, and every change applies and saves immediately.
-Auto-tab and Auto-confirm can also be switched on or off from the pasting screen.
+With the browser extension connected, the pasting screen has an **Auto-paste** button like the extension's: on, the extension fills each field in turn; off, you press **Next** for each one. Without the extension the button is greyed out and the hotkeys (or **Next**) do the pasting.
 
 ### Field order
 
@@ -110,9 +110,9 @@ The assistant pastes fields in the order Genius expects them:
 | 6 | YouTube URL | Copied to clipboard |
 | 7 | Cover Art URL | 1000×1000 PNG, copied to clipboard |
 
-### Auto-Tab
+### Moving between fields
 
-When **Auto-Tab** is enabled in Settings, the assistant automatically navigates between Genius fields after each paste:
+With the hotkeys, the assistant always moves between Genius fields after each paste, and presses Enter on the autocomplete suggestion:
 
 | After pasting… | Action |
 |---------------|--------|
@@ -123,7 +123,7 @@ When **Auto-Tab** is enabled in Settings, the assistant automatically navigates 
 | Last copyright label | Tab × 3 → YouTube URL field |
 | YouTube URL | Tab × 3 → Cover Art field |
 
-Auto-Tab is disabled by default.
+Without the browser extension the app cannot see Genius, so Enter takes whatever Genius suggests first; it cannot check that an artist with that name exists. The extension can: it picks a suggestion only when it matches the typed name exactly (ignoring case, accents and symbols), and otherwise leaves the text and the suggestions for you.
 
 ## Configuration
 
@@ -133,9 +133,7 @@ Open **⚙ Settings** from any screen:
 |---------|---------|-------------|
 | Hotkey (Next) | F8 | Paste current field and advance |
 | Hotkey (Back) | F7 | Step back one field |
-| Auto-confirm | On | Press Enter after paste to confirm autocomplete |
-| Wait for suggestions to settle | 0.6 s | How long to wait for Genius's suggestions before confirming |
-| Auto-tab | Off | Automatically Tab between Genius fields |
+| Wait for suggestions to settle | 0.6 s | Hotkeys only: how long to wait for Genius's suggestions before pressing Enter |
 | Compact mode | Off | Hide queue list and shrink the window |
 | Always on top | On | Keep the window above the browser |
 | Auto-start assistant | Off | Start automatically after a countdown |

@@ -22,7 +22,7 @@ def test_save_round_trips_every_field(tmp_path, monkeypatch):
             "typing_delay": 0.1,
             "autocomplete_wait": 0.9,
             "scrape_youtube": False,
-            "auto_tab": True,
+            "compact_mode": True,
             "auto_start_delay": 7,
             "bridge_secret": "ab" * 32,
             "bridge_origin": "chrome-extension://" + "a" * 32,
@@ -60,10 +60,26 @@ def test_save_creates_the_settings_folder(tmp_path, monkeypatch):
 
 def test_per_user_file_wins_over_legacy_checkout_env(tmp_path):
     legacy, user = tmp_path / "legacy.env", tmp_path / "user.env"
-    legacy.write_text("AUTO_TAB=true\nHOTKEY=f9\n", encoding="utf-8")
+    legacy.write_text("COMPACT_MODE=true\nHOTKEY=f9\n", encoding="utf-8")
     user.write_text("HOTKEY=f10\n", encoding="utf-8")
     loaded = config.Settings(_env_file=(str(legacy), str(user)))  # pyright: ignore[reportCallIssue]
-    assert (loaded.auto_tab, loaded.hotkey) == (True, "f10")
+    assert (loaded.compact_mode, loaded.hotkey) == (True, "f10")
+
+
+def test_a_settings_file_from_before_auto_tab_and_auto_confirm_were_removed_still_loads(tmp_path):
+    old = tmp_path / "settings.env"
+    old.write_text("HOTKEY=f9\nAUTO_TAB=true\nAUTO_ENTER=false\nAUTOCOMPLETE_WAIT=0.9\n", encoding="utf-8")
+    loaded = _settings(str(old))
+    assert (loaded.hotkey, loaded.autocomplete_wait) == ("f9", 0.9)
+    assert not hasattr(loaded, "auto_tab") and not hasattr(loaded, "auto_enter")
+
+
+def test_saving_no_longer_writes_the_removed_options(tmp_path, monkeypatch):
+    env = tmp_path / "settings.env"
+    monkeypatch.setattr(config, "_ENV_PATH", env)
+    _settings(None).save()
+    text = env.read_text(encoding="utf-8")
+    assert "AUTO_TAB" not in text and "AUTO_ENTER" not in text
 
 
 def test_parallel_reads_defaults_to_three_tracks_at_a_time_like_the_extension():

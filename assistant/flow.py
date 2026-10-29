@@ -1,6 +1,6 @@
 """
 Pure assistant flow logic: what to tell the user before each hotkey press and
-which keys Auto-Tab sends after a paste. Kept free of GUI and keyboard I/O so
+which keys the hotkey path sends to move between Genius fields after a paste. Kept free of GUI and keyboard I/O so
 it can be unit tested.
 """
 
@@ -35,7 +35,7 @@ def _tabs(n: int) -> list[KeyStep]:
 
 
 def autotab_steps(kind: str, next_kind: str | None) -> list[KeyStep]:
-    """Keys Auto-Tab presses after pasting `kind` to land on the field for `next_kind`."""
+    """Keys the hotkey path presses after pasting `kind` to land on the field for `next_kind`."""
     if kind in ("artist", "copyright_notice") and next_kind == "cover_art":
         return _tabs(6)
     if (kind in ("artist", "copyright_notice") and next_kind == "youtube_url") or (
