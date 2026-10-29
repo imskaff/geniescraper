@@ -668,11 +668,6 @@ def test_pages_of_the_wrong_shape_close_the_connection(pages):
         page(url="https://music.apple.com/" + "a" * 2100),
         page(url=""),
         page(url=7),
-        page(title="t" * 121),
-        page(title=""),
-        page(title="   "),
-        page(title="two\nlines"),
-        page(title="bell\x07"),
         page(title=None),
         page(kind="playlist"),
         page(kind=None),
@@ -691,6 +686,36 @@ def test_hostile_page_entries_are_dropped_and_the_good_ones_kept(hostile):
     reaction = pages_event(session, [hostile, page(url=SONG_URL, title="Chihiro", kind="song", current=False)])
     assert reaction.close is None
     assert reaction.events == [("pages", [page(url=SONG_URL, title="Chihiro", kind="song", current=False)])]
+
+
+@pytest.mark.parametrize(
+    ("raw", "shown"),
+    [
+        ("Some\u00a0Album\u2009Name", "Some Album Name"),  # no-break and thin spaces, which Apple's titles can hold
+        ("Em\u3000space \u2003 em", "Em space em"),
+        ("Two\tcolumns\nand newline", "Two columns and newline"),
+        ("Bad\x07Title\x00", "BadTitle"),
+        ("Private\ue000use", "Privateuse"),
+        ("\u200eCHIHIRO\u200f", "CHIHIRO"),
+        ("\u202eevil\u202c title", "evil title"),  # right-to-left override: it could reorder what is shown
+        ("\U0001f525 Emoji \U0001f3b6", "\U0001f525 Emoji \U0001f3b6"),
+        ("  padded  ", "padded"),
+        ("t" * 121, "t" * 119 + "\u2026"),
+    ],
+)
+def test_a_title_is_cleaned_not_the_reason_to_lose_the_page(raw, shown):
+    session, _ = ready_session()
+    reaction = pages_event(session, [page(title=raw)])
+    assert reaction.close is None
+    assert reaction.events == [("pages", [page(title=shown)])]
+
+
+@pytest.mark.parametrize("raw", ["", "   ", "\u200b\u200b", "\x07\x00"])
+def test_a_title_with_nothing_left_is_named_by_its_kind(raw):
+    session, _ = ready_session()
+    assert pages_event(session, [page(title=raw)]).events == [("pages", [page(title="Apple Music album")])]
+    song = page(url=SONG_URL, title=raw, kind="song", current=False)
+    assert pages_event(session, [song]).events == [("pages", [{**song, "title": "Apple Music song"}])]
 
 
 def test_at_most_twenty_pages_are_kept():

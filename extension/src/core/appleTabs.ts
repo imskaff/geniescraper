@@ -44,8 +44,13 @@ function nameFromAddress(url: string, kind: "album" | "song"): string {
   return spaced.replace(/(^|\s)(\S)/g, (_, space: string, letter: string) => space + letter.toUpperCase());
 }
 
+/** Control and private-use characters, which belong in no name. Spaces are turned into plain ones before this. */
+const CONTROL = /[\p{Cc}\p{Co}]/gu;
+
 function nameOf(tab: OpenTab, kind: "album" | "song"): string {
-  const title = tab.title.replace(INVISIBLE, "").trim().replace(SITE_SUFFIX, "").trim();
+  // Titles carry no-break and thin spaces and the odd tab; the desktop app shows the same one-line name.
+  const plain = tab.title.replace(INVISIBLE, "").replace(/\s+/g, " ").replace(CONTROL, "");
+  const title = plain.trim().replace(SITE_SUFFIX, "").trim();
   const name = title || nameFromAddress(tab.url, kind);
   return name.length > MAX_NAME ? `${name.slice(0, MAX_NAME - 1)}…` : name;
 }

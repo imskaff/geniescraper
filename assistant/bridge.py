@@ -22,6 +22,7 @@ import re
 import secrets
 import threading
 import time
+import unicodedata
 from collections.abc import Callable
 from concurrent.futures import Future
 from hashlib import sha256
@@ -180,9 +181,26 @@ def _check_state(state: Any) -> dict[str, Any]:
     return state
 
 
-def _plain_text(value: str) -> bool:
-    """No control characters and no line breaks: safe to show as one line."""
-    return all(ch.isprintable() for ch in value)
+# Invisible marks and the right-to-left overrides that can reorder what is shown; no part of a page's name.
+_HIDDEN_MARKS = frozenset("\u200b\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2060\u2066\u2067\u2068\u2069\ufeff")
+
+
+def _clean_title(raw: str, kind: str) -> str:
+    """A tab's title as one plain line: any kind of space is a space, control, private-use and invisible
+    characters go, and it is cut to ``MAX_PAGE_TITLE``. A title that leaves nothing is named by its kind.
+    Real titles carry no-break spaces and the like, so they are cleaned, never a reason to lose the page."""
+    kept = []
+    for ch in raw:
+        if ch.isspace():
+            kept.append(" ")
+        elif ch in _HIDDEN_MARKS or unicodedata.category(ch) in ("Cc", "Cs", "Co", "Cn"):
+            continue
+        else:
+            kept.append(ch)
+    title = " ".join("".join(kept).split())
+    if len(title) > MAX_PAGE_TITLE:
+        title = title[: MAX_PAGE_TITLE - 1] + "\u2026"
+    return title or ("Apple Music album" if kind == "album" else "Apple Music song")
 
 
 def _page_url(value: Any) -> bool:
@@ -215,14 +233,16 @@ def clean_pages(pages: Any) -> list[dict[str, Any]]:
         if (
             _page_url(entry["url"])
             and isinstance(title, str)
-            and 0 < len(title.strip()) <= MAX_PAGE_TITLE
-            and len(title) <= MAX_PAGE_TITLE
-            and _plain_text(title)
             and entry["kind"] in ("album", "song")
             and isinstance(entry["current"], bool)
         ):
             kept.append(
-                {"url": entry["url"], "title": title.strip(), "kind": entry["kind"], "current": entry["current"]}
+                {
+                    "url": entry["url"],
+                    "title": _clean_title(title, entry["kind"]),
+                    "kind": entry["kind"],
+                    "current": entry["current"],
+                }
             )
     return kept
 
