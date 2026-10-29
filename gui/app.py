@@ -12,7 +12,7 @@ from PIL import Image as PILImage
 
 from assistant import flow
 from gui import theme
-from gui.logic import STEPS, friendly_error, queue_summary, url_hint
+from gui.logic import STEPS, friendly_error, prefetch_plan, queue_summary, url_hint
 from gui.settings_window import SettingsWindow
 from scraper import apple_music, pipeline
 from scraper.apple_music import AlbumTrackInfo
@@ -79,7 +79,9 @@ class App(ctk.CTk):
         self._album_queue_total: int = 0
         self._prefetch_cache: dict[int, tuple[SongCredits, PILImage.Image | None]] = {}
         self._prefetch_cache_lock = threading.Lock()
-        self._prefetch_semaphore = threading.Semaphore(1)
+        self._prefetch_running: set[int] = set()  # tracks being read ahead; guarded by the lock
+        self._prefetch_limit = prefetch_plan(settings.parallel_reads)[0]
+        self._prefetch_semaphore = threading.Semaphore(self._prefetch_limit)
         self._track_vars: list = []
         self._scrape_selected_btn: ctk.CTkButton | None = None
         self._credits_in_countdown: bool = False
@@ -1041,27 +1043,45 @@ class App(ctk.CTk):
     def _prefetch_tracks(self, n: int = 2) -> None:
         if not self._is_album_queue_mode or self._album_info is None:
             return
+        # "Parallel reads" in the settings: how many tracks are read at once, and so how many are started ahead.
+        limit, lookahead = prefetch_plan(settings.parallel_reads)
+        if limit != self._prefetch_limit:
+            # Reads already running keep the semaphore they took, so a change never frees or blocks them wrongly.
+            self._prefetch_limit = limit
+            self._prefetch_semaphore = threading.Semaphore(limit)
+        n = max(n, lookahead)
+        semaphore = self._prefetch_semaphore
         with self._prefetch_cache_lock:
             cached = set(self._prefetch_cache)
+            running = set(self._prefetch_running)
         count = 0
         for track_index, track_title in self._album_queue_pending:
             if count >= n:
                 break
-            if track_index not in cached:
-                threading.Thread(
-                    target=self._prefetch_worker,
-                    args=(track_index, track_title),
-                    daemon=True,
-                ).start()
-                count += 1
+            if track_index in cached:
+                continue
+            count += 1
+            if track_index in running:  # already on its way: reading it twice at once would only double the requests
+                continue
+            with self._prefetch_cache_lock:
+                self._prefetch_running.add(track_index)
+            threading.Thread(
+                target=self._prefetch_worker,
+                args=(track_index, track_title, semaphore),
+                daemon=True,
+            ).start()
 
-    def _prefetch_worker(self, track_index: int, track_title: str) -> None:
+    def _prefetch_worker(self, track_index: int, track_title: str, semaphore: threading.Semaphore) -> None:
         album_info = self._album_info
         if album_info is None:
+            with self._prefetch_cache_lock:
+                self._prefetch_running.discard(track_index)
             return
         url, artist = album_info.url, album_info.artist
 
-        if not self._prefetch_semaphore.acquire(timeout=120):
+        if not semaphore.acquire(timeout=120):
+            with self._prefetch_cache_lock:
+                self._prefetch_running.discard(track_index)
             return
         try:
             with self._prefetch_cache_lock:
@@ -1089,7 +1109,9 @@ class App(ctk.CTk):
         except Exception:
             pass
         finally:
-            self._prefetch_semaphore.release()
+            with self._prefetch_cache_lock:
+                self._prefetch_running.discard(track_index)
+            semaphore.release()
 
     # ── hotkey assistant ─────────────────────────────────────────────────
 

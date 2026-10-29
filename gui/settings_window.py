@@ -17,6 +17,7 @@ from utils import config
 from utils.config import settings
 
 _AUTO_START_DELAYS = ("5", "10", "15", "30")
+_READS_ALL = "All"
 _COLLECT = (
     ("scrape_core", "Writers and producers", "Written By and Produced By"),
     ("scrape_additional", "Additional credits", "Every other role, such as engineers and musicians"),
@@ -70,6 +71,9 @@ class SettingsWindow(ctk.CTkToplevel):
             "Presses Enter after each paste to pick Genius's autocomplete suggestion.",
         )
         self._wait_slider()
+
+        self._heading("Reading tracks")
+        self._parallel_reads()
 
         self._heading("Hotkeys")
         self._hotkeys()
@@ -149,6 +153,22 @@ class SettingsWindow(ctk.CTkToplevel):
         slider.bind("<ButtonRelease-1>", lambda _: self._set("autocomplete_wait", round(slider.get(), 1)))
         slider.pack(side="left")
         value.pack(side="left", padx=(6, 0))
+
+    def _parallel_reads(self) -> None:
+        _, control = self._setting_row(
+            "Parallel reads",
+            "How many album tracks are read at once while you paste. 1 is the gentlest on Apple Music and YouTube.",
+            wrap=230,
+        )
+        menu = ctk.CTkOptionMenu(
+            control,
+            values=[_READS_ALL if n == 0 else str(n) for n in config.PARALLEL_CHOICES],
+            width=70,
+            font=theme.font(12),
+            command=lambda v: self._set("parallel_reads", 0 if v == _READS_ALL else int(v)),
+        )
+        menu.set(_READS_ALL if settings.parallel_reads == 0 else str(settings.parallel_reads))
+        menu.pack()
 
     def _hotkeys(self) -> None:
         box = ctk.CTkFrame(self._body, fg_color=theme.SURFACE, corner_radius=8)
