@@ -32,6 +32,7 @@ export const ALBUM: AlbumInfo = {
   phonographicCopyright: "℗ 2024 Demo Records",
   copyrightNotice: "© 2024 Demo Publishing",
   coverArtUrl: "https://example.com/album-cover.png",
+  releaseDate: "2024-05-21",
 };
 
 export const SINGLE: AlbumInfo = {
@@ -53,6 +54,7 @@ export function scrapeFor(title: string): PageScrape {
       { role: "Mixing Engineer", artists: ["Mixer One"] },
     ],
     coverArtUrl: "",
+    releaseDate: "2024-05-17",
     warnings: [],
   };
 }

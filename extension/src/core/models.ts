@@ -1,5 +1,6 @@
 // Port of scraper.models: credits, the merge rules and the paste queue in Genius form order.
 import { extractLabels } from "./copyright";
+import { formatReleaseDate, splitReleaseDate } from "./releaseDate";
 
 export interface Credit {
   role: string;
@@ -21,10 +22,30 @@ export interface SongCredits {
   coverArtUrl: string;
   youtubeUrl: string;
   youtubeIsMv: boolean;
+  /** When Apple Music released the song, ISO "YYYY-MM-DD"; "" when unknown. */
+  releaseDate: string;
   /** Which kind of video the link is; absent for a link saved before this was recorded, or one the user gave. */
   youtubeKind?: VideoKind;
   /** True when the user pasted this link themselves, instead of the look-up finding it. */
   youtubeByUser?: boolean;
+}
+
+/** Year, month (1-12) and day of the song's release date; null when it is unknown. */
+export function releaseYear(song: Pick<SongCredits, "releaseDate">): number | null {
+  return splitReleaseDate(song.releaseDate)?.[0] ?? null;
+}
+
+export function releaseMonth(song: Pick<SongCredits, "releaseDate">): number | null {
+  return splitReleaseDate(song.releaseDate)?.[1] ?? null;
+}
+
+export function releaseDay(song: Pick<SongCredits, "releaseDate">): number | null {
+  return splitReleaseDate(song.releaseDate)?.[2] ?? null;
+}
+
+/** The date as shown to the user, "May 17, 2024" ("" when unknown). */
+export function releaseDateText(song: Pick<SongCredits, "releaseDate">): string {
+  return formatReleaseDate(song.releaseDate);
 }
 
 export type QueueKind =

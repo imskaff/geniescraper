@@ -34,6 +34,19 @@ describe("normaliseSettings", () => {
   });
 });
 
+const SONG = {
+  title: "One",
+  artist: "Demo Artist",
+  appleMusicUrl: ALBUM.trackUrls[0],
+  credits: [{ role: "Songwriter", artists: ["W"] }],
+  phonographicCopyright: "",
+  copyrightNotice: "",
+  coverArtUrl: "",
+  youtubeUrl: "",
+  youtubeIsMv: false,
+  releaseDate: "2024-05-17",
+};
+
 const TRACK = { index: 0, title: "One", url: ALBUM.trackUrls[0], status: "pending", song: null, error: "" };
 
 describe("normaliseSession", () => {
@@ -47,6 +60,39 @@ describe("normaliseSession", () => {
   it("restores a valid session", () => {
     const stored = { screen: "review", album: ALBUM, selected: [0, 2], results: [TRACK], current: 0 };
     expect(normaliseSession(stored)).toEqual({ ...stored, results: [TRACK] });
+  });
+
+  it("restores a session saved before release dates were read, with no date", () => {
+    const oldAlbum: Record<string, unknown> = { ...ALBUM };
+    delete oldAlbum["releaseDate"];
+    const oldSong: Record<string, unknown> = { ...SONG };
+    delete oldSong["releaseDate"];
+    const session = normaliseSession({
+      screen: "review",
+      album: oldAlbum,
+      selected: [0],
+      results: [{ ...TRACK, status: "done", song: oldSong }],
+      current: 0,
+    });
+    expect(session.album?.releaseDate).toBe("");
+    expect(session.results[0]?.song?.releaseDate).toBe("");
+  });
+
+  it("keeps a good release date and drops one that is not a real date", () => {
+    const stored = (date: unknown) =>
+      normaliseSession({
+        screen: "review",
+        album: { ...ALBUM, releaseDate: date },
+        selected: [0],
+        results: [{ ...TRACK, status: "done", song: { ...SONG, releaseDate: date } }],
+        current: 0,
+      });
+    expect(stored("2024-05-17").results[0]?.song?.releaseDate).toBe("2024-05-17");
+    expect(stored("2024-05-17").album?.releaseDate).toBe("2024-05-17");
+    for (const bad of ["2024-02-31", "May 17, 2024", ""]) {
+      expect(stored(bad).results[0]?.song?.releaseDate).toBe("");
+      expect(stored(bad).album?.releaseDate).toBe("");
+    }
   });
 
   it("restores a track that was loading as pending", () => {

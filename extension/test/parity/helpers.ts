@@ -16,6 +16,7 @@ export function songFromVector(name: SongName): SongCredits {
     coverArtUrl: raw.cover_art_url,
     youtubeUrl: raw.youtube_url,
     youtubeIsMv: raw.youtube_kind === "music-video",
+    releaseDate: raw.release_date,
   };
 }
 

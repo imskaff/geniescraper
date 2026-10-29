@@ -1,6 +1,7 @@
 // Album and song page readers, ported from scraper.apple_music. Everything takes a Document and only reads it.
 import { trackCountFromFooter, splitCopyright } from "../core/copyright";
 import { pickCoverUrl } from "../core/cover";
+import { pickReleaseDate } from "../core/releaseDate";
 import { extractTitleArtist } from "./title";
 import { parseAppleMusicUrl } from "./url";
 
@@ -12,6 +13,8 @@ export const NOT_FOUND_SELECTOR = '[data-testid="not-found-heading"], [data-test
 /** One row per track of an album tracklist. */
 export const TRACK_ROW_SELECTOR = '[data-testid="track-list-item"]';
 
+const RELEASE_META_SELECTOR = 'meta[property="music:release_date"]';
+const RELEASE_LINE_SELECTOR = '[data-testid="song-subtitle-release-date"]';
 const FOOTER_SELECTOR = '[data-testid="tracklist-footer-description"]';
 const TRACK_TITLE_SELECTORS = [
   '[data-testid="track-list-item"] [data-testid="track-title"]',
@@ -66,6 +69,17 @@ export function readTitleArtist(doc: Document): [title: string, artist: string] 
 export function readCopyright(doc: Document): [phonographic: string, copyright: string] {
   const footer = doc.querySelector(FOOTER_SELECTOR);
   return splitCopyright(footer ? footer.textContent : "");
+}
+
+/**
+ * The release date the page shows as "YYYY-MM-DD" ("" if it names none). A song page gives the song's own date (its
+ * meta tag, else its visible date line); an album page gives only the album's, from the footer.
+ */
+export function readReleaseDate(doc: Document): string {
+  const meta = doc.querySelector(RELEASE_META_SELECTOR)?.getAttribute("content") ?? "";
+  const line = doc.querySelector(RELEASE_LINE_SELECTOR)?.textContent ?? "";
+  const footer = doc.querySelector(FOOTER_SELECTOR)?.textContent ?? "";
+  return pickReleaseDate(meta, line, footer);
 }
 
 /** Title of the 1-based `trackIndex` row of an album tracklist ("" when there is no such row). */

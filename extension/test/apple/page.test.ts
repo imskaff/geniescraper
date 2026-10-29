@@ -5,6 +5,7 @@ import {
   isNotFound,
   readCopyright,
   readCoverUrl,
+  readReleaseDate,
   readTitleArtist,
   readTrackCount,
   readTrackTitle,
@@ -20,6 +21,46 @@ const SONGS = CASES.filter((c) => c.url.includes("/song/"));
 
 // Albums whose page header shows only motion artwork and an editorial still, never the album artwork.
 const HEADER_WITHOUT_ARTWORK = new Set(["rodrigo-sour-t6"]);
+
+// What each saved album page's footer says: the album's date, which a track need not share (Good 4 U is
+// May 14 on a May 21 album).
+const ALBUM_FOOTER_DATE: Record<string, string> = {
+  "eilish-hmhas-t3": "2024-05-17",
+  "kendrick-nlu-single": "2024-05-04",
+  "rodrigo-sour-t6": "2021-05-21",
+  "rosalia-con-altura": "2019-03-28",
+  "swift-ttpd-t1": "2024-04-19",
+  "sza-sos-t1": "2022-12-09",
+};
+
+describe("the release date on the saved pages", () => {
+  it.each(CASES)("$id: the song page gives the song's own date, as the golden file says", ({ id }) => {
+    expect(readReleaseDate(loadFixture(id, "credits"))).toBe(loadGolden(id).release_date);
+  });
+
+  it.each(ALBUMS)("$id: the album page gives the album's date from its footer", ({ id }) => {
+    expect(readReleaseDate(loadFixture(id, "page"))).toBe(ALBUM_FOOTER_DATE[id]);
+  });
+
+  it.each(SONGS)("$id: a song page without the meta tag falls back to its visible date line", ({ id }) => {
+    const doc = loadFixture(id, "page");
+    expect(doc.querySelector('meta[property="music:release_date"]')).toBeNull();
+    expect(readReleaseDate(doc)).toBe(loadGolden(id).release_date);
+  });
+
+  it("reads nothing from a page without a date, or with a date that is not on the calendar", () => {
+    const parse = (markup: string): Document => new DOMParser().parseFromString(markup, "text/html");
+    expect(readReleaseDate(parse("<body><p>no date</p></body>"))).toBe("");
+    expect(
+      readReleaseDate(
+        parse('<head><meta property="music:release_date" content="2024-02-31T00:00:00.000Z"></head><body></body>'),
+      ),
+    ).toBe("");
+    expect(
+      readReleaseDate(parse('<body><span data-testid="song-subtitle-release-date">17 mai 2024</span></body>')),
+    ).toBe("");
+  });
+});
 
 describe("the album footer, whatever the line endings of the saved page", () => {
   // The footer's lines are separated by a newline in the markup. A DOM that computes innerText can drop a lone

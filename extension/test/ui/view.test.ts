@@ -252,6 +252,32 @@ describe("review screen", () => {
     expect(queue).toContain("Cover art URLhttps://example.com/album-cover.png");
   });
 
+  it("shows when the song was released, from its own page", async () => {
+    const { root } = await withFirstOpen();
+    expect(byText(root, "dt", "Released").nextElementSibling?.textContent).toBe("May 17, 2024");
+  });
+
+  it("falls back to the album's date when the song page names none", async () => {
+    const { root } = await withFirstOpen({
+      api: {
+        scrapeTrack: (_url, title) =>
+          Promise.resolve({ ok: true, data: { ...scrapeFor(title), releaseDate: "" } } as const),
+      },
+    });
+    expect(byText(root, "dt", "Released").nextElementSibling?.textContent).toBe("May 21, 2024");
+  });
+
+  it("hides the release date when neither page gave one", async () => {
+    const { root } = await withFirstOpen({
+      api: {
+        detect: () => Promise.resolve({ ok: true, data: { ...ALBUM, releaseDate: "" } } as const),
+        scrapeTrack: (_url, title) =>
+          Promise.resolve({ ok: true, data: { ...scrapeFor(title), releaseDate: "" } } as const),
+      },
+    });
+    expect([...root.querySelectorAll("dt")].some((dt) => dt.textContent === "Released")).toBe(false);
+  });
+
   it("has no track list to choose from when there is only one track", async () => {
     const ui = await mount({ api: { detect: () => Promise.resolve({ ok: true, data: SINGLE }) } });
     await submitLink(ui.root, SINGLE.url);

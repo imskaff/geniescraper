@@ -164,6 +164,8 @@ export function buildSong(album: AlbumInfo, result: Pick<TrackResult, "url">, sc
     coverArtUrl: album.coverArtUrl || scrape.coverArtUrl,
     youtubeUrl: "",
     youtubeIsMv: false,
+    // The song page names the song's own date; the album's footer is the fallback.
+    releaseDate: scrape.releaseDate || album.releaseDate,
   };
 }
 

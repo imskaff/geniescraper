@@ -1,7 +1,7 @@
 // Renders the controller's state. The structure follows the accessibility basics rather than decoration:
 // real headings, labelled controls, a status and an alert region that are never rebuilt (so announcements
 // fire), focus moved to the new screen's heading, and focus kept where it was across a re-render.
-import type { QueueKind, SongCredits, VideoKind } from "../core/models";
+import { releaseDateText, type QueueKind, type SongCredits, type VideoKind } from "../core/models";
 import type { AlbumInfo } from "../shared/messages";
 import { shownTrack, type TrackResult } from "../shared/session";
 import { trackHealth, type Health, type HealthLevel } from "../core/trackHealth";
@@ -641,6 +641,8 @@ export class PanelView {
     }
 
     const groups = el("dl", { class: "credits" });
+    const released = releaseDateText(song);
+    if (released) groups.append(el("dt", { text: "Released" }), el("dd", { text: released }));
     for (const credit of song.credits) {
       groups.append(el("dt", { text: credit.role }), el("dd", { text: credit.artists.join(", ") }));
     }

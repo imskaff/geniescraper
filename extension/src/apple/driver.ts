@@ -14,6 +14,7 @@ import {
   isNotFound,
   readCopyright,
   readCoverUrl,
+  readReleaseDate,
   readTitleArtist,
   readTrackCount,
   readTrackTitle,
@@ -72,6 +73,7 @@ export async function detectAlbum(doc: Document, url: string, timing: Timing): P
     phonographicCopyright,
     copyrightNotice,
     coverArtUrl: readCoverUrl(doc),
+    releaseDate: readReleaseDate(doc),
   };
 }
 
@@ -101,14 +103,15 @@ export interface ScrapeRequest {
   trackTitle: string;
 }
 
-/** Title, artist, credits and header cover of one song page. */
+/** Title, artist, credits, release date and header cover of one song page. */
 export async function scrapeTrack(doc: Document, request: ScrapeRequest, timing: Timing): Promise<PageScrape> {
   await waitForPage(doc, timing);
   const [pageTitle, artist] = readTitleArtist(doc);
   const coverArtUrl = readCoverUrl(doc);
+  const releaseDate = readReleaseDate(doc);
   await waitForCredits(doc, timing);
   // The text walk would misparse the lyrics and navigation that fill a song page, so cards only.
   const credits = parseCreditsDocument(doc, { cardsOnly: true });
   const warnings = credits.length === 0 ? ["No credits were found on this track's page."] : [];
-  return { title: request.trackTitle || pageTitle, artist, credits, coverArtUrl, warnings };
+  return { title: request.trackTitle || pageTitle, artist, credits, coverArtUrl, releaseDate, warnings };
 }

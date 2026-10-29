@@ -20,6 +20,7 @@ export interface Golden {
   phonographic_copyright: string;
   copyright_notice: string;
   cover_art_url: string;
+  release_date: string;
 }
 
 export const CASES = JSON.parse(readFileSync(join(REPO, "bench", "cases.json"), "utf-8")) as Case[];
