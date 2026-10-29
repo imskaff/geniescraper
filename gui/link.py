@@ -42,7 +42,24 @@ def default_factory(secret: str | None, origin: str | None, callbacks: _Callback
         on_status=callbacks["on_status"],
         on_connection=callbacks["on_connection"],
         on_paired=callbacks["on_paired"],
+        on_pages=callbacks["on_pages"],
     )
+
+
+@dataclass(frozen=True)
+class OpenPage:
+    """An Apple Music album or song page open in the user's browser, as the extension reported it."""
+
+    url: str
+    title: str
+    kind: str
+    current: bool
+
+    @classmethod
+    def from_report(cls, page: dict[str, Any]) -> OpenPage:
+        return cls(
+            url=str(page["url"]), title=str(page["title"]), kind=str(page["kind"]), current=bool(page["current"])
+        )
 
 
 class LinkState(Enum):
@@ -158,12 +175,15 @@ class LinkController:
         self.run_active = False
         self.unavailable = False
         self.status: RunStatus | None = None
+        #: The Apple Music pages open in the browser; empty unless an extension is connected.
+        self.pages: tuple[OpenPage, ...] = ()
         # The GUI sets these; all run on its thread.
         self.on_change: Callable[[], None] | None = None
         self.on_status: Callable[[RunStatus], None] | None = None
         self.on_finished: Callable[[], None] | None = None
         self.on_run_ended: Callable[[], None] | None = None
         self.on_connection: Callable[[bool], None] | None = None
+        self.on_pages: Callable[[], None] | None = None
         self._bridge: BridgeLike = self._make_bridge()
 
     # -- lifecycle --
@@ -173,6 +193,7 @@ class LinkController:
             "on_status": lambda state: self._post(gen, self._handle_status, state),
             "on_connection": lambda up: self._post(gen, self._handle_connection, up),
             "on_paired": lambda secret, origin: self._post(gen, self._handle_paired, secret, origin),
+            "on_pages": lambda pages: self._post(gen, self._handle_pages, pages),
         }
         return self._factory(self._secret, self._origin, callbacks)
 
@@ -269,6 +290,7 @@ class LinkController:
         self._connected = self._lost = False
         self._code = self._deadline = None
         self._reset_run()
+        self._set_pages(())
         self._bridge = self._make_bridge()
         if self._started:
             self._start_bridge()
@@ -289,9 +311,23 @@ class LinkController:
             self._lost = False
         elif self._secret is not None:
             self._lost = True
+        if not up:
+            self._set_pages(())
         if self.on_connection is not None:
             self.on_connection(up)
         self._changed()
+
+    # -- the pages open in the browser --
+    def _set_pages(self, pages: tuple[OpenPage, ...]) -> None:
+        if pages != self.pages:
+            self.pages = pages
+            if self.on_pages is not None:
+                self.on_pages()
+
+    def _handle_pages(self, pages: list[dict[str, Any]]) -> None:
+        """The extension's list, already checked by the bridge. A late report from a dropped link is ignored."""
+        if self._connected:
+            self._set_pages(tuple(OpenPage.from_report(page) for page in pages))
 
     # -- a run --
     def _reset_run(self) -> None:

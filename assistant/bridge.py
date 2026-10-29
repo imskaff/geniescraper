@@ -27,6 +27,7 @@ from concurrent.futures import Future
 from hashlib import sha256
 from http import HTTPStatus
 from typing import Any, TypeGuard
+from urllib.parse import urlsplit
 
 PROTOCOL_VERSION = 1
 HOST = "127.0.0.1"
@@ -37,6 +38,11 @@ MAX_MESSAGE_BYTES = 64 * 1024
 MAX_QUEUE_ITEMS = 500
 MAX_TEXT = 2000
 MAX_STATUS_TEXT = 500
+#: The open Apple Music pages the extension reports: how many, and how long an address and a title may be.
+MAX_PAGES = 20
+MAX_PAGE_URL = 2048
+MAX_PAGE_TITLE = 120
+APPLE_MUSIC_HOST = "music.apple.com"
 #: Seconds a new connection has to authenticate before it is dropped.
 AUTH_TIMEOUT_S = 5.0
 #: A pairing code works for this long, for one pairing, and dies after this many wrong guesses.
@@ -174,6 +180,53 @@ def _check_state(state: Any) -> dict[str, Any]:
     return state
 
 
+def _plain_text(value: str) -> bool:
+    """No control characters and no line breaks: safe to show as one line."""
+    return all(ch.isprintable() for ch in value)
+
+
+def _page_url(value: Any) -> bool:
+    """An https address on exactly music.apple.com: no other host, no credentials, no port, no spaces."""
+    if not isinstance(value, str) or not 0 < len(value) <= MAX_PAGE_URL or not value.startswith("https://"):
+        return False
+    if any(ch.isspace() or not ch.isprintable() or ch == "\\" for ch in value):
+        return False
+    try:
+        parts = urlsplit(value)
+    except ValueError:
+        return False
+    return parts.netloc == APPLE_MUSIC_HOST
+
+
+def clean_pages(pages: Any) -> list[dict[str, Any]]:
+    """The open pages the extension reports, checked entry by entry. A list of the wrong shape is a protocol
+    error; an entry that is not exactly an album or song page on Apple Music is dropped, and at most
+    ``MAX_PAGES`` are kept. Nothing here starts anything: the list is only ever shown."""
+    if not isinstance(pages, list):
+        raise ProtocolError("pages: not a list")
+    keys = {"url", "title", "kind", "current"}
+    kept: list[dict[str, Any]] = []
+    for entry in pages:
+        if len(kept) >= MAX_PAGES:
+            break
+        if not isinstance(entry, dict) or set(entry) != keys:
+            continue
+        title = entry["title"]
+        if (
+            _page_url(entry["url"])
+            and isinstance(title, str)
+            and 0 < len(title.strip()) <= MAX_PAGE_TITLE
+            and len(title) <= MAX_PAGE_TITLE
+            and _plain_text(title)
+            and entry["kind"] in ("album", "song")
+            and isinstance(entry["current"], bool)
+        ):
+            kept.append(
+                {"url": entry["url"], "title": title.strip(), "kind": entry["kind"], "current": entry["current"]}
+            )
+    return kept
+
+
 def _check_error(error: Any) -> dict[str, str]:
     if (
         not isinstance(error, dict)
@@ -307,6 +360,8 @@ class ClientSession:
             return Reaction()
         if kind == "status":
             return Reaction(events=[("status", _check_state(message.get("state")))])
+        if kind == "pages":
+            return Reaction(events=[("pages", clean_pages(message.get("pages")))])
         if kind == "ack":
             command_id, ok = message.get("id"), message.get("ok")
             if not _is_int(command_id) or not isinstance(ok, bool):
@@ -337,6 +392,7 @@ class Bridge:
         on_status: Callable[[dict[str, Any]], None] | None = None,
         on_connection: Callable[[bool], None] | None = None,
         on_paired: Callable[[str, str], None] | None = None,
+        on_pages: Callable[[list[dict[str, Any]]], None] | None = None,
     ) -> None:
         self.host = HOST
         self.port = 0
@@ -346,6 +402,7 @@ class Bridge:
         self._on_status = on_status
         self._on_connection = on_connection
         self._on_paired = on_paired
+        self._on_pages = on_pages
         self._pairing: PairingWindow | None = None
         self._server: Any = None
         self._loop: asyncio.AbstractEventLoop | None = None
@@ -546,6 +603,8 @@ class Bridge:
             self._call(self._on_connection, True)
         elif kind == "status":
             self._call(self._on_status, event[1])
+        elif kind == "pages":
+            self._call(self._on_pages, event[1])
         elif kind == "ack":
             future = self._pending.pop(event[1], None)
             if future is not None and not future.done():

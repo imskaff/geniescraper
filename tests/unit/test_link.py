@@ -411,3 +411,56 @@ def test_connection_wording_covers_every_state():
         assert link.state_hint(state_, code="ABCD-EFGH", seconds_left=75)
     assert "1:15" in link.state_hint(LinkState.WAITING, code="ABCD-EFGH", seconds_left=75)
     assert "ABCD-EFGH" not in link.state_hint(LinkState.CONNECTED, code=None, seconds_left=0)
+
+
+# --- the pages open in the browser ----------------------------------------------------------------------------
+
+ALBUM = "https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134"
+SONG = "https://music.apple.com/us/song/chihiro/1739659140"
+REPORT = [
+    {"url": ALBUM, "title": "Hit Me Hard And Soft", "kind": "album", "current": True},
+    {"url": SONG, "title": "Chihiro", "kind": "song", "current": False},
+]
+
+
+def test_pages_are_empty_until_an_extension_reports_them():
+    rig = rig_started(secret=SECRET, origin=ORIGIN)
+    assert rig.link.pages == ()
+    rig.bridge.connect()
+    assert rig.link.pages == ()
+
+
+def test_the_reported_pages_are_kept_and_the_gui_told_once_per_change():
+    rig = rig_started(secret=SECRET, origin=ORIGIN)
+    told: list[int] = []
+    rig.link.on_pages = lambda: told.append(len(rig.link.pages))
+    rig.bridge.connect()
+    rig.bridge.cb["on_pages"](REPORT)
+    assert rig.link.pages == (
+        link.OpenPage(ALBUM, "Hit Me Hard And Soft", "album", True),
+        link.OpenPage(SONG, "Chihiro", "song", False),
+    )
+    rig.bridge.cb["on_pages"](REPORT)  # the same list again changes nothing
+    rig.bridge.cb["on_pages"]([])
+    assert rig.link.pages == () and told == [2, 0]
+
+
+def test_the_pages_go_when_the_link_drops():
+    rig = rig_started(secret=SECRET, origin=ORIGIN)
+    rig.bridge.connect()
+    rig.bridge.cb["on_pages"](REPORT)
+    rig.bridge.drop()
+    assert rig.link.pages == ()
+    rig.bridge.cb["on_pages"](REPORT)  # a late report from the dropped link is ignored
+    assert rig.link.pages == ()
+
+
+def test_the_pages_go_when_the_pairing_is_forgotten():
+    rig = rig_started(secret=SECRET, origin=ORIGIN)
+    rig.bridge.connect()
+    old = rig.bridge
+    rig.bridge.cb["on_pages"](REPORT)
+    rig.link.forget()
+    assert rig.link.pages == ()
+    old.cb["on_pages"](REPORT)  # the old bridge's late callbacks are ignored
+    assert rig.link.pages == ()

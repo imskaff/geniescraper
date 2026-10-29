@@ -616,3 +616,118 @@ def test_a_locked_pairing_window_is_not_alive():
     for _ in range(b.PAIRING_MAX_FAILURES):
         w.check("WRONG-CODE")
     assert not w.alive
+
+
+# --- the open Apple Music pages -----------------------------------------------------------------------------------
+
+ALBUM_URL = "https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134"
+SONG_URL = "https://music.apple.com/us/song/chihiro/1739659140"
+
+
+def page(**over):
+    base = {"url": ALBUM_URL, "title": "Hit Me Hard And Soft", "kind": "album", "current": True}
+    base.update(over)
+    return base
+
+
+def pages_event(session, pages):
+    return session.receive(json.dumps({"type": "pages", "v": 1, "pages": pages}))
+
+
+def test_valid_pages_become_an_event():
+    session, _ = ready_session()
+    reaction = pages_event(session, [page(), page(url=SONG_URL, title="Chihiro", kind="song", current=False)])
+    assert reaction.close is None
+    assert reaction.events == [("pages", [page(), page(url=SONG_URL, title="Chihiro", kind="song", current=False)])]
+    assert pages_event(session, []).events == [("pages", [])]
+
+
+@pytest.mark.parametrize("pages", ["nope", None, {"a": 1}, 5])
+def test_pages_of_the_wrong_shape_close_the_connection(pages):
+    session, _ = ready_session()
+    reaction = pages_event(session, pages)
+    assert reaction.close is not None
+    assert reaction.events == []
+
+
+@pytest.mark.parametrize(
+    "hostile",
+    [
+        page(url="http://music.apple.com/us/album/x/1"),
+        page(url="https://music.apple.com.evil.example/us/album/x/1"),
+        page(url="https://evil.example/music.apple.com/us/album/x/1"),
+        page(url="https://music.apple.com@evil.example/us/album/x/1"),
+        page(url="https://evil.example\\@music.apple.com/us/album/x/1"),
+        page(url="https://user:pw@music.apple.com/us/album/x/1"),
+        page(url="https://music.apple.com:8443/us/album/x/1"),
+        page(url="https://MUSIC.apple.com/us/album/x/1"),
+        page(url="https://music.apple.com/us/album/x/1 evil"),
+        page(url="https://music.apple.com/us/album/x/1\n"),
+        page(url="javascript:alert(1)"),
+        page(url="file:///C:/Windows/win.ini"),
+        page(url="https://music.apple.com/" + "a" * 2100),
+        page(url=""),
+        page(url=7),
+        page(title="t" * 121),
+        page(title=""),
+        page(title="   "),
+        page(title="two\nlines"),
+        page(title="bell\x07"),
+        page(title=None),
+        page(kind="playlist"),
+        page(kind=None),
+        page(current="yes"),
+        page(current=1),
+        {**page(), "extra": 1},
+        {k: v for k, v in page().items() if k != "kind"},
+        "https://music.apple.com/us/album/x/1",
+        None,
+        ["x"],
+        7,
+    ],
+)
+def test_hostile_page_entries_are_dropped_and_the_good_ones_kept(hostile):
+    session, _ = ready_session()
+    reaction = pages_event(session, [hostile, page(url=SONG_URL, title="Chihiro", kind="song", current=False)])
+    assert reaction.close is None
+    assert reaction.events == [("pages", [page(url=SONG_URL, title="Chihiro", kind="song", current=False)])]
+
+
+def test_at_most_twenty_pages_are_kept():
+    session, _ = ready_session()
+    many = [page(url=f"https://music.apple.com/us/song/s{n}/{100 + n}", title=f"S{n}", kind="song") for n in range(60)]
+    kept = pages_event(session, many).events[0][1]
+    assert len(kept) == b.MAX_PAGES == 20
+    assert [p["title"] for p in kept] == [f"S{n}" for n in range(20)]
+
+
+def test_page_titles_are_data_only():
+    session, _ = ready_session()
+    nasty = '{"type":"begin"} <script>alert(1)</script>'
+    reaction = pages_event(session, [page(title=nasty)])
+    assert reaction.close is None and reaction.sends == []
+    assert reaction.events == [("pages", [page(title=nasty)])]
+
+
+def test_pages_before_authentication_are_refused():
+    session, _ = make_session()
+    reaction = session.receive(json.dumps({"type": "pages", "v": 1, "pages": []}))
+    assert reaction.close is not None and reaction.events == []
+
+
+async def test_bridge_delivers_pages_to_its_callback():
+    got = []
+    bridge = b.Bridge(secret=SECRET, on_pages=got.append)
+    conn = FakeConn()
+    task = asyncio.create_task(bridge._serve(conn, EXT_ORIGIN))
+    await asyncio.sleep(0)
+    nonce = conn.sent[0]["nonce"]
+    await bridge._feed(
+        conn,
+        json.dumps(
+            {"type": "hello", "v": 1, "nonce": "c" * 32, "proof": b.compute_proof(SECRET, "client", nonce, "c" * 32)}
+        ),
+    )
+    await bridge._feed(conn, json.dumps({"type": "pages", "v": 1, "pages": [page(), {"url": "http://x"}]}))
+    assert got == [[page()]]
+    task.cancel()
