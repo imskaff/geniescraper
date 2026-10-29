@@ -35,7 +35,7 @@ def lookups(monkeypatch):
         return ""
 
     async def youtube_url(title, artist):
-        return "https://www.youtube.com/watch?v=x", False
+        return "https://www.youtube.com/watch?v=x", "lyric-video"
 
     monkeypatch.setattr(pipeline.apple_music, "detect_album", detect_album)
     monkeypatch.setattr(pipeline.apple_music, "scrape", scrape)
@@ -59,6 +59,11 @@ async def test_fetch_track_falls_back_to_itunes_then_deezer_without_apple_cover(
     lookups["itunes"] = ""
     song = await pipeline.fetch_track(URL, 6, "good 4 u", "Olivia Rodrigo")
     assert song.cover_art_url == DEEZER
+
+
+async def test_fetch_track_carries_the_kind_of_the_youtube_video(lookups):
+    song = await pipeline.fetch_track(URL, 6, "good 4 u", "Olivia Rodrigo")
+    assert (song.youtube_url, song.youtube_kind) == ("https://www.youtube.com/watch?v=x", "lyric-video")
 
 
 async def test_detect_prefers_exact_apple_cover(lookups):

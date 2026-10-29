@@ -1,3 +1,5 @@
+import pytest
+
 from utils import config
 
 
@@ -59,3 +61,27 @@ def test_per_user_file_wins_over_legacy_checkout_env(tmp_path):
     user.write_text("HOTKEY=f10\n", encoding="utf-8")
     loaded = config.Settings(_env_file=(str(legacy), str(user)))  # pyright: ignore[reportCallIssue]
     assert (loaded.auto_tab, loaded.hotkey) == (True, "f10")
+
+
+def test_parallel_reads_defaults_to_one_track_at_a_time():
+    assert _settings(None).parallel_reads == 1
+
+
+def test_parallel_reads_is_saved_and_loaded(tmp_path, monkeypatch):
+    env = tmp_path / ".env"
+    monkeypatch.setattr(config, "_ENV_PATH", env)
+    _settings(None).model_copy(update={"parallel_reads": 3}).save()
+    assert _settings(str(env)).parallel_reads == 3
+
+
+@pytest.mark.parametrize("written", ["4", "-1", "many"])
+def test_parallel_reads_outside_the_choices_falls_back_to_the_default(tmp_path, written):
+    env = tmp_path / ".env"
+    env.write_text(f"PARALLEL_READS={written}\n", encoding="utf-8")
+    assert _settings(str(env)).parallel_reads == 1
+
+
+def test_parallel_reads_zero_means_all_at_once(tmp_path):
+    env = tmp_path / ".env"
+    env.write_text("PARALLEL_READS=0\n", encoding="utf-8")
+    assert _settings(str(env)).parallel_reads == 0

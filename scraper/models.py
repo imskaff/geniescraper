@@ -1,6 +1,7 @@
 import re
+from typing import Any, Literal, get_args
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 _COPYRIGHT_CONNECTORS = re.compile(
     r",?\s+(?:"
@@ -31,6 +32,23 @@ _WRITTEN_BY_ROLES = frozenset({"songwriter", "lyricist", "lyrics", "co-writer", 
 _PRODUCED_BY_ROLES = frozenset({"producer", "co-producer"})
 
 
+# What a song's YouTube link is, in Genius's order of preference.
+VideoKind = Literal["music-video", "lyric-video", "official-audio", "auto-generated"]
+VIDEO_KINDS: tuple[VideoKind, ...] = get_args(VideoKind)
+
+_KIND_LABELS: dict[VideoKind, str] = {
+    "music-video": "Music video",
+    "lyric-video": "Lyric video",
+    "official-audio": "Official audio",
+    "auto-generated": "Auto-generated",
+}
+
+
+def youtube_label(kind: VideoKind | None) -> str:
+    """The credits screen's name for a kind. A link saved without one was an audio, so it reads as the official audio."""
+    return _KIND_LABELS.get(kind, "Official audio") if kind else "Official audio"
+
+
 class Credit(BaseModel):
     role: str
     artists: list[str]
@@ -45,7 +63,17 @@ class SongCredits(BaseModel):
     copyright_notice: str = ""
     cover_art_url: str = ""
     youtube_url: str = ""
-    youtube_is_mv: bool = False
+    youtube_kind: VideoKind | None = None  # None: no link, or one saved before the kind was recorded
+
+    @model_validator(mode="before")
+    @classmethod
+    def _from_the_old_music_video_flag(cls, data: Any) -> Any:
+        """A song saved with `youtube_is_mv` (true: a music video) still loads; false never named a kind."""
+        if isinstance(data, dict) and "youtube_is_mv" in data:
+            data = dict(data)  # pyright: ignore[reportUnknownArgumentType]
+            if data.pop("youtube_is_mv") is True and data.get("youtube_kind") is None:
+                data["youtube_kind"] = "music-video"
+        return data
 
     def merged_credits(self) -> list[Credit]:
         """

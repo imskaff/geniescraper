@@ -19,10 +19,10 @@ pytestmark = [pytest.mark.live, pytest.mark.timeout(60)]
 
 @pytest.mark.parametrize("entry", load_youtube_golden(), ids=lambda e: e["id"])
 async def test_youtube_pick_matches_truth(entry):
-    url, is_mv = await youtube.fetch_youtube_url(entry["title"], entry["artist"])
+    url, kind = await youtube.fetch_youtube_url(entry["title"], entry["artist"])
 
     assert video_id(url) in entry["accept"], url
-    assert is_mv == entry["is_music_video"]
+    assert kind == entry["kind"]
 
 
 @pytest.mark.parametrize("case", load_cases(), ids=lambda c: c.id)
