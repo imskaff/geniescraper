@@ -55,7 +55,7 @@ def credit_accuracy(actual: SongCredits, expected: SongCredits) -> float:
 def diff(actual: SongCredits, expected: SongCredits) -> list[str]:
     """Human-readable differences on every field the scraper is responsible for."""
     problems: list[str] = []
-    for field in ("title", "artist", "phonographic_copyright", "copyright_notice"):
+    for field in ("title", "artist", "phonographic_copyright", "copyright_notice", "release_date"):
         a, e = getattr(actual, field), getattr(expected, field)
         if a != e:
             problems.append(f"{field}: got {a!r}, expected {e!r}")

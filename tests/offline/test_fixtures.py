@@ -69,6 +69,47 @@ async def test_cover_from_page(case, load_fixture):
         assert artwork_key(url) == artwork_key(load_golden(case.id).cover_art_url)
 
 
+# What each saved album page's footer says: the album's date, which a track need not share (Good 4 U is
+# May 14 on a May 21 album).
+ALBUM_FOOTER_DATE = {
+    "eilish-hmhas-t3": "2024-05-17",
+    "kendrick-nlu-single": "2024-05-04",
+    "rodrigo-sour-t6": "2021-05-21",
+    "rosalia-con-altura": "2019-03-28",
+    "swift-ttpd-t1": "2024-04-19",
+    "sza-sos-t1": "2022-12-09",
+}
+
+
+@pytest.mark.parametrize("case", CASES, ids=lambda c: c.id)
+async def test_release_date_from_song_page_matches_golden(case, load_fixture):
+    """The song page's meta tag (or, for kendrick-nlu-song, its visible date line) gives the track's own date."""
+    page = await load_fixture(f"{case.id}.credits.html")
+    assert await am._extract_release_date(page) == load_golden(case.id).release_date
+
+
+async def test_release_date_from_the_visible_line_when_there_is_no_meta(load_fixture):
+    page = await load_fixture("kendrick-nlu-song.page.html")
+    assert await page.locator('meta[property="music:release_date"]').count() == 0
+    assert await am._extract_release_date(page) == "2024-05-04"
+
+
+@pytest.mark.parametrize("case", ALBUM_CASES, ids=lambda c: c.id)
+async def test_release_date_from_album_footer(case, load_fixture):
+    page = await load_fixture(f"{case.id}.page.html")
+    assert await am._extract_release_date(page) == ALBUM_FOOTER_DATE[case.id]
+
+
+async def test_release_date_is_empty_for_a_page_without_one(browser):
+    context = await browser.new_context(offline=True)
+    try:
+        page = await context.new_page()
+        await page.set_content('<meta property="music:release_date" content="2024-02-31T00:00:00.000Z"><p>no date</p>')
+        assert await am._extract_release_date(page) == ""
+    finally:
+        await context.close()
+
+
 @pytest.mark.parametrize("case", CASES, ids=lambda c: c.id)
 async def test_page_ready_marker_present(case, load_fixture):
     """_wait_for_page waits for this marker instead of networkidle; it must exist on real pages."""

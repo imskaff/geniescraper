@@ -32,6 +32,13 @@ from scraper.deezer import (
     catalog_ref,
 )
 from scraper.models import Credit, SongCredits, _extract_labels  # pyright: ignore[reportPrivateUsage]
+from scraper.release_date import (
+    date_from_meta,
+    date_from_text,
+    format_release_date,
+    pick_release_date,
+    split_release_date,
+)
 from scraper.text import core_title_words, words
 from scraper.track_health import track_health
 from scraper.youtube import (
@@ -158,6 +165,58 @@ PAGE_TITLES = [
 TITLES = ["Fortnight (feat. Post Malone)", "BAD BUNNY x DÁKITI (Audio)", "SOS", "FE!N", "Water ft. Someone [Remix]", ""]
 
 
+RELEASE_META = [
+    "2024-05-17T00:00:00.000Z",
+    "2019-03-28",
+    "  2024-12-31T23:59:59-08:00 ",
+    "2024-02-29T00:00:00.000Z",
+    "2024-02-31T00:00:00.000Z",
+    "2023-02-29",
+    "2024-13-01",
+    "2024-5-17",
+    "May 17, 2024",
+    "12024-05-17",
+    "",
+    "junk",
+]
+
+RELEASE_TEXTS = [
+    "May 4, 2024",
+    "May 17, 2024 11 songs, 43 minutes ℗ 2024 Darkroom/Interscope Records",
+    "December 9, 2022\n1 song, 3 minutes\n℗ 2022 TDE",
+    "  sept. 3, 2020  ",
+    "Sep 3 2020",
+    "JANUARY 1, 2000",
+    "17 May 2024",
+    "4 March, 2021",
+    "28 Mar. 2019 · 12 songs",
+    "Updated Tue 9, 2024 then May 3, 2024",
+    "17 mai 2024",
+    "17 de mayo de 2024",
+    "2024年5月17日",
+    "Febuary 3, 2020",
+    "February 31, 2024",
+    "31 April 2024",
+    "May 0, 2024",
+    "May 17, 24",
+    "May 17, 20245",
+    "11 songs, 43 minutes ℗ 2024 Label",
+    "",
+]
+
+# (meta, song page line, album footer)
+RELEASE_PICKS = [
+    ("2024-05-17T00:00:00.000Z", "May 4, 2024", "March 1, 2020"),
+    ("", "May 4, 2024", "May 21, 2021"),
+    ("", "", "May 21, 2021 12 songs"),
+    ("2024-02-31", "May 4, 2024", ""),
+    ("junk", "17 mai 2024", ""),
+    ("", "", ""),
+]
+
+STORED_DATES = ["2024-05-17", "2019-03-08", "2024-02-29", "2024-02-30", "2024-5-7", "2024-05-17T00:00:00Z", ""]
+
+
 def _song(**kw: Any) -> SongCredits:
     base: dict[str, Any] = {"title": "T", "artist": "A", "apple_music_url": "u", "credits": []}
     return SongCredits(**(base | kw))
@@ -185,6 +244,7 @@ SONGS: dict[str, SongCredits] = {
         copyright_notice="© 2022 Top Dawg Entertainment",
         cover_art_url="https://example.com/cover.png",
         youtube_url="https://www.youtube.com/watch?v=abc",
+        release_date="2024-05-17",
     ),
     # A padded role merges with its trimmed twin but then misses the Written By set; the port must keep that quirk.
     "padded_roles": _song(
@@ -392,6 +452,19 @@ def build_vectors() -> dict[str, Any]:
         "youtube_search_url": [
             {"title": title, "artist": artist, "output": youtube_search_url(title, artist)}
             for title, artist in YOUTUBE_SEARCHES
+        ],
+        "date_from_meta": [{"input": t, "output": date_from_meta(t)} for t in RELEASE_META],
+        "date_from_text": [{"input": t, "output": date_from_text(t)} for t in RELEASE_TEXTS],
+        "pick_release_date": [
+            {"meta": m, "subtitle": s, "footer": f, "output": pick_release_date(m, s, f)} for m, s, f in RELEASE_PICKS
+        ],
+        "release_date_parts": [
+            {
+                "input": t,
+                "split": list(parts) if (parts := split_release_date(t)) else None,
+                "text": format_release_date(t),
+            }
+            for t in STORED_DATES
         ],
         "track_health": _track_health_cases(),
         "youtube_scores": _youtube_scores(),

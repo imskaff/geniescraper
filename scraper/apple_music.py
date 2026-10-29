@@ -23,6 +23,7 @@ from playwright.async_api import TimeoutError as PWTimeout
 from playwright_stealth import Stealth
 
 from scraper.models import Credit, SongCredits
+from scraper.release_date import pick_release_date
 from scraper.roles import ALL_ROLE_KEYS, ROLE_MAP, genius_role_name
 
 
@@ -215,6 +216,27 @@ def split_copyright(raw: str) -> tuple[str, str]:
 
     # Do NOT copy ℗ → © here; the GUI shows "Not found - copied from ℗" instead.
     return phonographic, copyright_
+
+
+# The three places a page can name its release date, read as raw text for pick_release_date.
+_RELEASE_DATE_JS = """() => {
+    const text = (sel) => document.querySelector(sel)?.textContent || '';
+    return [
+        document.querySelector('meta[property="music:release_date"]')?.getAttribute('content') || '',
+        text('[data-testid="song-subtitle-release-date"]'),
+        text('[data-testid="tracklist-footer-description"]'),
+    ];
+}"""
+
+
+async def _extract_release_date(page: Page) -> str:
+    """The release date shown on the open page as 'YYYY-MM-DD' ('' if it names none): a song page gives the
+    song's own date, an album page only the album's."""
+    try:
+        meta, subtitle, footer = await page.evaluate(_RELEASE_DATE_JS)
+    except Exception:
+        return ""
+    return pick_release_date(meta, subtitle, footer)
 
 
 # Artwork URLs from the page header (album or song), in DOM order, then the legacy meta tags.
@@ -730,6 +752,10 @@ async def scrape(
         if "/album/" in url:
             phonographic_copyright, copyright_notice = await _extract_copyright(page)
 
+        # An album page names only the album's date; a song page below replaces it with the song's own.
+        release_date = await _extract_release_date(page)
+        song_date = ""
+
         credits: list[Credit] = []
         if "/album/" in url:
             credits_ready = False
@@ -739,6 +765,7 @@ async def scrape(
                 await _open(page, song_url)
                 credits = await _parse_credits_page(page, strategy_0_only=True)
                 credits_ready = bool(credits)
+                song_date = await _extract_release_date(page)
                 if not credits:
                     # Song page gave nothing: go back to the album and use the click path.
                     await _open(page, url)
@@ -748,6 +775,7 @@ async def scrape(
                     print("[warn] Could not find/click 'View Credits'. Saving debug files.")
                     debug = True
                 credits = await _parse_credits_page(page)
+            release_date = song_date or await _extract_release_date(page) or release_date
         else:
             # Song pages expose credits directly via CSS selectors; only that strategy is safe there
             # (the body holds lyrics and navigation that the text walk would misparse as credits).
@@ -776,4 +804,5 @@ async def scrape(
         phonographic_copyright=phonographic_copyright,
         copyright_notice=copyright_notice,
         cover_art_url=cover_art_url,
+        release_date=release_date,
     )

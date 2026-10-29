@@ -1,7 +1,9 @@
 import re
 from typing import Any, Literal, get_args
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, field_validator, model_validator
+
+from scraper.release_date import format_release_date, split_release_date
 
 _COPYRIGHT_CONNECTORS = re.compile(
     r",?\s+(?:"
@@ -64,6 +66,29 @@ class SongCredits(BaseModel):
     cover_art_url: str = ""
     youtube_url: str = ""
     youtube_kind: VideoKind | None = None  # None: no link, or one saved before the kind was recorded
+    release_date: str = ""  # ISO 'YYYY-MM-DD'; '' when unknown or saved before it was recorded
+
+    @field_validator("release_date", mode="before")
+    @classmethod
+    def _release_date_or_empty(cls, value: Any) -> str:
+        """Anything that is not a real 'YYYY-MM-DD' date reads as unknown, so a damaged save still loads."""
+        return value if isinstance(value, str) and split_release_date(value) else ""
+
+    def release_year(self) -> int | None:
+        parts = split_release_date(self.release_date)
+        return parts[0] if parts else None
+
+    def release_month(self) -> int | None:
+        parts = split_release_date(self.release_date)
+        return parts[1] if parts else None
+
+    def release_day(self) -> int | None:
+        parts = split_release_date(self.release_date)
+        return parts[2] if parts else None
+
+    def release_date_text(self) -> str:
+        """The date as shown to the user, 'May 17, 2024' ('' when unknown)."""
+        return format_release_date(self.release_date)
 
     @model_validator(mode="before")
     @classmethod
