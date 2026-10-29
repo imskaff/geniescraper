@@ -77,13 +77,15 @@ jobs:
         run: npm ci
       - name: Build the Safari variant
         run: npm run build:safari
+      # The identifier's last part must be spelled like the app name: Xcode requires the extension's id
+      # (<identifier>.Extension) to start with the app's id, and the converter spells the app's id from the app name.
       - name: Convert it into an Xcode project
         run: |
           xcodebuild -version
           xcrun safari-web-extension-converter dist-safari \
             --project-location "$RUNNER_TEMP/safari" \
             --app-name Geniescraper \
-            --bundle-identifier io.github.imskaff.geniescraper \
+            --bundle-identifier io.github.imskaff.Geniescraper \
             --macos-only --no-open --no-prompt --force
           find "$RUNNER_TEMP/safari" -maxdepth 3 -name "*.xcodeproj"
       - name: Compile it (unsigned)

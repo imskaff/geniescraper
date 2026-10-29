@@ -535,7 +535,7 @@ How to convert, on a Mac:
 
 ```
 npm run build
-xcrun safari-web-extension-converter dist --project-location ../safari --app-name "Geniescraper" --bundle-identifier <your.reverse.domain.geniescraper>
+xcrun safari-web-extension-converter dist --project-location ../safari --app-name "Geniescraper" --bundle-identifier <your.reverse.domain>.Geniescraper
 ```
 
 Open the generated Xcode project, run it, then in Safari enable the extension (Settings, Extensions) and, for an unsigned build, Develop, Allow Unsigned Extensions.
@@ -1020,7 +1020,7 @@ The desktop module is `assistant/bridge.py`; nothing imports it yet.
 
 - `npm run build:safari` writes `extension/dist-safari/`: same bundles, manifest from `scripts/lib/safari-manifest.mjs` (no `side_panel`, `sidePanel` permission or `minimum_chrome_version`; `action.default_popup` = `ui/panel.html`). The Chrome manifest and `dist/` are unchanged.
 - `src/ui/surface.ts`: the page is a popup when `chrome.sidePanel` is absent; it adds `html.popup` (380px wide) and skips the "panel" port, since a popup closes on every focus loss and would pause an automatic run each time.
-- Not run in Safari. On a Mac next: `xcrun safari-web-extension-converter extension/dist-safari --project-location safari --app-name Geniescraper --bundle-identifier <id>`, then the checks in section 23.
+- Not run in Safari. On a Mac next: `xcrun safari-web-extension-converter extension/dist-safari --project-location safari --app-name Geniescraper --bundle-identifier <your.reverse.domain>.Geniescraper`, then the checks in section 23.
 
 ## 41. Pairing card in Settings (extension side of section 39)
 
