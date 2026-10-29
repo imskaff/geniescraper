@@ -24,6 +24,9 @@ def test_save_round_trips_every_field(tmp_path, monkeypatch):
             "scrape_youtube": False,
             "auto_tab": True,
             "auto_start_delay": 7,
+            "bridge_secret": "ab" * 32,
+            "bridge_origin": "chrome-extension://" + "a" * 32,
+            "link_mode": "auto",
             "win_x": 10,
             "win_y": 20,
         }
@@ -85,3 +88,15 @@ def test_parallel_reads_zero_means_all_at_once(tmp_path):
     env = tmp_path / ".env"
     env.write_text("PARALLEL_READS=0\n", encoding="utf-8")
     assert _settings(str(env)).parallel_reads == 0
+
+
+def test_pairing_secret_stays_out_of_repr():
+    secret = "cd" * 32
+    loaded = _settings(None).model_copy(update={"bridge_secret": secret})
+    assert secret not in repr(loaded)
+    assert secret not in str(loaded)
+
+
+def test_link_mode_only_accepts_the_two_modes():
+    assert config.Settings(link_mode="AUTO").link_mode == "auto"  # pyright: ignore[reportCallIssue]
+    assert config.Settings(link_mode="whatever").link_mode == "manual"  # pyright: ignore[reportCallIssue]
