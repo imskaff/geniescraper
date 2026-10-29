@@ -18,7 +18,8 @@ It never presses Save: you check the form and save it yourself.
 <a href="#usage">Usage</a> ·
 <a href="#configuration">Configuration</a> ·
 <a href="extension/FAQ.md">FAQ</a> ·
-<a href="extension/PRIVACY.md">Privacy</a>
+<a href="extension/PRIVACY.md">Privacy</a> ·
+<a href="#disclaimer">Disclaimer</a>
 </p>
 
 </div>
@@ -26,6 +27,9 @@ It never presses Save: you check the form and save it yourself.
 > [!TIP]
 > **<ins>Start with the browser extension.</ins>** It does everything inside your browser, fills the form by itself (***Auto-paste***), skips names that are already filled in and only ever picks an exact artist match.
 > The desktop app works best with the extension connected; on its own it can only paste with hotkeys into whichever field you click.
+
+> [!IMPORTANT]
+> **Géniescraper is an independent, unofficial project. It is not affiliated with, endorsed by or sponsored by Genius.com (Genius Media Group Inc.) or Apple.** See the [Disclaimer](#disclaimer).
 
 ## Features
 
@@ -249,6 +253,12 @@ The YouTube and Deezer lookups are off until you tick them; the browser then ask
 
 Settings are saved per user in `%APPDATA%\Geniescraper\settings.env`, so every copy of the app shares them.
 A `.env` in the project root from older versions is still read until the first save.
+
+## Disclaimer
+
+Géniescraper is an independent, unofficial project. It is **not affiliated with, endorsed by or sponsored by Genius.com (Genius Media Group Inc.) or Apple Inc.** "Genius" and "Apple Music" are trademarks of their respective owners, named here only to say what the tool works with.
+
+It reads the Apple Music pages you open yourself and fills the Genius form of your own signed-in session. It never handles your Genius password and never saves for you: you check the form and save it yourself. Please use it in line with the terms of the services you use.
 
 ## License
 
