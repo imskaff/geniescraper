@@ -32,18 +32,6 @@ def _dark_title_bar_attr(window: Any) -> int:
     return value.value
 
 
-def _is_above(upper: Any, lower: Any) -> bool:
-    """Whether `upper` is stacked above `lower` on the desktop (both are top-level windows)."""
-    user32 = ctypes.windll.user32
-    wanted = {user32.GetParent(upper.winfo_id()): "upper", user32.GetParent(lower.winfo_id()): "lower"}
-    handle = user32.GetTopWindow(0)
-    while handle:
-        if handle in wanted:
-            return wanted[handle] == "upper"
-        handle = user32.GetWindow(handle, 2)  # GW_HWNDNEXT
-    return False
-
-
 class _FakeBridge:
     """Stands in for the websocket bridge so the real App can be linked without a socket."""
 
@@ -113,11 +101,15 @@ def walk() -> dict[str, Any]:
             seen["settings_icon_set"] = window._iconbitmap_method_called
             seen["settings_scroll_increment"] = int(window._body._parent_canvas.cget("yscrollincrement"))
             seen["settings_headings"] = window.headings
-            window.focus_force()
-            for key, value in (("scrape_youtube", False), ("always_on_top", True), ("auto_tab", True)):
-                window._set(key, value)
-                window.master.update()
-                seen.setdefault("settings_above_main", []).append(_is_above(window, window.master))
+            calls: list[int] = []
+            window._on_change = lambda: calls.append(1)
+            original = settings.auto_tab
+            window._set("auto_tab", not original)
+            seen["staged_value"] = window._value("auto_tab")
+            seen["unchanged_while_open"] = settings.auto_tab is original and not calls
+            seen["applied"] = window._apply()
+            seen["changed_on_apply"] = settings.auto_tab is (not original)
+            settings.auto_tab = original
             seen["auto_paste_state"] = str(window._auto_switch.cget("state"))
             seen["auto_paste_hint"] = window._auto_hint.cget("text")
         elif name == "07-credits":
@@ -176,9 +168,11 @@ def test_settings_follow_the_extensions_order(walk):
     ]
 
 
-def test_changing_a_setting_keeps_the_settings_window_in_front(walk):
-    """Re-applying always-on-top used to raise the main window over Settings, which then looked closed."""
-    assert walk["settings_above_main"] == [True, True, True]
+def test_a_change_waits_for_the_window_to_close(walk):
+    """Applying each change at once rebuilt the app behind Settings, so the window flickered."""
+    assert walk["unchanged_while_open"]
+    assert walk["staged_value"] is not None
+    assert walk["applied"] and walk["changed_on_apply"]
 
 
 def test_auto_paste_is_grayed_out_until_an_extension_is_connected(walk):

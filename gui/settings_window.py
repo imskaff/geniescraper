@@ -6,6 +6,7 @@ assistant keeps running underneath while settings are adjusted.
 """
 
 import os
+import tkinter as tk
 from collections.abc import Callable
 
 import customtkinter as ctk
@@ -39,6 +40,7 @@ class SettingsWindow(ctk.CTkToplevel):
         self._link = link
         self._capture_hook: object | None = None
         self._reset_armed = False
+        self._pending: dict[str, object] = {}  # changes made here, applied together when the window closes
         self.title("Géniescraper settings")
         theme.set_icon(self)
         self.geometry(f"480x660+{master.winfo_rootx() + 70}+{master.winfo_rooty() + 20}")
@@ -192,7 +194,7 @@ class SettingsWindow(ctk.CTkToplevel):
             )
             btn = ctk.CTkButton(
                 box,
-                text=getattr(settings, key).upper(),
+                text=str(getattr(settings, key)).upper(),
                 width=120,
                 height=30,
                 font=theme.font(13, "bold"),
@@ -366,7 +368,7 @@ class SettingsWindow(ctk.CTkToplevel):
     def _footer(self, footer: ctk.CTkFrame) -> None:
         ctk.CTkLabel(
             footer,
-            text="Changes are saved automatically.",
+            text="Changes apply when you close this window.",
             font=theme.font(11),
             text_color=theme.MUTED,
             anchor="w",
@@ -384,7 +386,17 @@ class SettingsWindow(ctk.CTkToplevel):
             hover_color=theme.SURFACE_HI,
             command=self._reset,
         )
-        self._reset_btn.pack(side="right", padx=(6, 14), pady=12)
+        ctk.CTkButton(
+            footer,
+            text="Done",
+            width=80,
+            height=30,
+            font=theme.font(12, "bold"),
+            fg_color=theme.ACCENT,
+            text_color=theme.ACCENT_INK,
+            command=self.close,
+        ).pack(side="right", padx=(6, 14), pady=12)
+        self._reset_btn.pack(side="right", padx=(6, 0), pady=12)
         ctk.CTkButton(
             footer,
             text="Open settings folder",
@@ -402,11 +414,24 @@ class SettingsWindow(ctk.CTkToplevel):
     # ── actions ──────────────────────────────────────────────────────────
 
     def _set(self, key: str, value: object) -> None:
+        """Remember a change; nothing is applied or saved until the window closes, so the app behind it stays still."""
         if key == "link_mode_auto":  # the switch is a boolean, the setting is a word
             key, value = "link_mode", "auto" if value else "manual"
-        setattr(settings, key, value)
+        self._pending[key] = value
+
+    def _value(self, key: str) -> object:
+        """A setting as it will be once this window closes."""
+        return self._pending[key] if key in self._pending else getattr(settings, key)
+
+    def _apply(self) -> bool:
+        """Write the remembered changes to the settings and the file; True when there was something to apply."""
+        if not self._pending:
+            return False
+        for key, value in self._pending.items():
+            setattr(settings, key, value)
+        self._pending.clear()
         settings.save()
-        self._on_change()
+        return True
 
     def _capture(self, key: str) -> None:
         self._stop_capture()
@@ -419,7 +444,7 @@ class SettingsWindow(ctk.CTkToplevel):
             name = (event.name or "").lower()
             if name in ("shift", "ctrl", "alt", "windows", "unknown"):
                 return
-            self.after(0, self._finish_capture, key, name, getattr(settings, other))
+            self.after(0, self._finish_capture, key, name, str(self._value(other)))
 
         self._capture_hook = keyboard.on_press(on_key, suppress=False)
 
@@ -428,16 +453,16 @@ class SettingsWindow(ctk.CTkToplevel):
         btn = self._hk_buttons[key]
         btn.configure(border_color=theme.BORDER, text_color=theme.TEXT)
         if name == "esc":
-            btn.configure(text=getattr(settings, key).upper())
+            btn.configure(text=str(self._value(key)).upper())
             self._hk_msg.configure(text="Cancelled. The hotkey is unchanged.", text_color=theme.MUTED)
             return
         error = hotkey_error(name, other_value)
         if error:
-            btn.configure(text=getattr(settings, key).upper())
+            btn.configure(text=str(self._value(key)).upper())
             self._hk_msg.configure(text=error, text_color=theme.DANGER)
             return
         btn.configure(text=name.upper())
-        self._hk_msg.configure(text=f"Saved. {name.upper()} is the new hotkey.", text_color=theme.ACCENT)
+        self._hk_msg.configure(text=f"{name.upper()} is the new hotkey.", text_color=theme.ACCENT)
         self._set(key, name)
 
     def _stop_capture(self) -> None:
@@ -462,6 +487,7 @@ class SettingsWindow(ctk.CTkToplevel):
         }
         for name, field in config.Settings.model_fields.items():
             setattr(settings, name, keep.get(name, field.default))
+        self._pending.clear()
         settings.save()
         self._on_change()
         self._reset_armed = False
@@ -478,5 +504,15 @@ class SettingsWindow(ctk.CTkToplevel):
         os.startfile(folder)  # opens the user's own settings folder in Explorer
 
     def close(self) -> None:
-        self._stop_capture()
         self.destroy()
+
+    def destroy(self) -> None:
+        """Closing, however it happens, applies what was changed here: once, after the window is gone."""
+        self._stop_capture()
+        changed = self._apply()
+        super().destroy()
+        if changed:
+            try:
+                self._on_change()
+            except tk.TclError:  # the whole app is closing
+                pass
