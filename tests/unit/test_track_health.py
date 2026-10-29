@@ -3,7 +3,7 @@
 import pytest
 
 from scraper.models import Credit, SongCredits
-from scraper.track_health import Health, track_health
+from scraper.track_health import Health, TrackStatus, track_health
 
 SONG = SongCredits(
     title="One",
@@ -17,7 +17,7 @@ SONG = SongCredits(
 )
 
 
-def health(song: SongCredits | None = SONG, status="done", **kw) -> Health:
+def health(song: SongCredits | None = SONG, status: TrackStatus = "done", **kw) -> Health:
     return track_health(status, song, **kw)
 
 
