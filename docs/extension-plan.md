@@ -897,3 +897,111 @@ A role the form does not have still gets a new row, and a step without a role fa
   The pace, the opt-in start and the pauses are the mitigations; check the guidelines again before release.
 - Genius may change its form markup; the existing live check is the guard.
 - The pause on the user's input must not fire on the extension's own typing; the `isTrusted` test and a live run cover this.
+
+
+## 39. The companion link to the desktop app
+
+Status: implemented on both sides, not yet wired into `gui/app.py`, not yet seen in a real browser.
+
+### Decision and why
+
+The desktop app gets access to the user's Genius tab through the extension, not through a browser of its own.
+A window the app launched would ask the user to sign in to Genius inside software that is not their browser, which looks like (and trains users to accept) credential phishing, and a Chrome debug port hands every page and cookie to any local process.
+Here the user stays signed in in their normal Chrome or Edge, the desktop app never sees a credential, and the extension keeps doing the one thing it already does and tests: filling the Genius form.
+The blind F7/F8 hotkeys stay as the fallback whenever the extension is not connected.
+
+### What changed from the first sketch, and why
+
+- **"Random per-session token, entered once" cannot both hold.** A per-session secret means typing a code at every launch. The design is a short one-time **pairing code** (shown by the desktop app, good for 2 minutes and one pairing, locked after 5 wrong guesses) that is exchanged for a long random **pairing secret**. The secret is stored in `chrome.storage.local` (never `sync`) and in the desktop app's own settings file. It is rotated by "Forget pairing" on either side.
+- **The secret never crosses the wire after pairing.** Each connection is a mutual challenge-response: the server sends a nonce, the client answers `HMAC-SHA256(secret, "client|" + serverNonce + "|" + clientNonce)`, the server answers with the same under `"server|"`. A process that squats on the port learns nothing it can reuse, and the extension refuses a server that cannot answer.
+- **Origin is a filter, not the gate.** The `Origin` header stops web pages (which cannot forge it); any local process can forge it, so the secret is the gate. The server accepts only `chrome-extension://[a-p]{32}`, and after pairing it **pins the extension id it paired with** (trust on first use), because the unpacked, Chrome Web Store and Edge Add-ons ids all differ and a hardcoded id would break two of three. The `Host` header must equal `127.0.0.1:<port>`, against DNS rebinding.
+- **Port.** The desktop app tries 47831 to 47835 in order and the extension tries the same five, so nobody types a port.
+- **Bridge commands do not go through the router.** The extension validates them with its own narrow checker and calls the paste service directly. The socket can therefore never cause `detect`, `scrape-track` (tabs opened on any URL) or `youtube-key-check`.
+
+### Transport and limits
+
+- WebSocket, JSON text frames, one message per frame, `v: 1` on every message.
+- Desktop app: Python `websockets` (new dependency, owner approved), bound to `127.0.0.1` only, one authenticated client at a time (a second gets close code 1013).
+- Frames over 64 KiB are refused (library `max_size`, and again in the validator); binary frames are refused; a connection that has not authenticated within 5 seconds is closed; anything received before authentication other than `hello` or `pair` closes it. A queue holds at most 500 items of at most 2000 characters each.
+- Close code 1008 for every policy violation, with a fixed reason that never echoes input.
+- The desktop app sends `ping` every 20 seconds; the extension answers `pong`. Socket traffic keeps an MV3 worker alive since Chrome 116 (the minimum here is 120).
+
+### Messages
+
+Handshake:
+
+| From | Type | Fields |
+|------|------|--------|
+| server | `challenge` | `nonce` |
+| client | `hello` | `nonce`, `proof` |
+| server | `welcome` | `proof` |
+| client | `pair` | `code`, `nonce` (first connection only) |
+| server | `paired` | `secret` (once, then never again) |
+
+Commands, desktop app to extension; each carries an integer `id` and is answered by exactly one `ack`:
+
+| Type | Extra fields | Becomes |
+|------|--------------|---------|
+| `begin` | `title`, `queue` (pairs as `typed_queue()` returns them), `mode` `auto` or `manual` | `paste-start`, then `paste-auto-start` for `auto` |
+| `fill-next` | | `paste-fill` (as the Next key in the active Genius tab) |
+| `back`, `skip`, `stop` | | `paste-back`, `paste-skip`, `paste-stop` |
+| `pause`, `resume` | | `paste-auto-pause`, `paste-auto-start` |
+| `get-status` | | sends a `status` |
+| `ping` | | `pong` |
+
+Events, extension to desktop app:
+
+- `ack` `{id, ok, error?: {code, message}}`. An `auto` begin whose Genius form is not open answers `ok: false, tab-failed` with the session started; the desktop app shows the message and sends `resume` when the form is open.
+- `status` `{state: {active, auto, pauseReason, title, position, total, awaiting, busy, message, tone}}`, sent on every change of the paste session and as a snapshot on every (re)connect. `message` is the extension's own plain wording ("Filled ...", "Paused because ..."), so the desktop app can show the same text the panel shows. There is no separate `outcome` event: the position, `awaiting` and `tone` carry it.
+
+The status carries the numbers and the extension's own message, never the queue's text. Names scraped from Apple Music appear only as `queue` strings going in, and are only ever typed into a field with `value`, as today.
+
+### Pairing
+
+1. The user clicks "Connect browser extension" in the desktop app: `Bridge.begin_pairing()` returns `ABCD-EFGH` (31-symbol alphabet without `0 1 I L O`, 8 symbols).
+2. The user types it into the extension (Settings, "Desktop app"); the panel sends `bridge-pair {code}` to the worker, which tries the five ports and sends `pair`.
+3. On success the desktop app stores the secret and the extension's origin (the `on_paired(secret, origin)` callback) and the extension stores the secret. From then on the worker connects by itself whenever it is awake. No secret is in a URL, a log or a message after pairing; the code is worthless after one use.
+
+The panel side of this (the Settings field and a "Connected" indicator) is **not built yet**: the worker already answers `bridge-pair`, `bridge-unpair` and `bridge-status` from extension pages, so it is a field and three calls.
+
+### Permission change
+
+**None, by design, and not yet confirmed in a real browser.** A WebSocket is not subject to CORS, `host_permissions` governs cross-origin `fetch`/XHR from the worker, and the default MV3 extension content security policy sets no `connect-src`, so `new WebSocket("ws://127.0.0.1:47831/")` from the service worker should work with the manifest as it is. If Chrome's Local Network Access rules turn out to demand a permission for loopback sockets, the fallback is `optional_host_permissions: ["http://127.0.0.1/*"]` requested at pairing; that would need a new row in `store/listing.md`, the "never matches every site" and `ALLOWED_OPTIONAL_HOSTS` tests widened for exactly that one pattern, and a line in the privacy policy (which already names `127.0.0.1`). The manifest test now pins today's state: no loopback or `ws:` host, no `nativeMessaging`, `externally_connectable` unset, and every socket address anywhere in `src/` is `ws://` plus the `127.0.0.1` constant.
+
+`PRIVACY.md` gains a section ("The optional desktop app on your own computer") and its two absolute sentences are qualified; `store/listing.md` gains a "Companion desktop app (no extra permission)" section. The listing's permission table is unchanged because the manifest is.
+
+### Threat model
+
+| Threat | Mitigation |
+|--------|-----------|
+| A web page connects to the local port | The browser sets `Origin`; anything but `chrome-extension://...` gets HTTP 403 at the handshake. DNS rebinding fails the `Host` check. |
+| Another local process connects | It must know the secret (HMAC over a fresh nonce). Wrong guesses close the connection; the secret is 256 random bits. This does not defend against malware running as the same user, which can already read the files and the browser profile. |
+| A local process squats on the port to impersonate the desktop app | It cannot compute the server proof, so the extension drops it before sending anything but its own hello. The pairing code is the only thing a squatter could ever see, and it is single use. |
+| Brute-forcing the pairing code | 2 minutes, one use, 5 wrong guesses and it is dead; the user clicks again for a new one. |
+| A second extension with another id | The origin is pinned to the paired id. |
+| The socket drives the browser beyond pasting | The extension accepts nine command names, validated field by field. No page reads, no tab opening, no settings, never Save or Cancel. |
+| Hostile text in credits | It is JSON data, length-limited, typed only via `value`; a title that looks like a command is a title. |
+| Flooding | 64 KiB frames, 500 items, one client, 5-second authentication window. |
+| The desktop app is gone mid-run | A run the desktop app started pauses with the new reason `bridge-lost`; a worker that died with the socket pauses it on the next wake-up. A run the user started in the panel is never touched. |
+
+### Known limits
+
+- Nothing can wake a sleeping MV3 worker to connect (`alarms` is not an allowed permission). The link is made when the worker starts, when a Genius page talks to it, or when the panel asks; while connected, the desktop app's pings keep it awake. If the connection drops and the worker then goes idle, it reconnects at the next such event.
+- One extension at a time. Safari uses a different origin scheme and is not covered.
+- Edge: expected to send `chrome-extension://` as Chrome does; to be confirmed.
+
+### Integration points for `gui/app.py` (not done in this task)
+
+The desktop module is `assistant/bridge.py`; nothing imports it yet.
+
+1. **Own a `Bridge`** in `App.__init__`: `Bridge(secret=settings.bridge_secret, pinned_origin=settings.bridge_origin, on_status=..., on_connection=..., on_paired=...)`, `start()` at launch, `stop()` on close. The three callbacks run on the bridge's thread, so each must hop to Tk with `self.after(0, ...)`. Persist `bridge_secret` and `bridge_origin` in the settings file (`utils/config.py`), never in logs. If `start()` raises `OSError` (all five ports busy), keep working with hotkeys only.
+2. **Pairing UI** in the settings screen: a "Connect browser extension" button that shows `bridge.begin_pairing()` and its two-minute expiry, and a "Forget" button that calls `forget_pairing()` and clears the settings.
+3. **Starting a track** (`_show_assistant_screen`, line 542, after `self._queue = self._current_queue()`): when `bridge.connected`, call `bridge.send_command("begin", title=..., queue=self._queue, mode="auto" or "manual")` and show the returned `ack` error, if any. The queue strings are exactly what `typed_queue()` yields; the kinds match the extension's list, and the bridge refuses others.
+4. **Who owns F7/F8.** The `keyboard.hook_key(..., suppress=True)` hooks in `_register_assistant_keys` (line 121) swallow the keys before the browser sees them. Decision for the owner: while bridged, **release those hooks** and let the extension's page handler take F7/F8 when focus is on Genius (it already does, and auto mode needs no key); the on-screen Next/Back/Skip buttons send `fill-next`, `back`, `skip`. When `on_connection(False)` fires, re-register the hooks so the blind fallback works again. Both at once would double-step.
+5. **Mirror the position** from `on_status`: set `self._pos = state["position"]` and re-render, instead of advancing it in `_on_hotkey` (line 1102) and `_skip` (line 698) while bridged. The extension is then the only writer of the position.
+6. **Ending**: Esc and leaving the assistant screen send `stop`.
+7. `requirements.txt` and `pyproject.toml` list `websockets>=14.0`; **`uv.lock` is stale** until someone runs `uv lock`.
+
+### Tests
+
+`tests/unit/test_bridge.py` (pairing window, origin and host checks, proofs, schema limits, a fake connection, and a real loopback socket with the `websockets` client); `test/background/bridge.test.ts` (handshake, pairing, command mapping, refusal of everything else, status, loss and reconnect, with a fake socket and a fake paste session), `test/shared/bridge.test.ts`, `test/background/bridgeLost.test.ts`, and the new group in `test/manifest.test.ts`. The TypeScript and Python proofs are pinned to the same HMAC vector.
