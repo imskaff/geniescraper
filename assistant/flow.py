@@ -4,8 +4,27 @@ which keys Auto-Tab sends after a paste. Kept free of GUI and keyboard I/O so
 it can be unit tested.
 """
 
+from scraper.roles import genius_role_name
+
 # Queue kinds whose value is copied to the clipboard as-is (no autocomplete to confirm).
 CLIPBOARD_ONLY_KINDS = frozenset({"cover_art", "youtube_url"})
+
+# Apple roles Genius spells differently (measured on the live form; same table as the extension's geniusRole).
+_GENIUS_ROLE_NAMES = {
+    "additional producer": "Additional Production",
+    "vocal recording engineer": "Vocal Engineer",
+}
+
+
+def genius_role(role: str) -> str:
+    """The role as Genius names it, or unchanged when Genius uses Apple's name or has no equivalent."""
+    return _GENIUS_ROLE_NAMES.get(role.strip().lower()) or genius_role_name(role)
+
+
+def genius_queue(queue: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """The paste queue with each role step under Genius's name; other steps are untouched."""
+    return [(kind, genius_role(value) if kind == "role" else value) for kind, value in queue]
+
 
 # A key press with the pause (seconds) to wait before pressing it.
 KeyStep = tuple[str, float]

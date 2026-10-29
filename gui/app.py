@@ -401,13 +401,14 @@ class App(ctk.CTk):
 
     def _current_queue(self) -> list[tuple[str, str]]:
         assert self._song is not None
-        return self._song.typed_queue(
+        queue = self._song.typed_queue(
             include_core=settings.scrape_core,
             include_additional=settings.scrape_additional,
             include_copyright=settings.scrape_copyright,
             include_youtube=settings.scrape_youtube,
             include_cover_art=settings.scrape_cover_art,
         )
+        return flow.genius_queue(queue)  # roles typed under the names Genius uses
 
     def _show_credits_screen(self) -> None:
         self._screen = "credits"
