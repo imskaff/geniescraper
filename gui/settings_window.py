@@ -77,7 +77,7 @@ class SettingsWindow(ctk.CTkToplevel):
         footer = ctk.CTkFrame(self, fg_color=theme.SURFACE, corner_radius=0)
         footer.pack(side="bottom", fill="x")
         body = theme.scroll_frame(self, fg_color="transparent")
-        body.pack(fill="both", expand=True, padx=8, pady=(8, 0))
+        body.pack(fill="both", expand=True, padx=theme.SPACE_2, pady=(theme.SPACE_2, 0))
         body.grid_columnconfigure(0, weight=1)
         self._body = body
         self._body_row = 0
@@ -120,48 +120,64 @@ class SettingsWindow(ctk.CTkToplevel):
             "Hides the step list while pasting and shrinks the window.",
         )
         self._auto_start()
+        self._end_card()
 
         self._footer(footer)
 
-    def _place(self, widget: ctk.CTkBaseClass, pady: tuple[int, int] = (0, 0), padx: int = 16) -> None:
+    def _place(self, widget: ctk.CTkBaseClass, pady: tuple[int, int] = (0, 0), padx: int = theme.SPACE_4) -> None:
         widget.grid(row=self._row, column=0, sticky="ew", padx=padx, pady=pady)
         self._row += 1
 
     def _card(self, title: str) -> None:
         """A section, drawn as in the extension: a bordered card with its own heading."""
+        self._end_card()
         self.headings.append(title)
         card = ctk.CTkFrame(
             self._body, fg_color=theme.SURFACE, border_width=1, border_color=theme.BORDER, corner_radius=8
         )
-        card.grid(row=self._body_row, column=0, sticky="ew", padx=12, pady=(0, 16))
+        card.grid(row=self._body_row, column=0, sticky="ew", padx=theme.SPACE_3, pady=(0, theme.SPACE_5))
         card.grid_columnconfigure(0, weight=1)
         self._body_row += 1
         ctk.CTkLabel(card, text=title, font=theme.font(15, "bold"), text_color=theme.TEXT, anchor="w").grid(
-            row=0, column=0, sticky="w", padx=16, pady=(14, 4)
+            row=0, column=0, sticky="w", padx=theme.SPACE_4, pady=(theme.SPACE_4, theme.SPACE_2)
         )
         self._box = card
         self._row = 1
 
+    def _end_card(self) -> None:
+        """Room under the last row, so a card's bottom edge is as far from its content as its top edge is."""
+        if self._box is not self._body:
+            self._place(ctk.CTkFrame(self._box, height=theme.SPACE_2, fg_color="transparent", corner_radius=0))
+
     def _subgroup(self, title: str) -> None:
         """A titled group inside a card, set off from the one before it by a line."""
-        self._place(ctk.CTkFrame(self._box, height=1, fg_color=theme.BORDER, corner_radius=0), (12, 0))
+        self._place(ctk.CTkFrame(self._box, height=1, fg_color=theme.BORDER, corner_radius=0), (theme.SPACE_2, 0))
         self._place(
             ctk.CTkLabel(
                 self._box, text=title.upper(), font=theme.font(11, "bold"), text_color=theme.MUTED, anchor="w"
             ),
-            (10, 2),
+            (theme.SPACE_4, theme.SPACE_2),
         )
 
     def _setting_row(self, label: str, hint: str, wrap: int = 300) -> tuple[ctk.CTkFrame, ctk.CTkFrame]:
         row = ctk.CTkFrame(self._box, fg_color="transparent", corner_radius=0)
         row.grid_columnconfigure(0, weight=1)
         text = ctk.CTkFrame(row, fg_color="transparent")
-        text.grid(row=0, column=0, sticky="ew", padx=(0, 8), pady=6)
-        ctk.CTkLabel(text, text=label, font=theme.font(13, "bold"), text_color=theme.TEXT, anchor="w").pack(anchor="w")
-        self._last_hint = ctk.CTkLabel(
-            text, text=hint, font=theme.font(11), text_color=theme.MUTED, anchor="w", justify="left", wraplength=wrap
+        text.grid(row=0, column=0, sticky="ew", padx=(0, theme.SPACE_2), pady=theme.SPACE_2)
+        ctk.CTkLabel(text, text=label, font=theme.font(13, "bold"), text_color=theme.TEXT, anchor="w", height=0).pack(
+            anchor="w"
         )
-        self._last_hint.pack(anchor="w")
+        self._last_hint = ctk.CTkLabel(
+            text,
+            text=hint,
+            font=theme.font(11),
+            text_color=theme.MUTED,
+            anchor="w",
+            justify="left",
+            wraplength=wrap,
+            height=0,
+        )
+        self._last_hint.pack(anchor="w", pady=(theme.SPACE_1, 0))
         control = ctk.CTkFrame(row, fg_color="transparent")
         control.grid(row=0, column=1, sticky="e")
         self._place(row)
@@ -200,7 +216,7 @@ class SettingsWindow(ctk.CTkToplevel):
         slider.set(settings.autocomplete_wait)
         slider.bind("<ButtonRelease-1>", lambda _: self._set("autocomplete_wait", round(slider.get(), 1)))
         slider.pack(side="left")
-        value.pack(side="left", padx=(6, 0))
+        value.pack(side="left", padx=(theme.SPACE_2, 0))
 
     def _parallel_reads(self) -> None:
         _, control = self._setting_row(
@@ -227,7 +243,7 @@ class SettingsWindow(ctk.CTkToplevel):
             (("hotkey", "Key that fills the next step"), ("back_hotkey", "Key that goes back one step"))
         ):
             ctk.CTkLabel(box, text=label, font=theme.font(13, "bold"), text_color=theme.TEXT, anchor="w").grid(
-                row=i, column=0, sticky="w", padx=0, pady=(6 if i == 0 else 4, 4)
+                row=i, column=0, sticky="w", padx=0, pady=theme.SPACE_2
             )
             btn = ctk.CTkButton(
                 box,
@@ -242,7 +258,7 @@ class SettingsWindow(ctk.CTkToplevel):
                 border_color=theme.BORDER,
                 command=lambda k=key: self._capture(k),
             )
-            btn.grid(row=i, column=1, sticky="e", padx=0, pady=(6 if i == 0 else 4, 4))
+            btn.grid(row=i, column=1, sticky="e", padx=0, pady=theme.SPACE_2)
             self._hk_buttons[key] = btn
         self._hk_msg = ctk.CTkLabel(
             box,
@@ -253,7 +269,7 @@ class SettingsWindow(ctk.CTkToplevel):
             justify="left",
             wraplength=400,
         )
-        self._hk_msg.grid(row=2, column=0, columnspan=2, sticky="w", padx=0, pady=(2, 6))
+        self._hk_msg.grid(row=2, column=0, columnspan=2, sticky="w", padx=0, pady=(0, theme.SPACE_2))
         self._place(box)
 
     def _auto_paste(self) -> None:
@@ -276,25 +292,27 @@ class SettingsWindow(ctk.CTkToplevel):
         box = ctk.CTkFrame(self._box, fg_color=theme.SURFACE_HI, corner_radius=8)
         box.grid_columnconfigure(0, weight=1)
         head = ctk.CTkFrame(box, fg_color="transparent")
-        head.grid(row=0, column=0, columnspan=2, sticky="ew", padx=14, pady=(12, 0))
+        head.grid(row=0, column=0, columnspan=2, sticky="ew", padx=theme.SPACE_4, pady=(theme.SPACE_4, 0))
         self._link_dot = ctk.CTkLabel(head, text="●", font=theme.font(14), text_color=theme.FAINT, width=16)
         self._link_dot.pack(side="left")
         self._link_state_lbl = ctk.CTkLabel(
             head, text="", font=theme.font(13, "bold"), text_color=theme.TEXT, anchor="w"
         )
-        self._link_state_lbl.pack(side="left", padx=(4, 0))
+        self._link_state_lbl.pack(side="left", padx=(theme.SPACE_1, 0))
         self._link_hint_lbl = ctk.CTkLabel(
             box, text="", font=theme.font(11), text_color=theme.MUTED, anchor="w", justify="left", wraplength=360
         )
-        self._link_hint_lbl.grid(row=1, column=0, columnspan=2, sticky="w", padx=14, pady=(4, 6))
+        self._link_hint_lbl.grid(
+            row=1, column=0, columnspan=2, sticky="w", padx=theme.SPACE_4, pady=(theme.SPACE_2, theme.SPACE_2)
+        )
         self._link_code_box = ctk.CTkFrame(box, fg_color=theme.SURFACE, corner_radius=8)
         self._link_code_lbl = ctk.CTkLabel(
             self._link_code_box, text="", font=theme.display(30), text_color=theme.ACCENT, anchor="center"
         )
-        self._link_code_lbl.pack(padx=18, pady=8)
+        self._link_code_lbl.pack(padx=theme.SPACE_4, pady=theme.SPACE_2)
         self._link_code_row = 2
         buttons = ctk.CTkFrame(box, fg_color="transparent")
-        buttons.grid(row=3, column=0, columnspan=2, sticky="w", padx=14, pady=(8, 12))
+        buttons.grid(row=3, column=0, columnspan=2, sticky="w", padx=theme.SPACE_4, pady=(theme.SPACE_2, theme.SPACE_4))
         self._link_connect_btn = ctk.CTkButton(
             buttons,
             text="Connect browser extension",
@@ -304,7 +322,7 @@ class SettingsWindow(ctk.CTkToplevel):
             text_color=theme.ACCENT_INK,
             command=self._link_connect,
         )
-        self._link_connect_btn.pack(side="left", padx=(0, 8))
+        self._link_connect_btn.pack(side="left", padx=(0, theme.SPACE_2))
         self._link_forget_btn = ctk.CTkButton(
             buttons,
             text="Forget pairing",
@@ -318,7 +336,7 @@ class SettingsWindow(ctk.CTkToplevel):
             command=self._link_forget,
         )
         self._link_forget_btn.pack(side="left")
-        self._place(box, (2, 8))  # directly under the Auto-paste switch it belongs to
+        self._place(box, (theme.SPACE_1, theme.SPACE_2))  # directly under the Auto-paste switch it belongs to
         self.refresh_link()
 
     def refresh_link(self) -> None:
@@ -342,7 +360,7 @@ class SettingsWindow(ctk.CTkToplevel):
         self._link_hint_lbl.configure(text=hint)
         self._link_code_lbl.configure(text=code or "")
         if code:
-            self._link_code_box.grid(row=self._link_code_row, column=0, columnspan=2, sticky="w", padx=14)
+            self._link_code_box.grid(row=self._link_code_row, column=0, columnspan=2, sticky="w", padx=theme.SPACE_4)
         else:
             self._link_code_box.grid_remove()
         self._link_connect_btn.configure(
@@ -389,7 +407,7 @@ class SettingsWindow(ctk.CTkToplevel):
             command=lambda v: self._set("auto_start_delay", int(v.removesuffix(" s"))),
         )
         delay.set(f"{settings.auto_start_delay} s")
-        delay.pack(side="left", padx=(0, 8))
+        delay.pack(side="left", padx=(0, theme.SPACE_2))
         ctk.CTkSwitch(
             control,
             text="",
@@ -406,7 +424,7 @@ class SettingsWindow(ctk.CTkToplevel):
             font=theme.font(11),
             text_color=theme.MUTED,
             anchor="w",
-        ).pack(side="left", padx=14, pady=12)
+        ).pack(side="left", padx=theme.SPACE_4, pady=theme.SPACE_3)
         self._reset_btn = ctk.CTkButton(
             footer,
             text="Reset to defaults",
@@ -429,8 +447,8 @@ class SettingsWindow(ctk.CTkToplevel):
             fg_color=theme.ACCENT,
             text_color=theme.ACCENT_INK,
             command=self.close,
-        ).pack(side="right", padx=(6, 14), pady=12)
-        self._reset_btn.pack(side="right", padx=(6, 0), pady=12)
+        ).pack(side="right", padx=(theme.SPACE_2, theme.SPACE_4), pady=theme.SPACE_3)
+        self._reset_btn.pack(side="right", padx=(theme.SPACE_2, 0), pady=theme.SPACE_3)
         ctk.CTkButton(
             footer,
             text="Open settings folder",
@@ -443,7 +461,7 @@ class SettingsWindow(ctk.CTkToplevel):
             text_color=theme.MUTED,
             hover_color=theme.SURFACE_HI,
             command=self._open_folder,
-        ).pack(side="right", pady=12)
+        ).pack(side="right", pady=theme.SPACE_3)
 
     # ── actions ──────────────────────────────────────────────────────────
 
