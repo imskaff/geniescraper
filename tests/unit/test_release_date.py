@@ -155,5 +155,17 @@ class TestSongModel:
         s = song(release_date="2021-05-14")
         assert SongCredits.model_validate_json(s.model_dump_json()).release_date == "2021-05-14"
 
-    def test_the_paste_queue_does_not_change(self):
-        assert song(release_date="2024-05-17").typed_queue() == song().typed_queue()
+    def test_the_date_adds_three_steps_after_the_cover(self):
+        s = song(release_date="2024-05-07", cover_art_url="https://img/c.png")
+        assert s.typed_queue() == [
+            ("cover_art", "https://img/c.png"),
+            ("release_month", "May"),
+            ("release_day", "7"),
+            ("release_year", "2024"),
+        ]
+
+    def test_no_date_no_steps(self):
+        assert song().typed_queue() == []
+
+    def test_the_setting_off_drops_the_steps(self):
+        assert song(release_date="2024-05-17").typed_queue(include_release_date=False) == []

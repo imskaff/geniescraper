@@ -64,6 +64,9 @@ QUEUE_KINDS = frozenset(
         "copyright_notice",
         "youtube_url",
         "cover_art",
+        "release_month",
+        "release_day",
+        "release_year",
     }
 )
 SIMPLE_COMMANDS = frozenset({"fill-next", "back", "skip", "pause", "resume", "stop", "get-status"})

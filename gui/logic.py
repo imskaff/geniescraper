@@ -103,6 +103,8 @@ def queue_summary(queue: list[tuple[str, str]]) -> str:
         parts.append("YouTube link")
     if "cover_art" in kinds:
         parts.append("cover art")
+    if "release_year" in kinds:
+        parts.append("release date")
     if not parts:
         return "Nothing to paste. Check which fields are turned on in Settings."
     return f"{_count(len(queue), 'step', 'steps')}: " + ", ".join(parts)

@@ -61,6 +61,7 @@ class TestTypedQueue:
             copyright_notice="© 2024 Label C",
             youtube_url="https://youtu.be/x",
             cover_art_url="https://img/1000x1000bb.png",
+            release_date="2024-12-01",
         )
 
     def test_order_matches_genius_form(self):
@@ -78,6 +79,9 @@ class TestTypedQueue:
             ("copyright_notice", "Label C"),
             ("youtube_url", "https://youtu.be/x"),
             ("cover_art", "https://img/1000x1000bb.png"),
+            ("release_month", "December"),
+            ("release_day", "1"),
+            ("release_year", "2024"),
         ]
 
     def test_copyright_falls_back_to_phonographic_labels(self):
@@ -90,7 +94,11 @@ class TestTypedQueue:
 
     def test_toggles_exclude_categories(self):
         q = self.full_song().typed_queue(
-            include_core=False, include_copyright=False, include_youtube=False, include_cover_art=False
+            include_core=False,
+            include_copyright=False,
+            include_youtube=False,
+            include_cover_art=False,
+            include_release_date=False,
         )
         assert q == [("role", "Mixing Engineer"), ("artist", "Mixer")]
 

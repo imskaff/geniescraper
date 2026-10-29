@@ -3,7 +3,7 @@ from typing import Any, Literal, get_args
 
 from pydantic import BaseModel, field_validator, model_validator
 
-from scraper.release_date import format_release_date, split_release_date
+from scraper.release_date import MONTHS, format_release_date, split_release_date
 
 _COPYRIGHT_CONNECTORS = re.compile(
     r",?\s+(?:"
@@ -157,6 +157,7 @@ class SongCredits(BaseModel):
         include_copyright: bool = True,
         include_youtube: bool = True,
         include_cover_art: bool = True,
+        include_release_date: bool = True,
     ) -> list[tuple[str, str]]:
         """
         Returns a typed queue consumed by the hotkey assistant.
@@ -212,4 +213,10 @@ class SongCredits(BaseModel):
             queue.append(("youtube_url", self.youtube_url))
         if include_cover_art and self.cover_art_url:
             queue.append(("cover_art", self.cover_art_url))
+        if include_release_date and (parts := split_release_date(self.release_date)):
+            # Genius's Release Date is three dropdowns: month by name, day without a leading zero, year.
+            year, month, day = parts
+            queue.append(("release_month", MONTHS[month - 1]))
+            queue.append(("release_day", str(day)))
+            queue.append(("release_year", str(year)))
         return queue

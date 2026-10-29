@@ -56,6 +56,7 @@ _COLLECT = (
     ("scrape_copyright", "Copyright lines (℗ and ©)", "The labels, from album links"),
     ("scrape_youtube", "YouTube link", "Pasted into Genius's YouTube field"),
     ("scrape_cover_art", "PNG cover art link", "1000×1000 PNG of the exact release"),
+    ("scrape_release_date", "Release date", "Month, day and year, in the three Release Date dropdowns"),
 )
 
 

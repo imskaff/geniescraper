@@ -28,6 +28,12 @@ def keys(kind, next_kind):
         ("copyright_notice", "cover_art", ["tab"] * 6),
         ("artist", "cover_art", ["tab"] * 6),
         ("cover_art", None, []),
+        ("cover_art", "release_month", []),
+        ("artist", "release_month", []),
+        ("copyright_notice", "release_month", []),
+        ("release_month", "release_day", []),
+        ("release_day", "release_year", []),
+        ("release_year", None, []),
         ("role", "artist", []),
     ],
 )
@@ -52,6 +58,9 @@ class TestInstructionText:
         ("phonographic_copyright", "L1"),
         ("youtube_url", "https://youtu.be/x"),
         ("cover_art", "https://img"),
+        ("release_month", "May"),
+        ("release_day", "7"),
+        ("release_year", "2024"),
     ]
 
     @pytest.mark.parametrize(
@@ -65,7 +74,14 @@ class TestInstructionText:
             (7, "Field is ready. Press F8 to add the label"),
             (8, "Press F8 to copy the YouTube video URL to clipboard"),
             (9, "Press F8 to copy the 1000×1000 PNG cover art URL to clipboard"),
-            (10, "All done. Save the page on Genius."),
+            (
+                10,
+                "Open the Tags and Albums section if it is closed. "
+                "Click the Release Date Month dropdown, then press F8 to enter the month",
+            ),
+            (11, "Click the Release Date Day dropdown, then press F8 to enter the day"),
+            (12, "Click the Release Date Year dropdown, then press F8 to enter the year"),
+            (13, "All done. Save the page on Genius."),
         ],
     )
     def test_messages(self, pos, expected):

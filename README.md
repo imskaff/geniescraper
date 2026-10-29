@@ -201,6 +201,7 @@ Fields are pasted in the order Genius expects them:
 | 5   | Copyright (©)              | Role name typed, then each label         |
 | 6   | YouTube URL                | Pasted, or copied to the clipboard       |
 | 7   | Cover Art URL              | 1000×1000 PNG, pasted or copied          |
+| 8   | Release Date               | Month, day and year dropdowns            |
 
 ## Configuration
 
@@ -210,7 +211,7 @@ Both apps have a **Settings** screen. In the desktop app it opens over any scree
 
 | Card                   | What you can set                                                                                                                      |
 |------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
-| **What to paste**      | Songwriters and producers, additional credits, copyright lines, YouTube link, PNG cover art link.                                      |
+| **What to paste**      | Songwriters and producers, additional credits, copyright lines, YouTube link, PNG cover art link, release date.                                |
 | **Pasting on Genius**  | Auto-paste on or off, the pause between fields (0.6 s by default), the keys (`F8` and `F7`), how long to wait for suggestions, what happens after a track. |
 | **Reading credits**    | How many tracks are read at the same time (3 by default).                                                                              |
 | **YouTube links**      | Find a YouTube link for each track (recommended), and an optional free YouTube key for more reliable links; the panel walks you through getting one. |
@@ -229,6 +230,7 @@ The YouTube and Deezer lookups are off until you tick them; the browser then ask
 | Copyright lines (℗ and ©)          | On      | From album links                                                     |
 | YouTube link                       | On      | Pasted into Genius's YouTube field                                   |
 | PNG cover art link                 | On      | 1000×1000 PNG of the exact release                                   |
+| Release date                       | On      | Month, day and year, in the three Release Date dropdowns             |
 | Keys                               | F8 / F7 | Paste next / go back one step                                        |
 | Wait for suggestions to settle     | 0.6 s   | Hotkeys only: how long to wait before pressing Enter                 |
 | Tracks read at the same time       | 3       | How many album tracks are read while you paste                       |

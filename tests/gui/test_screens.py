@@ -118,6 +118,32 @@ def _check_hotkey_path(window: Any) -> dict[str, Any]:
     }
 
 
+def _check_release_steps(window: Any) -> dict[str, Any]:
+    """A song with a release date: its three steps are listed under their own names, and the first one is explained."""
+    old_song, old_pos = window._song, window._pos
+    window._song = old_song.model_copy(update={"release_date": "2024-05-17"})
+    window._clear_kb_hooks()
+    window._show_assistant_screen()
+    window.update()
+    queue = list(window._queue)
+    first = next(i for i, (kind, _) in enumerate(queue) if kind == "release_month")
+    window._pos = first
+    window._render_assistant()
+    window.update()
+    seen = {
+        "tail": queue[first:],
+        "texts": _texts(window._queue_sf),
+        "instruction": window._card_instr_lbl.cget("text"),
+        "badge": window._hero_badge.cget("text"),
+    }
+    window._song = old_song
+    window._clear_kb_hooks()
+    window._show_assistant_screen()
+    window._pos = old_pos
+    window._render_assistant()
+    return seen
+
+
 def _check_assistant_controls(window: Any) -> dict[str, Any]:
     """With no extension: no Next button, Auto-paste is grayed out and says why, the manual-mode notice is up."""
     window._pos = 0
@@ -385,6 +411,7 @@ def walk() -> dict[str, Any]:
             window._back_from_credits()
             seen["review_hooks_after_back"] = len(window._kb_hooks)
         elif name == "09-assistant-middle":
+            seen["release_steps"] = _check_release_steps(window)
             window._skip()
             seen["pos_after_skip"] = window._pos
             window._jump_to(3)
@@ -605,6 +632,16 @@ def test_pasting_screen_without_the_extension(walk):
     assert start["stop"]["text"] == "Back to credits"
     assert "Paste into Genius" in seen["texts"] and "CHIHIRO  ·  Billie Eilish" in seen["texts"]
     assert any(t.startswith("Keep the song's Edit Metadata form open") for t in seen["texts"])
+
+
+def test_release_date_steps_are_listed_and_explained(walk):
+    seen = walk["release_steps"]
+    assert seen["tail"] == [("release_month", "May"), ("release_day", "17"), ("release_year", "2024")]
+    for label in ("Release month", "Release day", "Release year"):
+        assert label in seen["texts"]
+    assert "May" in seen["texts"] and "17" in seen["texts"] and "2024" in seen["texts"]
+    assert seen["badge"] == "Release month"
+    assert seen["instruction"].startswith("Open the Tags and Albums section if it is closed.")
 
 
 def test_previous_is_off_at_the_first_step_and_skip_and_next_when_finished(walk):

@@ -64,6 +64,9 @@ QUEUE_KINDS = [
     "copyright_notice",
     "youtube_url",
     "cover_art",
+    "release_month",
+    "release_day",
+    "release_year",
 ]
 
 COPYRIGHT_LINES = [
@@ -265,13 +268,20 @@ SONGS: dict[str, SongCredits] = {
     ),
 }
 
-QUEUE_FLAGS = ["include_core", "include_additional", "include_copyright", "include_youtube", "include_cover_art"]
+QUEUE_FLAGS = [
+    "include_core",
+    "include_additional",
+    "include_copyright",
+    "include_youtube",
+    "include_cover_art",
+    "include_release_date",
+]
 
 
 def _typed_queue_cases() -> list[dict[str, Any]]:
     cases: list[dict[str, Any]] = []
     for name, song in SONGS.items():
-        # All 32 flag combinations: the toggles are independent, so every one is a parity risk.
+        # All 64 flag combinations: the toggles are independent, so every one is a parity risk.
         for combo in itertools.product([True, False], repeat=len(QUEUE_FLAGS)):
             flags = dict(zip(QUEUE_FLAGS, combo, strict=True))
             cases.append(

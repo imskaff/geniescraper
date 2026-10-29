@@ -54,6 +54,9 @@ _FIELD_LABELS = {
     "copyright_notice": "©  Copyright",
     "cover_art": "Cover Art URL",
     "youtube_url": "YouTube URL",
+    "release_month": "Release month",
+    "release_day": "Release day",
+    "release_year": "Release year",
 }
 
 
@@ -66,6 +69,9 @@ _LIST_LABELS = {
     "copyright_role": "Copyright",
     "youtube_url": "YouTube URL",
     "cover_art": "Cover Art URL",
+    "release_month": "Release month",
+    "release_day": "Release day",
+    "release_year": "Release year",
 }
 _NESTED_KINDS = frozenset({"artist", "phonographic_copyright", "copyright_notice"})
 
@@ -555,6 +561,7 @@ class App(ctk.CTk):
             include_copyright=settings.scrape_copyright,
             include_youtube=settings.scrape_youtube,
             include_cover_art=settings.scrape_cover_art,
+            include_release_date=settings.scrape_release_date,
         )
         return flow.genius_queue(queue)  # roles typed under the names Genius uses
 

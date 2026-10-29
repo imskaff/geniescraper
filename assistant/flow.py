@@ -9,6 +9,13 @@ from scraper.roles import genius_role_name
 # Queue kinds whose value is copied to the clipboard as-is (no autocomplete to confirm).
 CLIPBOARD_ONLY_KINDS = frozenset({"cover_art", "youtube_url"})
 
+# The Release Date dropdowns on Genius's form: kind -> (dropdown name, what is typed).
+_RELEASE_DROPDOWNS = {
+    "release_month": ("Month", "month"),
+    "release_day": ("Day", "day"),
+    "release_year": ("Year", "year"),
+}
+
 # Apple roles Genius spells differently (measured on the live form; same table as the extension's geniusRole).
 _GENIUS_ROLE_NAMES = {
     "additional producer": "Additional Production",
@@ -80,6 +87,11 @@ def instruction_text(queue: list[tuple[str, str]], pos: int, hotkey: str) -> str
         return f"Press {hk} to copy the 1000×1000 PNG cover art URL to clipboard"
     if kind == "youtube_url":
         return f"Press {hk} to copy the YouTube video URL to clipboard"
+    if kind in _RELEASE_DROPDOWNS:
+        # The three dropdowns sit in the Tags and Albums section, which may be collapsed. No Tab sequence leads there.
+        dropdown, noun = _RELEASE_DROPDOWNS[kind]
+        opener = "Open the Tags and Albums section if it is closed. " if kind == "release_month" else ""
+        return f"{opener}Click the Release Date {dropdown} dropdown, then press {hk} to enter the {noun}"
     if prev == "role":
         return f"Tab to Artists in this role, then press {hk}"
     return f"Field is ready. Press {hk} to add the next artist"

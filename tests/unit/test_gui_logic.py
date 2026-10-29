@@ -64,9 +64,12 @@ def test_queue_summary_counts_in_genius_terms():
         ("phonographic_copyright", "Label"),
         ("youtube_url", "https://youtu.be/x"),
         ("cover_art", "https://img"),
+        ("release_month", "May"),
+        ("release_day", "7"),
+        ("release_year", "2024"),
     ]
     assert queue_summary(queue) == (
-        "9 steps: 2 writers, 1 producer, 1 additional role, 1 copyright line, YouTube link, cover art"
+        "12 steps: 2 writers, 1 producer, 1 additional role, 1 copyright line, YouTube link, cover art, release date"
     )
 
 

@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     scrape_copyright: bool = True  # ℗ and ©
     scrape_youtube: bool = True  # YouTube URL
     scrape_cover_art: bool = True  # Cover art URL
+    scrape_release_date: bool = True  # Release date (month, day and year dropdowns)
 
     # Look-ups on other sites, as in the extension's Settings
     find_youtube: bool = True  # Search YouTube for each track's link
@@ -99,6 +100,7 @@ class Settings(BaseSettings):
             f"SCRAPE_COPYRIGHT={str(self.scrape_copyright).lower()}",
             f"SCRAPE_YOUTUBE={str(self.scrape_youtube).lower()}",
             f"SCRAPE_COVER_ART={str(self.scrape_cover_art).lower()}",
+            f"SCRAPE_RELEASE_DATE={str(self.scrape_release_date).lower()}",
             "",
             "# Look-ups on other sites (true/false)",
             f"FIND_YOUTUBE={str(self.find_youtube).lower()}",
