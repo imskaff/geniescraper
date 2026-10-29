@@ -5,6 +5,7 @@ import { OPTIONAL_LOOKUP_HOSTS, hostOrigin, type OptionalHost } from "../lookups
 import { PanelView } from "./view";
 import { PASTE_KEY, normalisePaste } from "../core/paste";
 import { chromeStores } from "../shared/storage";
+import { POPUP_CLASS, isPopupSurface, reportsClosing } from "./surface";
 
 const HOSTS = Object.keys(OPTIONAL_LOOKUP_HOSTS) as OptionalHost[];
 
@@ -71,7 +72,9 @@ function keepConnected(): void {
   };
   connect();
 }
-keepConnected();
+const popup = isPopupSurface(chrome);
+if (popup) document.documentElement.classList.add(POPUP_CLASS);
+if (reportsClosing(popup)) keepConnected();
 
 void PanelController.create(env).then((panel) => {
   new PanelView(root, panel);

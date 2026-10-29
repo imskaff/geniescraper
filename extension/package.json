@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
+    "build:safari": "node scripts/build.mjs --safari",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",

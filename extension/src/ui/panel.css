@@ -76,6 +76,13 @@ body {
     sans-serif;
 }
 
+/* As a toolbar popup (Safari) the page sets its own size; as a side panel the browser does. */
+html.popup body {
+  width: 380px;
+  min-height: 480px;
+  max-height: 600px;
+}
+
 #app {
   max-width: 40rem;
   margin: 0 auto;
