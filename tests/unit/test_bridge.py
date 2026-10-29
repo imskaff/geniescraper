@@ -176,7 +176,7 @@ def test_hello_with_the_right_proof_gets_a_server_proof_and_becomes_ready():
 
 def test_the_secret_never_appears_in_anything_the_server_sends():
     session, _ = make_session()
-    sent = [session.start()] + session.receive(hello(session)).sends
+    sent = [session.start(), *session.receive(hello(session)).sends]
     assert SECRET not in json.dumps(sent)
 
 

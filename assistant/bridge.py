@@ -405,7 +405,7 @@ class Bridge:
             async def main() -> None:
                 try:
                     await self.start_async()
-                except Exception as exc:  # noqa: BLE001 - reported to the caller
+                except Exception as exc:
                     ready.set_exception(exc)
                     return
                 ready.set_result(None)
@@ -451,7 +451,7 @@ class Bridge:
     async def _safe_send(self, conn: Any, message: dict[str, Any], command_id: int | None = None) -> None:
         try:
             await conn.send(json.dumps(message))
-        except Exception:  # noqa: BLE001 - the connection is gone; the read loop cleans up
+        except Exception:
             future = self._pending.pop(command_id, None) if command_id is not None else None
             if future is not None and not future.done():
                 future.set_exception(NotConnected("connection lost"))
@@ -489,7 +489,7 @@ class Bridge:
             await conn.send(json.dumps(session.start()))
             async for raw in conn:
                 await self._feed(conn, raw)
-        except Exception:  # noqa: BLE001 - a dropped connection ends the loop
+        except Exception:
             pass
         finally:
             watchdog.cancel()
@@ -546,7 +546,7 @@ class Bridge:
             return
         try:
             callback(*args)
-        except Exception:  # noqa: BLE001 - a GUI bug must not take the link down
+        except Exception:
             pass
 
     async def _heartbeat(self) -> None:
