@@ -1072,10 +1072,19 @@ Three queue steps after the cover art, only for a song with a release date and w
 
 The form (saved in `tests/fixtures/genius-release-date.html`): a `fieldset` "Release Date" with three single-select comboboxes, found by `aria-label` "Release Month", "Release Day", "Release Year" (never by their ids). They sit in the collapsible region `#collapsible-tags_albums-content`.
 
-Assumed, not yet seen on a live form (the live check `scripts/live-genius.mjs` prints what is really there, lines marked "release:"):
+Live check on 29 October 2026 (`npm run live:genius`, installed Chrome, the owner's signed-in profile, a song of the owner's, nothing saved): all checks passed, including a whole 50-step queue (47 credits steps and the three date steps) and the three dropdowns ending on May, 17 and 2024.
 
-- The option texts. A month option counts when it is the month's name, its three-letter form or its number, alone or as "May - 5" / "5 May"; a day or year option counts by numeric equality ("05" is 5). The fill types the name first and, for a month, the number if the name found nothing. It chooses an option only when exactly one matches. With none, the typed text and the suggestions stay for the user, with the normal "no exact match, choose yourself" message.
-- The chosen value shows in an element whose class contains `singleValue` (react-select's own). A dropdown that already holds the value is skipped. A date Genius already has is kept (decided by the owner): when any of the dropdowns this run cannot have filled yet holds a value, the date steps skip and say so, so that Apple's date never overwrites Genius's and two dates are never mixed. The month and the day this very run chose do not stop the next step.
-- A closed section has `aria-hidden="true"` on the region, and the control that opens it has `aria-controls` with the region's id and `aria-expanded="false"`. The fill presses that control only when the section is closed, never to close it, and says so in the step message. Without such a control the step stops with "Open the Tags and Albums section, then press Next."
+Confirmed on the real form:
+
+- The option texts. Month: the full names, January to December. Day: 1 to 31. Year: 2027 down to 1 (2,027 options), newest first. So the plain case works without the fallbacks for numbers or "May - 5" style texts; those stay as a safety net.
+- The chosen value shows in `div[class*="singleValue"]` (for example `<div class="css-1kt6lw4-singleValue">May</div>`), as assumed.
+- The region `#collapsible-tags_albums-content` has `aria-hidden="false"` when open, and its header is a `button` with `aria-controls="collapsible-tags_albums-content"` and `aria-expanded="true"` (its heading reads "Tags, Albums & Metadata"), as assumed.
+
+Not yet confirmed on a live form:
+
+- What the collapsed section looks like and that pressing its control opens it: the section was already open on the test song, so only the fake form covers that path.
+- Skipping a date Genius already has (the owner decided to keep it): covered by the fake form only. The date in the live run was Apple's, so this song had none beforehand.
+
+Decisions kept in the code: the option matching above (an option is chosen only when exactly one matches; otherwise the typed text and the suggestions stay for the user), and a date Genius already has is kept: when any of the dropdowns this run cannot have filled yet holds a value, the date steps skip and say so, so that Apple's date never overwrites Genius's and two dates are never mixed. The month and the day this very run chose do not stop the next step.
 
 The desktop hotkey path pastes the value, waits, and presses Enter, with no Tab sequence (`autotab_steps` has none for these kinds).

@@ -180,8 +180,9 @@ const RELEASE_NOUN: Record<ReleaseKind, string> = {
 const OPEN_TAGS = "Open the Tags and Albums section, then press Next.";
 
 /**
- * Whether a dropdown's option (or chosen value) text is the date part this step means. The real option texts are not
- * known yet, so this accepts the plausible spellings and nothing else:
+ * Whether a dropdown's option (or chosen value) text is the date part this step means. The real form lists the full
+ * month names, days 1 to 31 and years from 2027 down (checked live), and this also accepts the other plausible
+ * spellings, and nothing else:
  *   - month: the month's name ("May"), its three-letter form ("May", "Sep", "Sept") or its number ("5", "05"), alone
  *     or together as "May - 5" / "5 May"; case and accents are ignored;
  *   - day and year: numeric equality, so "05" is 5.
