@@ -13,6 +13,7 @@ import sys
 import threading
 import time
 from collections.abc import Callable, Iterator
+from concurrent.futures import Future
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -58,6 +59,33 @@ OPEN_PAGES = [
     {"url": "https://music.apple.com/us/song/chihiro/1739659140", "title": "CHIHIRO", "kind": "song", "current": False},
     {"url": "https://music.apple.com/us/album/short-n-sweet/1758452684", "title": "Short n' Sweet (Deluxe) by Sabrina Carpenter", "kind": "album", "current": False},
 ]  # fmt: skip
+
+
+class FakeBridge:
+    """Stands in for the websocket bridge so the real App can be linked without a socket."""
+
+    def __init__(self) -> None:
+        self.sent: list[tuple[str, Future[Any]]] = []
+
+    def start(self) -> None: ...
+    def stop(self) -> None: ...
+    def forget_pairing(self) -> None: ...
+
+    def begin_pairing(self) -> str:
+        return "ABCD-EFGH"
+
+    def send_command(self, name: str, **fields: Any) -> Future[Any]:
+        future: Future[Any] = Future()
+        self.sent.append((name, future))
+        return future
+
+
+def link_status(total: int, position: int, auto: str, **extra: Any) -> dict[str, Any]:
+    """A status report as the extension sends it."""
+    return {
+        "active": True, "auto": auto, "pauseReason": "", "title": "t", "position": position,
+        "total": total, "awaiting": False, "busy": False, "message": "", "tone": "info", **extra,
+    }  # fmt: skip
 
 
 def _cover() -> Image.Image:
@@ -142,6 +170,26 @@ def _walk(on_screen: Callable[[Any, str], None]) -> None:
         app._pos = 21
         app._render_assistant()
         screen("09-assistant-middle")
+
+        # The browser extension is connected: first filling by itself (Auto-paste on), then paused (off).
+        fake = FakeBridge()
+        app.link._bridge = fake
+        app.link._handle_connection(True)
+        fake.sent[0][1].set_result((True, None))
+        app.update()
+        total = len(app._queue)
+        app.link._handle_status(link_status(total, 21, "running"))
+        screen("09b-assistant-linked-auto")
+        app.link._handle_status(link_status(total, 21, "paused", pauseReason="user"))
+        screen("09c-assistant-linked-manual")
+        app.link._handle_status(
+            link_status(total, 21, "paused", message="Pick the suggestion on Genius.", tone="attention")
+        )
+        screen("09d-assistant-linked-message")
+        app.link._handle_connection(False)
+        app.link.end_run()
+        app._sync_hooks()
+        app.update()
         app._show_esc_confirm()
         screen("10-esc-confirm")
 

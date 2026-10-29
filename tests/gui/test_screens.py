@@ -8,10 +8,11 @@ records its result during one walk and the tests below assert on those results.
 
 import ctypes
 import sys
-from concurrent.futures import Future
 from typing import Any
 
 import pytest
+
+from tools.gui_snapshots import FakeBridge
 
 pytestmark = [
     pytest.mark.gui,
@@ -20,7 +21,8 @@ pytestmark = [
 
 EXPECTED_SCREENS = [
     "01-start", "02-start-url", "03-start-error", "03-start-open-pages", "04-settings", "05-tracks", "06-loading",
-    "07-credits", "08-assistant-start", "09-assistant-middle", "10-esc-confirm",
+    "07-credits", "08-assistant-start", "09-assistant-middle", "09b-assistant-linked-auto",
+    "09c-assistant-linked-manual", "09d-assistant-linked-message", "10-esc-confirm",
     "11-assistant-compact", "12-done",
 ]  # fmt: skip
 
@@ -32,23 +34,7 @@ def _dark_title_bar_attr(window: Any) -> int:
     return value.value
 
 
-class _FakeBridge:
-    """Stands in for the websocket bridge so the real App can be linked without a socket."""
-
-    def __init__(self) -> None:
-        self.sent: list[tuple[str, Future[Any]]] = []
-
-    def start(self) -> None: ...
-    def stop(self) -> None: ...
-    def forget_pairing(self) -> None: ...
-
-    def begin_pairing(self) -> str:
-        return "ABCD-EFGH"
-
-    def send_command(self, name: str, **fields: Any) -> Future[Any]:
-        future: Future[Any] = Future()
-        self.sent.append((name, future))
-        return future
+_FakeBridge = FakeBridge
 
 
 def _card_texts(window: Any) -> list[str]:
@@ -68,6 +54,97 @@ def _card_texts(window: Any) -> list[str]:
 
     walk(card)
     return found
+
+
+def _texts(widget: Any) -> list[str]:
+    """Every piece of text a widget tree shows: labels, buttons and switches."""
+    found: list[str] = []
+    for child in widget.winfo_children():
+        try:
+            text = child.cget("text")
+        except Exception:
+            text = ""
+        if isinstance(text, str) and text:
+            found.append(text)
+        found.extend(_texts(child))
+    return found
+
+
+def _buttons(window: Any) -> dict[str, dict[str, Any]]:
+    """The pasting screen's buttons by name: their text, whether they are enabled and whether they are on screen."""
+    return {
+        name: {"text": b.cget("text"), "enabled": str(b.cget("state")) == "normal", "shown": bool(b.winfo_ismapped())}
+        for name, b in window._ctl.items()
+    }
+
+
+def _check_hotkey_path(window: Any) -> dict[str, Any]:
+    """Press the hotkey with the keyboard stubbed: it must always confirm and always tab."""
+    from unittest import mock
+
+    keys: list[str] = []
+    old_queue, old_pos = window._queue, window._pos
+    window._queue = [("written_by", "A"), ("role", "Mixer"), ("cover_art", "https://x/y.png"), ("written_by", "B")]
+    try:
+        with (
+            mock.patch("gui.app.keyboard.press_and_release", side_effect=keys.append),
+            mock.patch("gui.app.pyperclip.copy"),
+            mock.patch("gui.app.time.sleep"),
+        ):
+            window._pos = 0
+            window._on_hotkey()  # a songwriter, then a role: Enter, then Tab, Tab, Enter to Add additional credits
+            after_name = list(keys)
+            keys.clear()
+            window._pos = 2
+            window._on_hotkey()  # a cover link is only copied: nothing to confirm
+            after_clipboard = list(keys)
+    finally:
+        window._queue, window._pos = old_queue, old_pos
+    return {"name": after_name, "clipboard": after_clipboard}
+
+
+def _check_assistant_controls(window: Any) -> dict[str, Any]:
+    """With no extension: Next is the manual step, Auto-paste is grayed out and says why."""
+    window._pos = 0
+    window._render_assistant()
+    window.update()
+    seen: dict[str, Any] = {"at_start": _buttons(window), "hint": window._auto_hint_lbl.cget("text")}
+    seen["texts"] = _texts(window)
+    seen["settings_label_texts"] = []
+    window._pos = 21
+    window._render_assistant()
+    seen["middle_buttons_early"] = None
+    window._pos = len(window._queue)
+    window._render_assistant()
+    seen["finished"] = _buttons(window)
+    seen["finished_progress"] = window._prog_lbl.cget("text")
+    window._pos = 21
+    window._render_assistant()
+    seen["middle_progress"] = window._prog_lbl.cget("text")
+    seen["middle"] = _buttons(window)
+    seen["done_header"] = window._steps_heads["done"].cget("text")
+    seen["left_header"] = window._steps_heads["left"].cget("text")
+    seen["done_rows_hidden"] = not window._row_widgets[0][0].winfo_ismapped()
+    window._toggle_steps("done")
+    window.update()
+    seen["done_rows_shown_after_toggle"] = window._row_widgets[0][0].winfo_ismapped()
+    window._toggle_steps("done")
+    return seen
+
+
+def _check_linked(window: Any, name: str) -> dict[str, Any]:
+    """The extension's Auto-paste toggle on the pasting screen, with a fake bridge behind the link."""
+    fake = window.link._bridge
+    seen: dict[str, Any] = {"buttons": _buttons(window), "status": window._link_lbl.cget("text")}
+    before = len(fake.sent)
+    window._ctl["auto"].invoke()
+    seen["clicked"] = [n for n, _ in fake.sent[before:]]
+    seen["link_mode"] = None
+    from utils.config import settings
+
+    seen["link_mode"] = settings.link_mode
+    settings.link_mode = "auto"
+    return seen
 
 
 def _report(*pages: Any) -> list[dict[str, Any]]:
@@ -136,7 +213,7 @@ def _drive_link(window: Any) -> dict[str, Any]:
     )  # fmt: skip
     seen["pos_from_status"] = window._pos
     seen["status_line"] = window._link_lbl.cget("text")
-    seen["resume_button"] = [w.cget("text") for w in window._link_btns.winfo_children()]
+    seen["resume_button"] = _buttons(window)
     link._handle_connection(False)
     seen["hooks_after_drop"] = len(window._kb_hooks)
     link.end_run()
@@ -163,15 +240,16 @@ def walk() -> dict[str, Any]:
             seen["settings_icon_set"] = window._iconbitmap_method_called
             seen["settings_scroll_increment"] = int(window._body._parent_canvas.cget("yscrollincrement"))
             seen["settings_headings"] = window.headings
+            seen["settings_texts"] = _texts(window)
             calls: list[int] = []
             window._on_change = lambda: calls.append(1)
-            original = settings.auto_tab
-            window._set("auto_tab", not original)
-            seen["staged_value"] = window._value("auto_tab")
-            seen["unchanged_while_open"] = settings.auto_tab is original and not calls
+            original = settings.find_youtube
+            window._set("find_youtube", not original)
+            seen["staged_value"] = window._value("find_youtube")
+            seen["unchanged_while_open"] = settings.find_youtube is original and not calls
             seen["applied"] = window._apply()
-            seen["changed_on_apply"] = settings.auto_tab is (not original)
-            settings.auto_tab = original
+            seen["changed_on_apply"] = settings.find_youtube is (not original)
+            settings.find_youtube = original
             seen["copy_button_before"] = window._link_copy_btn.cget("text")
             window._copy_code("ABCD-EFGH")
             seen["copied_to_clipboard"] = window.clipboard_get()
@@ -192,13 +270,31 @@ def walk() -> dict[str, Any]:
             seen["pos_after_jump"] = window._pos
             window._jump_to(999)
             seen["pos_after_jump_past_end"], seen["queue_len"] = window._pos, len(window._queue)
-            before = settings.auto_tab
-            window._toggle_chip("auto_tab")
-            seen["auto_tab_toggled"] = settings.auto_tab is (not before)
-            seen["chip_text"], seen["auto_tab_now"] = window._chips["auto_tab"].cget("text"), settings.auto_tab
+            seen["hotkey_path"] = _check_hotkey_path(window)
+            seen["unlinked"] = _check_assistant_controls(window)
             window._pos = 21
             window._render_assistant()
             seen["link"] = _drive_link(window)
+            window._pos = 21
+            window._render_assistant()
+        elif name == "09b-assistant-linked-auto":
+            seen["linked_auto"] = _check_linked(window, name)
+        elif name == "09c-assistant-linked-manual":
+            seen["linked_manual"] = _check_linked(window, name)
+        elif name == "09d-assistant-linked-message":
+            seen["linked_message"] = window._link_lbl.cget("text")
+        elif name == "11-assistant-compact":
+            seen["compact_texts"] = _texts(window)
+            seen["compact_height"] = window.winfo_height() * 620 / window.winfo_width()  # in 100%-scale pixels
+            seen["compact_has_list"] = window._queue_sf is not None
+            window._ask_back_to_credits()
+            window.update()
+            seen["back_confirm_open"] = window._esc_overlay_open()
+            seen["back_confirm_texts"] = _texts(window._esc_overlay)
+            window._back_to_credits()
+            window.update()
+            seen["back_screen"] = window._screen
+            seen["back_countdown"] = window._credits_in_countdown
 
     walk_screens(on_screen)
     return seen
@@ -241,8 +337,6 @@ def test_assistant_controls_skip_jump_and_toggle(walk):
     assert walk["pos_after_skip"] == 22
     assert walk["pos_after_jump"] == 3
     assert walk["pos_after_jump_past_end"] == walk["queue_len"] - 1
-    assert walk["auto_tab_toggled"]
-    assert walk["chip_text"].endswith("on" if walk["auto_tab_now"] else "off")
 
 
 def test_leaving_review_screen_releases_its_f8_hotkey(walk):
@@ -300,8 +394,96 @@ def test_a_connected_extension_owns_the_keys_and_drives_the_screen(walk):
     assert link["skip_command"] == "skip" and link["pos_unchanged_by_skip"]
     assert link["pos_from_status"] == 4
     assert "link to the desktop app was lost" in link["status_line"]
-    assert any("Resume" in text for text in link["resume_button"])
+    assert link["resume_button"]["auto"]["text"] == "Auto-paste: OFF" and link["resume_button"]["auto"]["enabled"]
 
 
 def test_dropping_the_link_gives_the_keys_back(walk):
     assert walk["link"]["hooks_after_drop"] > 0
+
+
+def _has_removed_option(texts: list[str]) -> bool:
+    return any(word in text.lower() for text in texts for word in ("auto-tab", "auto-confirm", "autotab"))
+
+
+def test_auto_tab_and_auto_confirm_are_gone_from_settings_and_the_assistant(walk):
+    from utils.config import Settings
+
+    assert "auto_tab" not in Settings.model_fields and "auto_enter" not in Settings.model_fields
+    assert not _has_removed_option(walk["settings_texts"])
+    assert not _has_removed_option(walk["unlinked"]["texts"])
+    assert not _has_removed_option(walk["compact_texts"])
+
+
+def test_the_hotkey_path_always_confirms_and_always_tabs(walk):
+    path = walk["hotkey_path"]
+    assert path["name"] == ["ctrl+v", "enter", "tab", "tab", "enter"]
+    assert path["clipboard"] == ["ctrl+v"]
+
+
+def test_settings_say_what_the_wait_is_for_and_that_the_hotkeys_cannot_check(walk):
+    texts = " ".join(walk["settings_texts"])
+    assert "Wait for suggestions to settle" in walk["settings_texts"]
+    assert "cannot see Genius" in texts and "does not check that an artist" in texts
+    assert "matches the typed name exactly" in texts
+
+
+def test_pasting_screen_without_the_extension(walk):
+    seen = walk["unlinked"]
+    start, auto = seen["at_start"], seen["at_start"]["auto"]
+    assert auto["text"] == "Auto-paste: OFF" and not auto["enabled"]
+    assert seen["hint"] == "Connect the browser extension in Settings to use Auto-paste"
+    assert start["next"]["shown"] and start["next"]["enabled"] and start["next"]["text"].startswith("Next (")
+    assert start["back"]["text"].startswith("Previous (")
+    assert start["stop"]["text"] == "Back to credits"
+    assert "Paste into Genius" in seen["texts"] and "CHIHIRO  ·  Billie Eilish" in seen["texts"]
+    assert any(t.startswith("Keep the song's Edit Metadata form open") for t in seen["texts"])
+
+
+def test_previous_is_off_at_the_first_step_and_skip_and_next_when_finished(walk):
+    seen = walk["unlinked"]
+    assert not seen["at_start"]["back"]["enabled"]
+    assert seen["middle"]["back"]["enabled"]
+    assert not seen["finished"]["skip"]["enabled"] and not seen["finished"]["next"]["enabled"]
+    assert seen["finished"]["back"]["enabled"]
+    assert seen["finished_progress"] == "All steps done"
+    assert seen["middle_progress"] == "Step 22 of 48"
+
+
+def test_step_lists_are_disclosures_done_closed_and_left_open(walk):
+    seen = walk["unlinked"]
+    assert seen["done_header"].endswith("Steps done (21)") and seen["left_header"].endswith("Steps left (27)")
+    assert seen["done_rows_hidden"] and seen["done_rows_shown_after_toggle"]
+
+
+def test_auto_paste_on_hides_next_and_toggling_pauses(walk):
+    seen = walk["linked_auto"]
+    assert seen["buttons"]["auto"]["text"] == "Auto-paste: ON" and seen["buttons"]["auto"]["enabled"]
+    assert not seen["buttons"]["next"]["shown"]
+    assert seen["clicked"] == ["pause"]
+    assert seen["link_mode"] == "manual"
+
+
+def test_auto_paste_off_shows_next_and_toggling_resumes(walk):
+    seen = walk["linked_manual"]
+    assert seen["buttons"]["auto"]["text"] == "Auto-paste: OFF" and seen["buttons"]["auto"]["enabled"]
+    assert seen["buttons"]["next"]["shown"] and seen["buttons"]["next"]["enabled"]
+    assert seen["clicked"] == ["resume"]
+    assert seen["link_mode"] == "auto"
+    assert "paused" in seen["status"].lower() or "pause" in seen["status"].lower()
+
+
+def test_the_extension_message_shows_above_the_step_counter(walk):
+    assert walk["linked_message"] == "Pick the suggestion on Genius."
+
+
+def test_compact_mode_hides_the_step_list_and_keeps_the_buttons(walk):
+    assert not walk["compact_has_list"]
+    assert walk["compact_height"] <= 320
+    assert "Back to credits" in walk["compact_texts"]
+
+
+def test_back_to_credits_asks_first_then_leaves_without_restarting_the_countdown(walk):
+    assert walk["back_confirm_open"]
+    assert "Back to the credits?" in walk["back_confirm_texts"]
+    assert walk["back_screen"] == "credits"
+    assert not walk["back_countdown"]
