@@ -15,6 +15,7 @@ export interface Settings {
   scrapeCopyright: boolean;
   scrapeYoutube: boolean;
   scrapeCoverArt: boolean;
+  scrapeReleaseDate: boolean;
   /** Keys pressed on the Genius page: fill the next step, and go back one. */
   nextHotkey: string;
   backHotkey: string;
@@ -60,6 +61,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   scrapeCopyright: true,
   scrapeYoutube: true,
   scrapeCoverArt: true,
+  scrapeReleaseDate: true,
   nextHotkey: "F8",
   backHotkey: "F7",
   autoConfirm: true,
@@ -139,6 +141,7 @@ export function normaliseSettings(raw: unknown): Settings {
     scrapeCopyright: flag("scrapeCopyright"),
     scrapeYoutube: flag("scrapeYoutube"),
     scrapeCoverArt: flag("scrapeCoverArt"),
+    scrapeReleaseDate: flag("scrapeReleaseDate"),
     nextHotkey,
     backHotkey,
     autoConfirm: flag("autoConfirm"),
@@ -160,5 +163,6 @@ export function queueOptions(settings: Settings): Required<QueueOptions> {
     includeCopyright: settings.scrapeCopyright,
     includeYoutube: settings.scrapeYoutube,
     includeCoverArt: settings.scrapeCoverArt,
+    includeReleaseDate: settings.scrapeReleaseDate,
   };
 }

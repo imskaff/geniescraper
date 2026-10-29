@@ -75,6 +75,7 @@ describe("starting to paste", () => {
       "scrapeCopyright",
       "scrapeYoutube",
       "scrapeCoverArt",
+      "scrapeReleaseDate",
     ] as const) {
       await panel.setSetting(key, false);
     }

@@ -92,6 +92,7 @@ export function setupSummary(state: PanelState): string[] {
     settings.scrapeAdditional && "additional credits",
     settings.scrapeCopyright && "copyright lines",
     settings.scrapeCoverArt && "the PNG cover link",
+    settings.scrapeReleaseDate && "the release date",
     settings.scrapeYoutube && "the YouTube link",
   ].filter((part): part is string => typeof part === "string");
   const reads = settings.parallelReads;
@@ -193,6 +194,13 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
             "scrapeCoverArt",
             "PNG cover art link",
             "A link to the 1000 by 1000 PNG cover, ready to add to Genius. Recommended.",
+          ),
+          option(
+            panel,
+            state,
+            "scrapeReleaseDate",
+            "Release date",
+            "The month, day and year, chosen in the three Release Date dropdowns. Recommended.",
           ),
           option(
             panel,

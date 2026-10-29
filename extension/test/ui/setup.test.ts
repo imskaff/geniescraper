@@ -268,7 +268,7 @@ describe("the summary", () => {
     await goTo(root, SETUP_STEPS - 1);
     const text = $(root, "main").textContent;
     expect(text).toContain(
-      "Pasting: songwriters and producers, additional credits, copyright lines, the PNG cover link, the YouTube link.",
+      "Pasting: songwriters and producers, additional credits, copyright lines, the PNG cover link, the release date, the YouTube link.",
     );
     expect(text).toContain("Reading: 3 tracks at a time.");
     expect(text).toContain("Genius keys: F8 fills the next step, F7 goes back.");
@@ -289,7 +289,7 @@ describe("the summary", () => {
     await panel.setSetting("nextHotkey", "F9");
     await goTo(root, SETUP_STEPS - 1);
     const text = $(root, "main").textContent;
-    expect(text).toContain("Pasting: additional credits, copyright lines, the PNG cover link.");
+    expect(text).toContain("Pasting: additional credits, copyright lines, the PNG cover link, the release date.");
     expect(text).toContain("Reading: every track at once.");
     expect(text).toContain("F9 fills the next step");
     expect(text).toContain("Covers from Deezer when Apple has none: on.");
@@ -303,6 +303,7 @@ describe("the summary", () => {
       "scrapeAdditional",
       "scrapeCopyright",
       "scrapeCoverArt",
+      "scrapeReleaseDate",
       "scrapeYoutube",
     ] as const) {
       await panel.setSetting(key, false);

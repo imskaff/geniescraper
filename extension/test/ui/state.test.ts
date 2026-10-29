@@ -24,6 +24,7 @@ describe("normaliseSettings", () => {
       includeCopyright: true,
       includeYoutube: true,
       includeCoverArt: true,
+      includeReleaseDate: true,
     });
   });
 

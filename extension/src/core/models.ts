@@ -1,6 +1,6 @@
 // Port of scraper.models: credits, the merge rules and the paste queue in Genius form order.
 import { extractLabels } from "./copyright";
-import { formatReleaseDate, splitReleaseDate } from "./releaseDate";
+import { MONTHS, formatReleaseDate, splitReleaseDate } from "./releaseDate";
 
 export interface Credit {
   role: string;
@@ -57,7 +57,10 @@ export type QueueKind =
   | "phonographic_copyright"
   | "copyright_notice"
   | "youtube_url"
-  | "cover_art";
+  | "cover_art"
+  | "release_month"
+  | "release_day"
+  | "release_year";
 
 export type QueueItem = readonly [kind: QueueKind, value: string];
 
@@ -67,6 +70,7 @@ export interface QueueOptions {
   includeCopyright?: boolean;
   includeYoutube?: boolean;
   includeCoverArt?: boolean;
+  includeReleaseDate?: boolean;
 }
 
 // Roles that map to Genius's Written By field (labelled "Writer" in the edit form).
@@ -121,11 +125,11 @@ export function producedBy(song: Pick<SongCredits, "credits">): string[] {
 /**
  * The paste queue, in the order of the Genius metadata form:
  * Writer, Producer, then each additional role followed by its artists,
- * then the ℗ and © labels, the YouTube link and the cover art URL.
+ * then the ℗ and © labels, the YouTube link, the cover art URL and the release date (month, day, year).
  */
 export function typedQueue(song: SongCredits, options: QueueOptions = {}): QueueItem[] {
   const { includeCore = true, includeAdditional = true, includeCopyright = true } = options;
-  const { includeYoutube = true, includeCoverArt = true } = options;
+  const { includeYoutube = true, includeCoverArt = true, includeReleaseDate = true } = options;
 
   const queue: QueueItem[] = [];
   if (includeCore) {
@@ -152,5 +156,15 @@ export function typedQueue(song: SongCredits, options: QueueOptions = {}): Queue
   }
   if (includeYoutube && song.youtubeUrl) queue.push(["youtube_url", song.youtubeUrl]);
   if (includeCoverArt && song.coverArtUrl) queue.push(["cover_art", song.coverArtUrl]);
+  const date = includeReleaseDate ? splitReleaseDate(song.releaseDate) : null;
+  if (date) {
+    // Genius's Release Date is three dropdowns: month by name, day without a leading zero, year.
+    const [year, month, day] = date;
+    queue.push(
+      ["release_month", MONTHS[month - 1] ?? ""],
+      ["release_day", String(day)],
+      ["release_year", String(year)],
+    );
+  }
   return queue;
 }

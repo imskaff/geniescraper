@@ -28,8 +28,8 @@ describe("vectors.json", () => {
     expect(Object.keys(value as object).length).toBeGreaterThan(0);
   });
 
-  it("covers all 32 toggle combinations for every sample song", () => {
+  it("covers all 64 toggle combinations for every sample song", () => {
     const songs = Object.keys(vectors.songs);
-    expect(vectors.typed_queue).toHaveLength(songs.length * 32);
+    expect(vectors.typed_queue).toHaveLength(songs.length * 64);
   });
 });

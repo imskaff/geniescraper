@@ -476,6 +476,7 @@ describe("settings screen", () => {
       "Copyright lines (℗ and ©)",
       "YouTube link",
       "PNG cover art link",
+      "Release date",
       "Choose the exact match in Genius's suggestions for me",
       "Go back to the main menu after the last track",
       "Find a YouTube link for each track (recommended)",

@@ -23,9 +23,13 @@ export const FIELD_LABELS: Readonly<Record<QueueKind, string>> = {
   copyright_notice: "© label",
   youtube_url: "YouTube URL",
   cover_art: "Cover art URL",
+  release_month: "Release month",
+  release_day: "Release day",
+  release_year: "Release year",
 };
 
-type ScrapeKey = "scrapeCore" | "scrapeAdditional" | "scrapeCopyright" | "scrapeYoutube" | "scrapeCoverArt";
+type ScrapeKey =
+  "scrapeCore" | "scrapeAdditional" | "scrapeCopyright" | "scrapeYoutube" | "scrapeCoverArt" | "scrapeReleaseDate";
 
 const SETTING_LABELS: readonly (readonly [ScrapeKey, string])[] = [
   ["scrapeCore", "Songwriters and producers"],
@@ -33,6 +37,7 @@ const SETTING_LABELS: readonly (readonly [ScrapeKey, string])[] = [
   ["scrapeCopyright", "Copyright lines (℗ and ©)"],
   ["scrapeYoutube", "YouTube link"],
   ["scrapeCoverArt", "PNG cover art link"],
+  ["scrapeReleaseDate", "Release date"],
 ];
 
 /** The mark in front of a track in the list; it repeats what the words say, so it is hidden from screen readers. */

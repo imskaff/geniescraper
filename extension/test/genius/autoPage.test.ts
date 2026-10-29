@@ -353,3 +353,50 @@ describe("problems stop the run with a plain message", () => {
     await expect(page.whenAutoIdle()).resolves.toBeUndefined();
   });
 });
+
+describe("the release date steps in an automatic run", () => {
+  const DATE: [string, string][] = [
+    ["release_month", "May"],
+    ["release_day", "5"],
+    ["release_year", "2024"],
+  ];
+
+  it("runs through the three steps after the other fields, then switches itself off", async () => {
+    const { fake, page, stored, begin } = setup({ release: { collapsed: true } });
+    await begin([...SHORT, ...DATE]);
+    await page.whenAutoIdle();
+    expect(fake.chosen).toEqual([
+      "Writer: Billie Eilish",
+      "Release Month: May",
+      "Release Day: 5",
+      "Release Year: 2024",
+    ]);
+    expect(fake.tagsToggles).toBe(1);
+    expect(stored()).toMatchObject({ position: SHORT.length + DATE.length, auto: "off", pauseReason: "" });
+    expect(fake.saveClicks + fake.cancelClicks + fake.submits).toBe(0);
+  });
+
+  it("waits for the user's choice when the list has no exact option, then carries on", async () => {
+    const { fake, page, stored, begin } = setup({ release: { years: [2023, 2025] } });
+    await begin(DATE);
+    await until(() => stored().awaiting);
+    expect(stored()).toMatchObject({ auto: "running", awaiting: true, position: 2 });
+    expect(stored().message).toContain("release year 2024");
+    // The user picks the nearest year themselves.
+    const yearBox = fake.doc.querySelector('input[aria-label="Release Year"]')?.closest("div")?.parentElement;
+    const chosen = fake.doc.createElement("div");
+    chosen.className = "css-user-singleValue";
+    chosen.textContent = "2025";
+    yearBox?.append(chosen);
+    await page.whenAutoIdle();
+    expect(stored()).toMatchObject({ position: DATE.length, auto: "off", awaiting: false });
+  });
+
+  it("pauses as a problem, in plain words, when the Tags and Albums section cannot be opened", async () => {
+    const { page, stored, begin } = setup({ release: { collapsed: true, noExpander: true } });
+    await begin(DATE);
+    await page.whenAutoIdle();
+    expect(stored()).toMatchObject({ auto: "paused", pauseReason: "problem", position: 0, busy: false });
+    expect(stored().message).toBe("Open the Tags and Albums section, then press Next.");
+  });
+});

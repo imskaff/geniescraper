@@ -103,6 +103,16 @@ export async function chooseOption(
   return false;
 }
 
+/** Poll until `done()` is true or the select timeout is up; the answer is whether it became true. */
+export async function waitFor(done: () => boolean, timing: ComboboxTiming): Promise<boolean> {
+  const deadline = Date.now() + timing.selectMs;
+  while (Date.now() < deadline) {
+    if (done()) return true;
+    await sleep(timing.pollMs);
+  }
+  return done();
+}
+
 /** Wait for `text` to appear as a chip in `box`. */
 export async function waitForChip(box: Element, text: string, timing: ComboboxTiming): Promise<boolean> {
   const deadline = Date.now() + timing.selectMs;

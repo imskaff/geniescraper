@@ -48,6 +48,55 @@ export function creditsExpander(form: HTMLFormElement): HTMLButtonElement | null
   return button && /^Expand\b/i.test(button.textContent.trim()) ? button : null;
 }
 
+/**
+ * The Release Date fieldset: three single-select comboboxes, found by their aria-label (captured from the live form;
+ * their react-select ids change on every open). They live in the collapsible Tags and Albums region, which can be
+ * closed, and then its content is hidden. ASSUMED, not yet confirmed on a live form: the control that opens the region
+ * carries aria-controls with the region's id and an aria-expanded state; a closed region has aria-hidden="true".
+ */
+export const RELEASE_LABELS = {
+  release_month: "Release Month",
+  release_day: "Release Day",
+  release_year: "Release Year",
+} as const;
+
+export const TAGS_REGION_ID = "collapsible-tags_albums-content";
+
+export function releaseInput(doc: Document, label: string): HTMLInputElement | null {
+  return doc.querySelector<HTMLInputElement>(`input[role="combobox"][aria-label="${label}"]`);
+}
+
+/** Whether the Tags and Albums region is closed (its content is hidden). False when the page has no such region. */
+export function tagsCollapsed(doc: Document): boolean {
+  return doc.getElementById(TAGS_REGION_ID)?.getAttribute("aria-hidden") === "true";
+}
+
+/** The control that opens the Tags and Albums region, only while the region is closed: never one that would close it. */
+export function tagsExpander(doc: Document): HTMLElement | null {
+  const control = doc.querySelector<HTMLElement>(`[aria-controls="${TAGS_REGION_ID}"]`);
+  if (!control) return null;
+  const expanded = control.getAttribute("aria-expanded");
+  return expanded === "false" || (expanded === null && tagsCollapsed(doc)) ? control : null;
+}
+
+/**
+ * The box of a single-select dropdown that holds its chosen value: the largest ancestor of the input that contains no
+ * other combobox. (react-select's own classes are hashed, so none is relied on.)
+ */
+export function dropdownBox(input: HTMLInputElement): HTMLElement {
+  let box: HTMLElement = input;
+  for (;;) {
+    const parent = box.parentElement;
+    if (!parent || parent.querySelectorAll('input[role="combobox"]').length !== 1) return box;
+    box = parent;
+  }
+}
+
+/** The value a single-select dropdown shows ("" while it is empty and shows its placeholder). */
+export function singleValueText(box: Element): string {
+  return box.querySelector('[class*="singleValue"]')?.textContent.trim() ?? "";
+}
+
 export function addCreditsButton(form: HTMLFormElement): HTMLButtonElement | null {
   for (const button of form.querySelectorAll("button")) {
     if (button.textContent.trim() === ADD_CREDITS_TEXT) return button;

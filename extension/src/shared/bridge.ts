@@ -26,6 +26,9 @@ export const QUEUE_KINDS: ReadonlySet<string> = new Set([
   "copyright_notice",
   "youtube_url",
   "cover_art",
+  "release_month",
+  "release_day",
+  "release_year",
 ]);
 
 export type SimpleCommand = "fill-next" | "back" | "skip" | "pause" | "resume" | "stop" | "get-status";

@@ -266,6 +266,9 @@ export const STEP_LABELS: Readonly<Record<QueueKind, string>> = {
   copyright_notice: "Artist in this role (© label)",
   youtube_url: "YouTube URL",
   cover_art: "Song art URL",
+  release_month: "Release month",
+  release_day: "Release day",
+  release_year: "Release year",
 };
 
 /**
@@ -300,6 +303,12 @@ export function instruction(state: PasteState, hotkey: string): string {
       return `Press ${key} to fill in the YouTube URL.`;
     case "cover_art":
       return `Press ${key} to fill in the song art URL.`;
+    case "release_month":
+      return `Press ${key} to choose ${value} as the release month.`;
+    case "release_day":
+      return `Press ${key} to choose ${value} as the release day.`;
+    case "release_year":
+      return `Press ${key} to choose ${value} as the release year.`;
   }
 }
 

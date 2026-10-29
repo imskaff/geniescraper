@@ -13,6 +13,43 @@ import { words } from "../../src/core/text";
 import { boxOf } from "../../src/genius/selectors";
 
 const FIXTURE = join(import.meta.dirname, "..", "..", "..", "tests", "fixtures", "genius-edit-form.html");
+const RELEASE_FIXTURE = join(import.meta.dirname, "..", "..", "..", "tests", "fixtures", "genius-release-date.html");
+
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+/** How the Release Date dropdowns spell their options: the real texts are not known, so each style is tried. */
+export interface ReleaseOptions {
+  /** "names" (May), "short" (May, Sep), "numbers" (5), "padded" (05) or "both" (May - 5). Default names. */
+  months?: "names" | "short" | "numbers" | "padded" | "both" | "odd";
+  /** Days spelled with a leading zero (05). */
+  paddedDays?: boolean;
+  /** The day options exactly as given, instead of 1 to 31. */
+  days?: string[];
+  years?: number[];
+  /** The Tags and Albums section starts closed (aria-hidden) and opens through its control. */
+  collapsed?: boolean;
+  /** While closed, the dropdowns are not in the page at all. */
+  unmountedWhenCollapsed?: boolean;
+  /** Leave out the control that opens the section. */
+  noExpander?: boolean;
+  /** Leave the Release Date fieldset out of the form. */
+  absent?: boolean;
+  /** A value the dropdowns already hold, by input label ("Release Month": "May"). */
+  preset?: Record<string, string>;
+}
 
 export const ARTISTS = [
   "Billie Eilish",
@@ -53,6 +90,8 @@ export interface FakeOptions {
    * a song that already has some: while collapsed there are no rows and no Add button in the page at all.
    */
   collapsedRoles?: boolean;
+  /** How the Release Date dropdowns behave; the fieldset is always in the form unless `absent`. */
+  release?: ReleaseOptions;
 }
 
 export interface FakeGenius {
@@ -73,6 +112,10 @@ export interface FakeGenius {
   plainEvents: string[];
   /** How many times the Expand button of the collapsed additional credits was pressed. */
   expands: number;
+  /** How many times the control of the Tags and Albums section was pressed. */
+  tagsToggles: number;
+  /** The option lists of the Release Date dropdowns, by input label. */
+  releaseOptions: Record<string, string[]>;
 }
 
 const SUGGESTION_LIMIT = 10;
@@ -110,6 +153,8 @@ export function loadFakeGenius(options: FakeOptions = {}): FakeGenius {
     plainKeys: [],
     plainEvents: [],
     expands: 0,
+    tagsToggles: 0,
+    releaseOptions: {},
   };
   const artists = options.artists ?? ARTISTS;
   const roles = options.roles ?? ROLES;
@@ -120,6 +165,8 @@ export function loadFakeGenius(options: FakeOptions = {}): FakeGenius {
   doc.querySelector('button[aria-label="Cancel"]')?.addEventListener("click", () => fake.cancelClicks++);
 
   const fieldName = (input: HTMLInputElement): string => {
+    const aria = input.getAttribute("aria-label");
+    if (aria) return aria;
     const label = input
       .closest("label")
       ?.querySelector("span")
@@ -242,6 +289,8 @@ export function loadFakeGenius(options: FakeOptions = {}): FakeGenius {
       input.addEventListener(type, () => fake.plainEvents.push(`${input.name}:${type}`));
   }
 
+  if (!options.release?.absent) addReleaseDate(fake, options.release ?? {}, delay);
+
   // Additional credits: the fixture holds one empty row to copy from.
   const rows = form.querySelector<HTMLElement>('[class*="RepeatableInputPair__Rows"]');
   const template = rows?.firstElementChild?.cloneNode(true) as HTMLElement | undefined;
@@ -299,6 +348,143 @@ export function loadFakeGenius(options: FakeOptions = {}): FakeGenius {
   }
 
   return fake;
+}
+
+/**
+ * The Release Date fieldset, from the captured fixture, inside its collapsible region. Each dropdown is a
+ * single-select: typing filters its options (react-select matches the text anywhere in the label), Enter on the focused
+ * option shows it as the single value and removes the placeholder.
+ */
+function addReleaseDate(fake: FakeGenius, release: ReleaseOptions, delay: number): void {
+  const { doc, form } = fake;
+  const parsed = new DOMParser().parseFromString(readFileSync(RELEASE_FIXTURE, "utf-8"), "text/html");
+  const region = parsed.getElementById("collapsible-tags_albums-content");
+  if (!region) throw new Error("release fixture has no region");
+  const node = doc.importNode(region, true);
+  form.append(node);
+
+  const style = release.months ?? "names";
+  const monthText = (n: number): string => {
+    const name = MONTH_NAMES[n - 1] ?? "";
+    switch (style) {
+      case "names":
+        return name;
+      case "short":
+        return name.slice(0, 3);
+      case "numbers":
+        return String(n);
+      case "padded":
+        return String(n).padStart(2, "0");
+      case "both":
+        return `${name} - ${String(n)}`;
+      case "odd":
+        return `Mayo ${String(n)}`; // spellings that must never be taken for a month
+    }
+  };
+  const lists: Record<string, string[]> = {
+    "Release Month": Array.from({ length: 12 }, (_, i) => monthText(i + 1)),
+    "Release Day":
+      release.days ??
+      Array.from({ length: 31 }, (_, i) => (release.paddedDays ? String(i + 1).padStart(2, "0") : String(i + 1))),
+    "Release Year": (release.years ?? Array.from({ length: 80 }, (_, i) => 2030 - i)).map(String),
+  };
+  fake.releaseOptions = lists;
+
+  for (const input of node.querySelectorAll<HTMLInputElement>('input[role="combobox"]')) {
+    const label = input.getAttribute("aria-label") ?? "";
+    const list = lists[label] ?? [];
+    const box = (): HTMLElement => {
+      let at: HTMLElement = input;
+      while (at.parentElement && at.parentElement.querySelectorAll('input[role="combobox"]').length === 1)
+        at = at.parentElement;
+      return at;
+    };
+    const closeMenu = (): void => {
+      doc.getElementById(input.getAttribute("aria-controls") ?? "")?.remove();
+      input.setAttribute("aria-expanded", "false");
+      input.setAttribute("aria-activedescendant", "");
+    };
+    const choose = (text: string): void => {
+      box().querySelector('[id$="-placeholder"]')?.remove();
+      box().querySelector('[class*="singleValue"]')?.remove();
+      const single = element(doc, "div", { class: "css-1dimb5e-singleValue" }, text);
+      input.parentElement?.parentElement?.insertBefore(single, input.parentElement);
+      input.value = "";
+      fake.chosen.push(`${label}: ${text}`);
+    };
+    if (release.preset?.[label]) choose(release.preset[label]);
+
+    input.addEventListener("input", () => {
+      const typed = input.value;
+      if (!typed) {
+        closeMenu();
+        return;
+      }
+      setTimeout(() => {
+        if (input.value !== typed) return;
+        closeMenu();
+        const base = input.id.replace(/-input$/, "");
+        const hits = list.filter((text) => text.toLowerCase().includes(typed.toLowerCase()));
+        if (hits.length === 0) return; // react-select shows "No options", which is not an option
+        const listbox = element(doc, "div", { id: `${base}-listbox`, role: "listbox" });
+        hits.forEach((text, i) => {
+          listbox.append(
+            element(doc, "div", { id: `${base}-option-${String(i)}`, role: "option", tabindex: "-1" }, text),
+          );
+        });
+        box().querySelector(".css-b62m3t-container")?.append(listbox);
+        input.setAttribute("aria-controls", listbox.id);
+        input.setAttribute("aria-expanded", "true");
+        input.setAttribute("aria-activedescendant", `${base}-option-0`);
+      }, delay);
+    });
+    input.addEventListener("keydown", (event) => {
+      const open = input.getAttribute("aria-expanded") === "true";
+      if (event.key === "Enter") {
+        fake.enters.push({ open, field: label });
+        if (!open) return;
+        const active = doc.getElementById(input.getAttribute("aria-activedescendant") ?? "");
+        if (active) choose(active.textContent.trim());
+        closeMenu();
+        return;
+      }
+      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+      const ids = [
+        ...(doc.getElementById(input.getAttribute("aria-controls") ?? "")?.querySelectorAll('[role="option"]') ?? []),
+      ].map((o) => o.id);
+      const at = ids.indexOf(input.getAttribute("aria-activedescendant") ?? "");
+      const next = Math.min(ids.length - 1, Math.max(0, at + (event.key === "ArrowDown" ? 1 : -1)));
+      if (ids[next]) input.setAttribute("aria-activedescendant", ids[next]);
+    });
+  }
+
+  // The control of the section: a press toggles it, as the real one would, and is counted.
+  const content = [...node.children];
+  const setOpen = (open: boolean): void => {
+    node.setAttribute("aria-hidden", open ? "false" : "true");
+    if (release.unmountedWhenCollapsed) {
+      if (open) node.replaceChildren(...content);
+      else node.replaceChildren();
+    }
+  };
+  if (!release.noExpander) {
+    const control = element(doc, "button", {
+      type: "button",
+      "aria-controls": "collapsible-tags_albums-content",
+      "aria-expanded": release.collapsed ? "false" : "true",
+    });
+    control.textContent = "Tags and Albums";
+    node.before(control);
+    control.addEventListener("click", () => {
+      fake.tagsToggles++;
+      const open = control.getAttribute("aria-expanded") !== "true";
+      setTimeout(() => {
+        control.setAttribute("aria-expanded", String(open));
+        setOpen(open);
+      }, delay);
+    });
+  }
+  if (release.collapsed) setOpen(false);
 }
 
 /** Chips shown in a field, as their label text. */
