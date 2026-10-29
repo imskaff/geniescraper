@@ -76,6 +76,13 @@ body {
     sans-serif;
 }
 
+/* As a toolbar popup (Safari) the page sets its own size; as a side panel the browser does. */
+html.popup body {
+  width: 380px;
+  min-height: 480px;
+  max-height: 600px;
+}
+
 #app {
   max-width: 40rem;
   margin: 0 auto;
@@ -198,9 +205,10 @@ label {
   color: var(--muted);
 }
 
-/* Room for three lines, whichever of the link screen's two messages shows, so the detector below stays put. */
-#link-help {
-  min-height: 4.5em;
+/* The link form keeps the height of its longest help text (three lines), with Get credits right under whatever text
+   shows, so the detector below it stays put and has room of its own. */
+.link-form {
+  min-height: 13em;
 }
 
 h2 + .help {
@@ -546,7 +554,7 @@ select.field {
 .detector {
   position: relative;
   overflow: hidden;
-  margin: 0 0 var(--space-4);
+  margin: var(--space-4) 0 var(--space-4);
   padding: var(--space-3);
   background: var(--surface);
   border: 1px solid var(--surface-hi);

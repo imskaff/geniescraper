@@ -35,3 +35,4 @@ extension/node_modules/
 extension/dist/
 extension/release/
 extension/store/assets/
+extension/dist-safari/

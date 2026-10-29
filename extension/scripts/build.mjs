@@ -1,12 +1,16 @@
 // Bundles the extension into dist/, which is what gets loaded unpacked or zipped for the store.
 // Output stays unminified and the CSP stays at the MV3 default: reviewers must be able to read what ships.
 import { build } from "esbuild";
-import { cp, mkdir, readdir, rm } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { toSafariManifest } from "./lib/safari-manifest.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const dist = join(root, "dist");
+// `--safari` builds the Safari variant (popup instead of side panel) into dist-safari/, for the Mac converter step.
+const safari = process.argv.includes("--safari");
+const outDir = safari ? "dist-safari" : "dist";
+const dist = join(root, outDir);
 
 const ENTRY_POINTS = {
   "background/worker": "src/background/worker.ts",
@@ -29,7 +33,7 @@ for (const name of await readdir(dist)) await rm(join(dist, name), { recursive: 
 await build({
   absWorkingDir: root,
   entryPoints: ENTRY_POINTS,
-  outdir: "dist",
+  outdir: outDir,
   bundle: true,
   format: "iife",
   target: "chrome120",
@@ -45,4 +49,9 @@ for (const path of STATIC_PATHS) {
 for (const [from, to] of Object.entries(STATIC_FILES)) {
   await mkdir(dirname(join(dist, to)), { recursive: true });
   await cp(join(root, from), join(dist, to));
+}
+
+if (safari) {
+  const chromeManifest = JSON.parse(await readFile(join(root, "manifest.json"), "utf-8"));
+  await writeFile(join(dist, "manifest.json"), JSON.stringify(toSafariManifest(chromeManifest), null, 2) + "\n");
 }

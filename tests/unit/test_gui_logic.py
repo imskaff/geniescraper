@@ -1,6 +1,6 @@
 import pytest
 
-from gui.logic import classify_url, friendly_error, hotkey_error, queue_summary, url_hint
+from gui.logic import classify_url, friendly_error, hotkey_error, prefetch_plan, queue_summary, url_hint
 
 
 @pytest.mark.parametrize(
@@ -79,3 +79,17 @@ def test_queue_summary_empty():
 )
 def test_hotkey_rules(key, other, ok):
     assert (hotkey_error(key, other) is None) is ok
+
+
+@pytest.mark.parametrize(
+    ("reads", "limit", "lookahead"),
+    [
+        (1, 1, 2),  # the default: one track read at a time, two ahead of the one being pasted
+        (2, 2, 2),
+        (3, 3, 3),
+        (5, 5, 5),
+        (0, 1000, 1000),  # all of them at once
+    ],
+)
+def test_prefetch_plan(reads, limit, lookahead):
+    assert prefetch_plan(reads) == (limit, lookahead)

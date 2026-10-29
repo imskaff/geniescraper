@@ -63,16 +63,16 @@ async def fetch_track(url: str, track_index: int, track_title: str, artist: str)
         cover_task = asyncio.create_task(fetch_cover(url, search_title, artist))
         youtube_task = asyncio.create_task(youtube.fetch_youtube_url(search_title, artist))
         song, cover_url, yt_result = await asyncio.gather(scrape_task, cover_task, youtube_task)
-        yt_url, yt_is_mv = yt_result
+        yt_url, yt_kind = yt_result
     else:
         song = await scrape_task
-        cover_url, yt_url, yt_is_mv = "", "", False
+        cover_url, yt_url, yt_kind = "", "", None
 
     yt_title = song.title or search_title
     yt_artist = song.artist or artist
     if not yt_url and yt_title and yt_artist and yt_title != "Unknown":
         try:
-            yt_url, yt_is_mv = await youtube.fetch_youtube_url(yt_title, yt_artist)
+            yt_url, yt_kind = await youtube.fetch_youtube_url(yt_title, yt_artist)
         except Exception:
             pass
 
@@ -83,4 +83,4 @@ async def fetch_track(url: str, track_index: int, track_title: str, artist: str)
             pass
 
     cover_url = song.cover_art_url or cover_url
-    return song.model_copy(update={"cover_art_url": cover_url, "youtube_url": yt_url, "youtube_is_mv": yt_is_mv})
+    return song.model_copy(update={"cover_art_url": cover_url, "youtube_url": yt_url, "youtube_kind": yt_kind})

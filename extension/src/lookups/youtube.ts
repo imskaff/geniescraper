@@ -1,6 +1,7 @@
 // Find a song's YouTube link, ported from scraper.youtube. The scoring and the order of the phases are the desktop
 // app's, so the two pick the same video; the page access is behind `YoutubePages`, so everything here runs offline
 // against saved pages. Best-effort: every failure gives no link and never breaks a read.
+import type { VideoKind } from "../core/models";
 import { coreTitleWords, words } from "../core/text";
 
 /** What the lookup needs from YouTube: the parsed data of a results page and of a watch page, or null. */
@@ -14,7 +15,12 @@ export interface YoutubePages {
 export interface YoutubeLink {
   url: string;
   isMusicVideo: boolean;
+  /** Which kind of video it is; absent when there is no link. */
+  kind?: VideoKind;
 }
+
+/** What an audio-phase score means: 3 a lyric video, 2 the artist's own audio, 1 the auto-generated upload. */
+const AUDIO_KINDS: Readonly<Record<number, VideoKind>> = { 3: "lyric-video", 2: "official-audio", 1: "auto-generated" };
 
 const NONE: YoutubeLink = { url: "", isMusicVideo: false };
 
@@ -531,9 +537,10 @@ export async function findYoutube(
     }
 
     const bestMv = [...mv].sort(byScoreThenRank)[0];
-    if (bestMv) return { url: bestMv[2], isMusicVideo: true };
+    if (bestMv) return { url: bestMv[2], isMusicVideo: true, kind: "music-video" };
     const bestAudio = [...audio].sort(byScoreThenRank)[0];
-    if (bestAudio) return { url: bestAudio[2], isMusicVideo: false };
+    const kind = bestAudio ? AUDIO_KINDS[bestAudio[0]] : undefined;
+    if (bestAudio && kind) return { url: bestAudio[2], isMusicVideo: false, kind };
     return NONE;
   } catch {
     return NONE;

@@ -1,7 +1,7 @@
 // Renders the controller's state. The structure follows the accessibility basics rather than decoration:
 // real headings, labelled controls, a status and an alert region that are never rebuilt (so announcements
 // fire), focus moved to the new screen's heading, and focus kept where it was across a re-render.
-import type { QueueKind, SongCredits } from "../core/models";
+import type { QueueKind, SongCredits, VideoKind } from "../core/models";
 import type { AlbumInfo } from "../shared/messages";
 import { shownTrack, type TrackResult } from "../shared/session";
 import { trackHealth, type Health, type HealthLevel } from "../core/trackHealth";
@@ -46,6 +46,19 @@ const HEALTH_MARKS: Readonly<Record<HealthLevel, string>> = {
 };
 
 /** Only https links are made clickable; the value shown is always the text. */
+const VIDEO_KIND_LABELS: Readonly<Record<VideoKind, string>> = {
+  "music-video": "music video",
+  "lyric-video": "lyric video",
+  "official-audio": "official audio",
+  "auto-generated": "auto-generated",
+};
+
+/** What to call the song's link: its kind when known, otherwise what the older record can say. */
+function videoKindLabel(song: Pick<SongCredits, "youtubeKind" | "youtubeIsMv">): string {
+  if (song.youtubeKind) return VIDEO_KIND_LABELS[song.youtubeKind];
+  return song.youtubeIsMv ? "music video" : "audio";
+}
+
 function isHttps(value: string): boolean {
   return URL.canParse(value) && new URL(value).protocol === "https:";
 }
@@ -277,6 +290,31 @@ export class PanelView {
 
   private linkScreen(state: PanelState): Node[] {
     const busy = state.busy === "detect";
+    const start = this.draft ?? state.pageUrl;
+    // Get credits needs a link: it stays off while the box is empty and while a page is being read.
+    const go = el(
+      "button",
+      {
+        class: "button primary",
+        attrs: {
+          type: "submit",
+          "data-key": "go",
+          ...(busy ? { "aria-label": "Reading the page…" } : {}),
+          ...(busy || start.trim() === "" ? { disabled: "" } : {}),
+        },
+      },
+      "Get credits",
+      // Three dots that light up one after another while the page is read.
+      busy
+        ? el(
+            "span",
+            { class: "dots", attrs: { "aria-hidden": "true" } },
+            el("i", { text: "." }),
+            el("i", { text: "." }),
+            el("i", { text: "." }),
+          )
+        : null,
+    );
     const input = el("input", {
       class: "field",
       attrs: {
@@ -293,15 +331,16 @@ export class PanelView {
       on: {
         input: (event) => {
           this.draft = (event.target as HTMLInputElement).value;
+          go.disabled = busy || this.draft.trim() === "";
         },
       },
     });
-    input.value = this.draft ?? state.pageUrl;
+    input.value = start;
 
     const form = el(
       "form",
       {
-        class: "stack",
+        class: "stack link-form",
         attrs: { novalidate: "" },
         on: {
           submit: (event) => {
@@ -320,28 +359,7 @@ export class PanelView {
           : "Open an album or song on Apple Music and paste its link.",
         attrs: { id: "link-help" },
       }),
-      el(
-        "button",
-        {
-          class: "button primary",
-          attrs: {
-            type: "submit",
-            "data-key": "go",
-            ...(busy ? { disabled: "", "aria-label": "Reading the page…" } : {}),
-          },
-        },
-        "Get credits",
-        // Three dots that light up one after another while the page is read.
-        busy
-          ? el(
-              "span",
-              { class: "dots", attrs: { "aria-hidden": "true" } },
-              el("i", { text: "." }),
-              el("i", { text: "." }),
-              el("i", { text: "." }),
-            )
-          : null,
-      ),
+      go,
     );
     return [this.heading("Get credits from Apple Music"), form, ...this.openPages(state)];
   }
@@ -653,11 +671,7 @@ export class PanelView {
     if (song.youtubeUrl) {
       groups.append(
         el("dt", {
-          text: song.youtubeByUser
-            ? "YouTube (your link)"
-            : song.youtubeIsMv
-              ? "YouTube (music video)"
-              : "YouTube (audio)",
+          text: song.youtubeByUser ? "YouTube (your link)" : `YouTube (${videoKindLabel(song)})`,
         }),
         el(
           "dd",

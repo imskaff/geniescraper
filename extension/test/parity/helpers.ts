@@ -15,7 +15,7 @@ export function songFromVector(name: SongName): SongCredits {
     copyrightNotice: raw.copyright_notice,
     coverArtUrl: raw.cover_art_url,
     youtubeUrl: raw.youtube_url,
-    youtubeIsMv: raw.youtube_is_mv,
+    youtubeIsMv: raw.youtube_kind === "music-video",
   };
 }
 

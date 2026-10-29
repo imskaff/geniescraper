@@ -71,7 +71,7 @@ def _walk(on_screen: Callable[[Any, str], None]) -> None:
     from gui.app import App
 
     song = load_golden("eilish-hmhas-t3").model_copy(
-        update={"youtube_url": "https://www.youtube.com/watch?v=example", "youtube_is_mv": True}
+        update={"youtube_url": "https://www.youtube.com/watch?v=example", "youtube_kind": "music-video"}
     )
     album = AlbumTrackInfo(
         url="https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134",

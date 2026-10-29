@@ -191,21 +191,24 @@ class TestGeniusOrder:
 
         monkeypatch.setattr(yt, "_search", search)
         monkeypatch.setattr(yt, "_fetch_description", description)
-        url, is_mv = await yt.fetch_youtube_url("SOS", "SZA")
-        return url.split("=")[-1], is_mv
+        url, kind = await yt.fetch_youtube_url("SOS", "SZA")
+        return url.split("=")[-1], kind
 
     async def test_music_video_first(self, monkeypatch):
         got = await self.pick(monkeypatch, self.TOPIC, self.AUDIO, self.LYRIC, self.MV)
-        assert got == (self.MV[0], True)
+        assert got == (self.MV[0], "music-video")
 
     async def test_lyric_video_over_audio_and_topic(self, monkeypatch):
         got = await self.pick(monkeypatch, self.TOPIC, self.AUDIO, self.LYRIC)
-        assert got == (self.LYRIC[0], False)
+        assert got == (self.LYRIC[0], "lyric-video")
 
     async def test_official_audio_over_topic_even_when_listed_after_it(self, monkeypatch):
         got = await self.pick(monkeypatch, self.TOPIC, self.AUDIO)
-        assert got == (self.AUDIO[0], False)
+        assert got == (self.AUDIO[0], "official-audio")
 
     async def test_topic_only_when_nothing_better(self, monkeypatch):
         got = await self.pick(monkeypatch, self.TOPIC)
-        assert got == (self.TOPIC[0], False)
+        assert got == (self.TOPIC[0], "auto-generated")
+
+    async def test_no_kind_when_nothing_is_found(self, monkeypatch):
+        assert await self.pick(monkeypatch) == ("", None)

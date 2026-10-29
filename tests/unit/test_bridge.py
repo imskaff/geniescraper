@@ -464,7 +464,12 @@ async def authenticate(ws, secret=SECRET):
     nonce = "d" * 32
     await ws.send(
         json.dumps(
-            {"type": "hello", "v": 1, "nonce": nonce, "proof": b.compute_proof(secret, "client", challenge["nonce"], nonce)}
+            {
+                "type": "hello",
+                "v": 1,
+                "nonce": nonce,
+                "proof": b.compute_proof(secret, "client", challenge["nonce"], nonce),
+            }
         )
     )
     welcome = json.loads(await ws.recv())

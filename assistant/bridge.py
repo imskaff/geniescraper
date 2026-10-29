@@ -279,7 +279,11 @@ class ClientSession:
             if not hmac.compare_digest(expected.encode(), proof.encode()):
                 return _refuse("bad proof")
             self.ready = True
-            welcome = {"type": "welcome", "v": PROTOCOL_VERSION, "proof": compute_proof(self._secret, "server", self.nonce, client_nonce)}
+            welcome = {
+                "type": "welcome",
+                "v": PROTOCOL_VERSION,
+                "proof": compute_proof(self._secret, "server", self.nonce, client_nonce),
+            }
             return Reaction(sends=[welcome], events=[("ready",)])
         if message["type"] == "pair":
             code = message.get("code")

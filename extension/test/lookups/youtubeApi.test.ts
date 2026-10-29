@@ -191,6 +191,7 @@ describe("picking a video through the API, by the same rules as through the page
     expect(await findYoutube(pages, "SOS", "SZA")).toEqual({
       url: "https://www.youtube.com/watch?v=tafAB36p2sc",
       isMusicVideo: false,
+      kind: "auto-generated",
     });
   });
 
@@ -206,6 +207,7 @@ describe("picking a video through the API, by the same rules as through the page
     expect(await findYoutube(pages, "good 4 u", "Olivia Rodrigo")).toEqual({
       url: "https://www.youtube.com/watch?v=gNi_6U5Pm_o",
       isMusicVideo: true,
+      kind: "music-video",
     });
   });
 
@@ -246,6 +248,7 @@ describe("the service with a key", () => {
     expect(await yt.find("SOS", "SZA")).toEqual({
       url: "https://www.youtube.com/watch?v=tafAB36p2sc",
       isMusicVideo: false,
+      kind: "auto-generated",
       keyProblem: "",
     });
     expect(scraped).toEqual([]);
@@ -466,5 +469,9 @@ describe("the messages about the key", () => {
     expect(isYoutubeAnswer({ ...answer, keyProblem: "quota" })).toBe(true);
     expect(isYoutubeAnswer({ ...answer, keyProblem: "nonsense" })).toBe(false);
     expect(isYoutubeAnswer({ url: "", isMusicVideo: false, throttled: false })).toBe(false);
+    for (const kind of ["music-video", "lyric-video", "official-audio", "auto-generated"])
+      expect(isYoutubeAnswer({ ...answer, kind })).toBe(true);
+    expect(isYoutubeAnswer({ ...answer, kind: "podcast" })).toBe(false);
+    expect(isYoutubeAnswer({ ...answer, kind: 3 })).toBe(false);
   });
 });

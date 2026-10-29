@@ -5,6 +5,7 @@
     "artist": "SZA",
     "video_id": "GpDhsfSQVeE",
     "is_music_video": false,
+    "kind": "lyric-video",
     "accept": ["GpDhsfSQVeE"],
     "verified": "No official music video exists, so by Genius's order (music video, lyric video, official audio, auto-generated) the lyric video wins. GpDhsfSQVeE: 'SZA - SOS (Lyric Video)' on SZA's own channel (Official Artist Channel badge). Lower in the order, so no longer accepted: WxflcXmtVTM 'SZA - SOS (Audio)' on SZAVEVO (official audio) and tafAB36p2sc 'SOS' on SZA - Topic (auto-generated, 'Provided to YouTube by Top Dawg Entertainment/RCA Records'). Not MIOtiFP4GHI: 6-minute short film 'SOS Where The Hell Have You Been ?'."
   },
@@ -14,6 +15,7 @@
     "artist": "Olivia Rodrigo",
     "video_id": "gNi_6U5Pm_o",
     "is_music_video": true,
+    "kind": "music-video",
     "accept": ["gNi_6U5Pm_o"],
     "verified": "'Olivia Rodrigo - good 4 u (Official Video)' on OliviaRodrigoVEVO, 3:19, published 2021-05-13, description 'Directed by Petra Collins'."
   },
@@ -23,6 +25,7 @@
     "artist": "Billie Eilish",
     "video_id": "BY_XwvKogC8",
     "is_music_video": true,
+    "kind": "music-video",
     "accept": ["BY_XwvKogC8"],
     "verified": "'Billie Eilish - CHIHIRO (Official Music Video)' on BillieEilishVEVO, 5:24, published 2024-06-06, description 'Directed by Billie Eilish'."
   },
@@ -32,6 +35,7 @@
     "artist": "Taylor Swift",
     "video_id": "q3zqJs7JUCQ",
     "is_music_video": true,
+    "kind": "music-video",
     "accept": ["q3zqJs7JUCQ"],
     "verified": "'Taylor Swift - Fortnight (feat. Post Malone) (Official Music Video)' on the Taylor Swift channel, 4:09, published 2024-04-19, description 'The official music video for Fortnight'."
   },
@@ -41,6 +45,7 @@
     "artist": "Kendrick Lamar",
     "video_id": "H58vbez_m4E",
     "is_music_video": true,
+    "kind": "music-video",
     "accept": ["H58vbez_m4E"],
     "verified": "'Kendrick Lamar - Not Like Us' on KendrickLamarVEVO, 5:54, published 2024-07-04, description 'Directed by Dave Free & Kendrick Lamar'. Plain title, so only the description confirms it is the video."
   },
@@ -50,6 +55,7 @@
     "artist": "Kendrick Lamar",
     "video_id": "H58vbez_m4E",
     "is_music_video": true,
+    "kind": "music-video",
     "accept": ["H58vbez_m4E"],
     "verified": "Same song as kendrick-nlu-single."
   },
@@ -59,6 +65,7 @@
     "artist": "ROSALÍA & J Balvin",
     "video_id": "p7bfOZek9t4",
     "is_music_video": true,
+    "kind": "music-video",
     "accept": ["p7bfOZek9t4"],
     "verified": "'ROSALÍA, J Balvin - Con Altura (Official Video) ft. El Guincho' on RosaliaVEVO, 2:45, published 2019-03-28, description 'ROSALÍA & J. Balvin - Con Altura (Official Video)'."
   },
@@ -68,6 +75,7 @@
     "artist": "Adele",
     "video_id": "YQHsXMglC9A",
     "is_music_video": true,
+    "kind": "music-video",
     "accept": ["YQHsXMglC9A"],
     "verified": "Common-word title. 'Adele - Hello (Official Music Video)' on the Adele channel, 6:07, published 2015-10-22, description 'Hello is taken from the new album, 25'."
   },
@@ -77,6 +85,7 @@
     "artist": "The Kid LAROI & Justin Bieber",
     "video_id": "kTJczUoc26U",
     "is_music_video": true,
+    "kind": "music-video",
     "accept": ["kTJczUoc26U"],
     "verified": "Common-word title, two credited artists. 'The Kid LAROI, Justin Bieber - STAY (Official Video)' on TheKidLAROIVEVO, 2:38, published 2021-07-08, description 'Official video for Stay'."
   },
@@ -86,6 +95,7 @@
     "artist": "Bad Bunny & Jhay Cortez",
     "video_id": "TmKh7lAwnBI",
     "is_music_video": true,
+    "kind": "music-video",
     "accept": ["TmKh7lAwnBI"],
     "verified": "Non-ASCII title. 'BAD BUNNY x JHAY CORTEZ - DÁKITI (Video Oficial)' on the Bad Bunny channel, 3:34, published 2020-10-29."
   },
@@ -95,6 +105,7 @@
     "artist": "Beyoncé",
     "video_id": "bnVUHWCynig",
     "is_music_video": true,
+    "kind": "music-video",
     "accept": ["bnVUHWCynig"],
     "verified": "Non-ASCII artist, common-word title. 'Beyoncé - Halo' on BeyoncéVEVO, 3:45, published 2009-10-03, description 'Beyoncé's official music video for Halo'."
   },
@@ -104,6 +115,7 @@
     "artist": "Frank Ocean",
     "video_id": "uzS3WG6__G4",
     "is_music_video": false,
+    "kind": "official-audio",
     "accept": ["uzS3WG6__G4"],
     "verified": "No official music video exists, and the official channel is named 'Blonded' (Official Artist Channel badge), not 'Frank Ocean'. uzS3WG6__G4: 'Frank Ocean - Pink + White' on Blonded, 3:05, description '℗ Boys Don't Cry, Released August 20, 2016'."
   },
@@ -113,6 +125,7 @@
     "artist": "Luis Fonsi",
     "video_id": "kJQP7kiw5Fk",
     "is_music_video": true,
+    "kind": "music-video",
     "accept": ["kJQP7kiw5Fk"],
     "verified": "Featured artist in the title. 'Luis Fonsi - Despacito ft. Daddy Yankee' on LuisFonsiVEVO, 4:42, published 2017-01-12, 9.1B views. Not wJvppSr8BN4: reupload on an unofficial channel named 'YouTube VeVo'."
   },
@@ -122,6 +135,7 @@
     "artist": "Tyla",
     "video_id": "XoiOOiuH8iI",
     "is_music_video": true,
+    "kind": "music-video",
     "accept": ["XoiOOiuH8iI"],
     "verified": "Common-word title, short artist name. 'Tyla - Water (Official Music Video)' on TylaVEVO, 3:39, published 2023-10-05."
   },
@@ -131,6 +145,7 @@
     "artist": "BTS",
     "video_id": "gdZLi9oWNZg",
     "is_music_video": true,
+    "kind": "music-video",
     "accept": ["gdZLi9oWNZg"],
     "verified": "Official video lives on the label channel, not the artist channel. 'BTS (방탄소년단) 'Dynamite' Official MV' on HYBE LABELS (verified), 3:43, published 2020-08-20, description credits 'Director: Yong Seok Choi'."
   }

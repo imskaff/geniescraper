@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,6 +15,10 @@ def settings_path(appdata: str | None = None) -> Path:
 # It is still read (the per-user file wins) so existing settings carry over until the first save.
 _LEGACY_ENV_PATH = Path(__file__).parent.parent / ".env"
 _ENV_PATH = settings_path()
+
+
+# Tracks read at once, as the extension offers them; 0 is all of them.
+PARALLEL_CHOICES = (1, 2, 3, 5, 0)
 
 
 class Settings(BaseSettings):
@@ -39,9 +44,22 @@ class Settings(BaseSettings):
     auto_tab: bool = False  # Auto-press Tab after role/artist to navigate Genius fields
     always_on_top: bool = True  # Keep the window above the browser while pasting
 
+    # Tracks of an album read at once while the one before is being pasted: 1 (the default), 2, 3, 5 or 0 for all
+    parallel_reads: int = 1
+
     # Window position (-1 = not yet saved, use default centering)
     win_x: int = -1
     win_y: int = -1
+
+    @field_validator("parallel_reads", mode="before")
+    @classmethod
+    def _parallel_reads_choice(cls, value: object) -> int:
+        """Only the choices the settings window offers; anything else is the default."""
+        try:
+            reads = int(str(value))
+        except ValueError:
+            return 1
+        return reads if reads in PARALLEL_CHOICES else 1
 
     def save(self) -> None:
         """Persist current settings to the per-user settings file."""
@@ -73,6 +91,9 @@ class Settings(BaseSettings):
             f"AUTO_START_DELAY={self.auto_start_delay}",
             f"AUTO_TAB={str(self.auto_tab).lower()}",
             f"ALWAYS_ON_TOP={str(self.always_on_top).lower()}",
+            "",
+            "# Album tracks read at once while pasting: 1, 2, 3, 5, or 0 for all",
+            f"PARALLEL_READS={self.parallel_reads}",
             "",
             "# Last window position (set automatically on close)",
             f"WIN_X={self.win_x}",

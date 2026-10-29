@@ -6,6 +6,11 @@ export interface Credit {
   artists: string[];
 }
 
+/** What the song's YouTube link is, in Genius's order of preference. */
+export type VideoKind = "music-video" | "lyric-video" | "official-audio" | "auto-generated";
+
+export const VIDEO_KINDS: readonly VideoKind[] = ["music-video", "lyric-video", "official-audio", "auto-generated"];
+
 export interface SongCredits {
   title: string;
   artist: string;
@@ -16,6 +21,8 @@ export interface SongCredits {
   coverArtUrl: string;
   youtubeUrl: string;
   youtubeIsMv: boolean;
+  /** Which kind of video the link is; absent for a link saved before this was recorded, or one the user gave. */
+  youtubeKind?: VideoKind;
   /** True when the user pasted this link themselves, instead of the look-up finding it. */
   youtubeByUser?: boolean;
 }
