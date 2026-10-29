@@ -120,6 +120,7 @@ class App(ctk.CTk):
         self._link_before: ctk.CTkLabel | None = None
         self._ctl: dict[str, ctk.CTkButton] = {}
         self._auto_hint_lbl: ctk.CTkLabel | None = None
+        self._manual_card: ctk.CTkFrame | None = None  # the 'Manual mode' notice, shown only without the extension
         self._steps_heads: dict[str, ctk.CTkButton] = {}
         # The 'Open in your browser' card on the start screen, and what it currently shows.
         self._pages_card: ctk.CTkFrame | None = None
@@ -687,7 +688,7 @@ class App(ctk.CTk):
     def _show_assistant_screen(self, *, keep_run: bool = False) -> None:
         self._screen = "assistant"
         self._credits_in_countdown = False
-        self._link_lbl = self._link_before = self._auto_hint_lbl = None
+        self._link_lbl = self._link_before = self._auto_hint_lbl = self._manual_card = None
         self._ctl = {}
         self._steps_heads = {}
         self._clear()
@@ -758,6 +759,7 @@ class App(ctk.CTk):
             self, text="", anchor="w", justify="left", wraplength=560, font=_f(12), text_color=theme.TEXT
         )
         self._card_instr_lbl.pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_2))
+        self._build_manual_card(compact)
 
         # Buttons, in the extension's order.
         controls = ctk.CTkFrame(self, fg_color="transparent")
@@ -793,6 +795,47 @@ class App(ctk.CTk):
         self._render_link()
         self._register_assistant_keys()
         threading.Thread(target=self._wait_esc, daemon=True).start()
+
+    def _build_manual_card(self, compact: bool) -> None:
+        """The 'Manual mode' notice. It is packed by _render_controls while no extension is connected."""
+        card = ctk.CTkFrame(self, corner_radius=12, fg_color=theme.SURFACE, border_width=1, border_color=theme.BORDER)
+        if compact:
+            # One line: the window is only 300 tall, so the explanation lives in the full-size screen.
+            row = ctk.CTkFrame(card, fg_color="transparent")
+            row.pack(fill="x", padx=theme.SPACE_3, pady=theme.SPACE_2)
+            ctk.CTkLabel(
+                row, text="Manual mode: extension not connected", font=_f(12, "bold"), text_color=theme.TEXT
+            ).pack(side="left")
+            connect = self._button(row, "Connect browser extension", self._connect_extension, primary=True, width=200)
+            connect.configure(height=28)
+            connect.pack(side="right")
+        else:
+            ctk.CTkLabel(card, text="Manual mode", font=_f(13, "bold"), text_color=theme.TEXT, anchor="w").pack(
+                fill="x", padx=theme.SPACE_4, pady=(theme.SPACE_3, 0)
+            )
+            ctk.CTkLabel(
+                card,
+                text=(
+                    "The browser extension is not connected, so Géniescraper cannot see Genius. "
+                    f"Click each field yourself, then press {settings.hotkey.upper()}. "
+                    "It cannot tell what is already filled in (use Skip for those) or check that an artist exists."
+                ),
+                font=_f(12),
+                text_color=theme.MUTED,
+                anchor="w",
+                justify="left",
+                wraplength=520,
+            ).pack(fill="x", padx=theme.SPACE_4, pady=(theme.SPACE_1, theme.SPACE_2))
+            connect = self._button(card, "Connect browser extension", self._connect_extension, primary=True, width=220)
+            connect.pack(anchor="w", padx=theme.SPACE_4, pady=(0, theme.SPACE_3))
+        self._manual_card = card
+
+    def _connect_extension(self) -> None:
+        """Open Settings at the link card and start pairing, so the code is on screen to copy."""
+        self._open_settings()
+        win = self._settings_win
+        if win is not None and win.winfo_exists():
+            win.show_link()
 
     def _control(self, master, text: str, command, width: int) -> ctk.CTkButton:
         return ctk.CTkButton(
@@ -873,19 +916,8 @@ class App(ctk.CTk):
             settings.save()
 
     def _next_clicked(self) -> None:
-        """Next: the extension fills the step; without it the hotkey's keys are sent to whatever window is behind."""
-        if self.link.command("fill-next"):
-            return
-        if self.link.bridged:
-            return
-        self.iconify()  # the keys must reach the browser, not this window
-
-        def run() -> None:
-            time.sleep(0.35)
-            self._on_hotkey()
-            self.after(0, self.deiconify)
-
-        threading.Thread(target=run, daemon=True).start()
+        """Next is only on screen while the extension runs the paste: it fills the step."""
+        self.link.command("fill-next")
 
     def _ask_back_to_credits(self) -> None:
         self._show_esc_confirm(to_credits=True)
@@ -1450,7 +1482,7 @@ class App(ctk.CTk):
             text=f"Next ({settings.hotkey.upper()})",
             state="disabled" if finished or (bridged and bool(link.status and link.status.busy)) else "normal",
         )
-        if on:
+        if on or not bridged:  # without the extension the hotkeys are the only way: no Next button, no window tricks
             nxt.pack_forget()
         elif not nxt.winfo_ismapped():
             nxt.pack(side="left", padx=(0, theme.SPACE_2), before=ctl["back"])
@@ -1458,7 +1490,14 @@ class App(ctk.CTk):
             text=f"Previous ({settings.back_hotkey.upper()})", state="disabled" if self._pos == 0 else "normal"
         )
         ctl["skip"].configure(state="disabled" if finished else "normal")
-        hint = "" if bridged else (_AUTO_HINT_IDLE if link.connected else _AUTO_HINT_OFFLINE)
+        card = self._manual_card
+        if card is not None:
+            if link.connected:
+                card.pack_forget()
+            elif not card.winfo_manager():
+                card.pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_2), after=self._card_instr_lbl)
+        compact_notice = settings.compact_mode and card is not None and bool(card.winfo_manager())
+        hint = "" if bridged or compact_notice else (_AUTO_HINT_IDLE if link.connected else _AUTO_HINT_OFFLINE)
         if self._auto_hint_lbl is not None:
             if hint:
                 self._auto_hint_lbl.configure(text=hint)
@@ -1471,7 +1510,15 @@ class App(ctk.CTk):
             return "Auto-paste is filling the form. It pauses if you use Genius; press Auto-paste to take over."
         if self.link.bridged:
             return f"Press Next here, or {settings.hotkey.upper()} on the Genius page, to fill this step."
-        return flow.instruction_text(self._queue, self._pos, settings.hotkey)
+        text = flow.instruction_text(self._queue, self._pos, settings.hotkey)
+        if (
+            not settings.compact_mode  # compact mode has no room: its notice line says it
+            and self._pos < len(self._queue)
+            and self._queue[self._pos][0] not in flow.CLIPBOARD_ONLY_KINDS
+        ):
+            hk = settings.hotkey.upper()
+            text += "\n" + f"Click the field on Genius first: {hk} pastes wherever your cursor is."
+        return text
 
     def _show_done_screen(self) -> None:
         self._screen = "done"

@@ -21,7 +21,7 @@ pytestmark = [
 
 EXPECTED_SCREENS = [
     "01-start", "02-start-url", "03-start-error", "03-start-open-pages", "04-settings", "05-tracks", "06-loading",
-    "07-credits", "08-assistant-start", "09-assistant-middle", "09b-assistant-linked-auto",
+    "07-credits", "08-assistant-start", "09-assistant-middle", "09a-settings-from-connect", "09b-assistant-linked-auto",
     "09c-assistant-linked-manual", "09d-assistant-linked-message", "10-esc-confirm",
     "11-assistant-compact", "12-done",
 ]  # fmt: skip
@@ -90,6 +90,7 @@ def _check_hotkey_path(window: Any) -> dict[str, Any]:
             mock.patch("gui.app.keyboard.press_and_release", side_effect=keys.append),
             mock.patch("gui.app.pyperclip.copy"),
             mock.patch("gui.app.time.sleep"),
+            mock.patch.object(window, "iconify") as iconify,
         ):
             window._pos = 0
             window._on_hotkey()  # a songwriter, then a role: Enter, then Tab, Tab, Enter to Add additional credits
@@ -100,16 +101,27 @@ def _check_hotkey_path(window: Any) -> dict[str, Any]:
             after_clipboard = list(keys)
     finally:
         window._queue, window._pos = old_queue, old_pos
-    return {"name": after_name, "clipboard": after_clipboard}
+    return {
+        "name": after_name,
+        "clipboard": after_clipboard,
+        "iconified": iconify.called,
+        "window_state": window.state(),
+    }
 
 
 def _check_assistant_controls(window: Any) -> dict[str, Any]:
-    """With no extension: Next is the manual step, Auto-paste is grayed out and says why."""
+    """With no extension: no Next button, Auto-paste is grayed out and says why, the manual-mode notice is up."""
     window._pos = 0
     window._render_assistant()
     window.update()
     seen: dict[str, Any] = {"at_start": _buttons(window), "hint": window._auto_hint_lbl.cget("text")}
     seen["texts"] = _texts(window)
+    seen["instruction"] = window._card_instr_lbl.cget("text")
+    card = window._manual_card
+    seen["notice_shown"] = bool(card.winfo_ismapped())
+    seen["notice_texts"] = _texts(card)
+    seen["notice_above_buttons"] = card.winfo_y() < window._ctl["auto"].master.winfo_y()
+    seen["window_state"] = window.state()
     seen["settings_label_texts"] = []
     window._pos = 21
     window._render_assistant()
@@ -130,6 +142,35 @@ def _check_assistant_controls(window: Any) -> dict[str, Any]:
     seen["done_rows_shown_after_toggle"] = window._row_widgets[0][0].winfo_ismapped()
     window._toggle_steps("done")
     return seen
+
+
+def _check_manual_notice(window: Any) -> dict[str, Any]:
+    """The notice goes away when the extension connects and comes back when the link drops, without a rebuild."""
+    seen: dict[str, Any] = {}
+    link, card = window.link, window._manual_card
+    link._bridge = _FakeBridge()
+    link._handle_connection(True)
+    window.update()
+    seen["hidden_when_connected"] = not card.winfo_ismapped()
+    link._handle_connection(False)
+    window.update()
+    seen["back_after_drop"] = bool(card.winfo_ismapped())
+    seen["same_card"] = window._manual_card is card
+    link.end_run()
+    return seen
+
+
+def _check_connect(settings_win: Any) -> dict[str, Any]:
+    """After the Connect button: the Settings window is open, pairing has begun and the code is in view."""
+    settings_win.update()
+    body = settings_win._body
+    top = body.winfo_rooty()
+    return {
+        "code": settings_win._link.pairing_code,
+        "code_shown": bool(settings_win._link_code_box.winfo_ismapped()),
+        "copy_in_view": top <= settings_win._link_copy_btn.winfo_rooty() < top + body._parent_canvas.winfo_height(),
+        "copy_text": settings_win._link_copy_btn.cget("text"),
+    }
 
 
 def _check_linked(window: Any, name: str) -> dict[str, Any]:
@@ -272,11 +313,14 @@ def walk() -> dict[str, Any]:
             seen["pos_after_jump_past_end"], seen["queue_len"] = window._pos, len(window._queue)
             seen["hotkey_path"] = _check_hotkey_path(window)
             seen["unlinked"] = _check_assistant_controls(window)
+            seen["manual_notice"] = _check_manual_notice(window)
             window._pos = 21
             window._render_assistant()
             seen["link"] = _drive_link(window)
             window._pos = 21
             window._render_assistant()
+        elif name == "09a-settings-from-connect":
+            seen["connect"] = _check_connect(window)
         elif name == "09b-assistant-linked-auto":
             seen["linked_auto"] = _check_linked(window, name)
         elif name == "09c-assistant-linked-manual":
@@ -432,7 +476,7 @@ def test_pasting_screen_without_the_extension(walk):
     start, auto = seen["at_start"], seen["at_start"]["auto"]
     assert auto["text"] == "Auto-paste: OFF" and not auto["enabled"]
     assert seen["hint"] == "Connect the browser extension in Settings to use Auto-paste"
-    assert start["next"]["shown"] and start["next"]["enabled"] and start["next"]["text"].startswith("Next (")
+    assert not start["next"]["shown"]
     assert start["back"]["text"].startswith("Previous (")
     assert start["stop"]["text"] == "Back to credits"
     assert "Paste into Genius" in seen["texts"] and "CHIHIRO  ·  Billie Eilish" in seen["texts"]
@@ -443,7 +487,7 @@ def test_previous_is_off_at_the_first_step_and_skip_and_next_when_finished(walk)
     seen = walk["unlinked"]
     assert not seen["at_start"]["back"]["enabled"]
     assert seen["middle"]["back"]["enabled"]
-    assert not seen["finished"]["skip"]["enabled"] and not seen["finished"]["next"]["enabled"]
+    assert not seen["finished"]["skip"]["enabled"] and not seen["finished"]["next"]["shown"]
     assert seen["finished"]["back"]["enabled"]
     assert seen["finished_progress"] == "All steps done"
     assert seen["middle_progress"] == "Step 22 of 48"
@@ -487,3 +531,33 @@ def test_back_to_credits_asks_first_then_leaves_without_restarting_the_countdown
     assert "Back to the credits?" in walk["back_confirm_texts"]
     assert walk["back_screen"] == "credits"
     assert not walk["back_countdown"]
+
+
+def test_manual_mode_notice_is_shown_without_the_extension(walk):
+    seen = walk["unlinked"]
+    assert seen["notice_shown"] and seen["notice_above_buttons"]
+    texts = " ".join(seen["notice_texts"])
+    assert "Manual mode" in seen["notice_texts"] and "Connect browser extension" in seen["notice_texts"]
+    assert "not connected" in texts and "press F8" in texts and "Skip" in texts and "artist exists" in texts
+
+
+def test_manual_mode_instruction_says_to_click_the_field_before_the_hotkey(walk):
+    seen = walk["unlinked"]
+    assert "Click the field on Genius first" in seen["instruction"] and "F8" in seen["instruction"]
+
+
+def test_manual_mode_has_no_next_button_and_never_touches_the_window(walk):
+    seen = walk["unlinked"]
+    assert not seen["at_start"]["next"]["shown"] and not seen["middle"]["next"]["shown"]
+    assert seen["window_state"] == "normal"
+    assert walk["hotkey_path"]["window_state"] == "normal" and not walk["hotkey_path"]["iconified"]
+
+
+def test_the_notice_follows_the_connection_without_rebuilding_the_screen(walk):
+    seen = walk["manual_notice"]
+    assert seen["hidden_when_connected"] and seen["back_after_drop"] and seen["same_card"]
+
+
+def test_connect_opens_settings_at_the_link_card_and_starts_pairing(walk):
+    seen = walk["connect"]
+    assert seen["code"] == "ABCD-EFGH" and seen["code_shown"] and seen["copy_in_view"]

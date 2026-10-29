@@ -171,6 +171,15 @@ def _walk(on_screen: Callable[[Any, str], None]) -> None:
         app._render_assistant()
         screen("09-assistant-middle")
 
+        # The Connect button on the manual-mode notice: Settings opens at the link card with a pairing code.
+        app.link._bridge = FakeBridge()
+        app._connect_extension()
+        from_connect = app._settings_win
+        assert from_connect is not None
+        time.sleep(0.3)
+        screen("09a-settings-from-connect", from_connect)
+        from_connect.close()
+
         # The browser extension is connected: first filling by itself (Auto-paste on), then paused (off).
         fake = FakeBridge()
         app.link._bridge = fake
