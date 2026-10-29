@@ -452,9 +452,9 @@ describe("settings screen", () => {
       "PNG cover art link",
       "Choose the exact match in Genius's suggestions for me",
       "Go back to the main menu after the last track",
-      "Search Deezer for a cover when Apple has none",
       "Find a YouTube link for each track (recommended)",
       "Show the key",
+      "Search Deezer for a cover when Apple has none",
     ]);
     // Selects and the number box are named by their labels too (expectAccessible checks every control).
     expect([...root.querySelectorAll<HTMLElement>("select, input[type=number]")].map(accessibleName)).toEqual([

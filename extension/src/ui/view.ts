@@ -204,8 +204,8 @@ export class PanelView {
             button: (text, variant, key, onClick, disabled, wide) =>
               this.button(text, variant, key, onClick, disabled, wide),
             heading: (text) => this.heading(text),
-            lookupFieldset: () => this.lookupSettings(state),
-            keyFieldset: () => this.youtubeKeySettings(state),
+            youtubeFieldset: () => this.youtubeSettings(state),
+            deezerFieldset: () => this.deezerSettings(state),
             animateWelcome: () => this.playWelcome(),
           })
         : state.settingsOpen
@@ -1020,9 +1020,9 @@ export class PanelView {
       ),
       this.pastingSettings(state),
       this.readingSettings(state),
-      this.lookupSettings(state),
-      this.youtubeKeySettings(state),
+      this.youtubeSettings(state),
       this.desktopSettings(state),
+      this.deezerSettings(state),
     ];
   }
 
@@ -1294,40 +1294,52 @@ export class PanelView {
     );
   }
 
-  private lookupSettings(state: PanelState): HTMLElement {
-    const box = (host: OptionalHost, label: string, help: string): HTMLElement[] => {
-      const input = el("input", {
-        attrs: { type: "checkbox", "data-key": `host-${host}`, "aria-describedby": `host-${host}-help` },
-        on: {
-          change: (event) => {
-            // Straight from the click: Chrome shows its permission prompt only for a call made in the gesture.
-            void this.panel.setHost(host, (event.target as HTMLInputElement).checked);
-          },
+  /** One optional look-up: a box that asks Chrome for the site's permission, with what it does underneath. */
+  private hostBox(state: PanelState, host: OptionalHost, label: string, help: string): HTMLElement {
+    const input = el("input", {
+      attrs: { type: "checkbox", "data-key": `host-${host}`, "aria-describedby": `host-${host}-help` },
+      on: {
+        change: (event) => {
+          // Straight from the click: Chrome shows its permission prompt only for a call made in the gesture.
+          void this.panel.setHost(host, (event.target as HTMLInputElement).checked);
         },
-      });
-      input.checked = state.hosts[host];
-      return [
-        el(
-          "div",
-          { class: "setting" },
-          el("label", { class: "check" }, input, el("span", { text: label })),
-          el("p", { class: "help", text: help, attrs: { id: `host-${host}-help` } }),
-        ),
-      ];
-    };
+      },
+    });
+    input.checked = state.hosts[host];
+    return el(
+      "div",
+      { class: "setting" },
+      el("label", { class: "check" }, input, el("span", { text: label })),
+      el("p", { class: "help", text: help, attrs: { id: `host-${host}-help` } }),
+    );
+  }
+
+  /** The Deezer cover search. It comes last in Settings, as it does in the desktop app. */
+  private deezerSettings(state: PanelState): HTMLElement {
     return this.settingsCard(
-      "settings-lookups",
-      "Look-ups on other sites",
-      ...box(
+      "settings-deezer",
+      "Cover art look-up",
+      this.hostBox(
+        state,
         "deezer",
         "Search Deezer for a cover when Apple has none",
         "Chrome asks before this contacts api.deezer.com, and you can take the permission back here or in chrome://extensions.",
       ),
-      ...box(
+    );
+  }
+
+  /** The YouTube look-up and, under it, the optional key that makes it reliable: one card, as in the desktop app. */
+  private youtubeSettings(state: PanelState): HTMLElement {
+    return this.settingsCard(
+      "settings-youtube",
+      "YouTube links",
+      this.hostBox(
+        state,
         "youtube",
         "Find a YouTube link for each track (recommended)",
         "Searches www.youtube.com's pages for the song, as the desktop app does. Off until you allow it, and it needs the YouTube link ticked above to be pasted. Chrome asks first; take the permission back here or in chrome://extensions.",
       ),
+      this.subgroup("Better YouTube links (optional)", ...this.youtubeKeyContent(state)),
     );
   }
 
@@ -1382,22 +1394,32 @@ export class PanelView {
       },
     });
     input.value = this.codeDraft;
+    const message = el(
+      "p",
+      {
+        class: bridge.message ? `help key-message ${bridge.tone}`.trim() : "help",
+        attrs: {
+          id: "bridge-message",
+          "aria-live": bridge.tone === "error" ? "assertive" : "polite",
+          "data-tone": bridge.tone,
+        },
+      },
+      ...(bridge.message && bridge.tone
+        ? [
+            el("span", {
+              class: "tone-mark",
+              text: bridge.tone === "ok" ? "✓ " : "✗ ",
+              attrs: { "aria-hidden": "true" },
+            }),
+          ]
+        : []),
+      bridge.message,
+    );
     return this.settingsCard(
       "settings-desktop",
       "Desktop app",
-      el("p", {
-        class: "help",
-        text: "Pairing links this browser to the Géniescraper desktop app on this same computer, so the app can send the credits to paste into this panel and you can step through them from either one. The link goes only to 127.0.0.1, your own computer, never over the internet. Pairing shares no Genius sign-in: your Genius password and credentials are never sent to the desktop app and it never sees them. You stay signed in to Genius in your own browser. Unpair at any time to cut the link.",
-        attrs: { id: "bridge-help" },
-      }),
-      el("p", { class: "help", text: statusText, attrs: { id: "bridge-status", "aria-live": "polite" } }),
       el("label", { text: "Pairing code", attrs: { for: "bridge-code" } }),
       input,
-      el("p", {
-        class: "help",
-        text: "Open the desktop app, choose to connect a browser extension, and type the code it shows (like ABCD-EFGH). Capitals, small letters, dashes and spaces all work.",
-        attrs: { id: "bridge-code-help" },
-      }),
       el(
         "div",
         { class: "row" },
@@ -1416,31 +1438,35 @@ export class PanelView {
             )
           : null,
       ),
-      el(
-        "p",
-        {
-          class: bridge.message ? `help key-message ${bridge.tone}`.trim() : "help",
-          attrs: {
-            id: "bridge-message",
-            "aria-live": bridge.tone === "error" ? "assertive" : "polite",
-            "data-tone": bridge.tone,
-          },
-        },
-        ...(bridge.message && bridge.tone
-          ? [
-              el("span", {
-                class: "tone-mark",
-                text: bridge.tone === "ok" ? "✓ " : "✗ ",
-                attrs: { "aria-hidden": "true" },
-              }),
-            ]
-          : []),
-        bridge.message,
+      el("p", { class: "help", text: statusText, attrs: { id: "bridge-status", "aria-live": "polite" } }),
+      message,
+      this.subgroup(
+        "What is this?",
+        el(
+          "div",
+          { class: "stack", attrs: { id: "bridge-help" } },
+          el("p", {
+            text: "The Géniescraper desktop app is this extension's companion on your computer, and pairing links the two. Once paired, the app lists the Apple Music pages you have open and this extension fills the Genius form for you, one step at a time or all at once.",
+          }),
+          el(
+            "ul",
+            { class: "plain-list" },
+            el("li", {
+              text: "To pair, open the desktop app, choose Connect browser extension and type its code above (capitals, dashes and spaces do not matter).",
+              attrs: { id: "bridge-code-help" },
+            }),
+            el("li", { text: "The link stays on this computer (127.0.0.1) and never goes over the internet." }),
+            el("li", {
+              text: "Your Genius password is never shared: you stay signed in in this browser, and the app never sees it.",
+            }),
+            el("li", { text: "Unpair at any time to cut the link." }),
+          ),
+        ),
       ),
     );
   }
 
-  private youtubeKeySettings(state: PanelState): HTMLElement {
+  private youtubeKeyContent(state: PanelState): Node[] {
     const link = (text: string, href: string): HTMLElement =>
       el("a", {
         class: "button quiet link-button",
@@ -1518,9 +1544,7 @@ export class PanelView {
 
     const busy = state.youtubeKey.busy;
     const message = state.youtubeKey.message;
-    return this.settingsCard(
-      "settings-youtube-key",
-      "Better YouTube links (optional)",
+    return [
       el("p", {
         class: "help",
         text: "The free YouTube search can be blocked by Google, and then no link is found. For reliable links you can use Google's official YouTube service with your own free key. It is free for roughly 25 songs a day, and the key stays in this browser: it is not synced and it is sent only to Google.",
@@ -1581,7 +1605,7 @@ export class PanelView {
         { class: "help" },
         link("Google's own guide to API keys", "https://developers.google.com/youtube/v3/getting-started"),
       ),
-    );
+    ];
   }
 
   /** Fill the key box from the clipboard; Chrome may ask first, or refuse, and then typing it in works as well. */

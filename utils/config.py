@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     scrape_youtube: bool = True  # YouTube URL
     scrape_cover_art: bool = True  # Cover art URL
 
+    # Look-ups on other sites, as in the extension's Settings
+    find_youtube: bool = True  # Search YouTube for each track's link
+    deezer_covers: bool = True  # Search Deezer for a cover when Apple has none
+
     # Assistant behavior
     compact_mode: bool = False  # Hide queue list and shrink window during scraping
     auto_enter: bool = True  # Press Enter after pasting to confirm autocomplete
@@ -95,6 +99,10 @@ class Settings(BaseSettings):
             f"SCRAPE_COPYRIGHT={str(self.scrape_copyright).lower()}",
             f"SCRAPE_YOUTUBE={str(self.scrape_youtube).lower()}",
             f"SCRAPE_COVER_ART={str(self.scrape_cover_art).lower()}",
+            "",
+            "# Look-ups on other sites (true/false)",
+            f"FIND_YOUTUBE={str(self.find_youtube).lower()}",
+            f"DEEZER_COVERS={str(self.deezer_covers).lower()}",
             "",
             "# Assistant behavior",
             f"COMPACT_MODE={str(self.compact_mode).lower()}",

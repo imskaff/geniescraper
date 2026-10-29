@@ -339,9 +339,9 @@ describe("the automatic pasting settings", () => {
       "What to paste",
       "Pasting on Genius",
       "Reading credits",
-      "Look-ups on other sites",
-      "Better YouTube links (optional)",
+      "YouTube links",
       "Desktop app",
+      "Cover art look-up",
     ]);
     for (const card of cards) {
       const heading = card.querySelector("h3");

@@ -106,3 +106,12 @@ def test_link_mode_only_accepts_the_two_modes():
 def test_link_mode_defaults_to_auto_and_a_saved_manual_is_kept():
     assert _settings(None).link_mode == "auto"
     assert config.Settings(link_mode="manual").link_mode == "manual"  # pyright: ignore[reportCallIssue]
+
+
+def test_the_lookups_on_other_sites_are_on_by_default_and_remembered(tmp_path, monkeypatch):
+    assert (_settings(None).find_youtube, _settings(None).deezer_covers) == (True, True)
+    env = tmp_path / ".env"
+    monkeypatch.setattr(config, "_ENV_PATH", env)
+    _settings(None).model_copy(update={"find_youtube": False, "deezer_covers": False}).save()
+    loaded = _settings(str(env))
+    assert (loaded.find_youtube, loaded.deezer_covers) == (False, False)

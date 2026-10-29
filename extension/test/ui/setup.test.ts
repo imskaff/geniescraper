@@ -233,7 +233,7 @@ describe("the look-ups step", () => {
     const { root } = await mount({ firstRun: true });
     await goTo(root, 3);
     expect(root.textContent).toContain("Chrome asks your permission");
-    expect(root.textContent).toContain("Recommended: tick the Deezer box");
+    expect(root.textContent).toContain("Recommended: tick the YouTube box");
   });
 
   it("has the Deezer and YouTube boxes, which ask Chrome inside the click", async () => {

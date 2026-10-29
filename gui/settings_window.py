@@ -33,11 +33,7 @@ _COLLECT = (
     ("scrape_core", "Songwriters and producers", "Written By and Produced By"),
     ("scrape_additional", "Additional credits", "Every other role, such as engineers and musicians"),
     ("scrape_copyright", "Copyright lines (℗ and ©)", "The labels, from album links"),
-    (
-        "scrape_youtube",
-        "Find a YouTube link for each track (recommended)",
-        "Official music video, lyric video or official audio",
-    ),
+    ("scrape_youtube", "YouTube link", "Pasted into Genius's YouTube field"),
     ("scrape_cover_art", "PNG cover art link", "1000×1000 PNG of the exact release"),
 )
 
@@ -113,6 +109,21 @@ class SettingsWindow(ctk.CTkToplevel):
 
         self._card("Reading credits")
         self._parallel_reads()
+
+        self._card("YouTube links")
+        self._switch(
+            "find_youtube",
+            "Find a YouTube link for each track (recommended)",
+            "Searches YouTube for the music video, lyric video or official audio. "
+            "It needs the YouTube link ticked above to be pasted.",
+        )
+
+        self._card("Cover art look-up")
+        self._switch(
+            "deezer_covers",
+            "Search Deezer for a cover when Apple has none",
+            "Only asked when Apple Music has no cover of its own for the release.",
+        )
 
         self._card("Window")
         self._switch("always_on_top", "Always on top", "Keeps this window above the browser while you paste.")

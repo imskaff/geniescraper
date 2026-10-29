@@ -261,6 +261,8 @@ def test_settings_follow_the_extensions_order(walk):
         "What to paste",
         "Pasting on Genius",
         "Reading credits",
+        "YouTube links",
+        "Cover art look-up",
         "Window",
     ]
 

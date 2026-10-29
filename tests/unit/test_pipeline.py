@@ -78,3 +78,31 @@ async def test_detect_falls_back_to_itunes_then_deezer_without_apple_cover(looku
     lookups["itunes"] = ""
     info = await pipeline.detect(URL)
     assert info.cover_art_url == DEEZER
+
+
+async def test_deezer_is_not_asked_when_the_setting_is_off(lookups, monkeypatch):
+    monkeypatch.setattr(pipeline.settings, "deezer_covers", False)
+    lookups["apple"] = ""
+    lookups["itunes"] = ""
+    song = await pipeline.fetch_track(URL, 6, "good 4 u", "Olivia Rodrigo")
+    assert song.cover_art_url == ""  # only Deezer had one
+    lookups["itunes"] = WRONG_EDITION
+    song = await pipeline.fetch_track(URL, 6, "good 4 u", "Olivia Rodrigo")
+    assert song.cover_art_url == WRONG_EDITION  # the iTunes search still runs
+
+
+async def test_youtube_is_not_searched_when_the_setting_is_off(lookups, monkeypatch):
+    asked: list[str] = []
+
+    async def youtube_url(title, artist):
+        asked.append(title)
+        return "https://www.youtube.com/watch?v=x", "lyric-video"
+
+    monkeypatch.setattr(pipeline.youtube, "fetch_youtube_url", youtube_url)
+    monkeypatch.setattr(pipeline.settings, "find_youtube", False)
+    song = await pipeline.fetch_track(URL, 6, "good 4 u", "Olivia Rodrigo")
+    assert asked == []
+    assert (song.youtube_url, song.youtube_kind) == ("", None)
+    monkeypatch.setattr(pipeline.settings, "find_youtube", True)
+    song = await pipeline.fetch_track(URL, 6, "good 4 u", "Olivia Rodrigo")
+    assert asked and song.youtube_url

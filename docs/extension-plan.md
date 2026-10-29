@@ -1056,3 +1056,12 @@ The desktop app lists the Apple Music album and song pages open in the user's br
 ### Tests
 
 `test/background/bridge.test.ts` (group "open Apple Music pages": sent on connect, not unpaired, not before the handshake, debounce, no repeat, filtering and the 20/120 caps, stops with the link, fresh on reconnect), `test/manifest.test.ts` (no `tabs` permission, the policy texts); `tests/unit/test_bridge.py` (hostile entries, caps, shape), `tests/unit/test_link.py` (controller state), `tests/unit/test_gui_logic.py` (rows), and `tests/gui/test_screens.py` (the card in the walk: listed, updated in place, emptied, hidden, a row starts Get credits).
+
+## 43. One YouTube card, Deezer last, and a shorter Desktop app card
+
+Settings in the extension and the desktop app now follow one order: What to paste, Pasting on Genius, Reading credits, YouTube links, the desktop link, Cover art look-up. The desktop app's own Window options come last.
+
+- **YouTube links** is one card. It holds "Find a YouTube link for each track (recommended)" (the permission box that used to sit in "Look-ups on other sites") and, under it, the optional "Better YouTube links" key setup that used to be a card of its own. The first-run set-up shows the same two cards (YouTube, then Deezer).
+- **Cover art look-up** holds the Deezer box alone, at the very bottom of Settings. The card "Look-ups on other sites" is gone.
+- **Desktop app** (extension) now starts with the pairing code box, then Pair and Unpair, then the status and any message, then a short "What is this?" block: two sentences on what the desktop app is and why to pair, and four short points (how to pair, local only, no Genius password shared, unpair at any time).
+- **Desktop app** (desktop) gets the same two look-up settings as the extension, `find_youtube` and `deezer_covers` (both on by default, in settings.env as FIND_YOUTUBE and DEEZER_COVERS). They now decide whether the pipeline searches YouTube and Deezer at all. The desktop has no YouTube key: that part of the extension's YouTube card has no counterpart there.

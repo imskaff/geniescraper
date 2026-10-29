@@ -145,6 +145,8 @@ Open **⚙ Settings** from any screen:
 | Scrape copyright | On | ℗ and © |
 | Scrape YouTube | On | YouTube video/MV link |
 | Scrape cover art | On | Album cover at 1000×1000 PNG |
+| Find a YouTube link for each track | On | Looks the link up on YouTube (recommended); off skips the search |
+| Search Deezer for a cover | On | Only asked when Apple Music has no cover of its own |
 
 Settings are saved per user in `%APPDATA%\Geniescraper\settings.env`, so every copy of the app shares them.
 A `.env` in the project root from older versions is still read until the first save.
