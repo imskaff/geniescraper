@@ -72,6 +72,8 @@ export class PanelView {
   private readonly expanded = new Map<string, boolean>();
   /** What the user has typed into the key box, kept across re-renders and never stored by the view. */
   private keyDraft = "";
+  /** What the user has typed into the pairing code box, kept across re-renders. */
+  private codeDraft = "";
   /** What the user typed into the YouTube link box, and for which track; a draft is not carried to another track. */
   private linkDraft: { index: number; text: string } | null = null;
 
@@ -1020,6 +1022,7 @@ export class PanelView {
       this.readingSettings(state),
       this.lookupSettings(state),
       this.youtubeKeySettings(state),
+      this.desktopSettings(state),
     ];
   }
 
@@ -1333,6 +1336,110 @@ export class PanelView {
    * one with a link to the exact Google page for each, and a way to paste and check it. The links open Google's own
    * pages in a new tab; the extension never reads those pages, so nothing here needs another permission.
    */
+  /** The link to the desktop app: what pairing does, how it stands now, and the code box. */
+  private desktopSettings(state: PanelState): HTMLElement {
+    const { bridge } = state;
+    const statusText = !bridge.known
+      ? "Checking the link to the desktop app…"
+      : !bridge.paired
+        ? "Not paired. No desktop app is linked to this browser."
+        : bridge.connected
+          ? "Paired and connected to the desktop app."
+          : "Paired, desktop app not running. Open the desktop app and this panel reconnects by itself.";
+    const pair = (): void => {
+      const input = this.root.querySelector<HTMLInputElement>("#bridge-code");
+      const typed = input ? input.value : this.codeDraft;
+      void this.panel.pairBridge(typed).then(() => {
+        // A code that worked is spent; one that did not stays, so a typo can be fixed rather than retyped.
+        if (this.panel.state.bridge.tone === "ok") this.codeDraft = "";
+        this.render();
+      });
+    };
+    const input = el("input", {
+      class: "field",
+      attrs: {
+        id: "bridge-code",
+        type: "text",
+        "data-key": "bridge-code",
+        autocomplete: "off",
+        autocapitalize: "characters",
+        spellcheck: "false",
+        maxlength: "16",
+        placeholder: "ABCD-EFGH",
+        "aria-describedby": bridge.message ? "bridge-code-help bridge-message" : "bridge-code-help",
+        ...(bridge.tone === "error" ? { "aria-invalid": "true" } : {}),
+      },
+      on: {
+        input: (event) => {
+          this.codeDraft = (event.target as HTMLInputElement).value;
+        },
+        keydown: (event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            pair();
+          }
+        },
+      },
+    });
+    input.value = this.codeDraft;
+    return this.settingsCard(
+      "settings-desktop",
+      "Desktop app",
+      el("p", {
+        class: "help",
+        text: "Pairing links this browser to the Géniescraper desktop app on this same computer, so the app can send the credits to paste into this panel and you can step through them from either one. The link goes only to 127.0.0.1, your own computer, never over the internet. Pairing shares no Genius sign-in: your Genius password and credentials are never sent to the desktop app and it never sees them. You stay signed in to Genius in your own browser. Unpair at any time to cut the link.",
+        attrs: { id: "bridge-help" },
+      }),
+      el("p", { class: "help", text: statusText, attrs: { id: "bridge-status", "aria-live": "polite" } }),
+      el("label", { text: "Pairing code", attrs: { for: "bridge-code" } }),
+      input,
+      el("p", {
+        class: "help",
+        text: "Open the desktop app, choose to connect a browser extension, and type the code it shows (like ABCD-EFGH). Capitals, small letters, dashes and spaces all work.",
+        attrs: { id: "bridge-code-help" },
+      }),
+      el(
+        "div",
+        { class: "row" },
+        this.button("Pair", "primary", "bridge-pair", pair, bridge.busy),
+        bridge.paired
+          ? this.button(
+              "Unpair",
+              "quiet",
+              "bridge-unpair",
+              () => {
+                void this.panel.unpairBridge().then(() => {
+                  this.root.querySelector<HTMLElement>("#bridge-code")?.focus();
+                });
+              },
+              bridge.busy,
+            )
+          : null,
+      ),
+      el(
+        "p",
+        {
+          class: bridge.message ? `help key-message ${bridge.tone}`.trim() : "help",
+          attrs: {
+            id: "bridge-message",
+            "aria-live": bridge.tone === "error" ? "assertive" : "polite",
+            "data-tone": bridge.tone,
+          },
+        },
+        ...(bridge.message && bridge.tone
+          ? [
+              el("span", {
+                class: "tone-mark",
+                text: bridge.tone === "ok" ? "✓ " : "✗ ",
+                attrs: { "aria-hidden": "true" },
+              }),
+            ]
+          : []),
+        bridge.message,
+      ),
+    );
+  }
+
   private youtubeKeySettings(state: PanelState): HTMLElement {
     const link = (text: string, href: string): HTMLElement =>
       el("a", {

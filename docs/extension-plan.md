@@ -1013,3 +1013,15 @@ The desktop module is `assistant/bridge.py`; nothing imports it yet.
 - `npm run build:safari` writes `extension/dist-safari/`: same bundles, manifest from `scripts/lib/safari-manifest.mjs` (no `side_panel`, `sidePanel` permission or `minimum_chrome_version`; `action.default_popup` = `ui/panel.html`). The Chrome manifest and `dist/` are unchanged.
 - `src/ui/surface.ts`: the page is a popup when `chrome.sidePanel` is absent; it adds `html.popup` (380px wide) and skips the "panel" port, since a popup closes on every focus loss and would pause an automatic run each time.
 - Not run in Safari. On a Mac next: `xcrun safari-web-extension-converter extension/dist-safari --project-location safari --app-name Geniescraper --bundle-identifier <id>`, then the checks in section 23.
+
+## 41. Pairing card in Settings (extension side of section 39)
+
+Settings gains a "Desktop app" card (last card, after the YouTube key). It is the only UI for the companion link; the worker side (`bridge-pair`, `bridge-unpair`, `bridge-status`) is unchanged.
+
+- **Status** (a polite live region): checking, not paired, paired and connected, or paired with the desktop app not running (with what to do). While Settings is open the controller re-asks `bridge-status` every 2.5 s and stops when Settings closes. A failed check keeps the last known state.
+- **Pairing**: a labelled code box (`autocomplete=off`, Enter submits) and a Pair button. The code is normalised by the same `normaliseCode` the worker uses (any case, dash or spaces) and a malformed one is refused in the panel without a request. A spent code is cleared; a refused one stays so a typo can be fixed. Unpair appears only while paired and hands focus back to the code box.
+- **Errors**: the worker reports one failure for a refused pairing, so the card lists every cause in one message: app not open on ports 47831-47835, wrong or expired code (codes work once, for a short time), and the lock after 5 wrong tries (show a new code). The message sits in an assertive live region and the box gets `aria-invalid`. The existing panel test allows exactly one `role=alert` and one `role=status`, so the card uses `aria-live` instead of roles.
+- **Copy** says pairing links this browser to the desktop app on the same computer (127.0.0.1 only), that no Genius sign-in is shared and the app never sees Genius credentials, and that Unpair cuts the link. `PRIVACY.md` already says this (section "The optional desktop app"), so it is unchanged.
+- **Code**: `WorkerApi.bridge`, `PanelState.bridge`, `PanelController.pairBridge/unpairBridge/refreshBridge`, `PanelView.desktopSettings`. Built with `el()` and `textContent` only. No new colours, so the contrast test is unaffected; no animation.
+- **Tests**: `test/ui/bridge.test.ts` (controller with fake timers, card markup and accessibility), `FakeApi.bridge` and `.link` in `test/ui/fakes.ts`.
+- **Not verified**: the card against a real desktop app (the desktop side is not wired yet, see section 39), and in a real browser.

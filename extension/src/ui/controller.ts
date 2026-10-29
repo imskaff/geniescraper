@@ -19,6 +19,7 @@ import {
   type KeyValueStore,
   type Stores,
 } from "../shared/storage";
+import { BRIDGE_PORTS, normaliseCode } from "../shared/bridge";
 import type { WorkerApi } from "./api";
 import type { OptionalHost } from "../lookups/http";
 import { parseYoutubeLink } from "../core/youtubeLink";
@@ -42,6 +43,19 @@ export interface HostPermissions {
 
 /** The steps of the first-time set-up: welcome, what to paste, speed, look-ups, summary. */
 export const SETUP_STEPS = 5;
+
+/** How often the Desktop app card re-asks the worker while Settings is open. */
+export const BRIDGE_POLL_MS = 2500;
+
+const PORT_RANGE = `${String(BRIDGE_PORTS[0])}-${String(BRIDGE_PORTS[BRIDGE_PORTS.length - 1])}`;
+
+export const BRIDGE_MESSAGES = {
+  empty: "Type the code the desktop app shows. It looks like ABCD-EFGH.",
+  badShape: "That is not a pairing code. It looks like ABCD-EFGH: eight letters and digits, and no 0, 1, I, L or O.",
+  paired: "Paired. The desktop app can now send credits to this panel.",
+  unpaired: "Unpaired. The desktop app can no longer reach this browser. You can pair again with a new code.",
+  notAccepted: `The desktop app did not accept the code. Check that: the desktop app is open and showing a pairing code (it listens on ports ${PORT_RANGE} of this computer); the code is the one on screen now (a code expires after a short time and works once); and you have not typed it wrongly 5 times (then the app locks that code, so show a new code in the desktop app and try again).`,
+} as const;
 
 export interface Env {
   api: WorkerApi;
@@ -69,6 +83,15 @@ export interface PanelState {
   hosts: Record<OptionalHost, boolean>;
   /** The user's own YouTube key: whether one is saved (never the key itself), and how the last attempt went. */
   youtubeKey: { saved: boolean; message: string; tone: "" | "ok" | "error"; busy: boolean };
+  /** The link to the desktop app: how it stands, and how the last pair or unpair attempt went. */
+  bridge: {
+    known: boolean;
+    paired: boolean;
+    connected: boolean;
+    busy: boolean;
+    message: string;
+    tone: "" | "ok" | "error";
+  };
   /** What became of each track's YouTube look-up, shown in its credits so a missing link is never a mystery. */
   youtubeNotes: Record<number, string>;
   /** What was wrong with the YouTube link the user last pasted, or "". */
@@ -204,6 +227,7 @@ export class PanelController {
       pasteIndex,
       hosts,
       youtubeKey: { saved: keySaved, message: "", tone: "", busy: false },
+      bridge: { known: false, paired: false, connected: false, busy: false, message: "", tone: "" },
       youtubeNotes: {},
       youtubeLinkError: "",
       doneCountdown: null,
@@ -588,10 +612,82 @@ export class PanelController {
   openSettings(): void {
     // The last job's progress message means nothing on the settings screen.
     this.update({ settingsOpen: true, status: "" });
+    this.watchBridge();
   }
 
   closeSettings(): void {
     this.update({ settingsOpen: false });
+    this.unwatchBridge();
+  }
+
+  // ── the link to the desktop app ─────────────────────────────────────
+
+  private bridgeTimer: ReturnType<typeof setInterval> | undefined;
+
+  private watchBridge(): void {
+    this.unwatchBridge();
+    void this.refreshBridge();
+    this.bridgeTimer = setInterval(() => void this.refreshBridge(), BRIDGE_POLL_MS);
+  }
+
+  private unwatchBridge(): void {
+    if (this.bridgeTimer !== undefined) clearInterval(this.bridgeTimer);
+    this.bridgeTimer = undefined;
+  }
+
+  private setBridge(patch: Partial<PanelState["bridge"]>): void {
+    this.update({ bridge: { ...this.current.bridge, ...patch } });
+  }
+
+  /** Ask the worker how the link stands. A failed check keeps what was last known, so a blip does not flip the card. */
+  async refreshBridge(): Promise<void> {
+    if (this.current.bridge.busy) return;
+    const answer = await this.env.api.bridge({ type: "bridge-status" });
+    if (!answer.ok || this.state.bridge.busy) return;
+    const { paired, connected } = answer.data;
+    const now = this.current.bridge;
+    if (now.known && now.paired === paired && now.connected === connected) return;
+    this.setBridge({ known: true, paired, connected });
+  }
+
+  /** Pair with the code the desktop app shows; the worker tries each of its ports. */
+  async pairBridge(raw: string): Promise<void> {
+    if (this.current.bridge.busy) return;
+    if (!raw.trim()) {
+      this.setBridge({ message: BRIDGE_MESSAGES.empty, tone: "error" });
+      return;
+    }
+    const code = normaliseCode(raw);
+    if (code === null) {
+      this.setBridge({ message: BRIDGE_MESSAGES.badShape, tone: "error" });
+      return;
+    }
+    this.setBridge({ busy: true, message: "Pairing with the desktop app…", tone: "" });
+    const answer = await this.env.api.bridge({ type: "bridge-pair", code });
+    if (answer.ok) {
+      this.setBridge({ ...answer.data, known: true, busy: false, message: BRIDGE_MESSAGES.paired, tone: "ok" });
+    } else {
+      this.setBridge({
+        busy: false,
+        tone: "error",
+        message: answer.error.code === "bad-request" ? answer.error.message : BRIDGE_MESSAGES.notAccepted,
+      });
+    }
+  }
+
+  async unpairBridge(): Promise<void> {
+    if (this.current.bridge.busy) return;
+    this.setBridge({ busy: true, message: "", tone: "" });
+    const answer = await this.env.api.bridge({ type: "bridge-unpair" });
+    if (answer.ok) {
+      this.setBridge({ ...answer.data, known: true, busy: false, message: BRIDGE_MESSAGES.unpaired, tone: "ok" });
+    } else {
+      this.setBridge({
+        busy: false,
+        tone: "error",
+        message: "The extension did not answer, so the pairing may still be in place. Try again.",
+      });
+    }
   }
 
   // ── the first-time set-up ───────────────────────────────────────────
