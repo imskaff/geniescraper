@@ -95,6 +95,14 @@ export class PasteService {
     });
   }
 
+  /** The link to the desktop app was lost while it drove a run: the run pauses, since nobody is steering it. */
+  bridgeLost(): Promise<void> {
+    return this.serial.run(async () => {
+      const state = await this.load();
+      await this.apply(state, pauseAuto(state, "bridge-lost"));
+    });
+  }
+
   /** A request from the panel. */
   command(request: PasteCommand): Promise<Result<PasteState>> {
     return this.serial.run(async () => {

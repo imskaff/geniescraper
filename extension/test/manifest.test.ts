@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { LOOKUP_HOSTS } from "../src/lookups/http";
+import { BRIDGE_HOST } from "../src/shared/bridge";
 
 const ROOT = join(import.meta.dirname, "..");
 
@@ -195,5 +196,44 @@ describe("locales", () => {
 
   it("keeps the description within the store's 132 character limit", () => {
     expect(messages["extDescription"]?.message.length).toBeLessThanOrEqual(132);
+  });
+});
+
+describe("the companion link to the desktop app", () => {
+  const read = (path: string): string => readFileSync(join(ROOT, path), "utf-8");
+
+  it("needs no permission of its own: no loopback host, no native messaging", () => {
+    const all = [...(manifest.host_permissions ?? []), ...(manifest.optional_host_permissions ?? [])];
+    expect(all.filter((host) => /127\.0\.0\.1|localhost|ws:|\[::1\]/.test(host))).toEqual([]);
+    expect(manifest.permissions ?? []).not.toContain("nativeMessaging");
+  });
+
+  it("opens sockets to ws://127.0.0.1 and to no other socket address anywhere in the extension", () => {
+    const found = new Set<string>();
+    const walk = (folder: string): void => {
+      for (const entry of readdirSync(join(ROOT, folder), { withFileTypes: true })) {
+        const path = `${folder}/${entry.name}`;
+        if (entry.isDirectory()) walk(path);
+        else if (entry.name.endsWith(".ts")) {
+          for (const m of read(path).matchAll(/wss?:\/\/([^\s"'`/:]+)/g)) found.add(m[1] ?? "");
+        }
+      }
+    };
+    walk("src");
+    expect([...found]).toEqual(["${BRIDGE_HOST}"]);
+    expect(BRIDGE_HOST).toBe("127.0.0.1");
+    expect(read("src/background/bridge.ts")).not.toContain("wss://");
+  });
+
+  it("is named in the privacy policy and the store listing", () => {
+    expect(read("PRIVACY.md")).toContain("127.0.0.1");
+    expect(read("store/listing.md")).toContain("127.0.0.1");
+  });
+
+  it("keeps the secret out of the synced area and out of logs", () => {
+    const source = read("src/background/bridge.ts");
+    expect(source).not.toMatch(/console\./);
+    expect(source).not.toMatch(/storage\.sync/);
+    expect(read("src/background/worker.ts")).toContain("chrome.storage.local");
   });
 });

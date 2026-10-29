@@ -6,7 +6,7 @@ import type { QueueItem, QueueKind } from "./models";
 export type AutoMode = "off" | "running" | "paused";
 
 /** Why a run paused. "input" is the user's own clicking or typing in the form, which is not a pause while a choice is awaited. */
-export type PauseReason = "user" | "input" | "panel-closed" | "page-changed" | "problem";
+export type PauseReason = "user" | "input" | "panel-closed" | "page-changed" | "problem" | "bridge-lost";
 
 export interface PasteState {
   active: boolean;
@@ -159,6 +159,8 @@ export function pauseMessage(reason: PauseReason): string {
       return "Paused because you used the form. Turn Auto-paste on to carry on.";
     case "panel-closed":
       return "Paused because the panel was closed. Turn Auto-paste on to carry on.";
+    case "bridge-lost":
+      return "Paused because the link to the desktop app was lost. Turn Auto-paste on to carry on.";
     case "page-changed":
       return "Paused because the Genius page changed. Open the song's edit form, then turn Auto-paste on.";
     case "problem":
@@ -306,7 +308,7 @@ export function instruction(state: PasteState, hotkey: string): string {
 const KINDS: ReadonlySet<string> = new Set(Object.keys(STEP_LABELS));
 const TONES: ReadonlySet<string> = new Set(["info", "ok", "attention"]);
 const AUTO_MODES: ReadonlySet<string> = new Set(["off", "running", "paused"]);
-const PAUSE_REASONS: ReadonlySet<string> = new Set(["user", "input", "panel-closed", "page-changed", "problem"]);
+const PAUSE_REASONS: ReadonlySet<string> = new Set(["user", "input", "panel-closed", "page-changed", "problem", "bridge-lost"]);
 
 function isItem(value: unknown): value is QueueItem {
   return (

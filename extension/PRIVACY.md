@@ -1,6 +1,6 @@
 # Géniescraper extension: privacy policy
 
-Last updated: 2026-10-28.
+Last updated: 2026-10-29.
 
 Géniescraper copies song credits from Apple Music into the Genius song edit form.
 This page says exactly what the extension does with data.
@@ -40,6 +40,17 @@ The side panel also lists the Apple Music album and song pages you already have 
 That list stays in the panel; it is not stored and not sent anywhere.
 If you add the optional YouTube link by pasting one yourself, nothing is sent anywhere: the link is only copied into the Genius form.
 The extension does not send anything to the developer or to any other party.
+The one other place it can talk to is the optional desktop app on your own computer, described next.
+
+## The optional desktop app on your own computer
+
+If you also run the Géniescraper desktop app and pair the two, the extension opens a connection to `127.0.0.1` (your own computer, never another machine) and nothing else.
+You pair once by typing a short code the desktop app shows; the extension then keeps a secret in `chrome.storage.local`, on this device only, never synced, and uses it only to prove to the desktop app that it is you (the secret itself is never sent again).
+Over that connection the desktop app sends the list of credits to paste (the same text you would see in the side panel) and commands such as fill next, back, skip and pause.
+The extension sends back only where the paste stands: a step count, whether it is running or paused, and its own plain status message.
+It does not send the Genius page's content, your Genius account, cookies, passwords or anything else, and the desktop app never sees your Genius sign-in: you stay signed in in your own browser.
+Nothing on this connection leaves your computer, and the extension never connects until you pair.
+You can unpair at any time, which deletes the secret.
 
 ## What the extension does not do
 
@@ -48,6 +59,7 @@ The extension does not send anything to the developer or to any other party.
 - It does not sell or share data, and it does not use data for purposes unrelated to its single purpose.
 - It does not load or run code from the internet: everything it runs ships in the package.
 - It does not read other sites: its access is limited to `music.apple.com`, `genius.com` and the services above.
+- It does not accept connections from the internet or from web pages: the link to the desktop app is one the extension opens itself, to your own computer, after you paired it.
 
 ## Your control
 
