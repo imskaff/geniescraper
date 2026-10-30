@@ -93,7 +93,7 @@ The steps are the same on **Windows** and **macOS**, apart from how you unzip th
 
 **Good to know**
 
-- **Updating.** Download the newest zip and unzip it over the same folder, replacing the files (on macOS, choose **Replace** when Finder asks), then press the reload icon on the extension's card in `chrome://extensions`. The extension does not update itself.
+- **Updating.** Download the newest zip and unzip it over the same folder, replacing the files (on macOS, choose **Replace** when Finder asks), then press the reload icon on the extension's card in `chrome://extensions`. The extension does not update itself; to be told when a newer one exists, turn on **Check for updates** in its Settings (off by default; Chrome asks first, and it only reads this project's public list of releases about once a day).
 - **Checking a download.** Compare its SHA-256 with `SHA256SUMS.txt` from the same release.
   - **Windows** (PowerShell): `Get-FileHash .\geniescraper-extension-<version>.zip -Algorithm SHA256`
   - **macOS** (Terminal): `shasum -a 256 geniescraper-extension-<version>.zip`

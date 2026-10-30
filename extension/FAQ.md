@@ -78,9 +78,18 @@ Please leave out:
 
 A song title and an album link are public, so those are fine.
 
+## How do I update it? Can it tell me about a new version?
+
+A copy loaded from a folder never updates itself.
+Download the newest zip from the Releases page, unzip it over the same folder, and press the reload icon on the extension's card in `chrome://extensions`.
+To be told when there is one, open Settings and turn on **Check for updates**.
+Chrome asks first; then about once a day, while the side panel is open, the extension asks `api.github.com` for this project's public list of releases and compares the newest extension version with yours.
+Nothing about you or your songs is sent, and nothing is downloaded or installed: you get a notice with a link, and you can choose **Later** or **Skip this version**.
+Turn it off, or take the permission back in `chrome://extensions`, and it stops.
+
 ## Where is my data kept?
 
 Settings are in `chrome.storage.sync` (they may sync through your Google account).
 Your current album and credits are in memory only and cleared when the browser closes.
-Your YouTube key, if you add one, is on this device only.
+Your YouTube key, if you add one, is on this device only, and so is the small record the optional update check keeps (when it last looked, the newest version it saw, and what you chose on the notice).
 Removing the extension removes all of it.

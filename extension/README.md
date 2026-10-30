@@ -26,6 +26,10 @@ You do not need the Chrome Web Store, a command line or Node.js to use the exten
 4. Pin Géniescraper from the toolbar's puzzle-piece menu and click it to open the side panel.
 
 To update, unzip the newest zip over the same folder and press the reload icon on the extension's card.
+The extension does not update itself, but it can tell you when a newer one exists: turn on **Check for updates** in Settings (off by default).
+Chrome then asks to let the extension reach `api.github.com`, and about once a day, while the panel is open, it reads the list of releases from this repository and shows an **Update available** notice with a link to the release page.
+The notice has **Later** (hidden for a few days) and **Skip this version**; you download and reload by hand as above, and nothing is installed for you.
+Installs from a browser store update themselves and do not show the setting.
 Chrome may show "Disable developer mode extensions" at start-up for any extension that is not from the store; keep it enabled.
 The same steps are in the [main README](../README.md#browser-extension-recommended).
 
@@ -100,7 +104,7 @@ Each takes `--chrome <path to chrome.exe>` or the `CHROME_PATH` environment vari
 | `scripting`                                         | Reading an Apple Music page and filling the Genius form.         |
 | `genius.com`, `music.apple.com`, `itunes.apple.com` | The pages it reads and fills, and Apple's catalog for cover art. |
 
-Three more hosts are optional and asked for in the panel only when you switch the feature on: `api.deezer.com` (cover art), `www.youtube.com` (finding a video link) and `www.googleapis.com` (finding it with your own YouTube key).
+Four more hosts are optional and asked for in the panel only when you switch the feature on: `api.deezer.com` (cover art), `www.youtube.com` (finding a video link), `www.googleapis.com` (finding it with your own YouTube key) and `api.github.com` (the optional update notice, which reads this project's public list of releases).
 Nothing is sent to any server of ours, because there is none.
 See [PRIVACY.md](PRIVACY.md).
 

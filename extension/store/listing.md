@@ -39,6 +39,7 @@ You stay in control:
 Optional extras, off until you turn them on (Chrome asks first):
 
 - A cover-art fallback from Deezer.
+- A notice when a newer version exists, for copies loaded from a folder (checks this project's public releases list once a day).
 - YouTube links, found by searching YouTube, or through Google's official YouTube service if you add your own free key. The panel walks you through getting one.
 
 Private by design: no accounts, no analytics, no tracking. Song titles and artists are sent only to the services above when you use them.
@@ -85,7 +86,7 @@ Suggested answers (check them against the dashboard's current wording at submiss
 - Personally identifiable information, health, financial, personal communications, location, web history, user activity: not collected.
 - Authentication information: the optional YouTube key is typed in by the user, stored only on their device and sent only to Google, in a request header, to look up a link. If the dashboard counts that as handled, tick it and say "to give the user the feature they turned on".
 - Web history: not collected. The titles and addresses of the Apple Music pages the user has open are sent only to the user's own desktop app on the same computer, and only if they paired it.
-- Website content: song titles, artist names and credits are read from the Apple Music page the user asked for, and the title and artist are sent to iTunes (always) and to Deezer, YouTube and Google (only when the user turns those on), to find a cover or a link. Tick it if the dashboard counts text sent to those services, with the purpose "core functionality".
+- Website content: song titles, artist names and credits are read from the Apple Music page the user asked for, and the title and artist are sent to iTunes (always) and to Deezer, YouTube and Google (only when the user turns those on), to find a cover or a link. The optional update check (api.github.com) sends no user data at all: it only reads the project's public list of releases, and it does nothing in an install the store updates. Tick it if the dashboard counts text sent to those services, with the purpose "core functionality".
 - Certifications: not sold or transferred to third parties apart from the requests above, which the user asked for; not used for anything unrelated to the single purpose; not used for creditworthiness or lending.
 
 ## Privacy policy
