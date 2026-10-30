@@ -365,3 +365,97 @@ Also needs the owner's call: the Chrome Web Store privacy and permission justifi
 - **Genius's own policy** on data from Spotify (credits copied from a streaming service) is not assessed here.
 - **Cover format:** JPEG 1500 px versus the 1000 px PNG Genius expects from Apple; check what the Genius form accepts.
 - **Accuracy:** Spotify credits come from distributors and labels and are sometimes wrong or partial; the Genius form is for facts, so the panel should show the source next to each song.
+
+## 12. Spike results: Spotify credits dialog (signed out, live)
+
+Run on 2026-10-30 with `extension/scripts/live-spotify.mjs`: one throwaway Chrome profile, no extension, no login, consent banner left alone, one page at a time with 4 second pauses, English forced with an `Accept-Language` header.
+Host contacted: `open.spotify.com` only, about 33 page loads in total (4 search pages, the 16 loads of the final run, and about 13 loads in debugging runs while the selectors were found).
+No captcha, block or 429 appeared.
+Sanitized fixtures of the dialog: `extension/test/spotify/credits-self-released.html` and `credits-major.html` (names replaced).
+
+### How the dialog is reached and built (corrects section 2)
+
+- Control: `button[data-testid="more-button"]` in the track's action bar (its `aria-label` is "More options for: <title>", localized).
+  Menu entry: `[role="menuitem"]` whose text is "View credits" (not "Show credits").
+- The dialog is a native `<dialog aria-label="Credits" open>`, not `[role="dialog"]`.
+  The `[role="dialog"]` elements on the page are the language picker, the country picker and the consent banner, so a `[role="dialog"]` query reads the wrong thing.
+- Inside: `<h1>Credits</h1>`, `<h2>` track title, then sections, each a `<span>` heading followed by `[role="group"][aria-labelledby]` rows.
+  A row is `span[dir="auto"]` (name) plus `p[id^="listrow-subtitle-"]` (role).
+  "Sources" is a single `[role="group"]` with two plain spans (heading, value).
+- Several roles of one person are joined in one string with " • " (for example "Composer • Lyricist").
+
+### Per-track results (visible tab, real pointer input)
+
+All 10 opened and parsed.
+Times are from navigation to a parsed dialog in a warm profile (a first cold load was about 9 seconds).
+
+| Track (kind) | Time | Songwriters | Producers | Source |
+|---|---|---|---|---|
+| Life Simulator (self-released, not on Apple) | 1.6 s | 2 (Lyricist) | none; artist is Recording Engineer | 955465 Records DK (= the ℗ owner) |
+| Never Gonna Give You Up (major) | 1.6 s | 4 (Composer) | 3 | BMG Rights Management (UK) Ltd |
+| NEMZZZ TYPE BEAT (self-released) | 1.4 s | 1 | 1 | Nemzzz (= artist and ℗ owner) |
+| Blinding Lights (major) | 1.3 s | 5 | 3 | Republic Records |
+| untitled (halo) (indie label) | 1.3 s | 4 | 1 | Dirty Hit |
+| Sad Piano, DS Productions (self-released) | 1.2 s | 1 | 1 | DS Productions |
+| improvisation, Olafur Arnalds (major) | 1.1 s | 1 | 1 | Decca Music Group Ltd. |
+| garage band, AwokenBet (self-released) | 1.3 s | 1 | none; artist is Studio Personnel/Engineer | awoken |
+| Mr. Brightside (major) | 1.1 s | 2 | 2 | Island Records |
+| Bohemian Rhapsody (major) | 1.4 s | 1 | 2 | Hollywood Records |
+
+Release date and label: the dialog does not show them.
+The `music:release_date` meta tag was empty in the hydrated page, so the year has to come from the "©" and "℗" lines on the track page, which were present on 10 of 10.
+
+### Click and hidden-tab tests (first 3 tracks each)
+
+| Mode | Result |
+|---|---|
+| Visible tab, real pointer input (CDP `Input.dispatchMouseEvent`) | 10 of 10 opened |
+| Visible tab, synthetic pointer sequence from page script (what a content script can send) | options menu opens, **dialog does not open: 0 of 3** |
+| Background tab (`visibilityState` was `hidden`), real pointer input | page hydrated and the more-button was found, but **the menu did not open: 0 of 3** |
+
+So the synthetic-click risk predicted in section 2 is real, and a hidden tab did not work with the only input I sent.
+Not tested in a hidden tab: keyboard activation, `element.click()`, a tab made visible only for the click.
+So "impossible" is not shown, only "not with these".
+
+### Answers
+
+1. **Reliable enough to build a provider?**
+   Reading: yes.
+   10 of 10 tracks gave a complete dialog with the same markup, found by `data-testid` and ARIA structure only, in about 1.1 to 1.6 seconds, with no block.
+   Opening is the problem: synthetic events from a content script did not open it (0 of 3) and a background tab did not work (0 of 3).
+   Without a trusted click the extension needs a visible tab or the user opening the dialog.
+2. **Is "Source" present, and does it name a distributor?**
+   Present on 10 of 10.
+   It named a distributor on **0 of 10**, including 0 of 4 self-released tracks: it was the label or the ℗ owner every time (BMG, Republic, Island, Hollywood, Decca, Dirty Hit, and the artist's own name or imprint for self-released tracks).
+   It matches the ℗ line already scraped, so it adds nothing for the distributor question.
+   No DistroKid, TuneCore or CD Baby appeared in this sample.
+3. **Role mapping** (Spotify English labels to Genius names in `extension/src/core/geniusRoles.ts` and the keys in `scraper/roles.py`).
+   Section headings: "Artist", "Composition & Lyrics", "Production & Engineering", "Performers", "Sources".
+   Roles seen: Main Artist, Composer, Lyricist, Songwriter, Producer, Engineer, Recording Engineer, Recording Second Engineer, Mixing Engineer, Mastering Engineer, Mixer, Studio Personnel, Vocalist, Vocals, Background Vocalist, Backing Vocals, Bass Vocalist, Programmer, Drum Kit, Guitar, Electric Guitar, Bass Guitar, Keyboard(s), Piano, Percussion, Synthesizer.
+
+   | Spotify | Maps to | Note |
+   |---|---|---|
+   | Composer, Lyricist, Songwriter | Songwriter ("Written By") | the whole "Composition & Lyrics" section |
+   | Producer | Producer ("Produced By") | |
+   | Mixing Engineer, Mastering Engineer, Recording Engineer, Engineer | same name | match Apple's keys |
+   | Mixer | Mixing Engineer | |
+   | Recording Second Engineer | no clean match (nearest "Additional Engineer") | leave to the user |
+   | Studio Personnel | none | no Apple equivalent; keep as written or drop |
+   | Programmer | Programmer | already Genius's name |
+   | Vocalist, Vocals | Vocals | |
+   | Background Vocalist, Backing Vocals | Background Vocals | |
+   | Bass Vocalist | none | keep as written |
+   | Drum Kit | Drums | |
+   | Guitar, Electric Guitar, Bass Guitar, Keyboard(s), Piano, Percussion, Synthesizer | same name | instrument names match Apple's list |
+
+   These were compared against the existing role tables from memory of their shape, not re-checked entry by entry against the live Genius dropdown.
+   The provider needs its own alias table (lowercase Spotify role to the key `normaliseRole` understands), and must split the " • " joined roles first.
+
+### Go / no-go
+
+- **Reading** the credits (writers, producers, other roles, the label as "Source"): **go**; the dialog is stable and rich, including for tracks missing on Apple.
+- **Opening** the dialog from the extension: **no-go as designed** until a trusted click is found.
+  The hidden background tab plan does not hold; what remains is a visible tab (a brief flash) or "user opens the dialog, extension reads it", and both conflict with the "no surprise popups" preference.
+- **Distributors for self-released music:** **no-go**; Spotify's "Source" is the label or ℗ owner, not the distributor.
+
+Not verified: other UI languages (English only), a signed-in view, tracks with no credits at all, a fresh EU profile's consent banner on trusted clicks (it was left alone and did not block clicks here), later markup changes, and any volume beyond a few dozen loads.
