@@ -29,10 +29,14 @@ The extension sends song titles and artist names (public text from the page you 
 | Service              | When                                                                                                                                                   | What is sent                                                                                        |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
 | `itunes.apple.com`   | Always, to find the exact cover art                                                                                                                    | The Apple Music catalog id of the album or song, or the song title and artist                       |
+| `genius.com`         | Only when you press "Open on Genius", or have "Open each song on Genius before pasting it" ticked and start pasting a song                              | Search terms made of the song title and artist, to find the song's Genius page. No cookies, no sign-in |
 | `api.deezer.com`     | Only if you tick "Search Deezer for a cover" and allow Chrome's permission prompt                                                                      | Song title and artist                                                                               |
 | `www.youtube.com`    | Only if you tick "Find a YouTube link" and allow Chrome's permission prompt. Then it happens for every track whose credits are read, one after another | Search terms made of the song title and artist, and the id of candidate videos                      |
 | `www.googleapis.com` | Only if you add your own YouTube key and allow Chrome's permission prompt. Then it happens for every track whose credits are read                      | Search terms (song title and artist), the id of candidate videos, and your key, in a request header |
 
+The Genius search needs no extra permission: the extension already has access to `genius.com` to fill the edit form.
+When exactly one Genius song matches the title and artist, the extension opens that song's page in a new tab of your own browser and presses its Edit Metadata button, which is the only button it presses outside the form; it never presses Save or Cancel.
+With none or several matching songs it opens nothing and tells you.
 Requests carry no cookies and no referrer.
 Apple Music pages are opened in a minimized window of your own browser (a background tab if that is not possible), as if you had visited them, and closed again when read.
 Because that is a real visit, Apple Music sees it as it would see any visit from your browser, including any cookies you already have for it; the extension reads only the page's public credits text.

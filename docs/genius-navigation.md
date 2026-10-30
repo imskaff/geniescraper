@@ -73,7 +73,7 @@ Every case stops and tells the user; none continues on its own and none guesses.
 | Case | Panel says | Next |
 | ---- | ---------- | ---- |
 | Genius search unreachable | Genius could not be reached | Try again |
-| No match | No exact match for this song on Genius; it may not be on Genius yet | Open Genius search (link, the user's click) |
+| No match | No exact match for this song on Genius; it may not be on Genius yet | Nothing opened; the user can search Genius themselves |
 | Several matches | Several Genius pages look like this song | Each page as a link; the user opens the right one themselves |
 | Not signed in | Sign in to Genius, then try again | Try again |
 | Form did not open | Open its Edit Metadata form yourself | Start pasting as usual |
@@ -103,9 +103,9 @@ If any state other than "opened" results, the paste does not start.
 
 ## Panel states (per track)
 
-`idle`, `searching`, `opening` (finding or opening the form), `opened`, `none`, `several`, `sign-in`, `no-form`, `failed`.
-The state belongs to one track; moving to another track or starting a paste clears it.
-The UI is its own module (`ui/geniusOpen.ts` for the view, `ui/geniusNav.ts` for the behaviour, as `updateBanner.ts` and `updateNotice.ts` do); the controller and the review view get one hook each.
+`idle`, `working` (searching, then finding or opening the form), `opened`, `none`, `several`, `sign-in`, `no-form`, `failed` and `busy` (a paste is running).
+The state belongs to one track; the notice shows only while that track is on screen, and starting a paste or leaving the album clears it.
+The UI is its own set of modules: `ui/geniusOpener.ts` (behaviour), `ui/geniusText.ts` (the words) and `ui/geniusView.ts` (button and notice), the way `updateNotice.ts` and `updateBanner.ts` are split; the controller and the review and finished screens get one hook each.
 
 ## Not in step 1 (what step 2 needs)
 

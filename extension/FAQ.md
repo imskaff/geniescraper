@@ -61,9 +61,16 @@ Apple Music sometimes loads a page slowly.
 Press Back to tracks and read the track again.
 If a track really has no credits on Apple Music, none can be read.
 
+## Open on Genius says it found nothing, or several
+
+It only opens a song whose title and artist match exactly (a remix, a live version or a translation page is not the song).
+If Genius shows no such song, it may not be on Genius yet, and nothing is opened; if it shows several, they are listed as links so you open the right one yourself.
+If it says the page has no Edit Metadata button, you are not signed in to Genius in this browser.
+It never saves, and it never reuses a Genius tab that shows something else, because that tab may hold a form you have not saved.
+
 ## What leaves my browser?
 
-Only song titles and artist names, to the services you turned on, and nothing to the developer, because there is no server.
+Only song titles and artist names, to the services you turned on, or to Genius when you press Open on Genius, and nothing to the developer, because there is no server.
 See [PRIVACY.md](PRIVACY.md) for the full list.
 
 ## How do I report a bug without sharing private data?

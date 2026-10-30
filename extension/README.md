@@ -10,6 +10,9 @@ What it does:
 
 - **Detects open pages.** The link screen listens for Apple Music albums and songs already open in your browser and offers each in one press, the page you are on first.
 - **Reads the credits** of a whole album at once and marks what is missing.
+- **Open on Genius** finds the song on Genius (an exact title and artist match only), opens it in a new tab and presses its Edit Metadata button, then leaves the pasting to you.
+  With no match, several matches, or a Genius you are not signed in to, it opens nothing and says why.
+  An optional setting does this for each song when you start pasting it.
 - **Auto-paste** (on by default, a switch in the panel and in Settings) fills the Genius form by itself with a short pause between fields, and pauses when you click or type in the form or press Esc.
   Step by step with a hotkey is still there.
 
@@ -98,7 +101,7 @@ Each takes `--chrome <path to chrome.exe>` or the `CHROME_PATH` environment vari
 | `storage`                                           | Settings, the working session and the optional YouTube key.      |
 | `sidePanel`                                         | The panel itself.                                                |
 | `scripting`                                         | Reading an Apple Music page and filling the Genius form.         |
-| `genius.com`, `music.apple.com`, `itunes.apple.com` | The pages it reads and fills, and Apple's catalog for cover art. |
+| `genius.com`, `music.apple.com`, `itunes.apple.com` | The pages it reads and fills, Genius's own song search for Open on Genius, and Apple's catalog for cover art. |
 
 Three more hosts are optional and asked for in the panel only when you switch the feature on: `api.deezer.com` (cover art), `www.youtube.com` (finding a video link) and `www.googleapis.com` (finding it with your own YouTube key).
 Nothing is sent to any server of ours, because there is none.
@@ -129,7 +132,7 @@ The store text is in [store/listing.md](store/listing.md).
 | Folder            | Contents                                                                  |
 | ----------------- | ------------------------------------------------------------------------- |
 | `src/apple/`      | Reading Apple Music pages (credits, titles, cover art).                   |
-| `src/background/` | The service worker: hidden tabs, the paste session, covers, YouTube.      |
+| `src/background/` | The service worker: hidden tabs, the paste session, covers, YouTube, Genius. |
 | `src/genius/`     | The content script that fills the Genius form.                            |
 | `src/lookups/`    | YouTube, Deezer and iTunes lookups.                                       |
 | `src/core/`       | Pure logic shared by the rest: the paste queue, roles, track health.      |
