@@ -82,7 +82,44 @@ export type WorkerRequest =
   | { type: "youtube-lookup"; title: string; artist: string }
   /** Try a YouTube key the user typed, with one cheap call. The key is checked, not stored, by the worker. */
   | { type: "youtube-key-check"; key: string }
+  /** Find this track's song on Genius and open its Edit Metadata form; nothing is typed or saved. */
+  | { type: "genius-open"; title: string; artist: string }
   | PasteCommand;
+
+/** How "Open on Genius" ended; only "opened" lets anything else go on. */
+export type GeniusOpenStatus =
+  /** The matching song's edit form is open. */
+  | "opened"
+  /** Genius has no song with exactly this title and artist (or its search did not show it). */
+  | "none"
+  /** More than one song matches exactly: the user chooses, nothing is picked for them. */
+  | "several"
+  /** The song page showed no Edit Metadata button, which is what a signed-out visitor sees. */
+  | "sign-in"
+  /** The song page opened but its form did not. */
+  | "no-form"
+  /** Genius could not be asked, or its page did not load. */
+  | "failed"
+  /** A paste is running: nothing is navigated meanwhile. */
+  | "busy";
+
+export interface GeniusSongLink {
+  title: string;
+  artists: string[];
+  /** Always a genius.com song page the worker built itself. */
+  url: string;
+}
+
+export interface GeniusOpenAnswer {
+  status: GeniusOpenStatus;
+  /** The matched song, for "opened", "sign-in" and "no-form". */
+  song?: GeniusSongLink;
+  /** Every exact candidate, for "several". */
+  songs?: GeniusSongLink[];
+}
+
+/** What the Genius page says after being asked to open the edit form. */
+export type OpenEditState = "opened" | "already-open" | "no-button" | "no-form";
 
 /** What the Genius content script asks the worker. The worker also checks that it really came from genius.com. */
 export type GeniusRequest =
@@ -137,6 +174,8 @@ export function isOutcome(value: unknown): value is Outcome {
 /** What the worker tells a Genius tab. */
 export type GeniusNotice =
   | { type: "genius/fill-now" }
+  /** Open the song's Edit Metadata form (press that one button); the page answers with an `OpenEditState`. */
+  | { type: "genius/open-edit" }
   /** The paste session started or ended, so the page knows whether the hotkeys are live. */
   | { type: "genius/paste-active"; active: boolean }
   /** An automatic run started, paused, resumed or ended, so the page loop knows whether to go on. */
@@ -166,6 +205,8 @@ const PASTE_COMMANDS: ReadonlySet<unknown> = new Set([
   "paste-auto-start",
   "paste-auto-pause",
 ]);
+/** Longest title or artist the worker will search for. */
+const MAX_TEXT = 500;
 const PAGE_PAUSE_REASONS: ReadonlySet<unknown> = new Set(["input", "user", "page-changed"]);
 
 function isPair(value: unknown): value is [string, string] {
@@ -189,6 +230,14 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
   if (value["type"] === "youtube-lookup")
     return typeof value["title"] === "string" && typeof value["artist"] === "string";
   if (value["type"] === "youtube-key-check") return typeof value["key"] === "string" && value["key"].length < 200;
+  if (value["type"] === "genius-open") {
+    return (
+      typeof value["title"] === "string" &&
+      typeof value["artist"] === "string" &&
+      value["title"].length <= MAX_TEXT &&
+      value["artist"].length <= MAX_TEXT
+    );
+  }
   if (!hasUrl(value)) return false;
   if (value["type"] === "detect") return value["tabId"] === undefined || Number.isInteger(value["tabId"]);
   return value["type"] === "scrape-track" && typeof value["trackTitle"] === "string";
@@ -248,7 +297,7 @@ export function isPasteStatus(value: unknown): value is PasteStatus {
 
 export function isGeniusNotice(value: unknown): value is GeniusNotice {
   if (!isRecord(value)) return false;
-  if (value["type"] === "genius/fill-now") return true;
+  if (value["type"] === "genius/fill-now" || value["type"] === "genius/open-edit") return true;
   if (value["type"] === "genius/auto-state") return AUTO_MODES.has(value["auto"]);
   if (value["type"] === "genius/clear") {
     return isPair(value["item"]) && (value["role"] === undefined || typeof value["role"] === "string");
@@ -312,4 +361,38 @@ export function isYoutubeAnswer(value: unknown): value is YoutubeAnswer {
 
 export function isKeyCheck(value: unknown): value is KeyCheck {
   return typeof value === "string" && ["ok", "key", "quota", "not-enabled", "failed"].includes(value);
+}
+
+const OPEN_STATUSES: ReadonlySet<unknown> = new Set([
+  "opened",
+  "none",
+  "several",
+  "sign-in",
+  "no-form",
+  "failed",
+  "busy",
+]);
+const OPEN_EDIT_STATES: ReadonlySet<unknown> = new Set(["opened", "already-open", "no-button", "no-form"]);
+
+function isSongLink(value: unknown): value is GeniusSongLink {
+  return (
+    isRecord(value) &&
+    typeof value["title"] === "string" &&
+    isStringArray(value["artists"]) &&
+    typeof value["url"] === "string" &&
+    value["url"].startsWith("https://genius.com/")
+  );
+}
+
+export function isGeniusOpenAnswer(value: unknown): value is GeniusOpenAnswer {
+  return (
+    isRecord(value) &&
+    OPEN_STATUSES.has(value["status"]) &&
+    (value["song"] === undefined || isSongLink(value["song"])) &&
+    (value["songs"] === undefined || (Array.isArray(value["songs"]) && value["songs"].every(isSongLink)))
+  );
+}
+
+export function isOpenEditState(value: unknown): value is OpenEditState {
+  return OPEN_EDIT_STATES.has(value);
 }

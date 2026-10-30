@@ -53,17 +53,25 @@ describe("fetchJson", () => {
     expect(await fetchJson("https://itunes.apple.com/lookup")).toBeNull();
   });
 
+  it("asks genius.com's search without cookies or a referrer", async () => {
+    const calls = stubFetch(ok({ response: { sections: [] } }));
+    expect(await fetchJson("https://genius.com/api/search/song?q=x")).toEqual({ response: { sections: [] } });
+    expect(calls[0]?.init?.credentials).toBe("omit");
+    expect(calls[0]?.init?.referrerPolicy).toBe("no-referrer");
+  });
+
   it("refuses a redirect, so a response never comes from a host that was not checked", async () => {
     const calls = stubFetch(ok({ a: 1 }));
     await fetchJson("https://itunes.apple.com/lookup");
     expect(calls[0]?.init?.redirect).toBe("error");
   });
 
-  it("lists exactly the hosts the manifest grants, one required and three optional", () => {
-    expect([...REQUIRED_LOOKUP_HOSTS]).toEqual(["itunes.apple.com"]);
+  it("lists exactly the hosts the manifest grants, two required and three optional", () => {
+    expect([...REQUIRED_LOOKUP_HOSTS]).toEqual(["itunes.apple.com", "genius.com"]);
     expect(Object.values(OPTIONAL_LOOKUP_HOSTS)).toEqual(["api.deezer.com", "www.youtube.com", "www.googleapis.com"]);
     expect([...LOOKUP_HOSTS].sort()).toEqual([
       "api.deezer.com",
+      "genius.com",
       "itunes.apple.com",
       "www.googleapis.com",
       "www.youtube.com",

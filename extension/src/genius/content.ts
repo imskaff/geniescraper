@@ -3,6 +3,7 @@
 import { isGeniusNotice, isPasteStatus, isResult } from "../shared/messages";
 import { normaliseSettings, SETTINGS_KEY } from "../shared/settings";
 import { REAL_COMBOBOX_TIMING } from "./fill";
+import { REAL_OPEN_EDIT_TIMING, openEditForm } from "./openEdit";
 import { GeniusPage } from "./page";
 
 declare global {
@@ -59,6 +60,13 @@ if (!window.__geniescraperGenius) {
   chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse: (response: unknown) => void) => {
     // Only this extension's own worker may drive the page.
     if (sender.id !== chrome.runtime.id || !isGeniusNotice(message)) return false;
+    if (message.type === "genius/open-edit") {
+      // The one answer that takes a while: the page may still be loading its button.
+      void openEditForm(document, REAL_OPEN_EDIT_TIMING).then((state) => {
+        sendResponse({ ok: true, data: { state } });
+      });
+      return true;
+    }
     if (message.type === "genius/paste-active") page.setActive(message.active);
     else if (message.type === "genius/auto-state") page.setAuto(message.auto);
     else if (message.type === "genius/clear") page.clearStep(message.item, message.role);

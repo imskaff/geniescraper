@@ -252,3 +252,48 @@ describe("the YouTube look-up", () => {
     expect(answer).toMatchObject({ ok: true, data: { url: LINK.url } });
   });
 });
+
+describe("router: opening a song on Genius", () => {
+  it.each([
+    { type: "genius-open" },
+    { type: "genius-open", title: "A" },
+    { type: "genius-open", title: 1, artist: "B" },
+  ])("rejects the malformed request %j", async (raw) => {
+    const browser = fakeBrowser();
+    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS);
+    expect(await route(raw)).toMatchObject({ ok: false, error: { code: "bad-request" } });
+  });
+
+  it("rejects a title or artist that is absurdly long", async () => {
+    const browser = fakeBrowser();
+    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS);
+    expect(await route({ type: "genius-open", title: "x".repeat(501), artist: "B" })).toMatchObject({ ok: false });
+  });
+
+  it("hands the track to the navigator and keeps the worker awake meanwhile", async () => {
+    const browser = fakeBrowser();
+    const asked: string[] = [];
+    const genius = {
+      open: (title: string, artist: string) => {
+        asked.push(`${artist}|${title}|${String(browser.keepAliveActive())}`);
+        return Promise.resolve({ status: "none" as const });
+      },
+    };
+    const route = createRouter(
+      browser.ports,
+      FAST_CLIENT,
+      pasteFor(browser),
+      NO_COVERS,
+      undefined,
+      undefined,
+      undefined,
+      genius,
+    );
+    expect(await route({ type: "genius-open", title: "Fortnight", artist: "Taylor Swift" })).toEqual({
+      ok: true,
+      data: { status: "none" },
+    });
+    expect(asked).toEqual(["Taylor Swift|Fortnight|1"]);
+    expect(browser.keepAliveActive()).toBe(0);
+  });
+});
