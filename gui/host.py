@@ -182,3 +182,30 @@ class Host(ctk.CTk):
 
     def _cancel_scrape(self) -> None:
         raise NotImplementedError
+
+    def _back_to_credits(self) -> None:
+        raise NotImplementedError
+
+    def _current_queue(self) -> list[tuple[str, str]]:
+        raise NotImplementedError
+
+    def _on_back_hotkey(self) -> None:
+        raise NotImplementedError
+
+    def _begin_link_run(self, resume_at: int) -> None:
+        raise NotImplementedError
+
+    def _render_link(self) -> None:
+        raise NotImplementedError
+
+    def _wait_esc(self) -> None:
+        raise NotImplementedError
+
+    def _show_esc_confirm(self, *, from_key: bool = False, to_credits: bool = False) -> None:
+        raise NotImplementedError
+
+    def _update_start_label(self) -> None:
+        raise NotImplementedError
+
+    def _advance_album_queue(self) -> None:
+        raise NotImplementedError
