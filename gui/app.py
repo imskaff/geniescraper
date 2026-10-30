@@ -1,7 +1,6 @@
 import asyncio
 import threading
 import time
-import webbrowser
 
 import customtkinter as ctk
 import keyboard
@@ -12,19 +11,21 @@ from assistant import flow
 from gui import theme
 from gui.chrome import ChromeMixin
 from gui.connect_prompt import ConnectPrompt
+from gui.credits_screen import CreditsScreenMixin
+from gui.done_screen import DoneScreenMixin
 from gui.host import Host
 from gui.link import LinkController, OpenPage
 from gui.link_glue import LinkGlueMixin
 from gui.logic import (
     prefetch_plan,
-    queue_summary,
 )
 from gui.queue_controller import QueueControllerMixin
 from gui.settings_window import SettingsWindow
 from gui.start_screen import StartScreenMixin
+from gui.tracks_screen import TracksScreenMixin
 from scraper import apple_music
 from scraper.apple_music import AlbumTrackInfo
-from scraper.models import SongCredits, youtube_label
+from scraper.models import SongCredits
 from utils.config import settings
 
 theme.apply()
@@ -71,7 +72,16 @@ _LIST_LABELS = {
 _NESTED_KINDS = frozenset({"artist", "phonographic_copyright", "copyright_notice"})
 
 
-class App(LinkGlueMixin, QueueControllerMixin, StartScreenMixin, ChromeMixin, Host):
+class App(
+    LinkGlueMixin,
+    DoneScreenMixin,
+    CreditsScreenMixin,
+    TracksScreenMixin,
+    QueueControllerMixin,
+    StartScreenMixin,
+    ChromeMixin,
+    Host,
+):
     def __init__(self, *, start_link: bool = True) -> None:
         super().__init__()
         self.title("Géniescraper v0.5")
@@ -205,155 +215,6 @@ class App(LinkGlueMixin, QueueControllerMixin, StartScreenMixin, ChromeMixin, Ho
         super().destroy()
 
     # ── screens ──────────────────────────────────────────────────────────
-
-    def _current_queue(self) -> list[tuple[str, str]]:
-        assert self._song is not None
-        queue = self._song.typed_queue(
-            include_core=settings.scrape_core,
-            include_additional=settings.scrape_additional,
-            include_copyright=settings.scrape_copyright,
-            include_youtube=settings.scrape_youtube,
-            include_cover_art=settings.scrape_cover_art,
-            include_release_date=settings.scrape_release_date,
-        )
-        return flow.genius_queue(queue)  # roles typed under the names Genius uses
-
-    def _show_credits_screen(self) -> None:
-        self._screen = "credits"
-        self._clear_kb_hooks()
-        self._set_compact(False)
-        self._clear()
-        self._header(2)
-        song = self._song
-        assert song is not None
-        queue = self._current_queue()
-
-        extra = ""
-        if self._is_album_queue_mode and self._album_info:
-            extra = (
-                f"Song {self._album_queue_position} of {self._album_queue_total} from {self._album_info.album_title}"
-            )
-        self._release_header(self, song.title, song.artist, self._cover_image, extra)
-
-        # Buttons anchored to bottom before the scrollable frame so they're always visible
-        self._credits_in_countdown = settings.auto_start_assistant
-        self._credits_countdown = settings.auto_start_delay
-        self._credits_countdown_paused = False
-
-        bottom = ctk.CTkFrame(self, fg_color="transparent")
-        bottom.pack(side="bottom", fill="x", padx=theme.SPACE_6, pady=(theme.SPACE_2, theme.SPACE_4))
-        self._button(bottom, "Back", self._back_from_credits, width=90).pack(side="left")
-        self._start_assistant_btn = self._button(bottom, "", self._show_assistant_screen, primary=True, width=230)
-        self._start_assistant_btn.pack(side="right")
-        self._update_start_label()
-        if not queue:
-            self._set_enabled(self._start_assistant_btn, False)
-        else:
-
-            def _on_credits_hotkey(e):
-                if e.event_type == "down":
-                    self.after(0, self._show_assistant_screen)
-
-            self._kb_hooks.append(keyboard.hook_key(settings.hotkey, _on_credits_hotkey, suppress=True))
-            if settings.auto_start_assistant:
-                self._start_assistant_btn.bind("<Enter>", lambda _: self._pause_credits_countdown())
-                self._start_assistant_btn.bind("<Leave>", lambda _: self._resume_credits_countdown())
-                self.after(1000, self._tick_credits_countdown)
-
-        summary = ctk.CTkFrame(self, fg_color="transparent")
-        summary.pack(side="bottom", fill="x", padx=theme.SPACE_6)
-        ctk.CTkLabel(
-            summary, text=queue_summary(queue), font=_f(12), text_color=theme.MUTED, anchor="w", wraplength=540
-        ).pack(anchor="w")
-        self._settings_summary(summary).pack(anchor="w")
-
-        sf = theme.scroll_frame(self, fg_color=theme.SURFACE, corner_radius=8)
-        sf.pack(fill="both", expand=True, padx=theme.SPACE_6, pady=(0, theme.SPACE_2))
-        sf.grid_columnconfigure(0, weight=0, minsize=170)
-        sf.grid_columnconfigure(1, weight=1)
-        row = 0
-
-        def section(title: str) -> None:
-            nonlocal row
-            ctk.CTkLabel(sf, text=title.upper(), font=_f(11, "bold"), text_color=theme.FAINT, anchor="w").grid(
-                row=row,
-                column=0,
-                columnspan=2,
-                sticky="w",
-                padx=theme.SPACE_3,
-                pady=(theme.SPACE_3 if row else theme.SPACE_2, theme.SPACE_1),
-            )
-            row += 1
-
-        def line(label: str, value: str, *, missing: bool = False, link: str = "", note: str = "") -> None:
-            nonlocal row
-            ctk.CTkLabel(sf, text=label, font=_f(13), text_color=theme.MUTED, anchor="w").grid(
-                row=row, column=0, sticky="nw", padx=theme.SPACE_3, pady=theme.SPACE_1
-            )
-            color = theme.FAINT if missing else (theme.ACCENT if link else theme.TEXT)
-            font = ctk.CTkFont(family=theme.UI_FAMILY, size=13, underline=True) if link else _f(13)
-            val = ctk.CTkLabel(sf, text=value, font=font, text_color=color, anchor="w", justify="left", wraplength=330)
-            val.grid(row=row, column=1, sticky="w", padx=(0, theme.SPACE_3), pady=theme.SPACE_1)
-            if link:
-                val.configure(cursor="hand2")
-                val.bind("<Button-1>", lambda _, u=link: webbrowser.open(u))
-            row += 1
-            if note:
-                ctk.CTkLabel(sf, text=note, font=_f(11), text_color=theme.FAINT, anchor="w").grid(
-                    row=row, column=1, sticky="w", padx=(0, theme.SPACE_3), pady=(0, theme.SPACE_1)
-                )
-                row += 1
-
-        section("Main credits")
-        line("Written By", ", ".join(song.written_by()) or "Not found", missing=not song.written_by())
-        line("Produced By", ", ".join(song.produced_by()) or "Not found", missing=not song.produced_by())
-
-        additional = song.additional_credits()
-        section(f"Additional credits ({len(additional)})")
-        if not additional:
-            line("Roles", "Not found", missing=True)
-        for credit in additional:
-            line(credit.role, ", ".join(credit.artists))
-
-        section("Release")
-        if released := song.release_date_text():
-            line("Released", released)
-        phono, notice = song.phonographic_copyright, song.copyright_notice
-        line("℗ Phonographic", phono or "Not found", missing=not phono)
-        if notice and notice != phono:
-            line("© Copyright", notice)
-        elif phono:
-            line("© Copyright", "Same as ℗", note="Apple Music lists no separate © line")
-        else:
-            line("© Copyright", "Not found", missing=True)
-        if song.youtube_url:
-            line("YouTube", youtube_label(song.youtube_kind), link=song.youtube_url)
-        else:
-            line("YouTube", "Not found", missing=True)
-        if song.cover_art_url:
-            line("Cover art", "1000×1000 PNG", link=song.cover_art_url)
-        else:
-            line("Cover art", "Not found", missing=True)
-
-    def _update_start_label(self) -> None:
-        hk = settings.hotkey.upper()
-        if self._credits_in_countdown:
-            text = f"Start pasting in {self._credits_countdown}s  ({hk})"
-        else:
-            text = f"Start pasting  ({hk})"
-        self._start_assistant_btn.configure(text=text)
-
-    def _back_from_credits(self) -> None:
-        self._credits_in_countdown = False
-        self._is_album_queue_mode = False
-        self._album_queue_pending = []
-        self._album_queue_current = 0
-        self._album_queue_position = 0
-        self._album_queue_total = 0
-        if self._album_info and self._album_info.track_count > 1:
-            self._show_track_select_screen()
-        else:
-            self._show_scrape_screen()
 
     def _show_assistant_screen(self, *, keep_run: bool = False) -> None:
         self._screen = "assistant"
@@ -612,148 +473,6 @@ class App(LinkGlueMixin, QueueControllerMixin, StartScreenMixin, ChromeMixin, Ho
 
     # ── scrape ───────────────────────────────────────────────────────────
 
-    def _show_track_select_screen(self) -> None:
-        self._screen = "tracks"
-        self._set_compact(False)
-        self._clear()
-        self._header(1)
-        info = self._album_info
-        assert info is not None
-        self._track_vars = []
-        self._scrape_selected_btn = None
-
-        self._release_header(self, info.album_title, info.artist, getattr(self, "_album_cover_image", None))
-
-        tools = ctk.CTkFrame(self, fg_color="transparent")
-        tools.pack(fill="x", padx=theme.SPACE_6, pady=(theme.SPACE_1, theme.SPACE_1))
-        ctk.CTkLabel(
-            tools, text=f"{info.track_count} songs. Tick the ones to paste.", font=_f(13), text_color=theme.MUTED
-        ).pack(side="left")
-        for text, value in (("Clear", False), ("Select all", True)):
-            ctk.CTkButton(
-                tools,
-                text=text,
-                width=80,
-                height=26,
-                font=_f(12),
-                fg_color="transparent",
-                hover_color=theme.SURFACE,
-                text_color=theme.ACCENT,
-                command=lambda v=value: self._select_all(v),
-            ).pack(side="right")
-
-        # Bottom buttons - packed before the scrollable frame so they're always visible
-        btn_row = ctk.CTkFrame(self, fg_color="transparent")
-        btn_row.pack(side="bottom", fill="x", padx=theme.SPACE_6, pady=(theme.SPACE_2, theme.SPACE_4))
-        self._button(btn_row, "Back", self._go_to_main_from_album, width=90).pack(side="left")
-        self._scrape_selected_btn = self._button(
-            btn_row, "Start with selected", self._start_selected_queue, primary=True, width=190
-        )
-        self._scrape_selected_btn.pack(side="right")
-        self._button(btn_row, f"All {info.track_count} songs", self._start_album_queue, width=130).pack(
-            side="right", padx=(0, theme.SPACE_2)
-        )
-
-        sf = theme.scroll_frame(self, fg_color=theme.SURFACE, corner_radius=8)
-        sf.pack(fill="both", expand=True, padx=theme.SPACE_6, pady=(0, theme.SPACE_1))
-
-        for i, title in enumerate(info.track_titles):
-            n = i + 1
-            var = ctk.BooleanVar(value=False)
-            self._track_vars.append(var)
-
-            row = ctk.CTkFrame(sf, fg_color="transparent", corner_radius=4)
-            row.pack(fill="x", padx=theme.SPACE_1, pady=theme.SPACE_1)
-
-            cb = ctk.CTkCheckBox(
-                row,
-                variable=var,
-                text="",
-                width=24,
-                height=24,
-                checkbox_width=18,
-                checkbox_height=18,
-                command=self._update_selection_btn,
-            )
-            cb.pack(side="left", padx=(theme.SPACE_2, theme.SPACE_1))
-
-            num_lbl = ctk.CTkLabel(row, text=str(n), width=28, text_color=theme.FAINT, anchor="e", font=_f(13))
-            num_lbl.pack(side="left", padx=(0, theme.SPACE_3))
-            title_lbl = ctk.CTkLabel(row, text=title, anchor="w", font=_f(13), text_color=theme.TEXT)
-            title_lbl.pack(side="left", fill="x", expand=True, pady=theme.SPACE_1)
-
-            def _hover_on(_, r=row):
-                r.configure(fg_color=theme.FOCUS)
-
-            def _hover_off(_, r=row):
-                r.configure(fg_color="transparent")
-
-            def _toggle(_, v=var):
-                v.set(not v.get())
-                self._update_selection_btn()
-
-            for w in (row, num_lbl, title_lbl):
-                w.bind("<Enter>", _hover_on)
-                w.bind("<Leave>", _hover_off)
-            for w in (row, num_lbl, title_lbl):
-                w.bind("<Button-1>", _toggle)
-                w.configure(cursor="hand2")
-        self._update_selection_btn()
-
-    def _select_all(self, value: bool) -> None:
-        for var in self._track_vars:
-            var.set(value)
-        self._update_selection_btn()
-
-    def _update_selection_btn(self) -> None:
-        btn = self._scrape_selected_btn
-        if btn is None:
-            return
-        try:
-            if not btn.winfo_exists():
-                return
-        except Exception:
-            return
-        count = sum(1 for v in self._track_vars if v.get())
-        if count == 0:
-            btn.configure(text="Start with selected")
-            self._set_enabled(btn, False)
-        else:
-            btn.configure(text=f"Start with {count} selected")
-            self._set_enabled(btn, True)
-
-    def _show_loading_screen(self, track_title: str) -> None:
-        self._screen = "loading"
-        self._job += 1
-        self._clear()
-        self._header(1)
-        box = ctk.CTkFrame(self, fg_color="transparent")
-        box.pack(expand=True)
-        if self._is_album_queue_mode:
-            ctk.CTkLabel(
-                box,
-                text=f"Song {self._album_queue_position} of {self._album_queue_total}",
-                font=_f(12),
-                text_color=theme.FAINT,
-            ).pack()
-        ctk.CTkLabel(box, text=track_title, font=theme.display(26), text_color=theme.TEXT, wraplength=480).pack(
-            pady=(theme.SPACE_1, theme.SPACE_4)
-        )
-        bar = ctk.CTkProgressBar(box, mode="indeterminate", width=320, height=4, progress_color=theme.ACCENT)
-        bar.pack()
-        bar.start()
-        ctk.CTkLabel(
-            box,
-            text=(
-                "Reading the credits on Apple Music and finding the YouTube link and cover art.\n"
-                "This usually takes 3 to 8 seconds."
-            ),
-            font=_f(12),
-            text_color=theme.MUTED,
-            justify="center",
-        ).pack(pady=(theme.SPACE_4, theme.SPACE_4))
-        self._button(box, "Cancel", self._cancel_scrape, width=110).pack()
-
     # ── hotkey assistant ─────────────────────────────────────────────────
 
     def _on_back_hotkey(self) -> None:
@@ -918,126 +637,6 @@ class App(LinkGlueMixin, QueueControllerMixin, StartScreenMixin, ChromeMixin, Ho
             hk = settings.hotkey.upper()
             text += "\n" + f"Click the field on Genius first: {hk} pastes wherever your cursor is."
         return text
-
-    def _show_done_screen(self) -> None:
-        self._screen = "done"
-        self._set_compact(False)
-        self._clear()
-        self._header(3)
-        self._in_countdown = True
-        self._countdown = 10
-        self._countdown_paused = False
-
-        box = ctk.CTkFrame(self, fg_color="transparent")
-        box.pack(expand=True)
-        ctk.CTkLabel(box, text="✓", font=theme.font(48, "bold"), text_color=theme.ACCENT).pack()
-        ctk.CTkLabel(box, text="All credits entered", font=theme.display(30), text_color=theme.TEXT).pack()
-        ctk.CTkLabel(
-            box,
-            text="Check the Genius page, then press Save there.",
-            font=_f(13),
-            text_color=theme.MUTED,
-        ).pack(pady=(theme.SPACE_1, theme.SPACE_5))
-
-        self._back_btn = self._button(box, "", self._go_to_main, primary=True, width=260)
-        self._back_btn.pack(pady=(0, theme.SPACE_2))
-        self._back_btn.bind("<Enter>", lambda _: self._pause_countdown())
-        self._back_btn.bind("<Leave>", lambda _: self._resume_countdown())
-        self._update_done_label()
-        if self._album_info is not None and self._album_info.track_count > 1:
-            self._button(box, "Back to the track list", self._back_to_album_list, width=260).pack(
-                pady=(0, theme.SPACE_2)
-            )
-        self._button(box, "Close Géniescraper", self.destroy, width=260).pack()
-
-        self.after(1000, self._tick_countdown)
-
-    def _update_done_label(self) -> None:
-        self._back_btn.configure(text=f"Paste another song  ({self._countdown}s)")
-
-    def _tick_countdown(self) -> None:
-        if not getattr(self, "_in_countdown", False):
-            return
-        if self._countdown_paused:
-            self.after(1000, self._tick_countdown)
-            return
-        self._countdown -= 1
-        if self._countdown <= 0:
-            self._go_to_main()
-            return
-        try:
-            self._update_done_label()
-        except Exception:
-            return
-        self.after(1000, self._tick_countdown)
-
-    def _pause_countdown(self) -> None:
-        self._countdown_paused = True
-
-    def _resume_countdown(self) -> None:
-        self._countdown_paused = False
-
-    def _tick_credits_countdown(self) -> None:
-        if not getattr(self, "_credits_in_countdown", False):
-            return
-        if self._credits_countdown_paused:
-            self.after(1000, self._tick_credits_countdown)
-            return
-        self._credits_countdown -= 1
-        if self._credits_countdown <= 0:
-            self._credits_in_countdown = False
-            self._show_assistant_screen()
-            return
-        try:
-            self._update_start_label()
-        except Exception:
-            return
-        self.after(1000, self._tick_credits_countdown)
-
-    def _pause_credits_countdown(self) -> None:
-        self._credits_countdown_paused = True
-
-    def _resume_credits_countdown(self) -> None:
-        self._credits_countdown_paused = False
-
-    def _back_to_album_list(self) -> None:
-        self._in_countdown = False
-        self._song = None
-        self._cover_image = None
-        self._queue = []
-        self._pos = 0
-        self._is_album_queue_mode = False
-        self._album_queue_pending = []
-        self._album_queue_current = 0
-        self._album_queue_position = 0
-        self._album_queue_total = 0
-        with self._prefetch_cache_lock:
-            self._prefetch_cache.clear()
-        # _album_info intentionally kept - no re-fetch needed
-        self._show_track_select_screen()
-
-    def _go_to_main_from_album(self) -> None:
-        self._album_info = None
-        self._album_cover_image = None
-        self._go_to_main()
-
-    def _go_to_main(self) -> None:
-        self.link.end_run()
-        self._in_countdown = False
-        self._song = None
-        self._cover_image = None
-        self._album_info = None
-        self._album_cover_image = None
-        self._queue = []
-        self._pos = 0
-        self._is_album_queue_mode = False
-        self._album_queue_pending = []
-        self._album_queue_current = 0
-        self._album_queue_position = 0
-        self._album_queue_total = 0
-        with self._prefetch_cache_lock:
-            self._prefetch_cache.clear()
-        self._show_scrape_screen()
 
     # ── companion link ───────────────────────────────────────────────────
 

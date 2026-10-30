@@ -167,3 +167,18 @@ class Host(ctk.CTk):
 
     def _detect_thread(self, url: str, job: int) -> None:
         raise NotImplementedError
+
+    def _show_assistant_screen(self) -> None:
+        raise NotImplementedError
+
+    def _go_to_main_from_album(self) -> None:
+        raise NotImplementedError
+
+    def _start_selected_queue(self) -> None:
+        raise NotImplementedError
+
+    def _start_album_queue(self) -> None:
+        raise NotImplementedError
+
+    def _cancel_scrape(self) -> None:
+        raise NotImplementedError
