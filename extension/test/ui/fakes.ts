@@ -1,6 +1,14 @@
 import { IDLE_PASTE, back, pauseAuto, skip, startAuto, startPaste, stop, type PasteState } from "../../src/core/paste";
 import type { BridgeLinkState, BridgeRequest } from "../../src/shared/bridge";
-import type { AlbumInfo, PageScrape, PasteCommand, KeyCheck, Result, YoutubeAnswer } from "../../src/shared/messages";
+import type {
+  AlbumInfo,
+  GeniusOpenAnswer,
+  PageScrape,
+  PasteCommand,
+  KeyCheck,
+  Result,
+  YoutubeAnswer,
+} from "../../src/shared/messages";
 import type { KeyValueStore, Stores } from "../../src/shared/storage";
 import type { WorkerApi } from "../../src/ui/api";
 import type { OptionalHost } from "../../src/lookups/http";
@@ -76,6 +84,7 @@ export interface ApiScript {
   checkYoutubeKey?: (key: string) => Promise<Result<KeyCheck>>;
   paste?: (command: PasteCommand) => Promise<Result<PasteState>>;
   bridge?: (request: BridgeRequest) => Promise<Result<BridgeLinkState>>;
+  openOnGenius?: (title: string, artist: string) => Promise<Result<GeniusOpenAnswer>>;
 }
 
 export function fakeApi(script: ApiScript = {}): FakeApi {
@@ -84,6 +93,11 @@ export function fakeApi(script: ApiScript = {}): FakeApi {
     calls,
     pasteState: { ...IDLE_PASTE },
     link: { paired: false, connected: false },
+    openOnGenius(title, artist) {
+      calls.push(`genius-open:${artist}|${title}`);
+      if (script.openOnGenius) return script.openOnGenius(title, artist);
+      return Promise.resolve({ ok: true, data: { status: "opened" } });
+    },
     bridge(request) {
       calls.push(`bridge:${request.type}`);
       if (script.bridge) return script.bridge(request);

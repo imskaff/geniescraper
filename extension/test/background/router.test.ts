@@ -286,7 +286,6 @@ describe("router: opening a song on Genius", () => {
       NO_COVERS,
       undefined,
       undefined,
-      undefined,
       genius,
     );
     expect(await route({ type: "genius-open", title: "Fortnight", artist: "Taylor Swift" })).toEqual({

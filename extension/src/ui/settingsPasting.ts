@@ -46,6 +46,16 @@ export function pastingSettings(v: ViewContext, state: PanelState): HTMLElement 
   });
   autoReturn.checked = settings.autoReturn;
 
+  const openOnGenius = el("input", {
+    attrs: { type: "checkbox", "data-key": "setting-openOnGenius", "aria-describedby": "setting-openOnGenius-help" },
+    on: {
+      change: (event) => {
+        void v.panel.setSetting("openOnGenius", (event.target as HTMLInputElement).checked);
+      },
+    },
+  });
+  openOnGenius.checked = settings.openOnGenius;
+
   // A whole number of seconds; the model keeps it in range, so an out-of-range entry snaps back on the next draw.
   const seconds = (key: "returnSeconds" | "nextTrackSeconds", id: string, min: number): HTMLInputElement => {
     const input = el("input", {
@@ -188,6 +198,21 @@ export function pastingSettings(v: ViewContext, state: PanelState): HTMLElement 
         { class: "check" },
         autoReturn,
         el("span", { text: "Go back to the main menu after the last track" }),
+      ),
+      el(
+        "div",
+        { class: "setting" },
+        el(
+          "label",
+          { class: "check" },
+          openOnGenius,
+          el("span", { text: "Open each song on Genius before pasting it" }),
+        ),
+        el("p", {
+          class: "help",
+          attrs: { id: "setting-openOnGenius-help" },
+          text: "Start pasting, and the next-track button, first search Genius for the song and open its Edit Metadata form in a new tab. It only goes on to paste when exactly one Genius song matches; otherwise it stops and tells you. The title and artist are sent to genius.com for the search. It never saves anything.",
+        }),
       ),
       setting(
         "Seconds before going back to the main menu",

@@ -1472,3 +1472,35 @@ main > .help {
   background: var(--surface-hi);
   border-left-color: var(--link);
 }
+
+/* "Open on Genius": how far it got, in the same card style as the update notice; a problem is marked in the warning colour. */
+.genius-open {
+  margin: var(--space-3) 0;
+  padding: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--surface-hi);
+  border-left: 4px solid var(--ok);
+  border-radius: 8px;
+}
+
+.genius-open.problem {
+  border-left-color: var(--warn);
+}
+
+.genius-open > p {
+  margin: 0;
+}
+
+.genius-open .genius-links {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+}
+
+.genius-open .genius-links li {
+  margin: var(--space-1) 0;
+}
+
+.genius-open a {
+  color: var(--link);
+  overflow-wrap: anywhere;
+}

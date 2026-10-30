@@ -33,6 +33,8 @@ export interface Settings {
   returnSeconds: number;
   /** Seconds the finished screen waits before starting the next track by itself; 0 waits for the user. */
   nextTrackSeconds: number;
+  /** Find the song on Genius and open its Edit Metadata form before pasting it. Off until chosen. */
+  openOnGenius: boolean;
   /** The first-time set-up has been seen (finished or skipped). */
   onboarded: boolean;
 }
@@ -71,6 +73,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   autoReturn: true,
   returnSeconds: 30,
   nextTrackSeconds: 0,
+  openOnGenius: false,
   onboarded: false,
 };
 
@@ -151,6 +154,7 @@ export function normaliseSettings(raw: unknown): Settings {
     autoReturn: flag("autoReturn"),
     returnSeconds: seconds("returnSeconds", false),
     nextTrackSeconds: seconds("nextTrackSeconds", true),
+    openOnGenius: flag("openOnGenius"),
     onboarded,
   };
 }

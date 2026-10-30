@@ -13,6 +13,7 @@ import { loadPaste, loadSession, loadSettings, saveSession, saveSettings } from 
 import type { OptionalHost } from "../lookups/http";
 import { loadYoutubeKey } from "../shared/secrets";
 import {
+  NO_GENIUS,
   NO_HOSTS,
   isFinished,
   MESSAGES,
@@ -27,6 +28,7 @@ import { YoutubeKey } from "./youtubeKey";
 import { DesktopLink } from "./desktopLink";
 import { Countdown } from "./countdown";
 import { YoutubeLookups } from "./youtubeLookups";
+import { GeniusOpener } from "./geniusOpener";
 
 export * from "./panelState";
 
@@ -42,6 +44,7 @@ export class PanelController {
   private readonly countdown: Countdown;
   private readonly youtube: YoutubeLookups;
   private readonly desktop: DesktopLink;
+  private readonly genius: GeniusOpener;
 
   constructor(
     private readonly env: Env,
@@ -56,6 +59,7 @@ export class PanelController {
     this.host = this.makeHost(env);
     this.key = new YoutubeKey(this.host, () => this.refreshHosts());
     this.desktop = new DesktopLink(this.host);
+    this.genius = new GeniusOpener(this.host, (index) => this.geniusTrack(index));
     this.countdown = new Countdown(this.host, {
       leaveToMenu: () => this.leavePasting("menu"),
       startPaste: (index) => this.startPaste(index),
@@ -73,6 +77,7 @@ export class PanelController {
       hosts,
       youtubeKey: { saved: keySaved, message: "", tone: "", busy: false },
       bridge: { known: false, paired: false, connected: false, busy: false, message: "", tone: "" },
+      genius: NO_GENIUS,
       youtubeNotes: {},
       youtubeLinkError: "",
       doneCountdown: null,
@@ -187,6 +192,32 @@ export class PanelController {
     await this.refreshHosts();
     // Redraw even when nothing changed, so a box the user ticked and Chrome refused goes back to unticked.
     this.update({ hosts: { ...this.current.hosts }, error: problem });
+  }
+
+  // ── opening the song on Genius ──────────────────────────────────────
+
+  /** The title and artist to look for on Genius: the track's own, with the album's artist when the page names none. */
+  private geniusTrack(index: number): { index: number; title: string; artist: string } | null {
+    const { results, album } = this.current.session;
+    const song = results.find((r) => r.index === index)?.song;
+    if (!song) return null;
+    return {
+      index,
+      title: song.title || (results.find((r) => r.index === index)?.title ?? ""),
+      artist: song.artist || (album?.artist ?? ""),
+    };
+  }
+
+  /** Find this track's song on Genius and open its Edit Metadata form. Pasting is left to the user. */
+  async openOnGenius(index: number): Promise<void> {
+    if (this.current.paste.active && !isFinished(this.current.paste)) return;
+    this.cancelCountdown();
+    await this.genius.open(index);
+  }
+
+  /** Whether an attempt to open a song is under way. */
+  geniusBusy(): boolean {
+    return this.genius.busy();
   }
 
   // ── the user's own YouTube key ──────────────────────────────────────
@@ -376,6 +407,7 @@ export class PanelController {
   }
 
   async backToTracks(): Promise<void> {
+    this.genius.clear();
     await this.updateSession({ screen: "tracks" });
     this.update({ error: "" });
   }
@@ -385,6 +417,7 @@ export class PanelController {
     this.run++;
     this.youtube.forget();
     this.pasted.clear();
+    this.genius.clear();
     await this.updateSession({ ...EMPTY_SESSION });
     this.update({ busy: null, error: "", status: "" });
   }
@@ -568,6 +601,8 @@ export class PanelController {
     const result = this.current.session.results.find((r) => r.index === index);
     const queue = this.queueFor(index);
     if (!result?.song || queue.length === 0) return;
+    // With the setting on, the song's edit form is opened first; anything short of that stops here and says why.
+    if (this.current.settings.openOnGenius && !(await this.genius.open(index))) return;
     const way = mode ?? this.lastMode ?? this.current.settings.pasteMode;
     this.lastMode = way;
     await this.pasteCommand({
@@ -576,6 +611,7 @@ export class PanelController {
       queue: queue.map(([kind, value]) => [kind, value]),
     });
     this.pasted.add(index);
+    this.genius.clear();
     this.update({ pasteIndex: index });
     await this.updateSession({ current: index });
     // The session is running by now. If no Genius page can take the run, the error says what to open, and the

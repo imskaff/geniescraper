@@ -4,6 +4,7 @@ import { STEP_LABELS, instruction } from "../core/paste";
 import { el } from "./dom";
 import { type PanelState } from "./controller";
 import { type ViewContext } from "./viewContext";
+import { geniusNotice } from "./geniusView";
 
 export function pasteScreen(v: ViewContext, state: PanelState): Node[] {
   const { paste, settings } = state;
@@ -140,6 +141,7 @@ export function doneScreen(v: ViewContext, state: PanelState): Node[] {
       el("p", { class: "help", text: state.paste.title }),
       el("p", { text: "Check the Genius page, then press Save there." }),
     ),
+    geniusNotice(state, next),
     el(
       "div",
       { class: "stack" },
@@ -166,5 +168,5 @@ export function doneScreen(v: ViewContext, state: PanelState): Node[] {
         true,
       ),
     ),
-  ];
+  ].filter((node): node is HTMLElement => node !== null);
 }
