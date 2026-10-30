@@ -5,6 +5,7 @@ import type { KeyValueStore, Stores } from "../../src/shared/storage";
 import type { WorkerApi } from "../../src/ui/api";
 import type { OptionalHost } from "../../src/lookups/http";
 import type { OpenTab } from "../../src/core/appleTabs";
+import { releaseUrl, type OfferedUpdate } from "../../src/core/updates";
 import type { ActiveTab, Env, HostPermissions } from "../../src/ui/controller";
 
 export function memoryStore(initial: Record<string, unknown> = {}): KeyValueStore & { data: Map<string, unknown> } {
@@ -65,6 +66,8 @@ export interface FakeApi extends WorkerApi {
   pasteState: PasteState;
   /** The link the fake worker holds; change it to simulate the desktop app coming or going. */
   link: BridgeLinkState;
+  /** The newer release the fake worker knows of, or null. Later and Skip clear it, as the real worker does. */
+  update: OfferedUpdate | null;
 }
 
 const NO_LINK: YoutubeAnswer = { url: "", isMusicVideo: false, throttled: false, keyProblem: "" };
@@ -78,12 +81,30 @@ export interface ApiScript {
   bridge?: (request: BridgeRequest) => Promise<Result<BridgeLinkState>>;
 }
 
+/** The notice the fake worker offers: set `update` to a version to have it ask for, or null for none. */
+export const offer = (version: string): OfferedUpdate => ({ version, url: releaseUrl(version) });
+
 export function fakeApi(script: ApiScript = {}): FakeApi {
   const calls: string[] = [];
   const api: FakeApi = {
     calls,
     pasteState: { ...IDLE_PASTE },
     link: { paired: false, connected: false },
+    update: null,
+    checkForUpdate(force) {
+      calls.push(`update-check${force ? ":force" : ""}`);
+      return Promise.resolve(api.update);
+    },
+    snoozeUpdate(version) {
+      calls.push(`update-later:${version}`);
+      api.update = null;
+      return Promise.resolve(null);
+    },
+    skipUpdate(version) {
+      calls.push(`update-skip:${version}`);
+      api.update = null;
+      return Promise.resolve(null);
+    },
     bridge(request) {
       calls.push(`bridge:${request.type}`);
       if (script.bridge) return script.bridge(request);

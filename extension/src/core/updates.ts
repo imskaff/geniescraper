@@ -127,3 +127,12 @@ export const skipped = (record: UpdateRecord, version: string): UpdateRecord => 
   ...record,
   skipped: record.skipped && (compareVersions(record.skipped, version) ?? 0) > 0 ? record.skipped : version,
 });
+
+/**
+ * Whether this install is one that never updates itself. A store install carries an `update_url` in its manifest and
+ * is updated by the browser; an unpacked one does not. A browser without a side panel (Safari's popup build) is
+ * updated by its own app, not by unzipping over a folder, so the notice is not offered there either.
+ */
+export function canCheckForUpdates(manifest: { update_url?: unknown }, hasSidePanel: boolean): boolean {
+  return hasSidePanel && manifest.update_url === undefined;
+}

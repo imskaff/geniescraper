@@ -2,6 +2,7 @@
 // and is validated on receipt: a message is data, never trusted to have the shape it claims.
 import { VIDEO_KINDS, type Credit, type VideoKind } from "../core/models";
 import type { AutoMode, Outcome } from "../core/paste";
+import { parseVersion, type OfferedUpdate } from "../core/updates";
 
 export interface AlbumInfo {
   url: string;
@@ -82,6 +83,11 @@ export type WorkerRequest =
   | { type: "youtube-lookup"; title: string; artist: string }
   /** Try a YouTube key the user typed, with one cheap call. The key is checked, not stored, by the worker. */
   | { type: "youtube-key-check"; key: string }
+  /** The update notice to show: the worker looks at the project's releases when a look is due, or when `force`. */
+  | { type: "update-check"; force?: boolean }
+  /** "Later" and "Skip this version" on the notice. */
+  | { type: "update-later"; version: string }
+  | { type: "update-skip"; version: string }
   | PasteCommand;
 
 /** What the Genius content script asks the worker. The worker also checks that it really came from genius.com. */
@@ -189,6 +195,9 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
   if (value["type"] === "youtube-lookup")
     return typeof value["title"] === "string" && typeof value["artist"] === "string";
   if (value["type"] === "youtube-key-check") return typeof value["key"] === "string" && value["key"].length < 200;
+  if (value["type"] === "update-check") return value["force"] === undefined || typeof value["force"] === "boolean";
+  if (value["type"] === "update-later" || value["type"] === "update-skip")
+    return parseVersion(value["version"]) !== null;
   if (!hasUrl(value)) return false;
   if (value["type"] === "detect") return value["tabId"] === undefined || Number.isInteger(value["tabId"]);
   return value["type"] === "scrape-track" && typeof value["trackTitle"] === "string";
@@ -312,4 +321,15 @@ export function isYoutubeAnswer(value: unknown): value is YoutubeAnswer {
 
 export function isKeyCheck(value: unknown): value is KeyCheck {
   return typeof value === "string" && ["ok", "key", "quota", "not-enabled", "failed"].includes(value);
+}
+
+/** The notice the worker answers with: an update to offer, or null for none. */
+export function isOfferedUpdate(value: unknown): value is OfferedUpdate | null {
+  return (
+    value === null ||
+    (isRecord(value) &&
+      parseVersion(value["version"]) !== null &&
+      typeof value["url"] === "string" &&
+      value["url"].startsWith("https://github.com/"))
+  );
 }

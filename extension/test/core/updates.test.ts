@@ -4,6 +4,7 @@ import {
   EMPTY_UPDATE_RECORD,
   SNOOZE_MS,
   afterCheck,
+  canCheckForUpdates,
   checkIsDue,
   compareVersions,
   newestExtensionVersion,
@@ -234,5 +235,19 @@ describe("skipped", () => {
   it("never lowers what was skipped", () => {
     expect(skipped(record({ skipped: "0.9.0" }), "0.7.0").skipped).toBe("0.9.0");
     expect(skipped(record({ skipped: "0.7.0" }), "0.9.0").skipped).toBe("0.9.0");
+  });
+});
+
+describe("canCheckForUpdates", () => {
+  it("is for an unpacked install in a browser with a side panel", () => {
+    expect(canCheckForUpdates({}, true)).toBe(true);
+  });
+
+  it("is not for a store install, which carries an update address and updates itself", () => {
+    expect(canCheckForUpdates({ update_url: "https://clients2.google.com/service/update2/crx" }, true)).toBe(false);
+  });
+
+  it("is not for the popup build", () => {
+    expect(canCheckForUpdates({}, false)).toBe(false);
   });
 });

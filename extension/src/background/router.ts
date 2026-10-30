@@ -9,6 +9,7 @@ import type { KeyCheck } from "../shared/messages";
 import type { PasteService } from "./paste";
 import type { BrowserPorts } from "./ports";
 import { Limiter, Serial } from "./serial";
+import { NO_UPDATES, type UpdateService } from "./updates";
 
 /** Hidden tabs open at once, whatever the panel asks for. */
 export const MAX_OPEN_TABS = 24;
@@ -39,6 +40,7 @@ export function createRouter(
   covers: CoverService,
   youtube: YoutubeService = NO_YOUTUBE,
   checkKey: (key: string) => Promise<KeyCheck> = () => Promise.resolve("failed"),
+  updates: UpdateService = NO_UPDATES,
 ): Router {
   const serial = new Serial();
   const reads = new Limiter(MAX_OPEN_TABS);
@@ -54,6 +56,11 @@ export function createRouter(
     }
     // Pasting must stay responsive while an album is being read, so it does not wait in the reads' queue.
     if (isPasteCommand(raw)) return paste.command(raw);
+
+    // The update notice never waits behind a read, and a read never waits for it.
+    if (raw.type === "update-check") return updates.check(raw.force === true).then((data) => ({ ok: true, data }));
+    if (raw.type === "update-later") return updates.later(raw.version).then((data) => ({ ok: true, data }));
+    if (raw.type === "update-skip") return updates.skip(raw.version).then((data) => ({ ok: true, data }));
 
     // YouTube look-ups wait in no queue of tabs: the gate inside the service paces them.
     const queue = raw.type === "detect" ? serial : raw.type === "scrape-track" ? reads : direct;

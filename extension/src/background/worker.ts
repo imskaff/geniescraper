@@ -8,12 +8,14 @@ import { chromeStores } from "../shared/storage";
 import { REAL_CLIENT_TIMING } from "./appleClient";
 import { realCovers } from "./covers";
 import { checkKey } from "../lookups/youtubeApi";
-import { fetchResult } from "../lookups/http";
+import { fetchResult, hostOrigin } from "../lookups/http";
 import { loadYoutubeKey } from "../shared/secrets";
 import { realYoutube } from "./youtube";
 import { PasteService } from "./paste";
 import { chromePorts } from "./ports";
 import { INTERNAL_ERROR, createRouter } from "./router";
+import { createUpdateService } from "./updates";
+import { canCheckForUpdates } from "../core/updates";
 
 const ports = chromePorts();
 const stores = chromeStores();
@@ -89,6 +91,16 @@ const route = createRouter(
   realCovers(),
   realYoutube({ getKey: () => loadYoutubeKey(secrets) }),
   (key) => checkKey(fetchResult, key),
+  // The notice for installs that never update themselves: only when switched on and the host is allowed.
+  createUpdateService({
+    settings: stores.settings,
+    local: secrets,
+    getResult: fetchResult,
+    granted: () => chrome.permissions.contains({ origins: [hostOrigin("github")] }),
+    installed: chrome.runtime.getManifest().version,
+    eligible: canCheckForUpdates(chrome.runtime.getManifest(), "sidePanel" in chrome),
+    now: Date.now,
+  }),
 );
 
 // The toolbar button opens the side panel. The setting persists, so this is harmless on every worker start.
