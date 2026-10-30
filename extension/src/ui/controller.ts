@@ -25,6 +25,7 @@ import {
 import type { PanelHost } from "./panelHost";
 import { YoutubeKey } from "./youtubeKey";
 import { DesktopLink } from "./desktopLink";
+import { Countdown } from "./countdown";
 import { YoutubeLookups } from "./youtubeLookups";
 
 export * from "./panelState";
@@ -38,6 +39,7 @@ export class PanelController {
   private run = 0;
   private readonly host: PanelHost;
   private readonly key: YoutubeKey;
+  private readonly countdown: Countdown;
   private readonly youtube: YoutubeLookups;
   private readonly desktop: DesktopLink;
 
@@ -54,6 +56,11 @@ export class PanelController {
     this.host = this.makeHost(env);
     this.key = new YoutubeKey(this.host, () => this.refreshHosts());
     this.desktop = new DesktopLink(this.host);
+    this.countdown = new Countdown(this.host, {
+      leaveToMenu: () => this.leavePasting("menu"),
+      startPaste: (index) => this.startPaste(index),
+      nextPastable: () => this.nextPastable(),
+    });
     this.youtube = new YoutubeLookups(this.host, (index, patch) => this.setResult(index, patch));
     const pasteIndex = paste.active
       ? (session.results.find((r) => (r.song?.title || r.title) === paste.title)?.index ?? null)
@@ -478,10 +485,10 @@ export class PanelController {
     if (!isFinished(paste)) this.cancelCountdown();
     // Only the last track left to paste ends the work: while another has not been pasted the user must not be moved
     // away (leaving wipes the credits). When it is not known which track was pasted, nothing is assumed.
-    else if (!wasFinished && this.current.settings.autoReturn && this.finishedLastTrack()) this.startCountdown();
+    else if (!wasFinished && this.current.settings.autoReturn && this.finishedLastTrack()) this.countdown.startDone();
     // Another track with credits is waiting: press its button for the user after a short pause, once, on arrival.
     else if (!wasFinished && this.current.settings.nextTrackSeconds > 0 && this.nextPastable() !== null)
-      this.startNextCountdown();
+      this.countdown.startNext();
   }
 
   /** Tracks the user has started pasting in this album, so 'last track' does not depend on the order they chose. */
@@ -596,73 +603,14 @@ export class PanelController {
 
   // ── the finished screen's countdown ─────────────────────────────────
 
-  private countdownTimer: ReturnType<typeof setTimeout> | undefined;
-  private countdownPaused = false;
-
-  private startCountdown(): void {
-    // The pause flag is left as the view last set it: the pointer may already be over the panel.
-    // Only one countdown runs at a time: starting one takes the other away.
-    this.update({ doneCountdown: this.current.settings.returnSeconds, nextCountdown: null });
-    this.scheduleTick();
-  }
-
-  /** The same hold for the next track: a countdown that starts it unless the user gets there first. */
-  private startNextCountdown(): void {
-    this.update({ nextCountdown: this.current.settings.nextTrackSeconds, doneCountdown: null });
-    this.scheduleTick();
-  }
-
-  private scheduleTick(): void {
-    clearTimeout(this.countdownTimer);
-    this.countdownTimer = setTimeout(() => {
-      this.tick();
-    }, 1000);
-  }
-
-  private tick(): void {
-    if (this.countdownPaused) {
-      this.scheduleTick();
-      return;
-    }
-    const done = this.current.doneCountdown;
-    if (done !== null) {
-      if (!isFinished(this.current.paste)) return;
-      if (done <= 1) {
-        this.cancelCountdown();
-        void this.leavePasting("menu");
-        return;
-      }
-      this.update({ doneCountdown: done - 1 });
-      this.scheduleTick();
-      return;
-    }
-    const left = this.current.nextCountdown;
-    if (left === null) return;
-    // The next track may have gone away meanwhile (the session ended, the credits changed): nothing to start then.
-    const target = this.nextPastable();
-    if (target === null) return;
-    if (left <= 1) {
-      this.cancelCountdown();
-      void this.startPaste(target);
-      return;
-    }
-    this.update({ nextCountdown: left - 1 });
-    this.scheduleTick();
-  }
-
   /** Stop the countdown for good (the user acted, left the screen, or turned the setting off). */
   cancelCountdown(): void {
-    clearTimeout(this.countdownTimer);
-    this.countdownTimer = undefined;
-    const patch: Partial<PanelState> = {};
-    if (this.current.doneCountdown !== null) patch.doneCountdown = null;
-    if (this.current.nextCountdown !== null) patch.nextCountdown = null;
-    if (patch.doneCountdown !== undefined || patch.nextCountdown !== undefined) this.update(patch);
+    this.countdown.cancel();
   }
 
   /** Hold the countdown while the user is using the panel (pointer over it, a button focused); it carries on after. */
   pauseCountdown(paused: boolean): void {
-    this.countdownPaused = paused;
+    this.countdown.pause(paused);
   }
 
   /** Leave the finished paste: end the session quietly and go where the user chose. */
