@@ -140,3 +140,30 @@ class Host(ctk.CTk):
 
     def _render_controls(self) -> None:
         raise NotImplementedError
+
+    def _show_credits_screen(self) -> None:
+        raise NotImplementedError
+
+    def _show_track_select_screen(self) -> None:
+        raise NotImplementedError
+
+    def _show_scrape_screen(self) -> None:
+        raise NotImplementedError
+
+    def _show_loading_screen(self, track_title: str) -> None:
+        raise NotImplementedError
+
+    def _show_done_screen(self) -> None:
+        raise NotImplementedError
+
+    def _back_to_album_list(self) -> None:
+        raise NotImplementedError
+
+    def _go_to_main(self) -> None:
+        raise NotImplementedError
+
+    def _set_busy(self, busy: bool, status: str = "") -> None:
+        raise NotImplementedError
+
+    def _detect_thread(self, url: str, job: int) -> None:
+        raise NotImplementedError
