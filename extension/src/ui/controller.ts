@@ -13,12 +13,10 @@ import { loadPaste, loadSession, loadSettings, saveSession, saveSettings } from 
 import { normaliseCode } from "../shared/bridge";
 import type { OptionalHost } from "../lookups/http";
 import { parseYoutubeLink } from "../core/youtubeLink";
-import { cleanKey, loadYoutubeKey, looksLikeApiKey, saveYoutubeKey } from "../shared/secrets";
-import type { KeyCheck } from "../shared/messages";
+import { loadYoutubeKey } from "../shared/secrets";
 import {
   NO_HOSTS,
   KEY_MESSAGES,
-  KEY_CHECK_MESSAGES,
   YOUTUBE_RETRY_LIMIT,
   isFinished,
   MESSAGES,
@@ -32,6 +30,8 @@ import {
   type Env,
   type PanelState,
 } from "./panelState";
+import type { PanelHost } from "./panelHost";
+import { YoutubeKey } from "./youtubeKey";
 
 export * from "./panelState";
 
@@ -42,6 +42,8 @@ export class PanelController {
   private readonly listeners = new Set<Listener>();
   /** Bumped whenever a scrape run is stopped or replaced, so a late answer from the old run is dropped. */
   private run = 0;
+  private readonly host: PanelHost;
+  private readonly key: YoutubeKey;
 
   constructor(
     private readonly env: Env,
@@ -53,6 +55,8 @@ export class PanelController {
     hosts: Record<OptionalHost, boolean> = { ...NO_HOSTS },
     keySaved = false,
   ) {
+    this.host = this.makeHost(env);
+    this.key = new YoutubeKey(this.host, () => this.refreshHosts());
     const pasteIndex = paste.active
       ? (session.results.find((r) => (r.song?.title || r.title) === paste.title)?.index ?? null)
       : null;
@@ -76,6 +80,19 @@ export class PanelController {
       status: "",
       pageUrl,
       appleTabs,
+    };
+  }
+
+  private makeHost(env: Env): PanelHost {
+    const read = (): PanelState => this.current;
+    return {
+      env,
+      get state() {
+        return read();
+      },
+      update: (patch) => {
+        this.update(patch);
+      },
     };
   }
 
@@ -169,77 +186,22 @@ export class PanelController {
 
   // ── the user's own YouTube key ──────────────────────────────────────
 
-  /** The key that last checked out as saved and working. Kept here, never in the state the view renders from. */
-  private workingKey = "";
-
-  /** True when this text is the key already saved and working, so pressing Save again would change nothing. */
   keyIsCurrent(raw: string): boolean {
-    return this.workingKey !== "" && cleanKey(raw) === this.workingKey;
+    return this.key.keyIsCurrent(raw);
   }
 
-  private setKeyState(patch: Partial<PanelState["youtubeKey"]>): void {
-    this.update({ youtubeKey: { ...this.current.youtubeKey, ...patch } });
-  }
-
-  /**
-   * Check and keep a YouTube key. Chrome's permission prompt for Google's service needs the user's click, so it is asked
-   * for first, before any wait (once the key has the right shape, which costs no request).
-   */
-  async saveYoutubeKey(raw: string): Promise<void> {
-    const key = cleanKey(raw);
-    if (this.current.youtubeKey.busy) return;
-    if (!looksLikeApiKey(key)) {
-      this.setKeyState({
-        message: key
-          ? "That does not look like a YouTube key. A key starts with AIza and is 39 letters, digits, dashes and underscores long. Copy it again from Google's page, using its copy button."
-          : "Paste your key into the box first.",
-        tone: "error",
-      });
-      return;
-    }
-    const asked = this.env.hosts.request("youtubeApi");
-    this.setKeyState({ busy: true, message: "Checking your key with Google…", tone: "" });
-    const granted = await asked.catch(() => false);
-    await this.refreshHosts();
-    if (!granted) {
-      this.setKeyState({
-        busy: false,
-        tone: "error",
-        message:
-          "Chrome needs your OK before the extension can talk to Google's YouTube service. Press Save again and choose Allow.",
-      });
-      return;
-    }
-    const answer = await this.env.api.checkYoutubeKey(key);
-    const outcome: KeyCheck = answer.ok ? answer.data : "failed";
-    if (outcome === "ok" || outcome === "quota" || outcome === "not-enabled") {
-      // A key that is right but not usable yet (service not switched on, allowance used up today) is still kept:
-      // the user has done their part, and it starts working by itself.
-      await saveYoutubeKey(this.env.secrets, key).catch(() => undefined);
-    }
-    const kept = outcome === "ok" || outcome === "quota" || outcome === "not-enabled";
-    this.workingKey = outcome === "ok" ? key : "";
-    this.setKeyState({
-      saved: kept ? true : this.current.youtubeKey.saved,
-      busy: false,
-      message: KEY_CHECK_MESSAGES[outcome],
-      // Only a key that is saved and working is a success; one kept for later (quota, service off) still needs action.
-      tone: outcome === "ok" ? "ok" : "error",
-    });
+  saveYoutubeKey(raw: string): Promise<void> {
+    return this.key.save(raw);
   }
 
   /** Show a message under the key box (the view uses it for things only it can know, such as a refused clipboard). */
   noteKeyMessage(message: string): void {
-    this.setKeyState({ message, tone: "error" });
+    this.key.noteMessage(message);
   }
 
   /** Forget the key and take back the permission for Google's service. */
-  async removeYoutubeKey(): Promise<void> {
-    await saveYoutubeKey(this.env.secrets, "").catch(() => undefined);
-    this.workingKey = "";
-    this.setKeyState({ saved: false, message: "Your key was removed from this browser.", tone: "" });
-    await this.env.hosts.remove("youtubeApi").catch(() => false);
-    await this.refreshHosts();
+  removeYoutubeKey(): Promise<void> {
+    return this.key.remove();
   }
 
   /** Re-read which Apple Music page the user is on and which others are open, after tabs change or navigate. */
