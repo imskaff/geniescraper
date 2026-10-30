@@ -163,7 +163,7 @@ export class PanelController {
   async refreshHosts(): Promise<void> {
     const hosts = await this.env.hosts.granted().catch(() => this.current.hosts);
     const now = this.current.hosts;
-    if (hosts.deezer !== now.deezer || hosts.youtube !== now.youtube || hosts.youtubeApi !== now.youtubeApi) {
+    if ((Object.keys(hosts) as OptionalHost[]).some((host) => hosts[host] !== now[host])) {
       this.update({ hosts });
     }
   }

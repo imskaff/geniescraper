@@ -59,11 +59,17 @@ describe("fetchJson", () => {
     expect(calls[0]?.init?.redirect).toBe("error");
   });
 
-  it("lists exactly the hosts the manifest grants, one required and three optional", () => {
+  it("lists exactly the hosts the manifest grants, one required and four optional", () => {
     expect([...REQUIRED_LOOKUP_HOSTS]).toEqual(["itunes.apple.com"]);
-    expect(Object.values(OPTIONAL_LOOKUP_HOSTS)).toEqual(["api.deezer.com", "www.youtube.com", "www.googleapis.com"]);
+    expect(Object.values(OPTIONAL_LOOKUP_HOSTS)).toEqual([
+      "api.deezer.com",
+      "www.youtube.com",
+      "www.googleapis.com",
+      "api.github.com",
+    ]);
     expect([...LOOKUP_HOSTS].sort()).toEqual([
       "api.deezer.com",
+      "api.github.com",
       "itunes.apple.com",
       "www.googleapis.com",
       "www.youtube.com",

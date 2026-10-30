@@ -12,6 +12,8 @@ export const OPTIONAL_LOOKUP_HOSTS = {
   youtube: "www.youtube.com",
   /** Google's official YouTube service, used only when the user has entered their own key. */
   youtubeApi: "www.googleapis.com",
+  /** GitHub's public releases list, used only for the optional "Check for updates" notice. */
+  github: "api.github.com",
 } as const;
 
 export type OptionalHost = keyof typeof OPTIONAL_LOOKUP_HOSTS;

@@ -153,7 +153,7 @@ export interface FakeHosts extends HostPermissions {
 export function fakeHosts(initial: Partial<Record<OptionalHost, boolean>> = {}): FakeHosts {
   const listeners: (() => void)[] = [];
   const hosts: FakeHosts = {
-    state: { deezer: false, youtube: false, youtubeApi: false, ...initial },
+    state: { deezer: false, youtube: false, youtubeApi: false, github: false, ...initial },
     log: [],
     allow: true,
     granted: () => Promise.resolve({ ...hosts.state }),

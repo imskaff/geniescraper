@@ -17,6 +17,13 @@ describe("normaliseSettings", () => {
     });
   });
 
+  it("keeps the update check off until it is chosen, and takes only a real boolean", () => {
+    expect(DEFAULT_SETTINGS.checkUpdates).toBe(false);
+    expect(normaliseSettings({ checkUpdates: true }).checkUpdates).toBe(true);
+    expect(normaliseSettings({ checkUpdates: "yes" }).checkUpdates).toBe(false);
+    expect(normaliseSettings({ scrapeCore: true }).checkUpdates).toBe(false);
+  });
+
   it("maps onto the queue options", () => {
     expect(queueOptions({ ...DEFAULT_SETTINGS, scrapeAdditional: false })).toEqual({
       includeCore: true,

@@ -488,7 +488,7 @@ describe("describeError", () => {
 describe("optional hosts", () => {
   it("starts from what Chrome reports, not from anything saved", async () => {
     const { panel } = await open({ hosts: { deezer: true } });
-    expect(panel.state.hosts).toEqual({ deezer: true, youtube: false, youtubeApi: false });
+    expect(panel.state.hosts).toEqual({ deezer: true, youtube: false, youtubeApi: false, github: false });
   });
 
   it("asks Chrome before it waits for anything, because the prompt needs the click", async () => {

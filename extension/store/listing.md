@@ -61,6 +61,7 @@ Copy song credits from Apple Music into the Genius song edit form.
 | Host `https://itunes.apple.com/*`            | Finds the exact cover art for the song from Apple's public catalog.                                                                                               |
 | Optional host `https://api.deezer.com/*`     | Cover-art fallback; requested only when the user turns it on.                                                                                                     |
 | Optional host `https://www.youtube.com/*`    | Finds a YouTube link for the song; requested only when the user turns it on.                                                                                      |
+| Optional host `https://api.github.com/*`     | Looks at the project's public releases list once a day to show an "update available" notice; requested only when the user turns on "Check for updates".           |
 | Optional host `https://www.googleapis.com/*` | Finds the YouTube link through Google's official service with the user's own key; requested only when the user adds a key.                                        |
 
 ## Companion desktop app (no extra permission)

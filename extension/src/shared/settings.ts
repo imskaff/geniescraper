@@ -33,6 +33,8 @@ export interface Settings {
   returnSeconds: number;
   /** Seconds the finished screen waits before starting the next track by itself; 0 waits for the user. */
   nextTrackSeconds: number;
+  /** Look at the project's GitHub releases once a day and show a notice when a newer extension exists. Off until chosen. */
+  checkUpdates: boolean;
   /** The first-time set-up has been seen (finished or skipped). */
   onboarded: boolean;
 }
@@ -71,6 +73,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   autoReturn: true,
   returnSeconds: 30,
   nextTrackSeconds: 0,
+  checkUpdates: false,
   onboarded: false,
 };
 
@@ -151,6 +154,7 @@ export function normaliseSettings(raw: unknown): Settings {
     autoReturn: flag("autoReturn"),
     returnSeconds: seconds("returnSeconds", false),
     nextTrackSeconds: seconds("nextTrackSeconds", true),
+    checkUpdates: flag("checkUpdates"),
     onboarded,
   };
 }

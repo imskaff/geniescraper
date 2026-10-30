@@ -150,6 +150,7 @@ The TypeScript port must not drift, so parity is enforced by tests, not by disci
 | host `https://genius.com/*` | Fill the edit form | required |
 | host `https://itunes.apple.com/*` | Exact cover lookup | required |
 | host `https://api.deezer.com/*` | Cover fallback | optional |
+| host `https://api.github.com/*` | Optional daily check of the project's releases, for a notice that a newer extension exists | optional |
 | host `https://www.youtube.com/*` | Official video lookup | optional |
 | host `https://www.googleapis.com/*` | Official YouTube service with the user's own key | optional |
 | `storage` | Settings and the current queue | required |

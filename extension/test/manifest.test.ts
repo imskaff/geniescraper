@@ -36,11 +36,13 @@ const ALLOWED_HOSTS = new Set([
   "https://genius.com/*",
   "https://itunes.apple.com/*",
   "https://api.deezer.com/*",
+  "https://api.github.com/*",
   "https://www.youtube.com/*",
   "https://www.googleapis.com/*",
 ]);
 const ALLOWED_OPTIONAL_HOSTS = new Set([
   "https://api.deezer.com/*",
+  "https://api.github.com/*",
   "https://www.youtube.com/*",
   "https://www.googleapis.com/*",
 ]);

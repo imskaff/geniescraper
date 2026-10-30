@@ -160,7 +160,12 @@ export const YOUTUBE_RETRY_LIMIT = 3;
 /** The longest Start pasting waits for a YouTube link before starting without it. */
 export const YOUTUBE_WAIT_MS = 8000;
 
-export const NO_HOSTS: Record<OptionalHost, boolean> = { deezer: false, youtube: false, youtubeApi: false };
+export const NO_HOSTS: Record<OptionalHost, boolean> = {
+  deezer: false,
+  youtube: false,
+  youtubeApi: false,
+  github: false,
+};
 
 /** What the user is told when their YouTube key cannot be used, in their terms. */
 export const KEY_MESSAGES = {

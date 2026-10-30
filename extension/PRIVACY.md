@@ -1,6 +1,6 @@
 # Géniescraper extension: privacy policy
 
-Last updated: 2026-10-29.
+Last updated: 2026-10-30.
 
 Géniescraper copies song credits from Apple Music into the Genius song edit form.
 This page says exactly what the extension does with data.
@@ -21,6 +21,9 @@ The short version: it collects nothing, has no accounts, no analytics and no ser
   If you choose to add a YouTube Data API key, it is stored in `chrome.storage.local`, on this device only.
   It is never synced and never shown back in full.
   You can remove it in Settings at any time.
+- **Update notice (optional, off by default).**
+  If you turn on "Check for updates", the extension keeps a small record in `chrome.storage.local`, on this device only: when it last looked, the newest extension version it found, and whether you chose "Later" or "Skip this version".
+  It contains nothing about you.
 
 ## What leaves your browser
 
@@ -31,8 +34,10 @@ The extension sends song titles and artist names (public text from the page you 
 | `itunes.apple.com`   | Always, to find the exact cover art                                                                                                                    | The Apple Music catalog id of the album or song, or the song title and artist                       |
 | `api.deezer.com`     | Only if you tick "Search Deezer for a cover" and allow Chrome's permission prompt                                                                      | Song title and artist                                                                               |
 | `www.youtube.com`    | Only if you tick "Find a YouTube link" and allow Chrome's permission prompt. Then it happens for every track whose credits are read, one after another | Search terms made of the song title and artist, and the id of candidate videos                      |
+| `api.github.com`     | Only if you tick "Check for updates" and allow Chrome's permission prompt. Then at most once a day, and only while the panel is open                   | Nothing about you or your songs: a plain request for the project's public list of releases          |
 | `www.googleapis.com` | Only if you add your own YouTube key and allow Chrome's permission prompt. Then it happens for every track whose credits are read                      | Search terms (song title and artist), the id of candidate videos, and your key, in a request header |
 
+The update check only reads the project's public releases list, to compare the newest extension version with the installed one; the extension then shows a notice with a link, and never downloads or installs anything.
 Requests carry no cookies and no referrer.
 Apple Music pages are opened in a minimized window of your own browser (a background tab if that is not possible), as if you had visited them, and closed again when read.
 Because that is a real visit, Apple Music sees it as it would see any visit from your browser, including any cookies you already have for it; the extension reads only the page's public credits text.
