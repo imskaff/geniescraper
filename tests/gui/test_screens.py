@@ -96,9 +96,9 @@ def _check_hotkey_path(window: Any) -> dict[str, Any]:
     window._queue = [("written_by", "A"), ("role", "Mixer"), ("cover_art", "https://x/y.png"), ("written_by", "B")]
     try:
         with (
-            mock.patch("gui.app.keyboard.press_and_release", side_effect=keys.append),
-            mock.patch("gui.app.pyperclip.copy"),
-            mock.patch("gui.app.time.sleep"),
+            mock.patch("keyboard.press_and_release", side_effect=keys.append),
+            mock.patch("pyperclip.copy"),
+            mock.patch("time.sleep"),
             mock.patch.object(window, "iconify") as iconify,
         ):
             window._pos = 0

@@ -12,12 +12,14 @@ from PIL import Image as PILImage
 
 from assistant import flow
 from gui import theme
+from gui.chrome import ChromeMixin
 from gui.connect_prompt import ConnectPrompt
-from gui.link import LinkController, OpenPage, RunStatus, describe_status
+from gui.host import Host
+from gui.link import LinkController, OpenPage
+from gui.link_glue import LinkGlueMixin
 from gui.logic import (
     OPEN_PAGES_EMPTY,
     OPEN_PAGES_PICK,
-    STEPS,
     detector_title,
     friendly_error,
     open_page_rows,
@@ -76,7 +78,7 @@ _LIST_LABELS = {
 _NESTED_KINDS = frozenset({"artist", "phonographic_copyright", "copyright_notice"})
 
 
-class App(ctk.CTk):
+class App(LinkGlueMixin, ChromeMixin, Host):
     def __init__(self, *, start_link: bool = True) -> None:
         super().__init__()
         self.title("Géniescraper v0.5")
@@ -159,22 +161,6 @@ class App(ctk.CTk):
 
     # ── helpers ──────────────────────────────────────────────────────────
 
-    def _clear(self) -> None:
-        """Remove the current screen, including its global hotkeys, so no stale key handler survives."""
-        self._clear_kb_hooks()
-        for w in self.winfo_children():
-            if isinstance(w, ctk.CTkToplevel):
-                continue
-            w.destroy()
-
-    def _clear_kb_hooks(self) -> None:
-        for hook in self._kb_hooks:
-            try:
-                keyboard.unhook(hook)
-            except Exception:
-                pass
-        self._kb_hooks = []
-
     def _register_assistant_keys(self) -> None:
         self._clear_kb_hooks()
         if self.link.bridged:
@@ -190,45 +176,6 @@ class App(ctk.CTk):
 
         self._kb_hooks.append(keyboard.hook_key(settings.hotkey, _on_fwd, suppress=True))
         self._kb_hooks.append(keyboard.hook_key(settings.back_hotkey, _on_back, suppress=True))
-
-    def _header(self, step: int | None) -> None:
-        """Top bar on every screen: where you are in the flow, and Settings."""
-        bar = ctk.CTkFrame(self, fg_color="transparent")
-        bar.pack(fill="x", padx=theme.SPACE_4, pady=(theme.SPACE_3, theme.SPACE_2))
-        crumbs = ctk.CTkFrame(bar, fg_color="transparent")
-        crumbs.pack(side="left")
-        for i, name in enumerate(STEPS):
-            if i:
-                ctk.CTkLabel(crumbs, text="›", font=_f(12), text_color=theme.DONE).pack(side="left", padx=theme.SPACE_2)
-            if step is None:
-                color, weight = theme.FAINT, "normal"
-            elif i < step:
-                color, weight = theme.MUTED, "normal"
-            elif i == step:
-                color, weight = theme.TEXT, "bold"
-            else:
-                color, weight = theme.DONE, "normal"
-            ctk.CTkLabel(crumbs, text=name, font=_f(12, weight), text_color=color).pack(side="left")
-        ctk.CTkButton(
-            bar,
-            text="⚙  Settings",
-            width=104,
-            height=28,
-            font=_f(12),
-            fg_color=theme.SURFACE,
-            hover_color=theme.SURFACE_HI,
-            text_color=theme.TEXT,
-            border_width=1,
-            border_color=theme.BORDER,
-            command=self._open_settings,
-        ).pack(side="right")
-
-    def _open_settings(self) -> None:
-        if self._settings_win is not None and self._settings_win.winfo_exists():
-            self._settings_win.lift()
-            self._settings_win.focus_force()
-            return
-        self._settings_win = SettingsWindow(self, on_change=self._settings_changed, link=self.link)
 
     def _settings_changed(self) -> None:
         """Apply a setting the moment it changes, on whatever screen is showing."""
@@ -247,45 +194,6 @@ class App(ctk.CTk):
             self._show_credits_screen()
         elif self._screen == "start":
             self._show_scrape_screen()
-
-    def _set_compact(self, compact: bool) -> None:
-        if compact:
-            if self.winfo_height() > 320:
-                self._normal_height = self.winfo_height()
-            self.geometry("620x300")
-        elif self.winfo_height() <= 320:
-            self.geometry(f"620x{self._normal_height}")
-
-    @staticmethod
-    def _set_enabled(btn: ctk.CTkButton, enabled: bool) -> None:
-        """Disabled primary buttons drop the yellow, so they never look clickable."""
-        if enabled:
-            btn.configure(state="normal", fg_color=theme.ACCENT, text_color=theme.ACCENT_INK)
-        else:
-            btn.configure(state="disabled", fg_color=theme.SURFACE_HI, text_color_disabled=theme.FAINT)
-
-    def _button(self, master, text: str, command, *, primary: bool = False, width: int = 140, **kw) -> ctk.CTkButton:
-        """Primary actions are filled; everything else is outlined, so the main step is obvious."""
-        style = (
-            {}
-            if primary
-            else {
-                "fg_color": "transparent",
-                "border_width": 1,
-                "border_color": theme.BORDER,
-                "text_color": theme.TEXT,
-                "hover_color": theme.SURFACE_HI,
-            }
-        )
-        return ctk.CTkButton(
-            master,
-            text=text,
-            command=command,
-            width=width,
-            height=38,
-            font=_f(13, "bold" if primary else "normal"),
-            **(style | kw),
-        )
 
     def destroy(self) -> None:
         self.link.end_run()
@@ -492,20 +400,6 @@ class App(ctk.CTk):
         self._url_entry.delete(0, "end")
         self._url_entry.insert(0, url)
         self._start_scrape()
-
-    def _settings_summary(self, master) -> ctk.CTkButton:
-        """One clickable line with the hotkeys, which opens Settings."""
-        text = f"Hotkeys {settings.hotkey.upper()} / {settings.back_hotkey.upper()}"
-        return ctk.CTkButton(
-            master,
-            text=text,
-            height=26,
-            font=_f(12),
-            fg_color="transparent",
-            hover_color=theme.SURFACE,
-            text_color=theme.MUTED,
-            command=self._open_settings,
-        )
 
     def _paste_url(self) -> None:
         self._url_entry.delete(0, "end")
@@ -847,27 +741,6 @@ class App(ctk.CTk):
             connect.pack(anchor="w", padx=theme.SPACE_4, pady=(0, theme.SPACE_3))
         self._manual_card = card
 
-    def _connect_extension(self) -> None:
-        """Open Settings at the link card and start pairing, so the code is on screen to copy."""
-        self._open_settings()
-        win = self._settings_win
-        if win is not None and win.winfo_exists():
-            win.show_link()
-
-    def _control(self, master, text: str, command, width: int) -> ctk.CTkButton:
-        return ctk.CTkButton(
-            master,
-            text=text,
-            width=width,
-            height=30,
-            font=_f(12),
-            fg_color=theme.SURFACE,
-            hover_color=theme.SURFACE_HI,
-            text_color=theme.TEXT,
-            text_color_disabled=theme.FAINT,
-            command=command,
-        )
-
     def _build_steps_list(self) -> None:
         """The step lists, in one scroll area: 'Steps done' (closed to start with) above 'Steps left' (open)."""
         sf = self._queue_sf = theme.scroll_frame(self, fg_color=theme.SURFACE, corner_radius=8)
@@ -1063,21 +936,6 @@ class App(ctk.CTk):
         else:
             self._show_track_select_screen()
 
-    def _toast(self, text: str, *, error: bool = False) -> None:
-        """Short message at the bottom of the window that disappears on its own."""
-        lbl = ctk.CTkLabel(
-            self,
-            text=text,
-            font=_f(12),
-            text_color=theme.TEXT,
-            fg_color=theme.DANGER_DIM if error else theme.SURFACE_HI,
-            corner_radius=6,
-            wraplength=520,
-        )
-        lbl.place(relx=0.5, rely=1.0, y=-16, anchor="s")
-        lbl.lift()
-        self.after(6000, lambda: lbl.destroy() if lbl.winfo_exists() else None)
-
     def _show_track_select_screen(self) -> None:
         self._screen = "tracks"
         self._set_compact(False)
@@ -1165,23 +1023,6 @@ class App(ctk.CTk):
                 w.bind("<Button-1>", _toggle)
                 w.configure(cursor="hand2")
         self._update_selection_btn()
-
-    def _release_header(self, master, title: str, artist: str, cover: PILImage.Image | None, extra: str = "") -> None:
-        top = ctk.CTkFrame(master, fg_color="transparent")
-        top.pack(fill="x", padx=theme.SPACE_6, pady=(theme.SPACE_3, theme.SPACE_3))
-        if cover is not None:
-            thumb = ctk.CTkImage(cover, size=(88, 88))
-            ctk.CTkLabel(top, image=thumb, text="").pack(side="left", padx=(0, theme.SPACE_4))
-        info = ctk.CTkFrame(top, fg_color="transparent")
-        info.pack(side="left", fill="both", expand=True)
-        ctk.CTkLabel(
-            info, text=title, font=theme.display(24), text_color=theme.TEXT, anchor="w", justify="left", wraplength=400
-        ).pack(anchor="w")
-        ctk.CTkLabel(info, text=artist, font=_f(14), text_color=theme.MUTED, anchor="w").pack(anchor="w")
-        if extra:
-            ctk.CTkLabel(info, text=extra, font=_f(12), text_color=theme.ACCENT, anchor="w").pack(
-                anchor="w", pady=(theme.SPACE_2, 0)
-            )
 
     def _select_all(self, value: bool) -> None:
         for var in self._track_vars:
@@ -1658,85 +1499,6 @@ class App(ctk.CTk):
         self._show_scrape_screen()
 
     # ── companion link ───────────────────────────────────────────────────
-
-    def _on_tk_thread(self, fn) -> None:
-        self.after(0, fn)
-
-    def _persist_pairing(self, secret: str, origin: str) -> None:
-        settings.bridge_secret, settings.bridge_origin = secret, origin
-        settings.save()
-
-    def _erase_pairing(self) -> None:
-        settings.bridge_secret = settings.bridge_origin = ""
-        settings.save()
-
-    def _begin_link_run(self, resume_at: int) -> None:
-        """Give the current queue to the extension, when it is connected. Otherwise the hotkeys do the work."""
-        self.link.end_run()
-        song = self._song
-        if song is not None and self.link.connected:
-            self.link.start_run(f"{song.title} · {song.artist}", self._queue, settings.link_mode, resume_at)
-
-    def _sync_hooks(self) -> None:
-        """The extension owns F7/F8 while it runs the paste; otherwise the desktop's keys are registered."""
-        if self._screen == "assistant" and not self._esc_overlay_open():
-            self._register_assistant_keys()
-
-    def _link_connection(self, up: bool) -> None:
-        if up and self._screen == "assistant" and not self.link.run_active and not self._esc_overlay_open():
-            self._begin_link_run(self._pos)  # it connected mid-song: carry on from the current step
-        self._sync_hooks()
-        self._render_link()
-        self._render_open_pages()
-
-    def _link_run_ended(self) -> None:
-        """The extension refused or ended the run: the desktop's keys come back."""
-        self._sync_hooks()
-        self._render_link()
-        if self.link.notice:
-            self._toast(self.link.notice, error=True)
-
-    def _link_status(self, status: RunStatus) -> None:
-        if self._screen != "assistant":
-            return
-        with self._lock:
-            self._pos = max(0, min(status.position, len(self._queue)))
-        self._render_assistant()
-        self._render_link()
-
-    def _link_finished(self) -> None:
-        if self._screen == "assistant":
-            self._finish_song()
-
-    def _link_changed(self) -> None:
-        self._render_link()
-        win = self._settings_win
-        if win is not None and win.winfo_exists():
-            win.refresh_link()
-
-    def _render_link(self) -> None:
-        """The status or error line above the step counter, and the buttons that follow the link."""
-        lbl, before = self._link_lbl, self._link_before
-        if self._screen != "assistant" or lbl is None or before is None or not lbl.winfo_exists():
-            return
-        link = self.link
-        status = link.status
-        if link.bridged:
-            text, tone = describe_status(status) if status else ("", "info")
-            text = link.notice or text or "Linked to the browser extension."
-            tone = "attention" if link.notice else tone
-        elif link.run_active:
-            text, tone = "Link lost. The hotkeys work again until the extension reconnects.", "attention"
-        else:
-            text, tone = link.notice, "attention"
-        colour = {"ok": theme.DONE, "attention": theme.WARN}.get(tone, theme.MUTED)
-        if text:
-            lbl.configure(text=text, text_color=colour)
-            lbl.pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_1), before=before)
-        else:
-            lbl.pack_forget()
-        self._card_instr_lbl.configure(text=self._instruction_text())
-        self._render_controls()
 
     def _wait_esc(self) -> None:
         while True:
