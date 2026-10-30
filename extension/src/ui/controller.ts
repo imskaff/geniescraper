@@ -2,204 +2,33 @@
 // Everything that touches the outside (the worker, storage, the browser's tabs) is injected, so the whole flow
 // runs in tests with fakes.
 import { parseAppleMusicUrl } from "../apple/url";
-import { appleTabEntries, type AppleTabEntry, type OpenTab } from "../core/appleTabs";
+import { appleTabEntries, type AppleTabEntry } from "../core/appleTabs";
 import { geniusRole } from "../core/geniusRoles";
-import { typedQueue, type QueueItem, type SongCredits } from "../core/models";
+import { typedQueue, type QueueItem } from "../core/models";
 import type { PasteCommand } from "../shared/messages";
 import { IDLE_PASTE, type PasteState } from "../core/paste";
-import type { AlbumInfo, AppError, PageScrape } from "../shared/messages";
 import { EMPTY_SESSION, type Session, type TrackResult } from "../shared/session";
 import { normaliseSettings, queueOptions, type PasteMode, type Settings } from "../shared/settings";
-import {
-  loadPaste,
-  loadSession,
-  loadSettings,
-  saveSession,
-  saveSettings,
-  type KeyValueStore,
-  type Stores,
-} from "../shared/storage";
-import { BRIDGE_PORTS, normaliseCode } from "../shared/bridge";
-import type { WorkerApi } from "./api";
+import { loadPaste, loadSession, loadSettings, saveSession, saveSettings } from "../shared/storage";
 import type { OptionalHost } from "../lookups/http";
-import { parseYoutubeLink } from "../core/youtubeLink";
-import { cleanKey, loadYoutubeKey, looksLikeApiKey, saveYoutubeKey } from "../shared/secrets";
-import type { KeyCheck } from "../shared/messages";
+import { loadYoutubeKey } from "../shared/secrets";
+import {
+  NO_HOSTS,
+  isFinished,
+  MESSAGES,
+  SETUP_STEPS,
+  describeError,
+  buildSong,
+  type Env,
+  type PanelState,
+} from "./panelState";
+import type { PanelHost } from "./panelHost";
+import { YoutubeKey } from "./youtubeKey";
+import { DesktopLink } from "./desktopLink";
+import { Countdown } from "./countdown";
+import { YoutubeLookups } from "./youtubeLookups";
 
-export interface ActiveTab {
-  tabId: number;
-  url: string;
-}
-
-/** The optional hosts' permissions, as Chrome has them: the permission is the setting, so nothing is stored twice. */
-export interface HostPermissions {
-  granted(): Promise<Record<OptionalHost, boolean>>;
-  /** Ask Chrome. Must be called straight from the user's click: Chrome refuses it after any wait. */
-  request(host: OptionalHost): Promise<boolean>;
-  remove(host: OptionalHost): Promise<boolean>;
-  /** Called whenever any permission is added or removed, including from chrome://extensions. */
-  subscribe(listener: () => void): void;
-}
-
-/** The steps of the first-time set-up: welcome, what to paste, speed, look-ups, summary. */
-export const SETUP_STEPS = 5;
-
-/** How often the Desktop app card re-asks the worker while Settings is open. */
-export const BRIDGE_POLL_MS = 2500;
-
-const PORT_RANGE = `${String(BRIDGE_PORTS[0])}-${String(BRIDGE_PORTS[BRIDGE_PORTS.length - 1])}`;
-
-export const BRIDGE_MESSAGES = {
-  empty: "Type the code the desktop app shows. It looks like ABCD-EFGH.",
-  badShape: "That is not a pairing code. It looks like ABCD-EFGH: eight letters and digits, and no 0, 1, I, L or O.",
-  paired: "Paired. The desktop app can now send credits to this panel.",
-  unpaired: "Unpaired. The desktop app can no longer reach this browser. You can pair again with a new code.",
-  notAccepted: `The desktop app did not accept the code. Check that: the desktop app is open and showing a pairing code (it listens on ports ${PORT_RANGE} of this computer); the code is the one on screen now (a code expires after a short time and works once); and you have not typed it wrongly 5 times (then the app locks that code, so show a new code in the desktop app and try again).`,
-} as const;
-
-export interface Env {
-  api: WorkerApi;
-  hosts: HostPermissions;
-  stores: Stores;
-  /** Where the user's YouTube key is kept: this browser only, never synced. */
-  secrets: KeyValueStore;
-  /** The tab the user is looking at, or null when there is none to read. */
-  activeTab(): Promise<ActiveTab | null>;
-  /** Every tab of the browser that shows Apple Music, in the browser's order, with the one in view marked. */
-  appleTabs(): Promise<OpenTab[]>;
-}
-
-export interface PanelState {
-  session: Session;
-  settings: Settings;
-  settingsOpen: boolean;
-  /** The first-time set-up: whether it is showing (it opens by itself until finished or skipped) and which step. */
-  setup: { open: boolean; step: number };
-  /** The paste session, as the worker stores it. */
-  paste: PasteState;
-  /** Which track is being pasted (null when unknown, for example after a restart with no match). */
-  pasteIndex: number | null;
-  /** Which optional hosts the user has granted, as Chrome reports it. */
-  hosts: Record<OptionalHost, boolean>;
-  /** The user's own YouTube key: whether one is saved (never the key itself), and how the last attempt went. */
-  youtubeKey: { saved: boolean; message: string; tone: "" | "ok" | "error"; busy: boolean };
-  /** The link to the desktop app: how it stands, and how the last pair or unpair attempt went. */
-  bridge: {
-    known: boolean;
-    paired: boolean;
-    connected: boolean;
-    busy: boolean;
-    message: string;
-    tone: "" | "ok" | "error";
-  };
-  /** What became of each track's YouTube look-up, shown in its credits so a missing link is never a mystery. */
-  youtubeNotes: Record<number, string>;
-  /** What was wrong with the YouTube link the user last pasted, or "". */
-  youtubeLinkError: string;
-  /** Seconds left before the finished screen returns to the main menu, or null when no countdown runs. */
-  doneCountdown: number | null;
-  /** Seconds left before the finished screen starts the next track by itself, or null when no countdown runs. */
-  nextCountdown: number | null;
-  /** Counts every error shown, so the same message appearing again (a repeated attempt) can still be told apart. */
-  errorSeq: number;
-  /** What the panel is waiting for; the buttons that would start another job are disabled meanwhile. */
-  busy: "detect" | "scrape" | null;
-  /** A problem the user has to act on; announced assertively. */
-  error: string;
-  /** Progress and results; announced politely. */
-  status: string;
-  /** The Apple Music page the user is on, offered as the default link ("" when there is none). */
-  pageUrl: string;
-  /** The album and song pages already open in the browser, offered on the link screen; the page in view first. */
-  appleTabs: AppleTabEntry[];
-}
-
-export const MESSAGES = {
-  invalidLink: "That is not an Apple Music album or song link.",
-  noTracks: "Pick at least one track.",
-  noPage: "Apple Music has no page for this track, so its credits cannot be read.",
-  lookingForYoutube: "Looking for the YouTube link…",
-  lookingForYoutubeShort: "Looking for it…",
-  noYoutubeShort: "No link found for this track.",
-  youtubeFailedShort: "The look-up did not finish.",
-  youtubeNotChecked: "Not checked: YouTube is limiting requests. Open this track to try again.",
-  noYoutube: "No YouTube link was found for this track.",
-  youtubeThrottled: "YouTube is limiting requests right now, so this track has no YouTube link. Try again in a minute.",
-  notAYoutubeLink:
-    "That is not a link to one YouTube video. Open the video on YouTube and copy the address from the address bar, or use its Share button.",
-  pasteYoutubeLink: "Paste the YouTube link into the box first.",
-  workerOutOfDate:
-    "The extension's background part is older than this panel, so it does not know that command. Open chrome://extensions, press Reload on Géniescraper, then try again. Step by step still works.",
-  allDone: "All credits entered. Check the Genius page, then press Save there.",
-} as const;
-
-/** What to tell the user about a failure; the codes are stable, the wording is for people. */
-export function describeError(error: AppError): string {
-  switch (error.code) {
-    case "invalid-url":
-      return MESSAGES.invalidLink;
-    case "not-found":
-      return "Apple Music could not find that page. Check the link and try again.";
-    case "timeout":
-      return "Apple Music took too long to respond. Try again.";
-    case "tab-failed":
-      return `Could not read the page: ${error.message}`;
-    case "bad-request":
-    case "internal":
-      return `Something went wrong while reading the page: ${error.message}`;
-  }
-}
-
-/** The song the extension holds for a track: the page's credits, with the album's copyright lines added. */
-export function buildSong(album: AlbumInfo, result: Pick<TrackResult, "url">, scrape: PageScrape): SongCredits {
-  return {
-    title: scrape.title,
-    artist: scrape.artist,
-    appleMusicUrl: result.url,
-    credits: scrape.credits,
-    // Song pages carry no ℗/© footer, so these come from the album page read at detection time.
-    phonographicCopyright: album.phonographicCopyright,
-    copyrightNotice: album.copyrightNotice,
-    // The album's cover comes from Apple's catalog lookup, which is exact; the song page header is only a fallback.
-    coverArtUrl: album.coverArtUrl || scrape.coverArtUrl,
-    youtubeUrl: "",
-    youtubeIsMv: false,
-    // The song page names the song's own date; the album's footer is the fallback.
-    releaseDate: scrape.releaseDate || album.releaseDate,
-  };
-}
-
-/** How long the lookups rest before a track YouTube refused is asked about again, and how many times that happens. */
-export const YOUTUBE_RETRY_MS = 45_000;
-const YOUTUBE_RETRY_LIMIT = 3;
-
-/** The longest Start pasting waits for a YouTube link before starting without it. */
-export const YOUTUBE_WAIT_MS = 8000;
-
-const NO_HOSTS: Record<OptionalHost, boolean> = { deezer: false, youtube: false, youtubeApi: false };
-
-/** What the user is told when their YouTube key cannot be used, in their terms. */
-const KEY_MESSAGES = {
-  key: "Google did not accept your YouTube key, so the free search is used instead. Check the key in Settings.",
-  quota:
-    "Your free YouTube allowance for today is used up (it resets at midnight, Pacific time), so the free search is used instead.",
-  "not-enabled":
-    "Your key works, but the YouTube Data API is not switched on for it. Follow step 2 in Settings and press Enable.",
-} as const;
-
-const KEY_CHECK_MESSAGES: Record<KeyCheck, string> = {
-  ok: "Key saved and working. YouTube links will now come from Google's official service.",
-  key: "Google did not accept this key. Copy it again from the Credentials page, or create a new one. Nothing was saved.",
-  quota:
-    "Key saved. Your free YouTube allowance for today is used up, so it will start working after midnight (Pacific time).",
-  "not-enabled":
-    "Key saved, but the YouTube Data API is not switched on yet. Follow step 2 below and press Enable; it works a minute after that.",
-  failed:
-    "Could not reach Google to check the key. Check your internet connection and press Save again. Nothing was saved.",
-};
-
-const isFinished = (paste: PasteState): boolean =>
-  paste.active && paste.queue.length > 0 && paste.position >= paste.queue.length;
+export * from "./panelState";
 
 type Listener = () => void;
 
@@ -208,6 +37,11 @@ export class PanelController {
   private readonly listeners = new Set<Listener>();
   /** Bumped whenever a scrape run is stopped or replaced, so a late answer from the old run is dropped. */
   private run = 0;
+  private readonly host: PanelHost;
+  private readonly key: YoutubeKey;
+  private readonly countdown: Countdown;
+  private readonly youtube: YoutubeLookups;
+  private readonly desktop: DesktopLink;
 
   constructor(
     private readonly env: Env,
@@ -219,6 +53,15 @@ export class PanelController {
     hosts: Record<OptionalHost, boolean> = { ...NO_HOSTS },
     keySaved = false,
   ) {
+    this.host = this.makeHost(env);
+    this.key = new YoutubeKey(this.host, () => this.refreshHosts());
+    this.desktop = new DesktopLink(this.host);
+    this.countdown = new Countdown(this.host, {
+      leaveToMenu: () => this.leavePasting("menu"),
+      startPaste: (index) => this.startPaste(index),
+      nextPastable: () => this.nextPastable(),
+    });
+    this.youtube = new YoutubeLookups(this.host, (index, patch) => this.setResult(index, patch));
     const pasteIndex = paste.active
       ? (session.results.find((r) => (r.song?.title || r.title) === paste.title)?.index ?? null)
       : null;
@@ -242,6 +85,19 @@ export class PanelController {
       status: "",
       pageUrl,
       appleTabs,
+    };
+  }
+
+  private makeHost(env: Env): PanelHost {
+    const read = (): PanelState => this.current;
+    return {
+      env,
+      get state() {
+        return read();
+      },
+      update: (patch) => {
+        this.update(patch);
+      },
     };
   }
 
@@ -335,77 +191,22 @@ export class PanelController {
 
   // ── the user's own YouTube key ──────────────────────────────────────
 
-  /** The key that last checked out as saved and working. Kept here, never in the state the view renders from. */
-  private workingKey = "";
-
-  /** True when this text is the key already saved and working, so pressing Save again would change nothing. */
   keyIsCurrent(raw: string): boolean {
-    return this.workingKey !== "" && cleanKey(raw) === this.workingKey;
+    return this.key.keyIsCurrent(raw);
   }
 
-  private setKeyState(patch: Partial<PanelState["youtubeKey"]>): void {
-    this.update({ youtubeKey: { ...this.current.youtubeKey, ...patch } });
-  }
-
-  /**
-   * Check and keep a YouTube key. Chrome's permission prompt for Google's service needs the user's click, so it is asked
-   * for first, before any wait (once the key has the right shape, which costs no request).
-   */
-  async saveYoutubeKey(raw: string): Promise<void> {
-    const key = cleanKey(raw);
-    if (this.current.youtubeKey.busy) return;
-    if (!looksLikeApiKey(key)) {
-      this.setKeyState({
-        message: key
-          ? "That does not look like a YouTube key. A key starts with AIza and is 39 letters, digits, dashes and underscores long. Copy it again from Google's page, using its copy button."
-          : "Paste your key into the box first.",
-        tone: "error",
-      });
-      return;
-    }
-    const asked = this.env.hosts.request("youtubeApi");
-    this.setKeyState({ busy: true, message: "Checking your key with Google…", tone: "" });
-    const granted = await asked.catch(() => false);
-    await this.refreshHosts();
-    if (!granted) {
-      this.setKeyState({
-        busy: false,
-        tone: "error",
-        message:
-          "Chrome needs your OK before the extension can talk to Google's YouTube service. Press Save again and choose Allow.",
-      });
-      return;
-    }
-    const answer = await this.env.api.checkYoutubeKey(key);
-    const outcome: KeyCheck = answer.ok ? answer.data : "failed";
-    if (outcome === "ok" || outcome === "quota" || outcome === "not-enabled") {
-      // A key that is right but not usable yet (service not switched on, allowance used up today) is still kept:
-      // the user has done their part, and it starts working by itself.
-      await saveYoutubeKey(this.env.secrets, key).catch(() => undefined);
-    }
-    const kept = outcome === "ok" || outcome === "quota" || outcome === "not-enabled";
-    this.workingKey = outcome === "ok" ? key : "";
-    this.setKeyState({
-      saved: kept ? true : this.current.youtubeKey.saved,
-      busy: false,
-      message: KEY_CHECK_MESSAGES[outcome],
-      // Only a key that is saved and working is a success; one kept for later (quota, service off) still needs action.
-      tone: outcome === "ok" ? "ok" : "error",
-    });
+  saveYoutubeKey(raw: string): Promise<void> {
+    return this.key.save(raw);
   }
 
   /** Show a message under the key box (the view uses it for things only it can know, such as a refused clipboard). */
   noteKeyMessage(message: string): void {
-    this.setKeyState({ message, tone: "error" });
+    this.key.noteMessage(message);
   }
 
   /** Forget the key and take back the permission for Google's service. */
-  async removeYoutubeKey(): Promise<void> {
-    await saveYoutubeKey(this.env.secrets, "").catch(() => undefined);
-    this.workingKey = "";
-    this.setKeyState({ saved: false, message: "Your key was removed from this browser.", tone: "" });
-    await this.env.hosts.remove("youtubeApi").catch(() => false);
-    await this.refreshHosts();
+  removeYoutubeKey(): Promise<void> {
+    return this.key.remove();
   }
 
   /** Re-read which Apple Music page the user is on and which others are open, after tabs change or navigate. */
@@ -482,7 +283,7 @@ export class PanelController {
       return;
     }
     // Track numbers belong to this album: what was asked about another album's tracks must not carry over.
-    this.forgetYoutube();
+    this.youtube.forget();
     this.pasted.clear();
     const results: TrackResult[] = selected.map((index) => ({
       index,
@@ -516,7 +317,7 @@ export class PanelController {
         const album = this.current.session.album;
         if (answer.ok && album) {
           await this.setResult(next.index, { status: "done", song: buildSong(album, next, answer.data), error: "" });
-          this.queueYoutube(next.index);
+          this.youtube.queue(next.index);
         } else if (!answer.ok) {
           await this.setResult(next.index, { status: "error", error: describeError(answer.error) });
         }
@@ -532,7 +333,7 @@ export class PanelController {
         ? `Got credits for ${String(done)} ${done === 1 ? "track" : "tracks"}.`
         : `Got credits for ${String(done)} of ${String(results.length)} tracks; ${String(failed)} failed.`;
     // A problem with the user's YouTube key found while reading stays on screen, not lost under the summary.
-    this.update({ busy: null, status: this.keyNote ? `${status} ${this.keyNote}` : status });
+    this.update({ busy: null, status: this.youtube.keyNote ? `${status} ${this.youtube.keyNote}` : status });
   }
 
   private async setResult(index: number, patch: Partial<TrackResult>): Promise<void> {
@@ -562,20 +363,9 @@ export class PanelController {
     const closing = this.current.session.current === index;
     await this.updateSession({ current: closing ? null : index });
     if (closing) return;
-    // A lookup that came back empty is asked once more when the user opens the track: the first answer may have come
-    // from a thin search, and the user is now looking at exactly this link. One still running is left alone.
-    const song = this.current.session.results.find((r) => r.index === index)?.song;
-    if (
-      song &&
-      !song.youtubeUrl &&
-      this.current.youtubeNotes[index] === MESSAGES.noYoutubeShort &&
-      !this.youtubeReasked.has(index)
-    ) {
-      this.youtubeReasked.add(index); // once: a track that truly has no video is not asked about at every opening
-      this.youtubeLookups.delete(index);
-    }
+    this.youtube.reaskIfEmpty(index);
     // Opened credits get their link looked up now, as the user is about to look at (and maybe fix) it.
-    void this.ensureYoutube(index);
+    void this.youtube.ensure(index);
   }
 
   /** The first track, in album order, whose credits are in and give something to paste; Start pasting begins here. */
@@ -593,7 +383,7 @@ export class PanelController {
   /** Start over with another link. */
   async newAlbum(): Promise<void> {
     this.run++;
-    this.forgetYoutube();
+    this.youtube.forget();
     this.pasted.clear();
     await this.updateSession({ ...EMPTY_SESSION });
     this.update({ busy: null, error: "", status: "" });
@@ -614,87 +404,33 @@ export class PanelController {
   openSettings(): void {
     // The last job's progress message means nothing on the settings screen.
     this.update({ settingsOpen: true, status: "" });
-    this.watchBridge();
+    this.desktop.watch();
   }
 
   closeSettings(): void {
     this.update({ settingsOpen: false });
-    this.unwatchBridge();
+    this.desktop.unwatch();
   }
 
   // ── the link to the desktop app ─────────────────────────────────────
 
-  private bridgeTimer: ReturnType<typeof setInterval> | undefined;
-
-  private watchBridge(): void {
-    this.unwatchBridge();
-    void this.refreshBridge();
-    this.bridgeTimer = setInterval(() => void this.refreshBridge(), BRIDGE_POLL_MS);
-  }
-
-  private unwatchBridge(): void {
-    if (this.bridgeTimer !== undefined) clearInterval(this.bridgeTimer);
-    this.bridgeTimer = undefined;
-  }
-
   /** Show a message under the pairing code box (the view uses it when the browser refuses to read the clipboard). */
   noteBridgeMessage(message: string): void {
-    this.setBridge({ message, tone: "error" });
-  }
-
-  private setBridge(patch: Partial<PanelState["bridge"]>): void {
-    this.update({ bridge: { ...this.current.bridge, ...patch } });
+    this.desktop.noteMessage(message);
   }
 
   /** Ask the worker how the link stands. A failed check keeps what was last known, so a blip does not flip the card. */
-  async refreshBridge(): Promise<void> {
-    if (this.current.bridge.busy) return;
-    const answer = await this.env.api.bridge({ type: "bridge-status" });
-    if (!answer.ok || this.state.bridge.busy) return;
-    const { paired, connected } = answer.data;
-    const now = this.current.bridge;
-    if (now.known && now.paired === paired && now.connected === connected) return;
-    this.setBridge({ known: true, paired, connected });
+  refreshBridge(): Promise<void> {
+    return this.desktop.refresh();
   }
 
   /** Pair with the code the desktop app shows; the worker tries each of its ports. */
-  async pairBridge(raw: string): Promise<void> {
-    if (this.current.bridge.busy) return;
-    if (!raw.trim()) {
-      this.setBridge({ message: BRIDGE_MESSAGES.empty, tone: "error" });
-      return;
-    }
-    const code = normaliseCode(raw);
-    if (code === null) {
-      this.setBridge({ message: BRIDGE_MESSAGES.badShape, tone: "error" });
-      return;
-    }
-    this.setBridge({ busy: true, message: "Pairing with the desktop app…", tone: "" });
-    const answer = await this.env.api.bridge({ type: "bridge-pair", code });
-    if (answer.ok) {
-      this.setBridge({ ...answer.data, known: true, busy: false, message: BRIDGE_MESSAGES.paired, tone: "ok" });
-    } else {
-      this.setBridge({
-        busy: false,
-        tone: "error",
-        message: answer.error.code === "bad-request" ? answer.error.message : BRIDGE_MESSAGES.notAccepted,
-      });
-    }
+  pairBridge(raw: string): Promise<void> {
+    return this.desktop.pair(raw);
   }
 
-  async unpairBridge(): Promise<void> {
-    if (this.current.bridge.busy) return;
-    this.setBridge({ busy: true, message: "", tone: "" });
-    const answer = await this.env.api.bridge({ type: "bridge-unpair" });
-    if (answer.ok) {
-      this.setBridge({ ...answer.data, known: true, busy: false, message: BRIDGE_MESSAGES.unpaired, tone: "ok" });
-    } else {
-      this.setBridge({
-        busy: false,
-        tone: "error",
-        message: "The extension did not answer, so the pairing may still be in place. Try again.",
-      });
-    }
+  unpairBridge(): Promise<void> {
+    return this.desktop.unpair();
   }
 
   // ── the first-time set-up ───────────────────────────────────────────
@@ -749,10 +485,10 @@ export class PanelController {
     if (!isFinished(paste)) this.cancelCountdown();
     // Only the last track left to paste ends the work: while another has not been pasted the user must not be moved
     // away (leaving wipes the credits). When it is not known which track was pasted, nothing is assumed.
-    else if (!wasFinished && this.current.settings.autoReturn && this.finishedLastTrack()) this.startCountdown();
+    else if (!wasFinished && this.current.settings.autoReturn && this.finishedLastTrack()) this.countdown.startDone();
     // Another track with credits is waiting: press its button for the user after a short pause, once, on arrival.
     else if (!wasFinished && this.current.settings.nextTrackSeconds > 0 && this.nextPastable() !== null)
-      this.startNextCountdown();
+      this.countdown.startNext();
   }
 
   /** Tracks the user has started pasting in this album, so 'last track' does not depend on the order they chose. */
@@ -794,210 +530,27 @@ export class PanelController {
     else if (answer.error.code === "bad-request") this.update({ error: MESSAGES.workerOutOfDate, status: "" });
     else this.update({ error: describeError(answer.error), status: "" });
   }
-
   // ── the YouTube link, one track at a time ───────────────────────────
 
-  /** Each track is asked about once per panel session; a track in the map has been, or is being, looked up. */
-  private readonly youtubeLookups = new Map<number, Promise<void>>();
-  /** The last thing found wrong with the user's YouTube key, shown after a read finishes. */
-  private keyNote = "";
-
-  /** Starts at 0 and moves on whenever the lookups are forgotten, so a queue from another album stops itself. */
-  private youtubeEpoch = 0;
-  /** The tracks waiting for their turn, one after another: Google blocks a burst of searches. */
-  private youtubeChain: Promise<void> = Promise.resolve();
-  /** Set when Google refused a lookup: the rest of the queue is not sent, so it does not make things worse. */
-  private youtubePaused = false;
-
-  /** Whether the YouTube step is on and there is a way to ask: YouTube's pages (its permission) or the user's key. */
   youtubeAskable(): boolean {
-    const { hosts, youtubeKey, settings } = this.current;
-    return settings.scrapeYoutube && (hosts.youtube || (youtubeKey.saved && hosts.youtubeApi));
+    return this.youtube.askable();
   }
 
-  /**
-   * Look up this track's YouTube link if it needs one and the user has allowed it. The answer is kept on the track,
-   * so it is not asked again. Opening a track and Start pasting call this straight away.
-   */
   ensureYoutube(index: number, announce = false): Promise<void> {
-    const known = this.youtubeLookups.get(index);
-    if (known) return known;
-    const result = this.current.session.results.find((r) => r.index === index);
-    const song = result?.song;
-    if (!result || !song || song.youtubeUrl || !this.youtubeAskable()) return Promise.resolve();
-    const lookup = this.lookupYoutube(index, song, announce);
-    this.youtubeLookups.set(index, lookup);
-    return lookup;
-  }
-
-  /**
-   * A track whose credits just arrived gets its link without the user having to open it, so the list never claims
-   * "All found" for a track whose link was never asked for. With the user's key the worker spreads the asks itself;
-   * with YouTube's pages they go one after another, and stop at the first refusal (opening a track tries again).
-   */
-  private queueYoutube(index: number): void {
-    if (!this.youtubeAskable()) return;
-    // Always one track at a time, with the user's key too: the key may be refused (its allowance used up) and each
-    // lookup then reads YouTube's pages, so a whole album asked at once was a burst that got the album refused.
-    const epoch = this.youtubeEpoch;
-    if (!this.youtubeLookups.has(index)) this.note(index, MESSAGES.lookingForYoutubeShort);
-    this.youtubeChain = this.youtubeChain.then(async () => {
-      if (epoch !== this.youtubeEpoch) return;
-      if (this.youtubePaused) {
-        this.note(index, MESSAGES.youtubeNotChecked);
-        this.lookAgainLater(index);
-        return;
-      }
-      await this.ensureYoutube(index);
-      if (epoch !== this.youtubeEpoch) return;
-      const song = this.current.session.results.find((r) => r.index === index)?.song;
-      if (song?.youtubeUrl) this.note(index, "");
-      // A refused or failed lookup is forgotten so it can be asked again; that is the sign to stop sending more, and to
-      // look again later by itself.
-      else if (song && !this.youtubeLookups.has(index)) {
-        this.youtubePaused = true;
-        this.lookAgainLater(index);
-      }
-    });
-  }
-
-  /** Tracks whose lookup was refused or never made, to be asked again after a rest. */
-  private readonly youtubeRetries = new Set<number>();
-  private readonly youtubeAttempts = new Map<number, number>();
-  /** Tracks whose empty answer has already been given the one more try that opening them brings. */
-  private readonly youtubeReasked = new Set<number>();
-  private youtubeRetryTimer: ReturnType<typeof setTimeout> | undefined;
-
-  /**
-   * A track whose link could not be looked up because YouTube was limiting requests is tried again after a rest, a few
-   * times, so the user is not left to open each track to get it going. Past the limit it is left to them.
-   */
-  private lookAgainLater(index: number): void {
-    if ((this.youtubeAttempts.get(index) ?? 0) >= YOUTUBE_RETRY_LIMIT) return;
-    this.youtubeRetries.add(index);
-    if (this.youtubeRetryTimer !== undefined) return;
-    const epoch = this.youtubeEpoch;
-    this.youtubeRetryTimer = setTimeout(() => {
-      this.youtubeRetryTimer = undefined;
-      if (epoch !== this.youtubeEpoch) return;
-      const again = [...this.youtubeRetries].sort((a, b) => a - b);
-      this.youtubeRetries.clear();
-      // The rest is over: the chain may ask again.
-      this.youtubePaused = false;
-      for (const index of again) {
-        const song = this.current.session.results.find((r) => r.index === index)?.song;
-        if (!song || song.youtubeUrl || !this.youtubeAskable()) continue;
-        this.youtubeAttempts.set(index, (this.youtubeAttempts.get(index) ?? 0) + 1);
-        this.queueYoutube(index);
-      }
-    }, YOUTUBE_RETRY_MS);
-  }
-
-  private forgetYoutube(): void {
-    this.youtubeEpoch++;
-    this.youtubePaused = false;
-    clearTimeout(this.youtubeRetryTimer);
-    this.youtubeRetryTimer = undefined;
-    this.youtubeRetries.clear();
-    this.youtubeAttempts.clear();
-    this.youtubeReasked.clear();
-    this.youtubeLookups.clear();
-    if (this.current.youtubeLinkError) this.update({ youtubeLinkError: "" });
-    this.keyNote = "";
-    if (Object.keys(this.current.youtubeNotes).length > 0) this.update({ youtubeNotes: {} });
-  }
-
-  private note(index: number, text: string): void {
-    const others = Object.entries(this.current.youtubeNotes).filter(([key]) => Number(key) !== index);
-    const notes: Record<number, string> = Object.fromEntries(others);
-    if (text) notes[index] = text;
-    this.update({ youtubeNotes: notes });
-  }
-
-  /**
-   * `announce` puts the outcome on the status line, which is for what the user just asked for (Start pasting). A
-   * look-up started by reading an album only writes the track's own note, so it never overwrites the read's summary or
-   * names an arbitrary track.
-   */
-  private async lookupYoutube(index: number, song: SongCredits, announce: boolean): Promise<void> {
-    const artist = song.artist || this.current.session.album?.artist || "";
-    const title = song.title;
-    if (!title || !artist) return;
-    this.note(index, MESSAGES.lookingForYoutubeShort);
-    if (announce) this.update({ status: MESSAGES.lookingForYoutube });
-    const answer = await this.env.api.lookupYoutube(title, artist);
-    const current = this.current.session.results.find((r) => r.index === index);
-    // The panel may have moved on (another album, the main menu) while YouTube was being asked.
-    if (current?.song?.title !== title) return;
-    const keyMessage = answer.ok && answer.data.keyProblem ? KEY_MESSAGES[answer.data.keyProblem] : "";
-    if (keyMessage) this.keyNote = keyMessage;
-    if (answer.ok && answer.data.url) {
-      await this.setResult(index, {
-        song: {
-          ...current.song,
-          youtubeUrl: answer.data.url,
-          youtubeIsMv: answer.data.isMusicVideo,
-          ...(answer.data.kind ? { youtubeKind: answer.data.kind } : {}),
-        },
-      });
-      this.note(index, "");
-      if (announce) this.update({ status: keyMessage });
-      return;
-    }
-    // A failed lookup may be tried again later; a clean "nothing found" is not asked twice.
-    const throttled = answer.ok && answer.data.throttled;
-    if (!answer.ok || throttled) this.youtubeLookups.delete(index);
-    const [note, status] = !answer.ok
-      ? [MESSAGES.youtubeFailedShort, ""]
-      : throttled
-        ? [MESSAGES.youtubeThrottled, MESSAGES.youtubeThrottled]
-        : [MESSAGES.noYoutubeShort, MESSAGES.noYoutube];
-    this.note(index, keyMessage || note);
-    if (announce) this.update({ status: keyMessage || status });
-  }
-
-  /** Wait for a look-up, but not for ever: pasting starts with what there is when YouTube is slow. */
-  private async waitForYoutube(index: number): Promise<void> {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const patience = new Promise<void>((resolve) => {
-      timer = setTimeout(resolve, YOUTUBE_WAIT_MS);
-    });
-    try {
-      await Promise.race([this.ensureYoutube(index, true), patience]);
-    } finally {
-      clearTimeout(timer);
-    }
+    return this.youtube.ensure(index, announce);
   }
 
   /**
    * Use a YouTube link the user pasted for a track, in place of whatever the look-up found. Only a link to one
    * YouTube video is taken, in its canonical form; anything else is refused with a message and changes nothing.
    */
-  async setYoutubeLink(index: number, raw: string): Promise<boolean> {
-    const result = this.current.session.results.find((r) => r.index === index);
-    if (!result?.song) return false;
-    const link = parseYoutubeLink(raw);
-    if (link === null) {
-      this.update({ youtubeLinkError: raw.trim() ? MESSAGES.notAYoutubeLink : MESSAGES.pasteYoutubeLink });
-      return false;
-    }
-    this.update({ youtubeLinkError: "" });
-    this.note(index, "");
-    const song = { ...result.song, youtubeUrl: link, youtubeIsMv: false, youtubeByUser: true };
-    delete song.youtubeKind;
-    await this.setResult(index, { song });
-    return true;
+  setYoutubeLink(index: number, raw: string): Promise<boolean> {
+    return this.youtube.setLink(index, raw);
   }
 
   /** Take the link off a track, for the user to paste another or none. */
-  async clearYoutubeLink(index: number): Promise<void> {
-    const result = this.current.session.results.find((r) => r.index === index);
-    if (!result?.song) return;
-    const song = { ...result.song, youtubeUrl: "", youtubeIsMv: false };
-    delete song.youtubeByUser;
-    delete song.youtubeKind;
-    this.update({ youtubeLinkError: "" });
-    await this.setResult(index, { song });
+  clearYoutubeLink(index: number): Promise<void> {
+    return this.youtube.clearLink(index);
   }
 
   /**
@@ -1011,7 +564,7 @@ export class PanelController {
    * a mode it goes the way the last track did, or the way the settings say for the first one.
    */
   async startPaste(index: number, mode?: PasteMode): Promise<void> {
-    await this.waitForYoutube(index);
+    await this.youtube.waitFor(index);
     const result = this.current.session.results.find((r) => r.index === index);
     const queue = this.queueFor(index);
     if (!result?.song || queue.length === 0) return;
@@ -1050,73 +603,14 @@ export class PanelController {
 
   // ── the finished screen's countdown ─────────────────────────────────
 
-  private countdownTimer: ReturnType<typeof setTimeout> | undefined;
-  private countdownPaused = false;
-
-  private startCountdown(): void {
-    // The pause flag is left as the view last set it: the pointer may already be over the panel.
-    // Only one countdown runs at a time: starting one takes the other away.
-    this.update({ doneCountdown: this.current.settings.returnSeconds, nextCountdown: null });
-    this.scheduleTick();
-  }
-
-  /** The same hold for the next track: a countdown that starts it unless the user gets there first. */
-  private startNextCountdown(): void {
-    this.update({ nextCountdown: this.current.settings.nextTrackSeconds, doneCountdown: null });
-    this.scheduleTick();
-  }
-
-  private scheduleTick(): void {
-    clearTimeout(this.countdownTimer);
-    this.countdownTimer = setTimeout(() => {
-      this.tick();
-    }, 1000);
-  }
-
-  private tick(): void {
-    if (this.countdownPaused) {
-      this.scheduleTick();
-      return;
-    }
-    const done = this.current.doneCountdown;
-    if (done !== null) {
-      if (!isFinished(this.current.paste)) return;
-      if (done <= 1) {
-        this.cancelCountdown();
-        void this.leavePasting("menu");
-        return;
-      }
-      this.update({ doneCountdown: done - 1 });
-      this.scheduleTick();
-      return;
-    }
-    const left = this.current.nextCountdown;
-    if (left === null) return;
-    // The next track may have gone away meanwhile (the session ended, the credits changed): nothing to start then.
-    const target = this.nextPastable();
-    if (target === null) return;
-    if (left <= 1) {
-      this.cancelCountdown();
-      void this.startPaste(target);
-      return;
-    }
-    this.update({ nextCountdown: left - 1 });
-    this.scheduleTick();
-  }
-
   /** Stop the countdown for good (the user acted, left the screen, or turned the setting off). */
   cancelCountdown(): void {
-    clearTimeout(this.countdownTimer);
-    this.countdownTimer = undefined;
-    const patch: Partial<PanelState> = {};
-    if (this.current.doneCountdown !== null) patch.doneCountdown = null;
-    if (this.current.nextCountdown !== null) patch.nextCountdown = null;
-    if (patch.doneCountdown !== undefined || patch.nextCountdown !== undefined) this.update(patch);
+    this.countdown.cancel();
   }
 
   /** Hold the countdown while the user is using the panel (pointer over it, a button focused); it carries on after. */
   pauseCountdown(paused: boolean): void {
-    this.countdownPaused = paused;
+    this.countdown.pause(paused);
   }
 
   /** Leave the finished paste: end the session quietly and go where the user chose. */
