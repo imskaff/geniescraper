@@ -1,5 +1,6 @@
 // The panel's state, the environment it runs in and the fixed texts it shows.
 import { type AppleTabEntry, type OpenTab } from "../core/appleTabs";
+import { type OfferedUpdate } from "../core/updates";
 import { type SongCredits } from "../core/models";
 import { type PasteState } from "../core/paste";
 import { type AlbumInfo, type AppError, type KeyCheck, type PageScrape } from "../shared/messages";
@@ -47,6 +48,8 @@ export interface Env {
   stores: Stores;
   /** Where the user's YouTube key is kept: this browser only, never synced. */
   secrets: KeyValueStore;
+  /** Whether this install never updates itself, so the update check applies (an unpacked one, not a store install). */
+  updatesEligible: boolean;
   /** The tab the user is looking at, or null when there is none to read. */
   activeTab(): Promise<ActiveTab | null>;
   /** Every tab of the browser that shows Apple Music, in the browser's order, with the one in view marked. */
@@ -76,6 +79,8 @@ export interface PanelState {
     message: string;
     tone: "" | "ok" | "error";
   };
+  /** The update notice: whether the check applies to this install, and the newer release to tell the user about. */
+  update: { eligible: boolean; offer: OfferedUpdate | null };
   /** What became of each track's YouTube look-up, shown in its credits so a missing link is never a mystery. */
   youtubeNotes: Record<number, string>;
   /** What was wrong with the YouTube link the user last pasted, or "". */

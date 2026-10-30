@@ -27,6 +27,7 @@ import { YoutubeKey } from "./youtubeKey";
 import { DesktopLink } from "./desktopLink";
 import { Countdown } from "./countdown";
 import { YoutubeLookups } from "./youtubeLookups";
+import { UpdateNotice } from "./updateNotice";
 
 export * from "./panelState";
 
@@ -42,6 +43,7 @@ export class PanelController {
   private readonly countdown: Countdown;
   private readonly youtube: YoutubeLookups;
   private readonly desktop: DesktopLink;
+  private readonly updates: UpdateNotice;
 
   constructor(
     private readonly env: Env,
@@ -56,6 +58,11 @@ export class PanelController {
     this.host = this.makeHost(env);
     this.key = new YoutubeKey(this.host, () => this.refreshHosts());
     this.desktop = new DesktopLink(this.host);
+    this.updates = new UpdateNotice(
+      this.host,
+      (host, on) => this.setHost(host, on),
+      (on) => this.setSetting("checkUpdates", on),
+    );
     this.countdown = new Countdown(this.host, {
       leaveToMenu: () => this.leavePasting("menu"),
       startPaste: (index) => this.startPaste(index),
@@ -73,6 +80,7 @@ export class PanelController {
       hosts,
       youtubeKey: { saved: keySaved, message: "", tone: "", busy: false },
       bridge: { known: false, paired: false, connected: false, busy: false, message: "", tone: "" },
+      update: { eligible: env.updatesEligible, offer: null },
       youtubeNotes: {},
       youtubeLinkError: "",
       doneCountdown: null,
@@ -125,6 +133,8 @@ export class PanelController {
     );
     // A permission taken back in chrome://extensions, or granted elsewhere, changes the Settings box at once.
     env.hosts.subscribe(() => void controller.refreshHosts());
+    // A newer extension, if the user asked to be told: the worker looks at most once a day, and never blocks the panel.
+    void controller.updates.refresh();
     // Tracks that were mid-read when the panel closed were restored as pending: carry on with them.
     if (session.screen === "review" && session.results.some((r) => r.status === "pending")) {
       void controller.scrapePending();
@@ -187,6 +197,21 @@ export class PanelController {
     await this.refreshHosts();
     // Redraw even when nothing changed, so a box the user ticked and Chrome refused goes back to unticked.
     this.update({ hosts: { ...this.current.hosts }, error: problem });
+  }
+
+  // ── the update notice ───────────────────────────────────────────────
+
+  /** Switch "Check for updates" on or off; on asks Chrome for api.github.com first, and a refusal leaves it off. */
+  setCheckUpdates(on: boolean): Promise<void> {
+    return this.updates.setEnabled(on);
+  }
+
+  snoozeUpdate(): Promise<void> {
+    return this.updates.later();
+  }
+
+  skipUpdate(): Promise<void> {
+    return this.updates.skip();
   }
 
   // ── the user's own YouTube key ──────────────────────────────────────

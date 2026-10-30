@@ -342,6 +342,7 @@ describe("the automatic pasting settings", () => {
       "Reading credits",
       "YouTube links",
       "Desktop app",
+      "Updates",
       "Cover art look-up",
     ]);
     for (const card of cards) {

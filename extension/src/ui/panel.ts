@@ -6,6 +6,7 @@ import { PanelView } from "./view";
 import { PASTE_KEY, normalisePaste } from "../core/paste";
 import { chromeStores } from "../shared/storage";
 import { POPUP_CLASS, isPopupSurface, reportsClosing } from "./surface";
+import { canCheckForUpdates } from "../core/updates";
 
 const HOSTS = Object.keys(OPTIONAL_LOOKUP_HOSTS) as OptionalHost[];
 
@@ -24,9 +25,13 @@ const hosts: HostPermissions = {
   },
 };
 
+const popupSurface = isPopupSurface(chrome);
+
 const env: Env = {
   api: createWorkerApi(chromeSend),
   hosts,
+  // Only an install the browser does not update itself gets the notice; a store install has an update address.
+  updatesEligible: canCheckForUpdates(chrome.runtime.getManifest(), !popupSurface),
   stores: chromeStores(),
   // The YouTube key stays in this browser: local storage, never the synced area.
   secrets: {
@@ -72,7 +77,7 @@ function keepConnected(): void {
   };
   connect();
 }
-const popup = isPopupSurface(chrome);
+const popup = popupSurface;
 if (popup) document.documentElement.classList.add(POPUP_CLASS);
 if (reportsClosing(popup)) keepConnected();
 

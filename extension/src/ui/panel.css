@@ -1472,3 +1472,30 @@ main > .help {
   background: var(--surface-hi);
   border-left-color: var(--link);
 }
+
+/* The update notice: a card above the screen, set off by the accent along its left edge (decoration only). */
+.update-notice {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--surface-hi);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+}
+
+.update-notice > .update-title {
+  margin: 0 0 var(--space-1);
+  font-weight: 700;
+}
+
+.update-notice > p {
+  margin: 0 0 var(--space-2);
+}
+
+.update-notice .row {
+  margin: 0;
+}
+
+.update-notice a.link-button {
+  margin-top: 0;
+}

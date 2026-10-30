@@ -37,6 +37,7 @@ export function settings(v: ViewContext, state: PanelState): Node[] {
     readingSettings(v, state),
     youtubeSettings(v, state),
     desktopSettings(v, state),
+    ...(state.update.eligible ? [updateSettings(v, state)] : []),
     deezerSettings(v, state),
   ];
 }
@@ -103,6 +104,35 @@ export function hostBox(
     { class: "setting" },
     el("label", { class: "check" }, input, el("span", { text: label })),
     el("p", { class: "help", text: help, attrs: { id: `host-${host}-help` } }),
+  );
+}
+
+/** The optional update notice: off until chosen, and it says exactly what is contacted and what is not. */
+export function updateSettings(v: ViewContext, state: PanelState): HTMLElement {
+  const input = el("input", {
+    attrs: { type: "checkbox", "data-key": "setting-checkUpdates", "aria-describedby": "setting-checkUpdates-help" },
+    on: {
+      change: (event) => {
+        // Straight from the click: Chrome shows its permission prompt only for a call made in the gesture.
+        void v.panel.setCheckUpdates((event.target as HTMLInputElement).checked);
+      },
+    },
+  });
+  // Both the choice and Chrome's permission must stand: a permission taken back elsewhere unticks the box.
+  input.checked = state.settings.checkUpdates && state.hosts.github;
+  return settingsCard(
+    "settings-updates",
+    "Updates",
+    el(
+      "div",
+      { class: "setting" },
+      el("label", { class: "check" }, input, el("span", { text: "Check for updates" })),
+      el("p", {
+        class: "help",
+        text: "This copy does not update itself. When on, Chrome asks first, then about once a day while this panel is open the extension asks api.github.com for the list of Géniescraper releases (nothing about you or your songs is sent) and shows a notice when a newer version exists. It never downloads or installs anything; you do that by hand. Take the permission back here or in chrome://extensions.",
+        attrs: { id: "setting-checkUpdates-help" },
+      }),
+    ),
   );
 }
 

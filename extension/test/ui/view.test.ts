@@ -481,6 +481,7 @@ describe("settings screen", () => {
       "Go back to the main menu after the last track",
       "Find a YouTube link for each track (recommended)",
       "Show the key",
+      "Check for updates",
       "Search Deezer for a cover when Apple has none",
     ]);
     // Selects and the number box are named by their labels too (expectAccessible checks every control).

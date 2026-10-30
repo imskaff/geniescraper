@@ -9,6 +9,7 @@ import { linkScreen, tracksScreen } from "./link";
 import { reviewScreen } from "./review";
 import { doneScreen, pasteScreen } from "./paste";
 import { deezerSettings, settings, youtubeSettings } from "./settings";
+import { updateBanner } from "./updateBanner";
 
 export class PanelView implements ViewContext {
   private screenKey = "";
@@ -70,6 +71,8 @@ export class PanelView implements ViewContext {
       // Both regions exist from the start and only their text changes, so screen readers announce updates.
       el("div", { class: "alert", attrs: { id: "alert", role: "alert" } }),
       el("div", { class: "status", attrs: { id: "status", role: "status", "aria-live": "polite" } }),
+      // The update notice has a region of its own, so it never moves the screen below it out of its place.
+      el("div", { attrs: { id: "update" } }),
       el("main", { attrs: { id: "screen" } }),
     );
     this.root.addEventListener("keydown", (event) => {
@@ -122,6 +125,8 @@ export class PanelView implements ViewContext {
     this.region("alert").textContent = state.error;
     this.region("alert").classList.toggle("quiet-visual", state.paste.active && !state.settingsOpen);
     this.region("status").textContent = state.status;
+    const notice = updateBanner(this, state);
+    this.region("update").replaceChildren(...(notice ? [notice] : []));
     const toggle = this.region("settings-toggle");
     toggle.textContent = state.settingsOpen ? "Back" : "Settings";
     // The set-up is the whole screen: no Settings button over it (its steps are the settings that matter).

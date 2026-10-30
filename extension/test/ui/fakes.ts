@@ -222,6 +222,8 @@ export function fakeEnv(
     youtubeKey?: string;
     /** Start with an empty settings store, as a new user's browser has, so the set-up shows. */
     firstRun?: boolean;
+    /** A store install updates itself and gets no update notice; tests default to an unpacked one. */
+    updatesEligible?: boolean;
   } = {},
 ): FakeEnv {
   // Tests start past the first-time set-up unless they ask for it: a store with nothing in it would show it.
@@ -238,6 +240,7 @@ export function fakeEnv(
     appleTabs: () => Promise.resolve([...openTabs]),
     api: fakeApi(options.api),
     hosts: fakeHosts(options.hosts),
+    updatesEligible: options.updatesEligible ?? true,
     stores,
     secrets: secretsStore,
     activeTab: () => Promise.resolve(tab),
