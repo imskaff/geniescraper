@@ -118,7 +118,7 @@ describe("what it says when it cannot go on", () => {
     button(root, "Open on Genius").click();
     await flush();
     expect($(root, "#alert").textContent).toContain(words);
-    expect($(root, '[data-key="genius-notice"]').classList.contains("problem")).toBe(true);
+    expect($(root, '[data-key="genius-notice"]').classList.contains("attention")).toBe(true);
     expect(pasteCalls(env.api.calls)).toEqual([]);
   });
 

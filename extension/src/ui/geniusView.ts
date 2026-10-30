@@ -37,7 +37,10 @@ export function geniusNotice(state: PanelState, index: number | null): HTMLEleme
     artists.length ? `${title} by ${artists.join(", ")}` : title;
   return el(
     "section",
-    { class: `genius-open ${message.tone}`, attrs: { "aria-label": "Open on Genius", "data-key": "genius-notice" } },
+    {
+      class: `genius-open ${message.tone === "problem" ? "attention" : "info"}`,
+      attrs: { "aria-label": "Open on Genius", "data-key": "genius-notice" },
+    },
     // The live regions at the top of the panel carry the words; this copy is for the eye.
     el("p", { text: message.text, attrs: { "aria-hidden": "true" } }),
     links.length > 0 && genius.phase !== "opened"

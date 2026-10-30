@@ -239,8 +239,9 @@ h2 + .help {
   margin: 0 0 var(--space-2);
 }
 
-/* On the paste screen the error shows above the step counter; the top region stays for screen readers only. */
-.alert.quiet-visual {
+/* Where the message is shown below (the paste screen's error, the Open on Genius notice), the top region stays for screen readers only. */
+.alert.quiet-visual,
+.status.quiet-visual {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -1483,7 +1484,7 @@ main > .help {
   border-radius: 8px;
 }
 
-.genius-open.problem {
+.genius-open.attention {
   border-left-color: var(--warn);
 }
 

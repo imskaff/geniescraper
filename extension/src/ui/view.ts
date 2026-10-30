@@ -9,6 +9,7 @@ import { linkScreen, tracksScreen } from "./link";
 import { reviewScreen } from "./review";
 import { doneScreen, pasteScreen } from "./paste";
 import { deezerSettings, settings, youtubeSettings } from "./settings";
+import { geniusMessage } from "./geniusText";
 
 export class PanelView implements ViewContext {
   private screenKey = "";
@@ -120,8 +121,18 @@ export class PanelView implements ViewContext {
     const headingHadFocus = document.activeElement?.tagName === "H2";
 
     this.region("alert").textContent = state.error;
-    this.region("alert").classList.toggle("quiet-visual", state.paste.active && !state.settingsOpen);
     this.region("status").textContent = state.status;
+    // The Open on Genius notice shows its own words, so the live regions above must not show them twice.
+    const genius = geniusMessage(state.genius)?.text;
+    this.region("alert").classList.toggle(
+      "quiet-visual",
+      (state.paste.active && !state.settingsOpen) ||
+        (!state.settingsOpen && genius !== undefined && state.error === genius),
+    );
+    this.region("status").classList.toggle(
+      "quiet-visual",
+      !state.settingsOpen && genius !== undefined && state.status === genius,
+    );
     const toggle = this.region("settings-toggle");
     toggle.textContent = state.settingsOpen ? "Back" : "Settings";
     // The set-up is the whole screen: no Settings button over it (its steps are the settings that matter).
