@@ -4,24 +4,19 @@
 import { parseAppleMusicUrl } from "../apple/url";
 import { appleTabEntries, type AppleTabEntry } from "../core/appleTabs";
 import { geniusRole } from "../core/geniusRoles";
-import { typedQueue, type QueueItem, type SongCredits } from "../core/models";
+import { typedQueue, type QueueItem } from "../core/models";
 import type { PasteCommand } from "../shared/messages";
 import { IDLE_PASTE, type PasteState } from "../core/paste";
 import { EMPTY_SESSION, type Session, type TrackResult } from "../shared/session";
 import { normaliseSettings, queueOptions, type PasteMode, type Settings } from "../shared/settings";
 import { loadPaste, loadSession, loadSettings, saveSession, saveSettings } from "../shared/storage";
 import type { OptionalHost } from "../lookups/http";
-import { parseYoutubeLink } from "../core/youtubeLink";
 import { loadYoutubeKey } from "../shared/secrets";
 import {
   NO_HOSTS,
-  KEY_MESSAGES,
-  YOUTUBE_RETRY_LIMIT,
   isFinished,
   MESSAGES,
   SETUP_STEPS,
-  YOUTUBE_RETRY_MS,
-  YOUTUBE_WAIT_MS,
   describeError,
   buildSong,
   type Env,
@@ -30,6 +25,7 @@ import {
 import type { PanelHost } from "./panelHost";
 import { YoutubeKey } from "./youtubeKey";
 import { DesktopLink } from "./desktopLink";
+import { YoutubeLookups } from "./youtubeLookups";
 
 export * from "./panelState";
 
@@ -42,6 +38,7 @@ export class PanelController {
   private run = 0;
   private readonly host: PanelHost;
   private readonly key: YoutubeKey;
+  private readonly youtube: YoutubeLookups;
   private readonly desktop: DesktopLink;
 
   constructor(
@@ -57,6 +54,7 @@ export class PanelController {
     this.host = this.makeHost(env);
     this.key = new YoutubeKey(this.host, () => this.refreshHosts());
     this.desktop = new DesktopLink(this.host);
+    this.youtube = new YoutubeLookups(this.host, (index, patch) => this.setResult(index, patch));
     const pasteIndex = paste.active
       ? (session.results.find((r) => (r.song?.title || r.title) === paste.title)?.index ?? null)
       : null;
@@ -278,7 +276,7 @@ export class PanelController {
       return;
     }
     // Track numbers belong to this album: what was asked about another album's tracks must not carry over.
-    this.forgetYoutube();
+    this.youtube.forget();
     this.pasted.clear();
     const results: TrackResult[] = selected.map((index) => ({
       index,
@@ -312,7 +310,7 @@ export class PanelController {
         const album = this.current.session.album;
         if (answer.ok && album) {
           await this.setResult(next.index, { status: "done", song: buildSong(album, next, answer.data), error: "" });
-          this.queueYoutube(next.index);
+          this.youtube.queue(next.index);
         } else if (!answer.ok) {
           await this.setResult(next.index, { status: "error", error: describeError(answer.error) });
         }
@@ -328,7 +326,7 @@ export class PanelController {
         ? `Got credits for ${String(done)} ${done === 1 ? "track" : "tracks"}.`
         : `Got credits for ${String(done)} of ${String(results.length)} tracks; ${String(failed)} failed.`;
     // A problem with the user's YouTube key found while reading stays on screen, not lost under the summary.
-    this.update({ busy: null, status: this.keyNote ? `${status} ${this.keyNote}` : status });
+    this.update({ busy: null, status: this.youtube.keyNote ? `${status} ${this.youtube.keyNote}` : status });
   }
 
   private async setResult(index: number, patch: Partial<TrackResult>): Promise<void> {
@@ -358,20 +356,9 @@ export class PanelController {
     const closing = this.current.session.current === index;
     await this.updateSession({ current: closing ? null : index });
     if (closing) return;
-    // A lookup that came back empty is asked once more when the user opens the track: the first answer may have come
-    // from a thin search, and the user is now looking at exactly this link. One still running is left alone.
-    const song = this.current.session.results.find((r) => r.index === index)?.song;
-    if (
-      song &&
-      !song.youtubeUrl &&
-      this.current.youtubeNotes[index] === MESSAGES.noYoutubeShort &&
-      !this.youtubeReasked.has(index)
-    ) {
-      this.youtubeReasked.add(index); // once: a track that truly has no video is not asked about at every opening
-      this.youtubeLookups.delete(index);
-    }
+    this.youtube.reaskIfEmpty(index);
     // Opened credits get their link looked up now, as the user is about to look at (and maybe fix) it.
-    void this.ensureYoutube(index);
+    void this.youtube.ensure(index);
   }
 
   /** The first track, in album order, whose credits are in and give something to paste; Start pasting begins here. */
@@ -389,7 +376,7 @@ export class PanelController {
   /** Start over with another link. */
   async newAlbum(): Promise<void> {
     this.run++;
-    this.forgetYoutube();
+    this.youtube.forget();
     this.pasted.clear();
     await this.updateSession({ ...EMPTY_SESSION });
     this.update({ busy: null, error: "", status: "" });
@@ -536,210 +523,27 @@ export class PanelController {
     else if (answer.error.code === "bad-request") this.update({ error: MESSAGES.workerOutOfDate, status: "" });
     else this.update({ error: describeError(answer.error), status: "" });
   }
-
   // ── the YouTube link, one track at a time ───────────────────────────
 
-  /** Each track is asked about once per panel session; a track in the map has been, or is being, looked up. */
-  private readonly youtubeLookups = new Map<number, Promise<void>>();
-  /** The last thing found wrong with the user's YouTube key, shown after a read finishes. */
-  private keyNote = "";
-
-  /** Starts at 0 and moves on whenever the lookups are forgotten, so a queue from another album stops itself. */
-  private youtubeEpoch = 0;
-  /** The tracks waiting for their turn, one after another: Google blocks a burst of searches. */
-  private youtubeChain: Promise<void> = Promise.resolve();
-  /** Set when Google refused a lookup: the rest of the queue is not sent, so it does not make things worse. */
-  private youtubePaused = false;
-
-  /** Whether the YouTube step is on and there is a way to ask: YouTube's pages (its permission) or the user's key. */
   youtubeAskable(): boolean {
-    const { hosts, youtubeKey, settings } = this.current;
-    return settings.scrapeYoutube && (hosts.youtube || (youtubeKey.saved && hosts.youtubeApi));
+    return this.youtube.askable();
   }
 
-  /**
-   * Look up this track's YouTube link if it needs one and the user has allowed it. The answer is kept on the track,
-   * so it is not asked again. Opening a track and Start pasting call this straight away.
-   */
   ensureYoutube(index: number, announce = false): Promise<void> {
-    const known = this.youtubeLookups.get(index);
-    if (known) return known;
-    const result = this.current.session.results.find((r) => r.index === index);
-    const song = result?.song;
-    if (!result || !song || song.youtubeUrl || !this.youtubeAskable()) return Promise.resolve();
-    const lookup = this.lookupYoutube(index, song, announce);
-    this.youtubeLookups.set(index, lookup);
-    return lookup;
-  }
-
-  /**
-   * A track whose credits just arrived gets its link without the user having to open it, so the list never claims
-   * "All found" for a track whose link was never asked for. With the user's key the worker spreads the asks itself;
-   * with YouTube's pages they go one after another, and stop at the first refusal (opening a track tries again).
-   */
-  private queueYoutube(index: number): void {
-    if (!this.youtubeAskable()) return;
-    // Always one track at a time, with the user's key too: the key may be refused (its allowance used up) and each
-    // lookup then reads YouTube's pages, so a whole album asked at once was a burst that got the album refused.
-    const epoch = this.youtubeEpoch;
-    if (!this.youtubeLookups.has(index)) this.note(index, MESSAGES.lookingForYoutubeShort);
-    this.youtubeChain = this.youtubeChain.then(async () => {
-      if (epoch !== this.youtubeEpoch) return;
-      if (this.youtubePaused) {
-        this.note(index, MESSAGES.youtubeNotChecked);
-        this.lookAgainLater(index);
-        return;
-      }
-      await this.ensureYoutube(index);
-      if (epoch !== this.youtubeEpoch) return;
-      const song = this.current.session.results.find((r) => r.index === index)?.song;
-      if (song?.youtubeUrl) this.note(index, "");
-      // A refused or failed lookup is forgotten so it can be asked again; that is the sign to stop sending more, and to
-      // look again later by itself.
-      else if (song && !this.youtubeLookups.has(index)) {
-        this.youtubePaused = true;
-        this.lookAgainLater(index);
-      }
-    });
-  }
-
-  /** Tracks whose lookup was refused or never made, to be asked again after a rest. */
-  private readonly youtubeRetries = new Set<number>();
-  private readonly youtubeAttempts = new Map<number, number>();
-  /** Tracks whose empty answer has already been given the one more try that opening them brings. */
-  private readonly youtubeReasked = new Set<number>();
-  private youtubeRetryTimer: ReturnType<typeof setTimeout> | undefined;
-
-  /**
-   * A track whose link could not be looked up because YouTube was limiting requests is tried again after a rest, a few
-   * times, so the user is not left to open each track to get it going. Past the limit it is left to them.
-   */
-  private lookAgainLater(index: number): void {
-    if ((this.youtubeAttempts.get(index) ?? 0) >= YOUTUBE_RETRY_LIMIT) return;
-    this.youtubeRetries.add(index);
-    if (this.youtubeRetryTimer !== undefined) return;
-    const epoch = this.youtubeEpoch;
-    this.youtubeRetryTimer = setTimeout(() => {
-      this.youtubeRetryTimer = undefined;
-      if (epoch !== this.youtubeEpoch) return;
-      const again = [...this.youtubeRetries].sort((a, b) => a - b);
-      this.youtubeRetries.clear();
-      // The rest is over: the chain may ask again.
-      this.youtubePaused = false;
-      for (const index of again) {
-        const song = this.current.session.results.find((r) => r.index === index)?.song;
-        if (!song || song.youtubeUrl || !this.youtubeAskable()) continue;
-        this.youtubeAttempts.set(index, (this.youtubeAttempts.get(index) ?? 0) + 1);
-        this.queueYoutube(index);
-      }
-    }, YOUTUBE_RETRY_MS);
-  }
-
-  private forgetYoutube(): void {
-    this.youtubeEpoch++;
-    this.youtubePaused = false;
-    clearTimeout(this.youtubeRetryTimer);
-    this.youtubeRetryTimer = undefined;
-    this.youtubeRetries.clear();
-    this.youtubeAttempts.clear();
-    this.youtubeReasked.clear();
-    this.youtubeLookups.clear();
-    if (this.current.youtubeLinkError) this.update({ youtubeLinkError: "" });
-    this.keyNote = "";
-    if (Object.keys(this.current.youtubeNotes).length > 0) this.update({ youtubeNotes: {} });
-  }
-
-  private note(index: number, text: string): void {
-    const others = Object.entries(this.current.youtubeNotes).filter(([key]) => Number(key) !== index);
-    const notes: Record<number, string> = Object.fromEntries(others);
-    if (text) notes[index] = text;
-    this.update({ youtubeNotes: notes });
-  }
-
-  /**
-   * `announce` puts the outcome on the status line, which is for what the user just asked for (Start pasting). A
-   * look-up started by reading an album only writes the track's own note, so it never overwrites the read's summary or
-   * names an arbitrary track.
-   */
-  private async lookupYoutube(index: number, song: SongCredits, announce: boolean): Promise<void> {
-    const artist = song.artist || this.current.session.album?.artist || "";
-    const title = song.title;
-    if (!title || !artist) return;
-    this.note(index, MESSAGES.lookingForYoutubeShort);
-    if (announce) this.update({ status: MESSAGES.lookingForYoutube });
-    const answer = await this.env.api.lookupYoutube(title, artist);
-    const current = this.current.session.results.find((r) => r.index === index);
-    // The panel may have moved on (another album, the main menu) while YouTube was being asked.
-    if (current?.song?.title !== title) return;
-    const keyMessage = answer.ok && answer.data.keyProblem ? KEY_MESSAGES[answer.data.keyProblem] : "";
-    if (keyMessage) this.keyNote = keyMessage;
-    if (answer.ok && answer.data.url) {
-      await this.setResult(index, {
-        song: {
-          ...current.song,
-          youtubeUrl: answer.data.url,
-          youtubeIsMv: answer.data.isMusicVideo,
-          ...(answer.data.kind ? { youtubeKind: answer.data.kind } : {}),
-        },
-      });
-      this.note(index, "");
-      if (announce) this.update({ status: keyMessage });
-      return;
-    }
-    // A failed lookup may be tried again later; a clean "nothing found" is not asked twice.
-    const throttled = answer.ok && answer.data.throttled;
-    if (!answer.ok || throttled) this.youtubeLookups.delete(index);
-    const [note, status] = !answer.ok
-      ? [MESSAGES.youtubeFailedShort, ""]
-      : throttled
-        ? [MESSAGES.youtubeThrottled, MESSAGES.youtubeThrottled]
-        : [MESSAGES.noYoutubeShort, MESSAGES.noYoutube];
-    this.note(index, keyMessage || note);
-    if (announce) this.update({ status: keyMessage || status });
-  }
-
-  /** Wait for a look-up, but not for ever: pasting starts with what there is when YouTube is slow. */
-  private async waitForYoutube(index: number): Promise<void> {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const patience = new Promise<void>((resolve) => {
-      timer = setTimeout(resolve, YOUTUBE_WAIT_MS);
-    });
-    try {
-      await Promise.race([this.ensureYoutube(index, true), patience]);
-    } finally {
-      clearTimeout(timer);
-    }
+    return this.youtube.ensure(index, announce);
   }
 
   /**
    * Use a YouTube link the user pasted for a track, in place of whatever the look-up found. Only a link to one
    * YouTube video is taken, in its canonical form; anything else is refused with a message and changes nothing.
    */
-  async setYoutubeLink(index: number, raw: string): Promise<boolean> {
-    const result = this.current.session.results.find((r) => r.index === index);
-    if (!result?.song) return false;
-    const link = parseYoutubeLink(raw);
-    if (link === null) {
-      this.update({ youtubeLinkError: raw.trim() ? MESSAGES.notAYoutubeLink : MESSAGES.pasteYoutubeLink });
-      return false;
-    }
-    this.update({ youtubeLinkError: "" });
-    this.note(index, "");
-    const song = { ...result.song, youtubeUrl: link, youtubeIsMv: false, youtubeByUser: true };
-    delete song.youtubeKind;
-    await this.setResult(index, { song });
-    return true;
+  setYoutubeLink(index: number, raw: string): Promise<boolean> {
+    return this.youtube.setLink(index, raw);
   }
 
   /** Take the link off a track, for the user to paste another or none. */
-  async clearYoutubeLink(index: number): Promise<void> {
-    const result = this.current.session.results.find((r) => r.index === index);
-    if (!result?.song) return;
-    const song = { ...result.song, youtubeUrl: "", youtubeIsMv: false };
-    delete song.youtubeByUser;
-    delete song.youtubeKind;
-    this.update({ youtubeLinkError: "" });
-    await this.setResult(index, { song });
+  clearYoutubeLink(index: number): Promise<void> {
+    return this.youtube.clearLink(index);
   }
 
   /**
@@ -753,7 +557,7 @@ export class PanelController {
    * a mode it goes the way the last track did, or the way the settings say for the first one.
    */
   async startPaste(index: number, mode?: PasteMode): Promise<void> {
-    await this.waitForYoutube(index);
+    await this.youtube.waitFor(index);
     const result = this.current.session.results.find((r) => r.index === index);
     const queue = this.queueFor(index);
     if (!result?.song || queue.length === 0) return;
