@@ -262,8 +262,11 @@ class AssistantScreenMixin(ChromeMixin):
             settings.save()
 
     def _next_clicked(self) -> None:
-        """Next is only on screen while the extension runs the paste: it fills the step."""
-        self.link.command("fill-next")
+        """Fill the step: the extension does it when connected, otherwise it is the F8 key, from a worker thread."""
+        if self.link.bridged:
+            self.link.command("fill-next")
+            return
+        threading.Thread(target=self._fill_next_by_hand, daemon=True).start()
 
     def _ask_back_to_credits(self) -> None:
         self._show_esc_confirm(to_credits=True)
@@ -393,7 +396,7 @@ class AssistantScreenMixin(ChromeMixin):
             text=f"Next ({settings.hotkey.upper()})",
             state="disabled" if finished or (bridged and bool(link.status and link.status.busy)) else "normal",
         )
-        if on or not bridged:  # without the extension the hotkeys are the only way: no Next button, no window tricks
+        if on:  # the extension is filling the form by itself
             nxt.pack_forget()
         elif not nxt.winfo_ismapped():
             nxt.pack(side="left", padx=(0, theme.SPACE_2), before=ctl["back"])

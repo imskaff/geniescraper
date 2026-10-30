@@ -192,6 +192,9 @@ class Host(ctk.CTk):
     def _on_back_hotkey(self) -> None:
         raise NotImplementedError
 
+    def _fill_next_by_hand(self) -> None:
+        raise NotImplementedError
+
     def _begin_link_run(self, resume_at: int) -> None:
         raise NotImplementedError
 
