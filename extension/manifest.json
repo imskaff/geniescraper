@@ -24,6 +24,7 @@
   "host_permissions": ["https://genius.com/*", "https://itunes.apple.com/*", "https://music.apple.com/*"],
   "optional_host_permissions": [
     "https://api.deezer.com/*",
+    "https://open.spotify.com/*",
     "https://www.googleapis.com/*",
     "https://www.youtube.com/*"
   ],

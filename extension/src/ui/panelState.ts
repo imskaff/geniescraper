@@ -144,14 +144,19 @@ export const MESSAGES = {
 } as const;
 
 /** What to tell the user about a failure; the codes are stable, the wording is for people. */
-export function describeError(error: AppError): string {
+export function describeError(error: AppError, source = "Apple Music"): string {
   switch (error.code) {
     case "invalid-url":
       return MESSAGES.invalidLink;
     case "not-found":
-      return "Apple Music could not find that page. Check the link and try again.";
+      return `${source} could not find that page. Check the link and try again.`;
     case "timeout":
-      return "Apple Music took too long to respond. Try again.";
+      return `${source} took too long to respond. Try again.`;
+    case "unavailable":
+    case "blocked":
+    case "no-access":
+      // These come from the worker or the page worded for the user already.
+      return error.message;
     case "tab-failed":
       return `Could not read the page: ${error.message}`;
     case "bad-request":

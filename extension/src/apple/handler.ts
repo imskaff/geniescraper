@@ -7,7 +7,9 @@ import { AppleError } from "./errors";
 import { parseAppleMusicUrl } from "./url";
 
 export async function handleRequest(raw: unknown, doc: Document, timing: Timing): Promise<Result<unknown>> {
-  if (!isContentRequest(raw)) return { ok: false, error: { code: "bad-request", message: "Unrecognised request." } };
+  // Only this provider's own requests: the other provider's content script answers theirs.
+  if (!isContentRequest(raw) || !raw.type.startsWith("apple/"))
+    return { ok: false, error: { code: "bad-request", message: "Unrecognised request." } };
   const target = parseAppleMusicUrl(raw.url);
   // Scraping reads one track's own song page; an album link here would need the menu path, which does not exist.
   if (!target || (raw.type === "apple/scrape" && target.kind !== "song")) {
@@ -15,7 +17,10 @@ export async function handleRequest(raw: unknown, doc: Document, timing: Timing)
   }
   try {
     if (raw.type === "apple/detect") return { ok: true, data: await detectAlbum(doc, raw.url, timing) };
-    return { ok: true, data: await scrapeTrack(doc, { url: raw.url, trackTitle: raw.trackTitle }, timing) };
+    if (raw.type === "apple/scrape") {
+      return { ok: true, data: await scrapeTrack(doc, { url: raw.url, trackTitle: raw.trackTitle }, timing) };
+    }
+    return { ok: false, error: { code: "bad-request", message: "Unrecognised request." } };
   } catch (error) {
     if (error instanceof AppleError) return { ok: false, error: error.toJSON() };
     return {

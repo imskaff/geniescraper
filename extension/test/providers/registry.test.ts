@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { APPLE_PROVIDER } from "../../src/providers/apple";
+import { SPOTIFY_PROVIDER } from "../../src/providers/spotify";
 import { PROVIDERS, recogniseUrl, unsupportedLinkMessage } from "../../src/providers/registry";
 import { ALBUM_URL, SONG_URL } from "../background/fakePorts";
 import { FAKE_ALBUM, FAKE_PROVIDER, FAKE_SONG } from "./fakeProvider";
@@ -8,7 +9,7 @@ const BOTH = [APPLE_PROVIDER, FAKE_PROVIDER];
 
 describe("recogniseUrl", () => {
   it("ships Apple Music as the registered provider", () => {
-    expect(PROVIDERS).toEqual([APPLE_PROVIDER]);
+    expect(PROVIDERS).toEqual([APPLE_PROVIDER, SPOTIFY_PROVIDER]);
     expect(recogniseUrl(SONG_URL)?.provider).toBe(APPLE_PROVIDER);
   });
 
@@ -29,8 +30,8 @@ describe("recogniseUrl", () => {
 
 describe("unsupportedLinkMessage", () => {
   it("keeps the provider's own wording when it is the only one", () => {
-    expect(unsupportedLinkMessage("album-or-song")).toBe("Not an Apple Music album or song link.");
-    expect(unsupportedLinkMessage("song")).toBe("Not an Apple Music song link.");
+    expect(unsupportedLinkMessage("album-or-song", [APPLE_PROVIDER])).toBe("Not an Apple Music album or song link.");
+    expect(unsupportedLinkMessage("song", [APPLE_PROVIDER])).toBe("Not an Apple Music song link.");
   });
 
   it("is general once several providers exist", () => {

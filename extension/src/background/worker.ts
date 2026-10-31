@@ -13,7 +13,7 @@ import { searchGenius } from "../lookups/genius";
 import { createGeniusNavigator } from "./geniusNav";
 import { loadYoutubeKey } from "../shared/secrets";
 import { realYoutube } from "./youtube";
-import { PROVIDERS } from "../providers/registry";
+import { APPLE_PROVIDER } from "../providers/apple";
 import { PasteService } from "./paste";
 import { chromePorts } from "./ports";
 import { INTERNAL_ERROR, createRouter } from "./router";
@@ -48,9 +48,9 @@ const bridge = new BridgeClient({
   },
   session: stores.session,
   openTabs: async () => {
-    // Only tabs showing a provider's site, which its host permission already covers; nothing else is listed or read.
+    // Only Apple Music tabs, which the desktop app can read; its host permission already covers them.
     const [tabs, [inView]] = await Promise.all([
-      chrome.tabs.query({ url: PROVIDERS.flatMap((provider) => [...provider.origins]) }),
+      chrome.tabs.query({ url: [...APPLE_PROVIDER.origins] }),
       chrome.tabs.query({ active: true, currentWindow: true }),
     ]);
     return tabs.flatMap((tab) =>

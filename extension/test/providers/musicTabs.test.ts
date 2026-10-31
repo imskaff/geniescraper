@@ -21,14 +21,14 @@ describe("musicTabEntries with several providers", () => {
       BOTH,
     );
     expect(entries).toEqual([
-      { url: FAKE_SONG, name: "Low Light", kind: "song", current: true },
-      { url: ALBUM_URL, name: "TTPD", kind: "album", current: false },
+      { url: FAKE_SONG, name: "Low Light", kind: "song", source: "Tunes", current: true },
+      { url: ALBUM_URL, name: "TTPD", kind: "album", source: "Apple Music", current: false },
     ]);
   });
 
   it("merges the same page open twice and falls back to the provider's own name", () => {
     const entries = musicTabEntries([tab(FAKE_ALBUM, "", 1), tab(`${FAKE_ALBUM}?x=1`, "", 2, true)], BOTH);
-    expect(entries).toEqual([{ url: FAKE_ALBUM, name: "Tunes page", kind: "album", current: true }]);
+    expect(entries).toEqual([{ url: FAKE_ALBUM, name: "Tunes page", kind: "album", source: "Tunes", current: true }]);
   });
 
   it("leaves the second provider's pages out when it is not registered", () => {

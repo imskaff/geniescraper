@@ -39,6 +39,10 @@ export interface CreditsProvider {
   readonly messages: ProviderMessages;
   /** Strict address check; null for anything that is not an album or song page of this site. */
   parseUrl(url: string): MusicUrl | null;
+  /** What names the page in an address: two addresses with the same key are one page (the open-pages list merges them). */
+  pageKey(url: string): string;
+  /** The address to open in a background tab for a recognised `url`: a provider may drop a locale prefix or tracking. */
+  openUrl(url: string): string;
   /** Name for the open-pages list; `title` has its invisible marks and extra spaces removed already. */
   tabName(title: string, url: string, kind: PageKind): string;
   /** Genius role name for a raw role label as this site shows it. */

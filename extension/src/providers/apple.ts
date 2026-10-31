@@ -38,6 +38,12 @@ export const APPLE_PROVIDER: CreditsProvider = {
     const parsed = parseAppleMusicUrl(url);
     return parsed ? { kind: parsed.kind, region: parsed.storefront } : null;
   },
+  pageKey(url) {
+    // The path names the page; a track picked after the address (?i=) does not make a second one.
+    const { origin, pathname } = new URL(url);
+    return origin + pathname;
+  },
+  openUrl: (url) => url,
   tabName(title, url, kind) {
     return title.trim().replace(SITE_SUFFIX, "").trim() || nameFromAddress(url, kind);
   },

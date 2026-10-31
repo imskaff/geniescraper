@@ -2,7 +2,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { LOOKUP_HOSTS } from "../src/lookups/http";
-import { PROVIDERS } from "../src/providers/registry";
+import { APPLE_PROVIDER } from "../src/providers/apple";
 import { BRIDGE_HOST } from "../src/shared/bridge";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -37,11 +37,13 @@ const ALLOWED_HOSTS = new Set([
   "https://genius.com/*",
   "https://itunes.apple.com/*",
   "https://api.deezer.com/*",
+  "https://open.spotify.com/*",
   "https://www.youtube.com/*",
   "https://www.googleapis.com/*",
 ]);
 const ALLOWED_OPTIONAL_HOSTS = new Set([
   "https://api.deezer.com/*",
+  "https://open.spotify.com/*",
   "https://www.youtube.com/*",
   "https://www.googleapis.com/*",
 ]);
@@ -243,11 +245,9 @@ describe("the companion link to the desktop app", () => {
     const manifest = JSON.parse(read("manifest.json")) as { permissions: string[]; host_permissions: string[] };
     expect(manifest.permissions).not.toContain("tabs");
     expect(manifest.host_permissions).toContain("https://music.apple.com/*");
-    // The worker queries only the providers' own origins, by address filter; Apple Music's is the one provider.
-    expect(read("src/background/worker.ts")).toContain(
-      "chrome.tabs.query({ url: PROVIDERS.flatMap((provider) => [...provider.origins]) })",
-    );
-    expect(PROVIDERS.flatMap((provider) => [...provider.origins])).toEqual(["https://music.apple.com/*"]);
+    // The desktop link lists Apple Music tabs only (it cannot read other sources), by address filter.
+    expect(read("src/background/worker.ts")).toContain("chrome.tabs.query({ url: [...APPLE_PROVIDER.origins] })");
+    expect(APPLE_PROVIDER.origins).toEqual(["https://music.apple.com/*"]);
   });
 
   it("keeps the secret out of the synced area and out of logs", () => {

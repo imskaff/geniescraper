@@ -18,6 +18,8 @@ export interface AlbumInfo {
   coverArtUrl: string;
   /** The album's release date ("YYYY-MM-DD"), from its footer; "" when the page shows none. */
   releaseDate: string;
+  /** A remark about this read for the track list, for example that a long album was only partly listed. */
+  note?: string;
 }
 
 /** What the in-page driver reads from one song page. */
@@ -30,6 +32,8 @@ export interface PageScrape {
   releaseDate: string;
   /** Non-fatal problems, for example that the page held no credits. */
   warnings: string[];
+  /** Plain remarks for the user about what this source could not give, and which roles were left out. */
+  notes?: string[];
 }
 
 /** The worker's answer to a YouTube look-up. */
@@ -48,7 +52,19 @@ export interface YoutubeAnswer {
 /** The outcome of trying a YouTube key. */
 export type KeyCheck = "ok" | "key" | "quota" | "not-enabled" | "failed";
 
-export type ErrorCode = "bad-request" | "invalid-url" | "not-found" | "timeout" | "tab-failed" | "internal";
+export type ErrorCode =
+  | "bad-request"
+  | "invalid-url"
+  | "not-found"
+  | "timeout"
+  | "tab-failed"
+  | "internal"
+  /** The site has the page but not this track (removed, or not available in the user's country). */
+  | "unavailable"
+  /** The site is asking for a captcha or limiting requests: reading stops until the user has looked. */
+  | "blocked"
+  /** The user has not allowed the extension to read the site yet. */
+  | "no-access";
 
 export interface AppError {
   code: ErrorCode;
@@ -57,9 +73,12 @@ export interface AppError {
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: AppError };
 
-/** Messages the background worker sends to the Apple Music content script. */
+/** Messages the background worker sends to a provider's content script; the prefix is the provider's id. */
 export type ContentRequest =
-  { type: "apple/detect"; url: string } | { type: "apple/scrape"; url: string; trackTitle: string };
+  | { type: "apple/detect"; url: string }
+  | { type: "apple/scrape"; url: string; trackTitle: string }
+  | { type: "spotify/detect"; url: string }
+  | { type: "spotify/scrape"; url: string; trackTitle: string };
 
 /** The pieces of the paste session an extension page can ask the worker to change. */
 export type PasteCommand =
@@ -193,8 +212,10 @@ function hasUrl(value: Record<string, unknown>): boolean {
 
 export function isContentRequest(value: unknown): value is ContentRequest {
   if (!isRecord(value) || !hasUrl(value)) return false;
-  if (value["type"] === "apple/detect") return true;
-  return value["type"] === "apple/scrape" && typeof value["trackTitle"] === "string";
+  if (value["type"] === "apple/detect" || value["type"] === "spotify/detect") return true;
+  return (
+    (value["type"] === "apple/scrape" || value["type"] === "spotify/scrape") && typeof value["trackTitle"] === "string"
+  );
 }
 
 const PASTE_COMMANDS: ReadonlySet<unknown> = new Set([
@@ -327,7 +348,8 @@ export function isAlbumInfo(value: unknown): value is AlbumInfo {
     typeof value["phonographicCopyright"] === "string" &&
     typeof value["copyrightNotice"] === "string" &&
     typeof value["coverArtUrl"] === "string" &&
-    typeof value["releaseDate"] === "string"
+    typeof value["releaseDate"] === "string" &&
+    (value["note"] === undefined || typeof value["note"] === "string")
   );
 }
 
@@ -344,7 +366,8 @@ export function isPageScrape(value: unknown): value is PageScrape {
     value["credits"].every(isCredit) &&
     typeof value["coverArtUrl"] === "string" &&
     typeof value["releaseDate"] === "string" &&
-    isStringArray(value["warnings"])
+    isStringArray(value["warnings"]) &&
+    (value["notes"] === undefined || isStringArray(value["notes"]))
   );
 }
 

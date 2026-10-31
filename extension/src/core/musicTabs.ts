@@ -19,6 +19,8 @@ export interface MusicTabEntry {
   /** What to call it in the list. */
   name: string;
   kind: PageKind;
+  /** The site the page belongs to ("Apple Music"), so the list can say where each page is from. */
+  source: string;
   /** The page the user is looking at now. */
   current: boolean;
 }
@@ -48,8 +50,7 @@ export function musicTabEntries(
     const recognised = recogniseUrl(tab.url, providers);
     if (!recognised) continue;
     // The same page in two tabs, or with a track picked after the address, is one entry.
-    const { origin, pathname } = new URL(tab.url);
-    const key = origin + pathname;
+    const key = recognised.provider.pageKey(tab.url);
     const known = byPage.get(key);
     if (known) {
       if (tab.current) known.current = true;
@@ -59,6 +60,7 @@ export function musicTabEntries(
       url: tab.url,
       name: nameOf(recognised.provider, tab, recognised.url.kind),
       kind: recognised.url.kind,
+      source: recognised.provider.label,
       current: tab.current,
     });
   }

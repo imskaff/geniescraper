@@ -1,6 +1,7 @@
 // The companion link to the desktop app: message shapes and their validators (docs/extension-plan.md section 39).
 // Everything arriving over the socket is data. It is parsed as JSON and checked field by field before anything
 // acts on it; a title or a name in it is never read as an instruction.
+import { APPLE_PROVIDER } from "../providers/apple";
 import { musicTabEntries, type OpenTab } from "../core/musicTabs";
 import type { PasteState } from "../core/paste";
 
@@ -66,7 +67,8 @@ export interface BridgePage {
  * cleaned and capped at 120 characters), at most MAX_PAGES, nothing but address, title, kind and whether it is in view.
  */
 export function toBridgePages(tabs: readonly OpenTab[]): BridgePage[] {
-  return musicTabEntries(tabs)
+  // The desktop app reads Apple Music only, so pages of other sources are not offered to it.
+  return musicTabEntries(tabs, [APPLE_PROVIDER])
     .filter((entry) => entry.url.length <= MAX_PAGE_URL)
     .slice(0, MAX_PAGES)
     .map((entry) => ({ url: entry.url, title: entry.name, kind: entry.kind, current: entry.current }));
