@@ -69,7 +69,7 @@ export function chromePorts(): BrowserPorts {
       await chrome.tabs.remove(tabId);
     },
     async injectContentScript(tabId, file = CONTENT_SCRIPT_FILE) {
-      await chrome.scripting.executeScript({ target: { tabId }, files: [file] });
+      await chrome.scripting.executeScript({ target: { tabId }, files: [file], injectImmediately: true });
     },
     sendMessage(tabId, message) {
       return chrome.tabs.sendMessage(tabId, message);

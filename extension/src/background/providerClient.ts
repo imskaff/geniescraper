@@ -48,16 +48,23 @@ async function within<T>(work: Promise<T>, ms: number): Promise<T | "timeout"> {
   }
 }
 
+/**
+ * Wait until the tab can take the content script: the page has committed (the tab shows an address on the site)
+ * or finished loading. The reader waits for the page's content by itself, so there is no need to sit through
+ * the rest of the load, which saves the time scripts, fonts and images take.
+ */
 async function waitForLoad(
   ports: BrowserPorts,
   tabId: number,
+  url: string,
   timing: ClientTiming,
 ): Promise<"loaded" | "gone" | "timeout"> {
+  const origin = new URL(url).origin;
   const deadline = Date.now() + timing.tabLoadMs;
   while (Date.now() < deadline) {
     const tab = await ports.getTab(tabId);
     if (!tab) return "gone";
-    if (tab.status === "complete") return "loaded";
+    if (tab.status === "complete" || tab.url.startsWith(`${origin}/`)) return "loaded";
     await sleep(timing.pollMs);
   }
   return "timeout";
@@ -97,7 +104,7 @@ async function inBackgroundTab<T>(
   let tabId: number | undefined;
   try {
     tabId = await ports.createTab(url, !provider.worksHidden);
-    const loaded = await waitForLoad(ports, tabId, timing);
+    const loaded = await waitForLoad(ports, tabId, url, timing);
     if (loaded === "gone") return fail("tab-failed", "The tab was closed before the page loaded.");
     if (loaded === "timeout") return fail("timeout", "The page did not finish loading. Check your connection.");
     await ports.injectContentScript(tabId, provider.contentScript);

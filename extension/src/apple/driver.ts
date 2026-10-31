@@ -21,7 +21,7 @@ import {
   readTrackTitles,
   readTrackUrls,
 } from "./page";
-import { sleep, waitFor } from "./wait";
+import { pause, waitFor } from "./wait";
 
 export interface Timing {
   /** Longest wait for the tracklist or song header (or the not-found view) to render. */
@@ -89,7 +89,7 @@ export async function waitForCredits(doc: Document, timing: Timing): Promise<voi
   if (!first) return;
   let seen = cardsSignature(doc);
   for (let i = 0; i < SETTLE_CHECKS; i++) {
-    await sleep(timing.settleMs);
+    await pause(timing.settleMs);
     const next = cardsSignature(doc);
     if (next === seen) return;
     seen = next;
