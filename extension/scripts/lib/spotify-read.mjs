@@ -133,17 +133,23 @@ export function spotifyReader() {
   }
 
   /**
-   * The "View credits" entry of the open menu. Found by structure, not text: of the menu's `button[role=menuitem]`
-   * entries it is the first that has neither `aria-disabled` nor `aria-expanded` ("Open in Desktop app" is the other
-   * such button and comes after it; the link entries are `a` elements). It also works on an album page's per-track
-   * menus, which lack the "Go to album" entry. A text match on a few languages is the fallback.
+   * The "View credits" entry of the open menu. Found by structure, not text. The menu's `button[role=menuitem]`
+   * entries that have neither `aria-disabled` nor `aria-expanded` are "View credits" and "Open in Desktop app"; the
+   * credits one is the first of them and is followed by "Share", which has `aria-expanded`. Requiring that follower
+   * (or, failing that, the text match) means a menu without a credits entry yields null instead of the
+   * desktop-app entry, which would try to launch another program. It also works on an album page's per-track menus,
+   * which lack the "Go to album" entry.
    */
   function findCreditsItem(doc) {
     const items = [...doc.querySelectorAll("[role='menu'] [role='menuitem']")];
     const bare = items.find(
-      (e) => e.tagName === "BUTTON" && !e.hasAttribute("aria-expanded") && !e.hasAttribute("aria-disabled"),
+      (e, i) =>
+        e.tagName === "BUTTON" &&
+        !e.hasAttribute("aria-expanded") &&
+        !e.hasAttribute("aria-disabled") &&
+        items[i + 1]?.hasAttribute("aria-expanded"),
     );
-    if (bare) return { el: bare, how: "first-bare-button" };
+    if (bare) return { el: bare, how: "bare-button-before-share" };
     const text = items.find((e) => /credit|autor|cr[eé]dit|mitwirk|クレジット/i.test(norm(e.textContent)));
     return text ? { el: text, how: "text" } : null;
   }
@@ -301,8 +307,9 @@ export function spotifyReader() {
   function sanitizeDialog(dialog) {
     const copy = dialog.cloneNode(true);
     const map = new Map();
+    let people = 0;
     const person = (name) => {
-      if (!map.has(name)) map.set(name, `Person ${String(map.size + 1)}`);
+      if (!map.has(name)) map.set(name, `Person ${String(++people)}`);
       return map.get(name);
     };
     const title = norm(copy.querySelector("h2")?.textContent);
@@ -365,7 +372,10 @@ export function spotifyReader() {
    *   blocked       a captcha / rate-limit text is showing
    * `steps` holds the milliseconds each stage took; a failed click is retried once (`attempt` says which one worked).
    */
-  async function readCredits(doc, { button, timeoutMs = 10000, attempts = 2, capture = false } = {}) {
+  async function readCredits(
+    doc,
+    { button, timeoutMs = 10000, attempts = 2, capture = false, menuMs = 4000, dialogMs = 5000 } = {},
+  ) {
     const steps = {};
     const t0 = Date.now();
     const mark = (name) => (steps[name] = Date.now() - t0);
@@ -382,7 +392,7 @@ export function spotifyReader() {
         await sleep(500);
       }
       more.click();
-      const item = await until(() => findCreditsItem(doc), 4000);
+      const item = await until(() => findCreditsItem(doc), menuMs);
       mark("menu" + String(attempt));
       const menu = [...doc.querySelectorAll("[role='menu'] [role='menuitem']")].map((e) => norm(e.textContent));
       if (!item) {
@@ -391,7 +401,7 @@ export function spotifyReader() {
       }
       const menuHtml = capture ? sanitizeMenu(item.el.closest("[role='menu']")) : undefined;
       item.el.click();
-      const dialog = await until(() => findDialog(doc), 5000);
+      const dialog = await until(() => findDialog(doc), dialogMs);
       mark("dialog" + String(attempt));
       if (!dialog) {
         last = { status: "no-dialog", menu, how: item.how };
