@@ -3,6 +3,7 @@
 // Targets are the names Genius lists (the ones Apple's table produces too), so the queue and the role picker treat
 // both sources alike; a test pins that every target is one of them.
 import { roleMap } from "../core/roles";
+import { ROLE_TABLES } from "./roleTables";
 
 const ALIASES: Readonly<Record<string, string>> = {
   // Composition & Lyrics: Genius has one field for all of them ("Writer").
@@ -42,12 +43,24 @@ const ALIASES: Readonly<Record<string, string>> = {
 
 /** Names Genius lists, lowercase to their spelling: a label that already is one is kept as is. */
 const GENIUS_NAMES: ReadonlyMap<string, string> = new Map(
-  Object.values(roleMap()).map((name) => [name.toLowerCase(), name]),
+  Object.values(roleMap()).map((name) => [roleKey(name), name]),
 );
 
-/** The key a label is looked up by: lowercase, no trailing colon, single spaces. */
-function keyOf(raw: string): string {
-  return raw.trim().replace(/:+$/, "").replace(/\s+/g, " ").trim().toLowerCase();
+/**
+ * The key a label is looked up by: no gender markers ("Komponist*in", "Produzent/-in", "Produzent(in)"), no accents,
+ * lowercase, no trailing colon, single spaces. The language tables are written in this same form.
+ */
+export function roleKey(raw: string): string {
+  return raw
+    .trim()
+    .normalize("NFD")
+    .replace(/\p{M}+/gu, "")
+    .replace(/\s*[*:_/]-?\s*(?:in(?:nen)?|e)(?![\p{L}\p{M}])/giu, "")
+    .replace(/\(\s*(?:in|innen|a|e)\s*\)/giu, "")
+    .replace(/:+$/, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
 }
 
 /** Every Genius role the table can produce; the test that pins them to Genius's list reads this. */
@@ -56,12 +69,23 @@ export function spotifyRoleTargets(): string[] {
 }
 
 /** Genius role for a Spotify role label, or null when the label is not one the table knows (kept out, not guessed). */
-export function spotifyRole(raw: string): string | null {
-  const key = keyOf(raw);
-  return ALIASES[key] ?? GENIUS_NAMES.get(key) ?? null;
+export function spotifyRole(raw: string, language = "en"): string | null {
+  const key = roleKey(raw);
+  return ALIASES[key] ?? ROLE_TABLES[baseLanguage(language)]?.[key] ?? GENIUS_NAMES.get(key) ?? null;
 }
 
 /** Interface form: an unknown label comes back as written, like Apple's. The credits mapping uses `spotifyRole`. */
 export function normaliseSpotifyRole(raw: string): string {
   return spotifyRole(raw) ?? raw.trim().replace(/:+$/, "").trim();
+}
+
+/** "de-AT" is "de". */
+export function baseLanguage(tag: string): string {
+  return tag.trim().toLowerCase().split(/[-_]/)[0] ?? "";
+}
+
+/** Whether a language has a role table of its own (English is the built-in one). */
+export function hasRoleTable(language: string): boolean {
+  const base = baseLanguage(language);
+  return base === "en" || base in ROLE_TABLES;
 }

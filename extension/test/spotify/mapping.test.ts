@@ -3,9 +3,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { roleMap } from "../../src/core/roles";
-import { creditsFromDialog, skippedNote, splitRoles, type DialogRow } from "../../src/spotify/dialog";
+import { creditsFromDialog, languageNote, skippedNote, splitRoles, type DialogRow } from "../../src/spotify/dialog";
 import { parseDialog } from "../../src/spotify/page";
-import { normaliseSpotifyRole, spotifyRole, spotifyRoleTargets } from "../../src/spotify/roles";
+import { hasRoleTable, normaliseSpotifyRole, roleKey, spotifyRole, spotifyRoleTargets } from "../../src/spotify/roles";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name: string): Element => {
@@ -155,5 +155,35 @@ describe("credits from the saved dialogs", () => {
     const result = creditsFromDialog(parseDialog(fixture("credits-artist-only.html")));
     expect(result.credits).toEqual([]);
     expect(result.skipped).toEqual([]);
+  });
+});
+
+describe("roleKey and languages", () => {
+  it("drops gender markers, accents and parentheses so one table entry covers every spelling", () => {
+    for (const raw of ["Komponist*in", "Komponist:in", "Komponist/-in", "Komponist(in)", "Komponist_in", "KOMPONIST"]) {
+      expect(roleKey(raw), raw).toBe("komponist");
+    }
+    expect(roleKey("Compositeur / Compositrice")).toBe("compositeur / compositrice");
+    expect(roleKey("Réalisateur")).toBe("realisateur");
+    expect(roleKey("Bass (Vocal)")).toBe("bass (vocal)");
+    expect(roleKey("Mixing/Engineer")).toBe("mixing/engineer");
+  });
+
+  it("falls back to the English table for any language, and to nothing for an unknown word", () => {
+    expect(spotifyRole("Composer", "xx")).toBe("Songwriter");
+    expect(spotifyRole("Komponist*in", "de")).toBeNull();
+    expect(spotifyRole("Composer", "de-AT")).toBe("Songwriter");
+  });
+
+  it("knows English and any language that has a table", () => {
+    expect(hasRoleTable("en-GB")).toBe(true);
+    expect(hasRoleTable("xx")).toBe(false);
+  });
+
+  it("says nothing for English and names the language otherwise", () => {
+    expect(languageNote("en")).toBe("");
+    expect(languageNote("")).toBe("");
+    expect(languageNote("de-DE")).toContain("German");
+    expect(languageNote("de-DE")).toContain("no role words");
   });
 });
