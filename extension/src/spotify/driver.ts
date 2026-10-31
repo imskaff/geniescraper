@@ -32,7 +32,7 @@ export class SpotifyError extends Error {
 
 /** What a Spotify track page cannot give, said next to the credits instead of leaving fields silently empty. */
 export const NOT_PROVIDED_NOTE =
-  "Spotify's page does not show the ISRC, and shows only the year of a track's release, so the release date is filled in only when the album page gave it.";
+  "Spotify does not show the ISRC. A track's own page shows only the year of its release, so the release date comes from the album page when you read an album, and is empty otherwise.";
 
 export const UNAVAILABLE_MESSAGE =
   "Spotify has no playable page for this track here. It may be removed or not available in your country.";
