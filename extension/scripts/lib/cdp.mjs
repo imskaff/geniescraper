@@ -16,8 +16,9 @@ export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * ignore --load-extension but accept this, and so does a plain Chromium. `findServiceWorker` loads it the first time
  * it is asked for the worker, or call `loadExtension()` yourself; it loads once.
  * `loadVia: "flag"` loads it with --load-extension instead, which only a plain Chromium honours.
+ * `extraArgs` are added to the command line (for example --lang and --accept-lang).
  */
-export function launchChromium({ chromePath, dist, port, profileDir, loadVia = "protocol" }) {
+export function launchChromium({ chromePath, dist, port, profileDir, loadVia = "protocol", extraArgs = [] }) {
   const profile = profileDir ?? mkdtempSync(join(tmpdir(), "geniescraper-live-"));
   const viaProtocol = loadVia === "protocol";
   let keepOpen;
@@ -30,6 +31,7 @@ export function launchChromium({ chromePath, dist, port, profileDir, loadVia = "
       ...(viaProtocol
         ? ["--enable-unsafe-extension-debugging"]
         : [`--disable-extensions-except=${dist}`, `--load-extension=${dist}`]),
+      ...extraArgs,
       "--no-first-run",
       "--no-default-browser-check",
       "about:blank",
