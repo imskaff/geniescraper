@@ -7,15 +7,15 @@ Introducing it is a pure refactor: no user-visible change, and the message contr
 
 ## Module map
 
-| Piece | Module |
-|---|---|
-| Interface types (`CreditsProvider`, `MusicUrl`, `SourceId`) | `extension/src/providers/types.ts` |
-| Registry and routing by URL | `extension/src/providers/registry.ts` |
-| Apple Music provider (URL rules, tab names, messages, role mapping) | `extension/src/providers/apple.ts` |
-| Apple's in-page reader (unchanged) | `extension/src/apple/*` |
-| Worker side: open or reuse a tab, inject, ask, time out | `extension/src/background/providerClient.ts` (was `appleClient.ts`) |
-| Open-tab discovery for the panel and the desktop link | `extension/src/core/musicTabs.ts` (was `appleTabs.ts`) |
-| Apple's role alias table | `extension/data/roles.json` through `extension/src/core/roles.ts` (unchanged) |
+| Piece                                                               | Module                                                                        |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Interface types (`CreditsProvider`, `MusicUrl`, `SourceId`)         | `extension/src/providers/types.ts`                                            |
+| Registry and routing by URL                                         | `extension/src/providers/registry.ts`                                         |
+| Apple Music provider (URL rules, tab names, messages, role mapping) | `extension/src/providers/apple.ts`                                            |
+| Apple's in-page reader (unchanged)                                  | `extension/src/apple/*`                                                       |
+| Worker side: open or reuse a tab, inject, ask, time out             | `extension/src/background/providerClient.ts` (was `appleClient.ts`)           |
+| Open-tab discovery for the panel and the desktop link               | `extension/src/core/musicTabs.ts` (was `appleTabs.ts`)                        |
+| Apple's role alias table                                            | `extension/data/roles.json` through `extension/src/core/roles.ts` (unchanged) |
 
 ## 1. Recognising a page
 
@@ -39,6 +39,9 @@ The worker asks through `providerClient.ts`:
   No match gives `invalid-url` with the provider's own wording, or a generic wording when several providers are registered.
 - **Injection:** `ports.injectContentScript(tabId, provider.contentScript)`.
   Injection is on demand through `chrome.scripting.executeScript`, so no static content script is declared in the manifest.
+- **Early injection:** in a tab the worker opened, the script is injected (`injectImmediately`) as soon as the tab shows an address on the provider's site or has finished loading, whichever is first.
+  The reader waits for the page's content by itself, so the rest of the load (scripts, fonts, images) is not waited for.
+  Short waits inside a reader use `pause` (`apple/wait.ts`), which hops on a message channel, because timers in hidden tabs are throttled and stretch a 150 ms pause to a second or more.
 - **Hidden or visible tab:** detect on a tab the user already has open reads it in place (never navigated or closed, and only if it shows the same URL).
   Otherwise, and for every scrape, a minimized background window is opened and closed in `finally`.
   `provider.worksHidden` says whether a hidden tab can run the driver; a provider that needs a visible tab sets it to `false` and the client opens the tab active.
