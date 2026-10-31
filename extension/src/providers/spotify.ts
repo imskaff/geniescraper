@@ -15,10 +15,10 @@ export const SPOTIFY_PROVIDER: CreditsProvider = {
   contentScript: "spotify/content.js",
   // A hidden tab opens the credits dialog with a plain click (measured), so no visible tab is needed.
   worksHidden: true,
-  // Page loads are spread out and few at once: two hidden tabs, starting at least 0.3 s apart. Measured live to
-  // behave; any failed or blocked read drops it to one at a time (see the router).
-  readGapMs: 300,
-  readConcurrency: 2,
+  // Page loads are spread out and few at once: three hidden tabs, starts at least 0.15 s apart. Measured live to
+  // behave (no error in 32 reads at 2 and 3 at once); any failed or blocked read drops it to one (see the router).
+  readGapMs: 150,
+  readConcurrency: 3,
   messages: {
     notAlbumOrSong: "Not a Spotify album or track link.",
     notSong: "Not a Spotify track link.",

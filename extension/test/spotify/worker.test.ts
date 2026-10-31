@@ -185,7 +185,7 @@ describe("the router and Spotify", () => {
     return createRouter(browser.ports, FAST_CLIENT, paste, NO_COVERS, undefined, undefined, undefined, clock);
   }
 
-  it("reads at most two tracks at a time with starts a gap apart, however many the panel asks for", async () => {
+  it("reads at most the provider's limit at a time, however many the panel asks for", async () => {
     const clock = fakeClock();
     const browser = fakeBrowser({ answer: () => Promise.resolve({ ok: true, data: SCRAPE }) });
     const route = routerFor(browser, clock);
@@ -193,7 +193,7 @@ describe("the router and Spotify", () => {
     const answers = await Promise.all(urls.map((url) => route({ type: "scrape-track", url, trackTitle: "Song" })));
     expect(answers.every((a) => (a as { ok: boolean }).ok)).toBe(true);
     expect(browser.maxOpenTabs()).toBeLessThanOrEqual(SPOTIFY_PROVIDER.readConcurrency ?? 1);
-    expect(browser.maxOpenTabs()).toBe(2);
+    expect(browser.maxOpenTabs()).toBe(3);
   });
 
   it("reads the tracks in the order they were asked for, so the first one is ready first", async () => {
@@ -232,7 +232,7 @@ describe("the router and Spotify", () => {
     }
   });
 
-  it("keeps two at a time when a track is simply unavailable", async () => {
+  it("keeps the full limit when a track is simply unavailable", async () => {
     const clock = fakeClock();
     let first = true;
     const browser = fakeBrowser({
@@ -247,7 +247,7 @@ describe("the router and Spotify", () => {
     const route = routerFor(browser, clock);
     await route({ type: "scrape-track", url: TRACK, trackTitle: "Song" });
     await Promise.all([TRACK_B, ALBUM_TRACK_3, ALBUM_TRACK_4].map((url) => route({ type: "scrape-track", url, trackTitle: "x" })));
-    expect(browser.maxOpenTabs()).toBe(2);
+    expect(browser.maxOpenTabs()).toBe(3);
   });
 
   it("stops reading Spotify after a captcha, opens nothing for a while, then tries again", async () => {
