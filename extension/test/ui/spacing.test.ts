@@ -34,7 +34,7 @@ describe("the panel's spacing", () => {
   it("uses only the scale for every margin, padding and gap", () => {
     const off = spacing().filter(({ selector, value }) => {
       // Screen-reader-only text is clipped with a 1px negative margin on purpose.
-      if (selector === ".sr-only" || selector === ".alert.quiet-visual") return false;
+      if (selector === ".sr-only" || selector.startsWith(".alert.quiet-visual")) return false;
       const rest = value
         .replace(/var\(--space-\d\)/g, "")
         .replace(/\*\s*-1/g, "")

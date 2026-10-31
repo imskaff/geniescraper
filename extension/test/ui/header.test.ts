@@ -121,7 +121,7 @@ describe("Start pasting in the button row", () => {
     await flush();
     expect(env.api.pasteState.title).toBe("Three");
     expect(panel.state.paste.active).toBe(true);
-    expect($(root, "h2").textContent).toBe("Paste into Genius");
+    expect($(root, "h2").textContent).toMatch(/^Demo Artist - [A-Za-z]+$/);
     expect(startButton(root)).toBeNull();
   });
 

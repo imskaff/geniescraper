@@ -49,7 +49,12 @@ export function words(text: string): string[] {
 // Where a track title's featured-artist part starts: "(feat. X)", "[ft. X]", "with X" in brackets, or a bare feat.
 const FEATURING = /[([]\s*(?:feat|ft|featuring|with)\b|\b(?:feat|ft|featuring)\b\.?/i;
 
+/** A title or artist line without its featured-artist part: "Fortnight (feat. Post Malone)" gives "Fortnight ". */
+export function withoutFeaturing(text: string): string {
+  return text.split(FEATURING)[0] ?? "";
+}
+
 /** Words of a track title without its featured-artist part: "Fortnight (feat. Post Malone)" gives ["fortnight"]. */
 export function coreTitleWords(title: string): string[] {
-  return words(title.split(FEATURING)[0] ?? "");
+  return words(withoutFeaturing(title));
 }

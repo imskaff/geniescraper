@@ -479,6 +479,7 @@ describe("settings screen", () => {
       "Release date",
       "Choose the exact match in Genius's suggestions for me",
       "Go back to the main menu after the last track",
+      "Open each song on Genius before pasting it",
       "Find a YouTube link for each track (recommended)",
       "Show the key",
       "Search Deezer for a cover when Apple has none",

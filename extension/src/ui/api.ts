@@ -3,11 +3,13 @@ import { normalisePaste, type PasteState } from "../core/paste";
 import { isBridgeLinkState, type BridgeLinkState, type BridgeRequest } from "../shared/bridge";
 import {
   isAlbumInfo,
+  isGeniusOpenAnswer,
   isKeyCheck,
   isPageScrape,
   isYoutubeAnswer,
   isResult,
   type AlbumInfo,
+  type GeniusOpenAnswer,
   type KeyCheck,
   type PageScrape,
   type PasteCommand,
@@ -24,6 +26,8 @@ export interface WorkerApi {
   lookupYoutube(title: string, artist: string): Promise<Result<YoutubeAnswer>>;
   /** Try a YouTube key with one cheap call to Google; the key is checked, not stored, by the worker. */
   checkYoutubeKey(key: string): Promise<Result<KeyCheck>>;
+  /** Find this track's song on Genius and open its Edit Metadata form; the answer says how far it got. */
+  openOnGenius(title: string, artist: string): Promise<Result<GeniusOpenAnswer>>;
   /** Change the paste session. The worker is its only writer; the answer is the state afterwards. */
   paste(command: PasteCommand): Promise<Result<PasteState>>;
   /** The link to the desktop app: pair with a code, unpair, or ask how it stands. The answer is the link afterwards. */
@@ -64,6 +68,7 @@ export function createWorkerApi(send: Send): WorkerApi {
     checkYoutubeKey: (key) => ask(send, { type: "youtube-key-check", key }, isKeyCheck),
     lookupYoutube: (title, artist) => ask(send, { type: "youtube-lookup", title, artist }, isYoutubeAnswer),
     bridge: (request) => ask(send, request, isBridgeLinkState),
+    openOnGenius: (title, artist) => ask(send, { type: "genius-open", title, artist }, isGeniusOpenAnswer),
     async paste(command) {
       const answer = await ask(send, command, isRecord);
       return answer.ok ? { ok: true, data: normalisePaste(answer.data) } : answer;

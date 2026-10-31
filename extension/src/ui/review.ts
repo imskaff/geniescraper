@@ -7,6 +7,7 @@ import { el } from "./dom";
 import { MESSAGES, type PanelState } from "./controller";
 import { type ViewContext } from "./viewContext";
 import { FIELD_LABELS } from "./fieldLabels";
+import { geniusButton, geniusNotice } from "./geniusView";
 
 /** The mark in front of a track in the list; it repeats what the words say, so it is hidden from screen readers. */
 const HEALTH_MARKS: Readonly<Record<HealthLevel, string>> = {
@@ -53,6 +54,14 @@ export function startButtons(v: ViewContext, state: PanelState, busy: boolean): 
   return [start];
 }
 
+/** Open on Genius for the track Start pasting would start, so the two always mean the same song. */
+function openOnGeniusButton(v: ViewContext, state: PanelState, busy: boolean): HTMLElement[] {
+  const index = startableIndex(v, state);
+  if (index === null) return [];
+  const title = state.session.results.find((r) => r.index === index)?.song?.title ?? "";
+  return [geniusButton(v, state, index, title, busy)];
+}
+
 /** The track whose credits are on screen and can be pasted now, or null. */
 export function startableIndex(v: ViewContext, state: PanelState): number | null {
   if (state.setup.open || state.settingsOpen || state.paste.active || state.session.screen !== "review") return null;
@@ -90,12 +99,14 @@ export function reviewScreen(v: ViewContext, state: PanelState): Node[] {
       busy ? v.button("Stop", "quiet", "stop", () => void v.panel.stop(), false) : null,
       // Start pasting sits with the other ways on and off this screen, so there is one row to look at.
       ...startButtons(v, state, busy),
+      ...openOnGeniusButton(v, state, busy),
       // One song has no list to go back to.
       (session.album?.trackCount ?? 0) > 1
         ? v.button("Back to tracks", "quiet", "back", () => void v.panel.backToTracks(), busy)
         : null,
       v.button("Back to main menu", "nav", "menu", () => void v.panel.newAlbum(), false),
     ),
+    geniusNotice(state, startableIndex(v, state)),
     startableIndex(v, state) !== null
       ? el("p", {
           class: "help",

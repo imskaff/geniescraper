@@ -150,3 +150,16 @@ export function chipTexts(box: Element): string[] {
 export function boxOf(input: HTMLInputElement): HTMLElement {
   return input.parentElement?.closest<HTMLElement>('[role="combobox"]') ?? input;
 }
+
+const EDIT_METADATA_TEXT = "Edit Metadata";
+
+/**
+ * The song page's Edit Metadata button, which opens the form. It only exists for a signed-in user, and it is the one
+ * control the extension presses outside the form: there is no address that opens the form directly.
+ */
+export function editMetadataButton(doc: Document): HTMLButtonElement | null {
+  for (const button of doc.querySelectorAll("button")) {
+    if (button.textContent.trim() === EDIT_METADATA_TEXT) return button;
+  }
+  return null;
+}

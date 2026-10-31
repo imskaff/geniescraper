@@ -23,6 +23,12 @@ export interface BrowserPorts {
   activeGeniusTab(): Promise<number | null>;
   /** Tell a Genius tab something; resolves false when nothing there is listening. */
   notifyGenius(tabId: number, notice: GeniusNotice): Promise<boolean>;
+  /** Tabs showing genius.com with their addresses (readable through the host permission). */
+  geniusTabs(): Promise<{ id: number; url: string }[]>;
+  /** Bring a tab, and its window, to the front. */
+  focusTab(tabId: number): Promise<void>;
+  /** Ask a Genius tab something and wait for its answer; resolves undefined when nothing there is listening. */
+  askGenius(tabId: number, notice: GeniusNotice): Promise<unknown>;
   /** Keep the service worker alive while work is in flight; returns the function that stops it. */
   keepAlive(): () => void;
 }
@@ -82,6 +88,21 @@ export function chromePorts(): BrowserPorts {
         return true;
       } catch {
         return false;
+      }
+    },
+    async geniusTabs() {
+      const tabs = await chrome.tabs.query({ url: GENIUS_MATCH });
+      return tabs.flatMap((tab) => (tab.id === undefined ? [] : [{ id: tab.id, url: tab.url ?? "" }]));
+    },
+    async focusTab(tabId) {
+      const tab = await chrome.tabs.update(tabId, { active: true });
+      if (tab?.windowId !== undefined) await chrome.windows.update(tab.windowId, { focused: true });
+    },
+    async askGenius(tabId, notice) {
+      try {
+        return (await chrome.tabs.sendMessage(tabId, notice)) as unknown;
+      } catch {
+        return undefined;
       }
     },
     keepAlive() {

@@ -2,7 +2,14 @@
 import { type AppleTabEntry, type OpenTab } from "../core/appleTabs";
 import { type SongCredits } from "../core/models";
 import { type PasteState } from "../core/paste";
-import { type AlbumInfo, type AppError, type KeyCheck, type PageScrape } from "../shared/messages";
+import {
+  type AlbumInfo,
+  type AppError,
+  type GeniusOpenStatus,
+  type GeniusSongLink,
+  type KeyCheck,
+  type PageScrape,
+} from "../shared/messages";
 import { type Session, type TrackResult } from "../shared/session";
 import { type Settings } from "../shared/settings";
 import { type KeyValueStore, type Stores } from "../shared/storage";
@@ -53,6 +60,23 @@ export interface Env {
   appleTabs(): Promise<OpenTab[]>;
 }
 
+/** How "Open on Genius" stands for one track; "idle" until it is pressed. The statuses are the worker's answers. */
+export type GeniusPhase = "idle" | "working" | GeniusOpenStatus;
+
+export interface GeniusOpenState {
+  /** The track it is about; the notice shows only while that track is the one on screen. */
+  index: number | null;
+  phase: GeniusPhase;
+  /** The track's title as the messages name it. */
+  title: string;
+  /** The matched song, when the worker found one. */
+  song: GeniusSongLink | null;
+  /** Every exact candidate, for "several". */
+  songs: GeniusSongLink[];
+}
+
+export const NO_GENIUS: GeniusOpenState = { index: null, phase: "idle", title: "", song: null, songs: [] };
+
 export interface PanelState {
   session: Session;
   settings: Settings;
@@ -76,6 +100,8 @@ export interface PanelState {
     message: string;
     tone: "" | "ok" | "error";
   };
+  /** Opening the current track's song on Genius. */
+  genius: GeniusOpenState;
   /** What became of each track's YouTube look-up, shown in its credits so a missing link is never a mystery. */
   youtubeNotes: Record<number, string>;
   /** What was wrong with the YouTube link the user last pasted, or "". */

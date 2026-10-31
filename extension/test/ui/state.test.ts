@@ -17,6 +17,13 @@ describe("normaliseSettings", () => {
     });
   });
 
+  it("keeps opening songs on Genius off until it is chosen, and takes only a real boolean", () => {
+    expect(DEFAULT_SETTINGS.openOnGenius).toBe(false);
+    expect(normaliseSettings({ openOnGenius: true }).openOnGenius).toBe(true);
+    expect(normaliseSettings({ openOnGenius: 1 }).openOnGenius).toBe(false);
+    expect(normaliseSettings({ scrapeCore: true }).openOnGenius).toBe(false);
+  });
+
   it("maps onto the queue options", () => {
     expect(queueOptions({ ...DEFAULT_SETTINGS, scrapeAdditional: false })).toEqual({
       includeCore: true,

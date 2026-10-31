@@ -60,7 +60,7 @@ describe("the ways to start pasting", () => {
       "paste:paste-auto-start",
     ]);
     expect(panel.state.paste).toMatchObject({ active: true, auto: "running" });
-    expect($(root, "h2").textContent).toBe("Paste into Genius");
+    expect($(root, "h2").textContent).toMatch(/^Demo Artist - [A-Za-z]+$/);
     const toggle = $(root, '[data-key="auto-toggle"]');
     expect(toggle.textContent).toBe("Auto-paste: ON");
     expect(toggle.getAttribute("data-state")).toBe("on");

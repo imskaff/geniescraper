@@ -9,9 +9,12 @@ import type { KeyCheck } from "../shared/messages";
 import type { PasteService } from "./paste";
 import type { BrowserPorts } from "./ports";
 import { Limiter, Serial } from "./serial";
+import type { GeniusNavigator } from "./geniusNav";
 
 /** Hidden tabs open at once, whatever the panel asks for. */
 export const MAX_OPEN_TABS = 24;
+
+const NO_GENIUS: GeniusNavigator = { open: () => Promise.resolve({ status: "failed" }) };
 
 const NO_LINK = { url: "", isMusicVideo: false, keyProblem: "" } as const;
 
@@ -39,6 +42,7 @@ export function createRouter(
   covers: CoverService,
   youtube: YoutubeService = NO_YOUTUBE,
   checkKey: (key: string) => Promise<KeyCheck> = () => Promise.resolve("failed"),
+  genius: GeniusNavigator = NO_GENIUS,
 ): Router {
   const serial = new Serial();
   const reads = new Limiter(MAX_OPEN_TABS);
@@ -54,6 +58,15 @@ export function createRouter(
     }
     // Pasting must stay responsive while an album is being read, so it does not wait in the reads' queue.
     if (isPasteCommand(raw)) return paste.command(raw);
+
+    // Opening a song on Genius waits for a page, not for the reads, and a read never waits for it.
+    if (raw.type === "genius-open") {
+      const stopKeepAlive = ports.keepAlive();
+      return genius
+        .open(raw.title, raw.artist)
+        .then((data): Result<unknown> => ({ ok: true, data }))
+        .finally(stopKeepAlive);
+    }
 
     // YouTube look-ups wait in no queue of tabs: the gate inside the service paces them.
     const queue = raw.type === "detect" ? serial : raw.type === "scrape-track" ? reads : direct;

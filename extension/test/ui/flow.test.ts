@@ -294,7 +294,7 @@ describe("the finished screen", () => {
     next.click();
     await flush();
     expect(env.api.pasteState.title).toBe("Three");
-    expect($(root, "h2").textContent).toBe("Paste into Genius");
+    expect($(root, "h2").textContent).toMatch(/^Demo Artist - [A-Za-z]+$/);
   });
 
   it("offers no next track after the last one", async () => {
@@ -344,7 +344,7 @@ describe("the finished screen", () => {
     await panel.pasteBack();
     await flush();
     expect(env.api.pasteState.position).toBe(env.api.pasteState.queue.length - 1);
-    expect($(root, "h2").textContent).toBe("Paste into Genius");
+    expect($(root, "h2").textContent).toMatch(/^Demo Artist - [A-Za-z]+$/);
   });
 });
 
@@ -448,7 +448,7 @@ describe("returning to the main menu after the last step", () => {
     await flush();
     expect(second.panel.state.doneCountdown).toBeNull();
     await tick(40);
-    expect($(second.root, "h2").textContent).toBe("Paste into Genius");
+    expect($(second.root, "h2").textContent).toMatch(/^Demo Artist - [A-Za-z]+$/);
   });
 
   it("does not start when the setting is off, and stops if it is turned off meanwhile", async () => {
@@ -474,7 +474,7 @@ describe("returning to the main menu after the last step", () => {
     await tick(12);
     await flush();
     expect(env.api.pasteState.title).toBe("Three");
-    expect($(root, "h2").textContent).toBe("Paste into Genius");
+    expect($(root, "h2").textContent).toMatch(/^Demo Artist - [A-Za-z]+$/);
     expect(panel.state.nextCountdown).toBeNull();
     expect(panel.state.doneCountdown).toBeNull();
     // The track started by the countdown was counted as pasted, so finishing it starts the menu countdown.
@@ -492,7 +492,7 @@ describe("returning to the main menu after the last step", () => {
     expect(panel.state.nextCountdown).toBe(1);
     await tick(1);
     await flush();
-    expect($(root, "h2").textContent).toBe("Paste into Genius");
+    expect($(root, "h2").textContent).toMatch(/^Demo Artist - [A-Za-z]+$/);
   });
 
   it("returns to the main menu after the number of seconds in the settings", async () => {
@@ -534,7 +534,7 @@ describe("returning to the main menu after the last step", () => {
     root.dispatchEvent(new Event("mouseleave"));
     await tick(15);
     await flush();
-    expect($(root, "h2").textContent).toBe("Paste into Genius");
+    expect($(root, "h2").textContent).toMatch(/^Demo Artist - [A-Za-z]+$/);
   });
 
   it("starts, from thirty, once the last track is finished, after the user moved on from the first", async () => {

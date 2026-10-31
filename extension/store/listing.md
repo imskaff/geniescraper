@@ -24,6 +24,7 @@ How it works:
 1. Open the side panel and paste an Apple Music album or song link (or open the page and the panel offers it; the Apple Music albums and songs you already have open are listed to pick from).
 2. Choose the tracks you want, and review the credits the extension read.
 3. Open the song's Edit Metadata form on Genius and press Start pasting: the extension fills the fields by itself, one after another.
+   Open on Genius finds the song and opens that form for you (exact title and artist only; with no match or several, it stops and tells you).
    Prefer to stay in control? Step by step fills one field per key press (F8), F7 goes back, and the panel can skip a step.
 
 What it fills: writers, producers, other roles and their artists, the phonographic and copyright lines, a YouTube link, and the cover art link.
@@ -51,17 +52,17 @@ Copy song credits from Apple Music into the Genius song edit form.
 
 ## Permission justifications
 
-| Permission                                   | Justification to enter                                                                                                                                            |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `storage`                                    | Saves the user's settings, and keeps the album and credits being worked on while the side panel is closed and reopened.                                           |
-| `scripting`                                  | Reads the credits from the Apple Music page the user asked for, in a minimized browser window (or a background tab), by running the extension's own reader there. |
-| `sidePanel`                                  | The extension's main screen is a side panel, so it stays beside the Genius form while the user pastes.                                                            |
-| Host `https://music.apple.com/*`             | Reads the credits of the Apple Music album or song the user gave.                                                                                                 |
-| Host `https://genius.com/*`                  | Fills the fields of the Genius song edit form when the user presses the Next key. Never saves.                                                                    |
-| Host `https://itunes.apple.com/*`            | Finds the exact cover art for the song from Apple's public catalog.                                                                                               |
-| Optional host `https://api.deezer.com/*`     | Cover-art fallback; requested only when the user turns it on.                                                                                                     |
-| Optional host `https://www.youtube.com/*`    | Finds a YouTube link for the song; requested only when the user turns it on.                                                                                      |
-| Optional host `https://www.googleapis.com/*` | Finds the YouTube link through Google's official service with the user's own key; requested only when the user adds a key.                                        |
+| Permission                                   | Justification to enter                                                                                                                                                                                            |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `storage`                                    | Saves the user's settings, and keeps the album and credits being worked on while the side panel is closed and reopened.                                                                                           |
+| `scripting`                                  | Reads the credits from the Apple Music page the user asked for, in a minimized browser window (or a background tab), by running the extension's own reader there.                                                 |
+| `sidePanel`                                  | The extension's main screen is a side panel, so it stays beside the Genius form while the user pastes.                                                                                                            |
+| Host `https://music.apple.com/*`             | Reads the credits of the Apple Music album or song the user gave.                                                                                                                                                 |
+| Host `https://genius.com/*`                  | Fills the fields of the Genius song edit form when the user presses the Next key, and, when the user presses Open on Genius, searches Genius for the song and opens its page and Edit Metadata form. Never saves. |
+| Host `https://itunes.apple.com/*`            | Finds the exact cover art for the song from Apple's public catalog.                                                                                                                                               |
+| Optional host `https://api.deezer.com/*`     | Cover-art fallback; requested only when the user turns it on.                                                                                                                                                     |
+| Optional host `https://www.youtube.com/*`    | Finds a YouTube link for the song; requested only when the user turns it on.                                                                                                                                      |
+| Optional host `https://www.googleapis.com/*` | Finds the YouTube link through Google's official service with the user's own key; requested only when the user adds a key.                                                                                        |
 
 ## Companion desktop app (no extra permission)
 
@@ -84,7 +85,7 @@ Suggested answers (check them against the dashboard's current wording at submiss
 - Personally identifiable information, health, financial, personal communications, location, web history, user activity: not collected.
 - Authentication information: the optional YouTube key is typed in by the user, stored only on their device and sent only to Google, in a request header, to look up a link. If the dashboard counts that as handled, tick it and say "to give the user the feature they turned on".
 - Web history: not collected. The titles and addresses of the Apple Music pages the user has open are sent only to the user's own desktop app on the same computer, and only if they paired it.
-- Website content: song titles, artist names and credits are read from the Apple Music page the user asked for, and the title and artist are sent to iTunes (always) and to Deezer, YouTube and Google (only when the user turns those on), to find a cover or a link. Tick it if the dashboard counts text sent to those services, with the purpose "core functionality".
+- Website content: song titles, artist names and credits are read from the Apple Music page the user asked for, and the title and artist are sent to iTunes (always), to Genius (only when the user presses Open on Genius or turns on opening each song before pasting), and to Deezer, YouTube and Google (only when the user turns those on), to find a cover, a link or the song's Genius page. Tick it if the dashboard counts text sent to those services, with the purpose "core functionality".
 - Certifications: not sold or transferred to third parties apart from the requests above, which the user asked for; not used for anything unrelated to the single purpose; not used for creditworthiness or lending.
 
 ## Privacy policy

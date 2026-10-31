@@ -8,7 +8,9 @@ import { chromeStores } from "../shared/storage";
 import { REAL_CLIENT_TIMING } from "./appleClient";
 import { realCovers } from "./covers";
 import { checkKey } from "../lookups/youtubeApi";
-import { fetchResult } from "../lookups/http";
+import { fetchJson, fetchResult } from "../lookups/http";
+import { searchGenius } from "../lookups/genius";
+import { createGeniusNavigator } from "./geniusNav";
 import { loadYoutubeKey } from "../shared/secrets";
 import { realYoutube } from "./youtube";
 import { PasteService } from "./paste";
@@ -89,6 +91,7 @@ const route = createRouter(
   realCovers(),
   realYoutube({ getKey: () => loadYoutubeKey(secrets) }),
   (key) => checkKey(fetchResult, key),
+  createGeniusNavigator(ports, stores, (title, artist) => searchGenius(fetchJson, title, artist)),
 );
 
 // The toolbar button opens the side panel. The setting persists, so this is harmless on every worker start.

@@ -55,7 +55,7 @@ describe("starting to paste", () => {
 
     expect(env.api.calls).toContain("paste:paste-start");
     expect(panel.state.paste.active).toBe(true);
-    expect($(root, "h2").textContent).toBe("Paste into Genius");
+    expect($(root, "h2").textContent).toMatch(/^Demo Artist - [A-Za-z]+$/);
     expect(document.activeElement).toBe($(root, "h2"));
   });
 
@@ -220,7 +220,7 @@ describe("a session the panel finds already running", () => {
     });
     const panel = await PanelController.create(env);
     new PanelView(root, panel);
-    expect($(root, "h2").textContent).toBe("Paste into Genius");
+    expect($(root, "h2").textContent).toBe("Song");
   });
 });
 

@@ -4,6 +4,16 @@ import { STEP_LABELS, instruction } from "../core/paste";
 import { el } from "./dom";
 import { type PanelState } from "./controller";
 import { type ViewContext } from "./viewContext";
+import { geniusButton, geniusNotice } from "./geniusView";
+import { geniusMessage } from "./geniusText";
+
+/** "Artist - Song name" for the track being pasted; just the song name when its artist is not known. */
+export function pasteHeading(state: PanelState): string {
+  const { paste, pasteIndex, session } = state;
+  const song = session.results.find((r) => r.index === pasteIndex)?.song;
+  const artist = (song?.artist || session.album?.artist || "").trim();
+  return artist && pasteIndex !== null ? `${artist} - ${paste.title}` : paste.title;
+}
 
 export function pasteScreen(v: ViewContext, state: PanelState): Node[] {
   const { paste, settings } = state;
@@ -37,8 +47,15 @@ export function pasteScreen(v: ViewContext, state: PanelState): Node[] {
   );
 
   return [
-    v.heading("Paste into Genius"),
-    el("p", { class: "help", text: paste.title }),
+    el(
+      "div",
+      { class: "screen-head" },
+      v.heading(pasteHeading(state)),
+      state.pasteIndex === null
+        ? null
+        : geniusButton(v, state, state.pasteIndex, paste.title, false, "screen-head-action"),
+    ),
+    geniusNotice(state, state.pasteIndex),
     pasteError(v, state),
     el("p", { class: "progress", text: progress }),
     current
@@ -114,7 +131,8 @@ export function pasteControls(v: ViewContext, state: PanelState, finished: boole
 
 /** The error above the step counter. A new error, or the same one on a new attempt, plays the attention animation once. */
 export function pasteError(v: ViewContext, state: PanelState): HTMLElement | null {
-  if (!state.error) return null;
+  // The Open on Genius notice already shows its own words.
+  if (!state.error || state.error === geniusMessage(state.genius)?.text) return null;
   const fresh = state.errorSeq !== v.shownErrorSeq;
   v.shownErrorSeq = state.errorSeq;
   return el(
@@ -140,6 +158,7 @@ export function doneScreen(v: ViewContext, state: PanelState): Node[] {
       el("p", { class: "help", text: state.paste.title }),
       el("p", { text: "Check the Genius page, then press Save there." }),
     ),
+    geniusNotice(state, next),
     el(
       "div",
       { class: "stack" },
@@ -166,5 +185,5 @@ export function doneScreen(v: ViewContext, state: PanelState): Node[] {
         true,
       ),
     ),
-  ];
+  ].filter((node): node is HTMLElement => node !== null);
 }

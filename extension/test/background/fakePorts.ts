@@ -45,6 +45,12 @@ export interface FakeBehaviour {
   geniusTabs?: { id: number; active: boolean }[];
   /** Genius tabs that cannot receive notices (no content script loaded). */
   deaf?: number[];
+  /** Addresses of the Genius tabs by id; a tab without one shows "". */
+  geniusUrls?: Record<number, string>;
+  /** What a Genius tab answers to a question (open-edit); defaults to the form opening. */
+  geniusAnswer?: (tabId: number, notice: GeniusNotice) => unknown;
+  /** Asks that find nobody listening before the page answers (a content script that has not loaded yet). */
+  deafAsks?: number;
 }
 
 export interface FakeBrowser {
@@ -67,6 +73,7 @@ export function fakeBrowser(behaviour: FakeBehaviour = {}): FakeBrowser {
   let peak = 0;
   let keepAlive = 0;
   const notices: string[] = [];
+  let deafAsks = behaviour.deafAsks ?? 0;
 
   const defaultAnswer = (request: ContentRequest): Promise<unknown> =>
     Promise.resolve({ ok: true, data: request.type === "apple/detect" ? ALBUM_INFO : PAGE_SCRAPE });
@@ -124,6 +131,26 @@ export function fakeBrowser(behaviour: FakeBehaviour = {}): FakeBrowser {
         }`,
       );
       return Promise.resolve(true);
+    },
+    geniusTabs() {
+      return Promise.resolve(
+        (behaviour.geniusTabs ?? []).map((tab) => ({ id: tab.id, url: behaviour.geniusUrls?.[tab.id] ?? "" })),
+      );
+    },
+    focusTab(tabId) {
+      log.push(`focus:${String(tabId)}`);
+      return Promise.resolve();
+    },
+    askGenius(tabId, notice) {
+      log.push(`ask:${String(tabId)}:${notice.type}`);
+      if (deafAsks > 0) {
+        deafAsks--;
+        return Promise.resolve(undefined);
+      }
+      if (behaviour.deaf?.includes(tabId)) return Promise.resolve(undefined);
+      return Promise.resolve(
+        behaviour.geniusAnswer ? behaviour.geniusAnswer(tabId, notice) : { ok: true, data: { state: "opened" } },
+      );
     },
     keepAlive() {
       keepAlive++;
