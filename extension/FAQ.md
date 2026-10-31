@@ -81,7 +81,8 @@ Until you have allowed it, your open Spotify tabs do not show up in the panel's 
 
 - Spotify's credits box does not show the release date or the ISRC, so the panel says so beside the credits, and those fields are not filled from Spotify.
   A track's page shows only the year; an album page's date is used when it is in English.
-- Spotify role names are read in English only. If Spotify shows its page in your language, the roles it cannot match are listed under "About this read" as left out, and you can add them on Genius yourself.
+- Spotify writes role names in the language of its page. The extension knows the role words of German, Spanish, French, Portuguese, Italian, Dutch, Polish, Swedish, Turkish, Japanese, Korean and Russian as well as English, taken from real reads. A role word it does not know (a rarer role, or another language) is left out and listed under "About this read", which also names the language Spotify showed, so you can add those on Genius yourself.
+- Spotify is read two pages at a time, a fraction of a second apart; one failed or blocked read drops that to one at a time.
 - Roles that Genius has no name for are listed under "About this read" too, instead of being guessed.
 - A long album shows only its first tracks on Spotify's page, so the track list marks the rest as "No Spotify page". Open one of those tracks on its own page and read it from there.
 - Cover art comes from Apple's catalog or Deezer by title and artist, as for Apple Music.

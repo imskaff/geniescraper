@@ -12,6 +12,8 @@ import { memoryStore } from "../ui/fakes";
 const TRACK = "https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT";
 const TRACK_B = "https://open.spotify.com/track/0VjIjW4GlUZAMYd2vXMi3b";
 const ALBUM = "https://open.spotify.com/album/1uyf3l2d4XYwiEqAb7t7fX";
+const ALBUM_TRACK_3 = "https://open.spotify.com/track/7qiZfU4dY1lWllzX7mPBI3";
+const ALBUM_TRACK_4 = "https://open.spotify.com/track/2takcwOaAZWiXQijPHIx7B";
 
 const SCRAPE: PageScrape = {
   title: "Song",
@@ -130,27 +132,48 @@ describe("reading Spotify through the worker", () => {
 });
 
 describe("the polite queue", () => {
-  it("runs one job at a time and leaves the gap between the end of one and the start of the next", async () => {
-    const clock = fakeClock();
-    const queue = new PoliteQueue(2500, clock);
-    const order: string[] = [];
+  const trace = (queue: PoliteQueue, clock: ReturnType<typeof fakeClock>, names: string[]) => {
+    const log: string[] = [];
     let running = 0;
     let peak = 0;
     const job = (name: string) => async () => {
       running++;
       peak = Math.max(peak, running);
-      order.push(`${name}@${String(clock.at - 1_000_000)}`);
+      log.push(`${name}@${String(clock.at - 1_000_000)}`);
+      await Promise.resolve();
       await Promise.resolve();
       running--;
     };
-    await Promise.all([queue.run(job("a")), queue.run(job("b")), queue.run(job("c"))]);
+    return Promise.all(names.map((n) => queue.run(job(n)))).then(() => ({ log, peak }));
+  };
+
+  it("with one at a time, starts jobs in order at least a gap apart", async () => {
+    const clock = fakeClock();
+    const { log, peak } = await trace(new PoliteQueue(300, 1, clock), clock, ["a", "b", "c"]);
     expect(peak).toBe(1);
-    expect(order).toEqual(["a@0", "b@2500", "c@5000"]);
-    expect(clock.slept).toEqual([2500, 2500]);
+    expect(log).toEqual(["a@0", "b@300", "c@600"]);
+  });
+
+  it("with two at a time, never has more than two running and spreads their starts", async () => {
+    const clock = fakeClock();
+    const { log, peak } = await trace(new PoliteQueue(300, 2, clock), clock, ["a", "b", "c", "d"]);
+    expect(peak).toBe(2);
+    expect(log.map((entry) => entry.split("@")[0])).toEqual(["a", "b", "c", "d"]);
+    const starts = log.map((entry) => Number(entry.split("@")[1]));
+    for (let i = 1; i < starts.length; i++) expect((starts[i] ?? 0) - (starts[i - 1] ?? 0)).toBeGreaterThanOrEqual(300);
+  });
+
+  it("drops to one at a time when told, and never below one", async () => {
+    const clock = fakeClock();
+    const queue = new PoliteQueue(0, 2, clock);
+    queue.setLimit(0);
+    expect(queue.concurrency).toBe(1);
+    const { peak } = await trace(queue, clock, ["a", "b", "c"]);
+    expect(peak).toBe(1);
   });
 
   it("keeps going after a job fails", async () => {
-    const queue = new PoliteQueue(0, fakeClock());
+    const queue = new PoliteQueue(0, 1, fakeClock());
     await expect(queue.run(() => Promise.reject(new Error("x")))).rejects.toThrow("x");
     await expect(queue.run(() => Promise.resolve(5))).resolves.toBe(5);
   });
@@ -162,16 +185,69 @@ describe("the router and Spotify", () => {
     return createRouter(browser.ports, FAST_CLIENT, paste, NO_COVERS, undefined, undefined, undefined, clock);
   }
 
-  it("reads tracks one at a time with a pause, however many the panel asks for at once", async () => {
+  it("reads at most two tracks at a time with starts a gap apart, however many the panel asks for", async () => {
     const clock = fakeClock();
     const browser = fakeBrowser({ answer: () => Promise.resolve({ ok: true, data: SCRAPE }) });
     const route = routerFor(browser, clock);
-    const answers = await Promise.all(
-      [TRACK, TRACK_B, TRACK].map((url) => route({ type: "scrape-track", url, trackTitle: "Song" })),
-    );
+    const urls = [TRACK, TRACK_B, TRACK, TRACK_B, TRACK];
+    const answers = await Promise.all(urls.map((url) => route({ type: "scrape-track", url, trackTitle: "Song" })));
     expect(answers.every((a) => (a as { ok: boolean }).ok)).toBe(true);
-    expect(browser.maxOpenTabs()).toBe(1);
-    expect(clock.slept).toEqual([SPOTIFY_PROVIDER.readGapMs, SPOTIFY_PROVIDER.readGapMs]);
+    expect(browser.maxOpenTabs()).toBeLessThanOrEqual(SPOTIFY_PROVIDER.readConcurrency ?? 1);
+    expect(browser.maxOpenTabs()).toBe(2);
+  });
+
+  it("reads the tracks in the order they were asked for, so the first one is ready first", async () => {
+    const clock = fakeClock();
+    const opened: string[] = [];
+    const browser = fakeBrowser({ answer: () => Promise.resolve({ ok: true, data: SCRAPE }) });
+    const create = browser.ports.createTab.bind(browser.ports);
+    browser.ports.createTab = (url, active) => {
+      opened.push(url);
+      return create(url, active);
+    };
+    const route = routerFor(browser, clock);
+    const urls = [TRACK, TRACK_B, ALBUM_TRACK_3, ALBUM_TRACK_4];
+    await Promise.all(urls.map((url) => route({ type: "scrape-track", url, trackTitle: "Song" })));
+    expect(opened).toEqual(urls);
+  });
+
+  it("falls back to one at a time after a read fails for a reason that is not the track's own", async () => {
+    for (const code of ["tab-failed", "timeout", "blocked"] as const) {
+      const clock = fakeClock();
+      let fail = true;
+      const browser = fakeBrowser({
+        answer: () =>
+          Promise.resolve(fail ? { ok: false, error: { code, message: code } } : { ok: true, data: SCRAPE }),
+      });
+      const route = routerFor(browser, clock);
+      await route({ type: "scrape-track", url: TRACK, trackTitle: "Song" });
+      fail = false;
+      clock.at += BLOCKED_PAUSE_MS;
+      const before = browser.maxOpenTabs();
+      await Promise.all(
+        [TRACK, TRACK_B, ALBUM_TRACK_3, ALBUM_TRACK_4].map((url) => route({ type: "scrape-track", url, trackTitle: "x" })),
+      );
+      expect(browser.maxOpenTabs(), code).toBe(Math.max(before, 1));
+      expect(browser.maxOpenTabs(), code).toBe(1);
+    }
+  });
+
+  it("keeps two at a time when a track is simply unavailable", async () => {
+    const clock = fakeClock();
+    let first = true;
+    const browser = fakeBrowser({
+      answer: () => {
+        const unavailable = first;
+        first = false;
+        return Promise.resolve(
+          unavailable ? { ok: false, error: { code: "unavailable", message: "gone" } } : { ok: true, data: SCRAPE },
+        );
+      },
+    });
+    const route = routerFor(browser, clock);
+    await route({ type: "scrape-track", url: TRACK, trackTitle: "Song" });
+    await Promise.all([TRACK_B, ALBUM_TRACK_3, ALBUM_TRACK_4].map((url) => route({ type: "scrape-track", url, trackTitle: "x" })));
+    expect(browser.maxOpenTabs()).toBe(2);
   });
 
   it("stops reading Spotify after a captcha, opens nothing for a while, then tries again", async () => {

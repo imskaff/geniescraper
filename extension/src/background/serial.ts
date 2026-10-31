@@ -43,25 +43,43 @@ export const REAL_CLOCK: Clock = {
     }),
 };
 
-/** Runs jobs one at a time with at least `gapMs` between the end of one and the start of the next. */
+/**
+ * Runs jobs in the order they arrive, at most `limit` at once, and starts no two jobs closer than `gapMs`. A site read
+ * this way sees a few page loads spread out, never a burst. `setLimit` lowers the concurrency (never below 1) when
+ * the site starts to push back; jobs already running are left to finish.
+ */
 export class PoliteQueue {
-  private readonly serial = new Serial();
-  private lastEnd = Number.NEGATIVE_INFINITY;
+  private active = 0;
+  private nextStart = Number.NEGATIVE_INFINITY;
+  private readonly waiting: (() => void)[] = [];
 
   constructor(
     private readonly gapMs: number,
+    private limit = 1,
     private readonly clock: Clock = REAL_CLOCK,
   ) {}
 
-  run<T>(job: () => Promise<T>): Promise<T> {
-    return this.serial.run(async () => {
-      const wait = this.lastEnd + this.gapMs - this.clock.now();
+  setLimit(limit: number): void {
+    this.limit = Math.max(1, limit);
+  }
+
+  get concurrency(): number {
+    return this.limit;
+  }
+
+  async run<T>(job: () => Promise<T>): Promise<T> {
+    while (this.active >= this.limit) await new Promise<void>((resolve) => this.waiting.push(resolve));
+    this.active++;
+    try {
+      // Reserve the start time before waiting, so jobs that arrive together are spread out, in order.
+      const at = Math.max(this.clock.now(), this.nextStart);
+      this.nextStart = at + this.gapMs;
+      const wait = at - this.clock.now();
       if (wait > 0) await this.clock.sleep(wait);
-      try {
-        return await job();
-      } finally {
-        this.lastEnd = this.clock.now();
-      }
-    });
+      return await job();
+    } finally {
+      this.active--;
+      this.waiting.shift()?.();
+    }
   }
 }

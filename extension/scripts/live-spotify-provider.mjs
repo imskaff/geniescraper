@@ -23,12 +23,18 @@ if (!chromePath) throw new Error("Pass --chrome <path to Chrome or Chromium> (or
 const lang = option("--lang", "en-US");
 const shotsDir = option("--screenshots", "");
 const albumId = option("--album", "");
+// Any other album address (an Apple Music one, to time the same read for comparison).
+const albumUrl = option("--album-url", "") || (albumId ? `https://open.spotify.com/album/${albumId}` : "");
 const albumTracks = Number(option("--album-tracks", "3"));
 const trackIds = option("--tracks", "").split(",").filter(Boolean);
 const wantUnavailable = args.includes("--unavailable");
 const wantTab = args.includes("--tab");
 // The shipped build as it is: Spotify not allowed yet. Nothing is loaded from Spotify; the explanation card shows.
 const ungranted = args.includes("--ungranted");
+// Timing runs: `--all` reads every listed track of the album and prints when each one finished; `--before` patches the
+// scratch build to the old schedule (one page at a time, 2.5 s apart) so the same album can be timed both ways.
+const readAll = args.includes("--all");
+const before = args.includes("--before");
 
 const failures = [];
 const check = (name, ok, detail = "") => {
@@ -41,6 +47,16 @@ const scratch = mkdtempSync(join(tmpdir(), "geniescraper-spotify-dist-"));
 cpSync(join(root, "dist"), scratch, { recursive: true });
 const manifestPath = join(scratch, "manifest.json");
 const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
+if (before) {
+  const workerPath = join(scratch, "background", "worker.js");
+  const code = readFileSync(workerPath, "utf-8");
+  if (!/readGapMs: 300,\s*readConcurrency: 2/.test(code))
+    throw new Error("--before: the schedule was not found in the build.");
+  writeFileSync(
+    workerPath,
+    code.replace(/readGapMs: 300,\s*readConcurrency: 2/, "readGapMs: 2500, readConcurrency: 1"),
+  );
+}
 if (!ungranted) {
   manifest.optional_host_permissions = manifest.optional_host_permissions.filter(
     (h) => h !== "https://open.spotify.com/*",
@@ -125,10 +141,10 @@ try {
   }
 
   // Phase 1: an album, a few of its tracks.
-  if (albumId) {
+  if (albumUrl) {
     console.log(`\n== album ${albumId}`);
     const started = Date.now();
-    await submitLink(`https://open.spotify.com/album/${albumId}`);
+    await submitLink(albumUrl);
     const listed = await until(
       "document.querySelectorAll('[data-key^=track-]').length > 0",
       "the album's track list",
@@ -141,16 +157,35 @@ try {
     check("album lists tracks", boxes > 1, `${String(boxes)} rows`);
     await shot("1-album-tracks");
     if (listed) {
-      for (let i = 0; i < albumTracks; i++) await clickKey(`track-${String(i)}`);
+      const picked = readAll ? boxes : albumTracks;
+      if (readAll) await clickKey("all");
+      else for (let i = 0; i < albumTracks; i++) await clickKey(`track-${String(i)}`);
       const t0 = Date.now();
       await clickKey("go");
-      loads += albumTracks;
-      await until("/Got credits for/.test(document.body.innerText)", "all picked tracks read", 150000);
+      loads += picked;
+      // When each track stops being "Waiting" or "Reading": the first is what the user waits for.
+      const doneAt = new Array(picked).fill(null);
+      const deadline = Date.now() + 240000;
+      while (Date.now() < deadline && doneAt.some((t) => t === null)) {
+        const states = await evalPanel(
+          `[...document.querySelectorAll('[data-key^=show-]')].map((b) => /Waiting|Reading/.test(b.textContent) ? 0 : 1)`,
+        );
+        states.forEach((done, i) => {
+          if (done && doneAt[i] === null) doneAt[i] = Date.now() - t0;
+        });
+        await sleep(100);
+      }
+      const finished = doneAt.filter((t) => t !== null).sort((x, y) => x - y);
+      console.log(
+        `timing: tracks=${String(picked)} first=${String(finished[0])} ms, last=${String(finished.at(-1))} ms, per track=${String(Math.round((finished.at(-1) ?? 0) / picked))} ms`,
+      );
+      console.log(`finish times (ms): ${doneAt.join(" ")}`);
+      await until("/Got credits for/.test(document.body.innerText)", "the summary line", 10000);
       const after = await pageText();
       console.log(after.split("\n").slice(0, 14).join(" | "));
       check(
         "every picked track was read",
-        new RegExp(`Got credits for ${String(albumTracks)} tracks?\\.`).test(after),
+        new RegExp(`Got credits for ${String(picked)} tracks?\\.`).test(after),
         `${String(Date.now() - t0)} ms`,
       );
       await shot("2-album-review");

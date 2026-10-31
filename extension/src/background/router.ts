@@ -20,6 +20,9 @@ const NO_GENIUS: GeniusNavigator = { open: () => Promise.resolve({ status: "fail
 /** After a site asks for a captcha, it is not read again for this long, so the user can look at it first. */
 export const BLOCKED_PAUSE_MS = 15 * 60_000;
 
+/** Failures that say something about the site or the connection rather than about one track. */
+const PUSHBACK_CODES: ReadonlySet<string> = new Set(["blocked", "tab-failed", "timeout", "internal"]);
+
 const NO_LINK = { url: "", isMusicVideo: false, keyProblem: "" } as const;
 
 export const INTERNAL_ERROR: Result<never> = {
@@ -58,7 +61,7 @@ export function createRouter(
   const politeQueue = (provider: CreditsProvider): PoliteQueue => {
     let queue = polite.get(provider.id);
     if (!queue) {
-      queue = new PoliteQueue(provider.readGapMs ?? 0, clock);
+      queue = new PoliteQueue(provider.readGapMs ?? 0, provider.readConcurrency ?? 1, clock);
       polite.set(provider.id, queue);
     }
     return queue;
@@ -110,8 +113,11 @@ export function createRouter(
       const stopKeepAlive = ports.keepAlive();
       try {
         const answer = await work(raw);
-        if (provider && !answer.ok && answer.error.code === "blocked") {
-          blockedUntil.set(provider.id, clock.now() + BLOCKED_PAUSE_MS);
+        if (provider && !answer.ok) {
+          if (answer.error.code === "blocked") blockedUntil.set(provider.id, clock.now() + BLOCKED_PAUSE_MS);
+          // A read that failed for a reason that is not the track's own (a captcha, a page that would not open or
+          // answer) may mean the site is pushing back: from then on it is read one page at a time.
+          if (PUSHBACK_CODES.has(answer.error.code)) politeQueue(provider).setLimit(1);
         }
         return answer;
       } finally {

@@ -53,7 +53,7 @@ The worker asks through `providerClient.ts`:
 - **Message names:** `apple/detect`, `apple/scrape`, `spotify/detect` and `spotify/scrape` are the content requests; each content script answers only its own prefix.
   A further provider adds `<id>/detect` and `<id>/scrape` to `ContentRequest` and validates its own prefix in its handler.
 - **Access:** a provider whose host is optional is checked with `ports.hasAccess(origins)` before any tab is opened; without it the client answers `no-access` and opens nothing.
-- **Polite reading:** `provider.readGapMs` (Spotify: 2500) makes the router read that provider one page at a time with at least that pause between page loads, whatever the panel asks for, and stop reading it for 15 minutes after a `blocked` answer. Reading the user's own tab opens nothing and skips the queue.
+- **Polite reading:** `provider.readGapMs` (Spotify: 300) and `provider.readConcurrency` (Spotify: 2) make the router read that provider in order, at most that many pages at once and no two starts closer than the gap, whatever the panel asks for. A `blocked`, `tab-failed`, `timeout` or `internal` answer drops it to one page at a time for the rest of the worker's life, and a `blocked` answer also stops reading it for 15 minutes. Reading the user's own tab opens nothing and skips the queue. The panel queues every picked track at once, so the rest of an album is read in the background in album order while the user reviews and pastes the first.
 - **Error codes:** besides the shared ones, `unavailable` (the site has no page for the track), `blocked` (captcha or rate limit) and `no-access` (host not allowed yet) carry wording made for the user.
   The panel never sees these messages, so the panel-to-worker contract (`detect`, `scrape` with a URL) needs no `source` field: the worker derives the source from the URL.
 
@@ -64,7 +64,7 @@ Every provider has `normaliseRole(raw)`, which maps a raw role label from that s
 - Apple's stays the data-driven `data/roles.json` (generated from `scraper/roles.py` by `tools/export_roles.py`) behind `core/roles.ts`, and is parity-tested against Python.
 - A new provider ships its own alias table inside `providers/<id>/` (label as the site shows it, lowercase, to a Genius role) and never edits Apple's table or the Python map.
   Apple's unknown labels are kept as written.
-  Spotify exposes `spotifyRole(raw)`, which returns `null` for an unknown label: the credits mapping leaves such a role out and lists it (with who holds it) in the track's notes, so a role in another language is never typed into Genius by mistake.
+  Spotify exposes `spotifyRole(raw, language)`, which returns `null` for an unknown label (English table first, then the table of the page's `<html lang>` in `src/spotify/roleTables.ts`, then Genius's own names, all by a normalised key): the credits mapping leaves such a role out and lists it (with who holds it) in the track's notes, so a role in another language is never typed into Genius by mistake.
   Every value in Spotify's table must be a role name Genius lists (a test checks it against the names Apple's table produces).
 
 ## 4. Open-tab discovery

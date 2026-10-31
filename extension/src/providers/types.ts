@@ -35,10 +35,12 @@ export interface CreditsProvider {
   /** Whether a minimized background window can run the in-page reader. */
   readonly worksHidden: boolean;
   /**
-   * Set for a site that is read politely: one page at a time, at least this many milliseconds between page loads, and
-   * no reading at all for a while after the site asked for a captcha. Absent for a site that tolerates parallel reads.
+   * Set for a site that is read politely: at least this many milliseconds between the starts of two page loads, and no
+   * reading at all for a while after the site asked for a captcha. Absent for a site that tolerates parallel reads.
    */
   readonly readGapMs?: number;
+  /** For a polite site: how many pages may load at once while it behaves (1 when absent). One failure drops it to 1. */
+  readonly readConcurrency?: number;
   /** Overrides of the shared waits, for a site that needs longer. */
   readonly timing?: Partial<ClientTiming>;
   readonly messages: ProviderMessages;
