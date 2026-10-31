@@ -29,11 +29,11 @@ export interface SpotifyCredits {
   skipped: { role: string; names: string[] }[];
 }
 
-/** Split "Composer • Lyricist" (the dialog joins one person's roles with a bullet) into its roles. */
+/** Split "Composer • Lyricist" (the dialog joins one person's roles with a bullet; a middle dot inside a word, as in French "ingénieur·e", is not a separator) into its roles. */
 export function splitRoles(text: string): string[] {
   return text
     .replace(/\s+/g, " ")
-    .split(/\s*[•·]\s*/)
+    .split(/\s*•\s*|\s+·\s+/)
     .map((role) => role.trim())
     .filter(Boolean);
 }

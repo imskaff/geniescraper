@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { OBSERVED } from "./observedRoles";
+import { ROLE_TABLES } from "../../src/spotify/roleTables";
 import { roleMap } from "../../src/core/roles";
 import { creditsFromDialog, languageNote, skippedNote, splitRoles, type DialogRow } from "../../src/spotify/dialog";
 import { parseDialog } from "../../src/spotify/page";
@@ -171,12 +173,12 @@ describe("roleKey and languages", () => {
 
   it("falls back to the English table for any language, and to nothing for an unknown word", () => {
     expect(spotifyRole("Composer", "xx")).toBe("Songwriter");
-    expect(spotifyRole("Komponist*in", "de")).toBeNull();
     expect(spotifyRole("Composer", "de-AT")).toBe("Songwriter");
   });
 
   it("knows English and any language that has a table", () => {
     expect(hasRoleTable("en-GB")).toBe(true);
+    expect(hasRoleTable("de-AT")).toBe(true);
     expect(hasRoleTable("xx")).toBe(false);
   });
 
@@ -184,6 +186,62 @@ describe("roleKey and languages", () => {
     expect(languageNote("en")).toBe("");
     expect(languageNote("")).toBe("");
     expect(languageNote("de-DE")).toContain("German");
-    expect(languageNote("de-DE")).toContain("no role words");
+    expect(languageNote("xx")).toContain("no role words");
+  });
+});
+
+describe("role words in each language Spotify was read in", () => {
+  const languages = Object.keys(OBSERVED);
+
+  it("covers the thirteen languages asked for besides English", () => {
+    expect(languages.sort()).toEqual(["de", "es", "fr", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr"]);
+    expect(Object.keys(ROLE_TABLES).sort()).toEqual(languages);
+  });
+
+  it.each(Object.entries(OBSERVED))("%s: every observed word maps to what its English word maps to", (language, pairs) => {
+    for (const [local, english] of pairs) {
+      expect(spotifyRole(local, language), `${language}: ${local} (${english})`).toBe(spotifyRole(english));
+    }
+  });
+
+  it.each(Object.entries(OBSERVED))("%s: gender and accent variants of an observed word give the same role", (language, pairs) => {
+    for (const [local] of pairs) {
+      const role = spotifyRole(local, language);
+      expect(spotifyRole(local.toUpperCase(), language), local).toBe(role);
+      expect(spotifyRole(` ${local}: `, language), local).toBe(role);
+    }
+  });
+
+  it("only maps to role names Genius lists, in every table", () => {
+    const genius = new Set(Object.values(roleMap()));
+    for (const table of Object.values(ROLE_TABLES)) for (const role of Object.values(table)) expect(genius.has(role), role).toBe(true);
+  });
+
+  it("keeps every table key in the normalised form it is looked up by", () => {
+    for (const [language, table] of Object.entries(ROLE_TABLES)) {
+      for (const key of Object.keys(table)) expect(roleKey(key), `${language}: ${key}`).toBe(key);
+    }
+  });
+
+  it("does not take a word from another language's table", () => {
+    expect(spotifyRole("Komponist", "de")).toBe("Songwriter");
+    expect(spotifyRole("Komponist", "fr")).toBeNull();
+    expect(spotifyRole("Komponist", "en")).toBeNull();
+  });
+
+  it("reads French inclusive spelling with a middle dot, and keeps it in one role", () => {
+    expect(splitRoles("Ingénieur·e • Chant")).toEqual(["Ingénieur·e", "Chant"]);
+    expect(spotifyRole("Ingénieur·e", "fr")).toBe("Engineer");
+  });
+
+  it("keeps Japanese and Korean letters whole (no accent stripping of their combining marks)", () => {
+    expect(roleKey("ミキシングエンジニア")).toBe("ミキシングエンジニア");
+    expect(spotifyRole("ミキシングエンジニア", "ja")).toBe("Mixing Engineer");
+    expect(spotifyRole("믹싱 엔지니어", "ko")).toBe("Mixing Engineer");
+  });
+
+  it("names the language for a read in a language with a table, and for one without", () => {
+    expect(languageNote("de")).toMatch(/German.*only some role words/);
+    expect(languageNote("ar")).toMatch(/Arabic.*no role words/);
   });
 });

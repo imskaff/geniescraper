@@ -51,16 +51,22 @@ const GENIUS_NAMES: ReadonlyMap<string, string> = new Map(
  * lowercase, no trailing colon, single spaces. The language tables are written in this same form.
  */
 export function roleKey(raw: string): string {
-  return raw
-    .trim()
-    .normalize("NFD")
-    .replace(/\p{M}+/gu, "")
-    .replace(/\s*[*:_/]-?\s*(?:in(?:nen)?|e)(?![\p{L}\p{M}])/giu, "")
-    .replace(/\(\s*(?:in|innen|a|e)\s*\)/giu, "")
-    .replace(/:+$/, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
+  return (
+    raw
+      .trim()
+      // Only Latin-style accents go: a combining mark in Japanese or Korean is part of the letter.
+      .normalize("NFD")
+      .replace(/[̀-ͯ]+/g, "")
+      .normalize("NFC")
+      .replace(/\s*[*:_/·]-?\s*(?:in(?:nen)?|e)(?![\p{L}\p{M}])/giu, "")
+      .replace(/\(\s*(?:in|innen|a|e)\s*\)/giu, "")
+      .replace(/:+$/, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase()
+      // Turkish dotless i, so "YAZARI" and "yazarı" are one word.
+      .replace(/ı/g, "i")
+  );
 }
 
 /** Every Genius role the table can produce; the test that pins them to Genius's list reads this. */
