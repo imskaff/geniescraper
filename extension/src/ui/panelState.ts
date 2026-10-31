@@ -1,5 +1,5 @@
 // The panel's state, the environment it runs in and the fixed texts it shows.
-import { type AppleTabEntry, type OpenTab } from "../core/appleTabs";
+import { type MusicTabEntry, type OpenTab } from "../core/musicTabs";
 import { type SongCredits } from "../core/models";
 import { type PasteState } from "../core/paste";
 import {
@@ -121,7 +121,7 @@ export interface PanelState {
   /** The Apple Music page the user is on, offered as the default link ("" when there is none). */
   pageUrl: string;
   /** The album and song pages already open in the browser, offered on the link screen; the page in view first. */
-  appleTabs: AppleTabEntry[];
+  appleTabs: MusicTabEntry[];
 }
 
 export const MESSAGES = {

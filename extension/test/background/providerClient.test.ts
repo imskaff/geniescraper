@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectAlbum, scrapeTrack } from "../../src/background/appleClient";
+import { detectAlbum, scrapeTrack } from "../../src/background/providerClient";
 import { ALBUM_INFO, ALBUM_URL, FAST_CLIENT, PAGE_SCRAPE, SONG_URL, fakeBrowser } from "./fakePorts";
 
 const NEVER = new Promise<never>(() => undefined);

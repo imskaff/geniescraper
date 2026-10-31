@@ -7,7 +7,7 @@ import {
   type BridgeDeps,
   type SocketLike,
 } from "../../src/background/bridge";
-import type { OpenTab } from "../../src/core/appleTabs";
+import type { OpenTab } from "../../src/core/musicTabs";
 import { PASTE_KEY, IDLE_PASTE, startPaste, normalisePaste, type PasteState } from "../../src/core/paste";
 import { BRIDGE_PORTS, computeProof } from "../../src/shared/bridge";
 import type { PasteCommand, Result } from "../../src/shared/messages";

@@ -47,8 +47,8 @@ The worker asks through `providerClient.ts`:
   A provider may raise them with `provider.timing` (a partial override); Apple does not.
 - **Errors:** every failure comes back as data (`Result`), with the existing codes (`invalid-url`, `timeout`, `tab-failed`, ...).
   The strings that name the site come from `provider.messages`.
-- **Message names:** the content request keeps `apple/detect` and `apple/scrape`.
-  A provider's requests are named `<id>/detect` and `<id>/scrape`, and its content script validates its own prefix.
+- **Message names:** the content request keeps `apple/detect` and `apple/scrape` for now, and only Apple's content script answers them.
+  A second provider adds `<id>/detect` and `<id>/scrape` to `ContentRequest` and validates its own prefix in its handler.
   The panel never sees these messages, so the panel-to-worker contract (`detect`, `scrape` with a URL) needs no `source` field: the worker derives the source from the URL.
 
 ## 3. Role mapping
@@ -63,7 +63,7 @@ Every provider has `normaliseRole(raw)`, which maps a raw role label from that s
 ## 4. Open-tab discovery
 
 `musicTabEntries(tabs, providers = PROVIDERS)` replaces `appleTabEntries`.
-For each open tab it finds the provider by URL, keeps album and song pages only, names the tab with `provider.tabName(title, url, kind)`, merges the same page open twice, and puts the page in view first.
+For each open tab it finds the provider by URL, keeps album and song pages only, names the tab with `provider.tabName(title, url, kind)` (the title arrives with invisible marks and extra spaces removed; the name is capped at 120 characters), merges the same page open twice, and puts the page in view first.
 The worker's tab query uses the union of `provider.origins` (as match patterns), so only hosts the extension already has permission for are listed.
 `toBridgePages` (desktop link) and the panel use the same list.
 The entry shape (`url`, `name`, `kind`, `current`) is unchanged, so the desktop link payload is unchanged; a `provider` field can be added when the desktop needs it.

@@ -5,7 +5,7 @@ import { isBridgeRequest, type BridgeRequest } from "../shared/bridge";
 import { PASTE_KEY, normalisePaste } from "../core/paste";
 import { BridgeClient, type SocketLike } from "./bridge";
 import { chromeStores } from "../shared/storage";
-import { REAL_CLIENT_TIMING } from "./appleClient";
+import { REAL_CLIENT_TIMING } from "./providerClient";
 import { realCovers } from "./covers";
 import { checkKey } from "../lookups/youtubeApi";
 import { fetchJson, fetchResult } from "../lookups/http";
@@ -13,6 +13,7 @@ import { searchGenius } from "../lookups/genius";
 import { createGeniusNavigator } from "./geniusNav";
 import { loadYoutubeKey } from "../shared/secrets";
 import { realYoutube } from "./youtube";
+import { PROVIDERS } from "../providers/registry";
 import { PasteService } from "./paste";
 import { chromePorts } from "./ports";
 import { INTERNAL_ERROR, createRouter } from "./router";
@@ -47,9 +48,9 @@ const bridge = new BridgeClient({
   },
   session: stores.session,
   openTabs: async () => {
-    // Only tabs showing Apple Music, which the host permission already covers; nothing else is listed or read.
+    // Only tabs showing a provider's site, which its host permission already covers; nothing else is listed or read.
     const [tabs, [inView]] = await Promise.all([
-      chrome.tabs.query({ url: "https://music.apple.com/*" }),
+      chrome.tabs.query({ url: PROVIDERS.flatMap((provider) => [...provider.origins]) }),
       chrome.tabs.query({ active: true, currentWindow: true }),
     ]);
     return tabs.flatMap((tab) =>

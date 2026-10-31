@@ -1,6 +1,7 @@
-// The worker's side of reading Apple Music: open a hidden tab on a validated URL, inject the content script,
-// ask it one question, and always close the tab again. Failures come back as data, never as exceptions.
-import { parseAppleMusicUrl } from "../apple/url";
+// The worker's side of reading a music site: open a hidden tab on a validated URL, inject the provider's content
+// script, ask it one question, and always close the tab again. Failures come back as data, never as exceptions.
+import { recogniseUrl, unsupportedLinkMessage } from "../providers/registry";
+import type { CreditsProvider } from "../providers/types";
 import {
   isAlbumInfo,
   isPageScrape,
@@ -23,6 +24,10 @@ export interface ClientTiming {
 }
 
 export const REAL_CLIENT_TIMING: ClientTiming = { tabLoadMs: 20_000, requestMs: 40_000, pollMs: 100 };
+
+function withOverrides(timing: ClientTiming, provider: CreditsProvider): ClientTiming {
+  return provider.timing ? { ...timing, ...provider.timing } : timing;
+}
 
 function fail(code: ErrorCode, message: string): Result<never> {
   return { ok: false, error: { code, message } };
@@ -64,6 +69,7 @@ async function ask<T>(
   tabId: number,
   request: ContentRequest,
   timing: ClientTiming,
+  provider: CreditsProvider,
   isData: (value: unknown) => value is T,
 ): Promise<Result<T>> {
   let response: unknown;
@@ -72,7 +78,7 @@ async function ask<T>(
   } catch (error) {
     return fail("tab-failed", error instanceof Error ? error.message : "The page did not answer.");
   }
-  if (response === "timeout") return fail("timeout", "Apple Music took too long to respond. Try again.");
+  if (response === "timeout") return fail("timeout", provider.messages.slowResponse);
   if (!isResult(response)) return fail("tab-failed", "The page returned an unexpected answer.");
   if (!response.ok) return response;
   return isData(response.data)
@@ -85,15 +91,16 @@ async function inBackgroundTab<T>(
   ports: BrowserPorts,
   url: string,
   timing: ClientTiming,
+  provider: CreditsProvider,
   work: (tabId: number) => Promise<Result<T>>,
 ): Promise<Result<T>> {
   let tabId: number | undefined;
   try {
-    tabId = await ports.createTab(url, false);
+    tabId = await ports.createTab(url, !provider.worksHidden);
     const loaded = await waitForLoad(ports, tabId, timing);
     if (loaded === "gone") return fail("tab-failed", "The tab was closed before the page loaded.");
     if (loaded === "timeout") return fail("timeout", "The page did not finish loading. Check your connection.");
-    await ports.injectContentScript(tabId);
+    await ports.injectContentScript(tabId, provider.contentScript);
     return await work(tabId);
   } catch (error) {
     return fail("tab-failed", error instanceof Error ? error.message : "Could not open the page.");
@@ -107,20 +114,25 @@ export async function detectAlbum(
   ports: BrowserPorts,
   url: string,
   tabId: number | undefined,
-  timing: ClientTiming,
+  baseTiming: ClientTiming,
 ): Promise<Result<AlbumInfo>> {
-  if (!parseAppleMusicUrl(url)) return fail("invalid-url", "Not an Apple Music album or song link.");
+  const recognised = recogniseUrl(url);
+  if (!recognised) return fail("invalid-url", unsupportedLinkMessage("album-or-song"));
+  const { provider } = recognised;
+  const timing = withOverrides(baseTiming, provider);
   const request: ContentRequest = { type: "apple/detect", url };
 
   if (tabId === undefined) {
-    return inBackgroundTab(ports, url, timing, (id) => ask(ports, id, request, timing, isAlbumInfo));
+    return inBackgroundTab(ports, url, timing, provider, (id) =>
+      ask(ports, id, request, timing, provider, isAlbumInfo),
+    );
   }
   // The user's tab is only read, never navigated or closed, and only if it really shows this page.
   try {
     const tab = await ports.getTab(tabId);
-    if (tab?.url !== url) return fail("invalid-url", "That tab is not showing this Apple Music page.");
-    await ports.injectContentScript(tabId);
-    return await ask(ports, tabId, request, timing, isAlbumInfo);
+    if (tab?.url !== url) return fail("invalid-url", provider.messages.tabNotShowing);
+    await ports.injectContentScript(tabId, provider.contentScript);
+    return await ask(ports, tabId, request, timing, provider, isAlbumInfo);
   } catch (error) {
     return fail("tab-failed", error instanceof Error ? error.message : "Could not read the tab.");
   }
@@ -131,9 +143,13 @@ export async function scrapeTrack(
   ports: BrowserPorts,
   url: string,
   trackTitle: string,
-  timing: ClientTiming,
+  baseTiming: ClientTiming,
 ): Promise<Result<PageScrape>> {
-  if (parseAppleMusicUrl(url)?.kind !== "song") return fail("invalid-url", "Not an Apple Music song link.");
+  const recognised = recogniseUrl(url);
+  if (!recognised) return fail("invalid-url", unsupportedLinkMessage("song"));
+  const { provider } = recognised;
+  if (recognised.url.kind !== "song") return fail("invalid-url", provider.messages.notSong);
+  const timing = withOverrides(baseTiming, provider);
   const request: ContentRequest = { type: "apple/scrape", url, trackTitle };
-  return inBackgroundTab(ports, url, timing, (id) => ask(ports, id, request, timing, isPageScrape));
+  return inBackgroundTab(ports, url, timing, provider, (id) => ask(ports, id, request, timing, provider, isPageScrape));
 }

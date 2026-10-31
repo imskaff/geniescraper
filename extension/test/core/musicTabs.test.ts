@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appleTabEntries, type OpenTab } from "../../src/core/appleTabs";
+import { musicTabEntries, type OpenTab } from "../../src/core/musicTabs";
 
 const tab = (url: string, title = "", current = false, tabId = 1): OpenTab => ({ tabId, url, title, current });
 
@@ -8,7 +8,7 @@ const SONG = "https://music.apple.com/us/song/chihiro/1739659140";
 
 describe("the open Apple Music pages the panel offers", () => {
   it("keeps only album and song pages of Apple Music", () => {
-    const entries = appleTabEntries([
+    const entries = musicTabEntries([
       tab(ALBUM),
       tab(SONG),
       tab("https://music.apple.com/us/playlist/todays-hits/pl.f4d106fed2bd41149aaacabb233eb5eb"),
@@ -23,7 +23,7 @@ describe("the open Apple Music pages the panel offers", () => {
   });
 
   it("shows a title as one plain line: no-break and thin spaces, tabs and control characters are cleaned", () => {
-    const names = appleTabEntries([
+    const names = musicTabEntries([
       tab(ALBUM, "Some\u00a0Album\u2009Name - Apple Music"),
       tab(SONG, "Two\tcolumns\nand newline\u0007 - Apple Music"),
     ]).map((e) => e.name);
@@ -31,11 +31,11 @@ describe("the open Apple Music pages the panel offers", () => {
   });
 
   it("says whether a page is an album or a song", () => {
-    expect(appleTabEntries([tab(ALBUM), tab(SONG)]).map((e) => e.kind)).toEqual(["album", "song"]);
+    expect(musicTabEntries([tab(ALBUM), tab(SONG)]).map((e) => e.kind)).toEqual(["album", "song"]);
   });
 
   it("lists a page once, however many tabs show it and whatever follows its address", () => {
-    const entries = appleTabEntries([
+    const entries = musicTabEntries([
       tab(ALBUM, "A", false, 1),
       tab(`${ALBUM}?i=1739659140`, "B", false, 2),
       tab(ALBUM, "C", false, 3),
@@ -46,7 +46,7 @@ describe("the open Apple Music pages the panel offers", () => {
 
   it("keeps pages of different storefronts apart", () => {
     const other = "https://music.apple.com/pl/album/hit-me-hard-and-soft/1739659134";
-    expect(appleTabEntries([tab(ALBUM), tab(other)])).toHaveLength(2);
+    expect(musicTabEntries([tab(ALBUM), tab(other)])).toHaveLength(2);
   });
 
   it.each([
@@ -60,24 +60,24 @@ describe("the open Apple Music pages the panel offers", () => {
     ["SOS by SZA on Apple Music", "SOS by SZA"],
     ["  ‏SOS  ", "SOS"],
   ])("names a page from its tab title: %j", (title, name) => {
-    expect(appleTabEntries([tab(ALBUM, title)])[0]?.name).toBe(name);
+    expect(musicTabEntries([tab(ALBUM, title)])[0]?.name).toBe(name);
   });
 
   it("falls back to the address when the title says nothing", () => {
     for (const title of ["", "Apple Music", "‎ Apple Music "]) {
-      expect(appleTabEntries([tab(ALBUM, title)])[0]?.name, JSON.stringify(title)).toBe("Hit Me Hard And Soft");
+      expect(musicTabEntries([tab(ALBUM, title)])[0]?.name, JSON.stringify(title)).toBe("Hit Me Hard And Soft");
     }
-    expect(appleTabEntries([tab(SONG, "")])[0]?.name).toBe("Chihiro");
+    expect(musicTabEntries([tab(SONG, "")])[0]?.name).toBe("Chihiro");
   });
 
   it("never lets a long or odd title run on", () => {
-    const entry = appleTabEntries([tab(ALBUM, `${"x".repeat(300)} - Apple Music`)])[0];
+    const entry = musicTabEntries([tab(ALBUM, `${"x".repeat(300)} - Apple Music`)])[0];
     expect(entry?.name.length).toBeLessThanOrEqual(120);
     expect(entry?.name.endsWith("…")).toBe(true);
   });
 
   it("puts the page the user is looking at first, and marks only that one", () => {
-    const entries = appleTabEntries([tab(ALBUM, "", false, 1), tab(SONG, "", true, 2)]);
+    const entries = musicTabEntries([tab(ALBUM, "", false, 1), tab(SONG, "", true, 2)]);
     expect(entries.map((e) => [e.url, e.current])).toEqual([
       [SONG, true],
       [ALBUM, false],
@@ -86,12 +86,12 @@ describe("the open Apple Music pages the panel offers", () => {
 
   it("keeps the browser's order for the rest, and marks none when the current tab is not an Apple Music page", () => {
     const third = "https://music.apple.com/us/album/sos/1650000000";
-    const entries = appleTabEntries([tab(ALBUM, "", false, 1), tab(SONG, "", false, 2), tab(third, "", false, 3)]);
+    const entries = musicTabEntries([tab(ALBUM, "", false, 1), tab(SONG, "", false, 2), tab(third, "", false, 3)]);
     expect(entries.map((e) => e.url)).toEqual([ALBUM, SONG, third]);
     expect(entries.some((e) => e.current)).toBe(false);
   });
 
   it("gives nothing for no tabs", () => {
-    expect(appleTabEntries([])).toEqual([]);
+    expect(musicTabEntries([])).toEqual([]);
   });
 });

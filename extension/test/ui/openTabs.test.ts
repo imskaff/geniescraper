@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import type { OpenTab } from "../../src/core/appleTabs";
+import type { OpenTab } from "../../src/core/musicTabs";
 import { PanelController } from "../../src/ui/controller";
 import { PanelView } from "../../src/ui/view";
 import { ALBUM, SINGLE, fakeEnv } from "./fakes";

@@ -1,5 +1,5 @@
 import type { BrowserPorts, TabState } from "../../src/background/ports";
-import type { ClientTiming } from "../../src/background/appleClient";
+import type { ClientTiming } from "../../src/background/providerClient";
 import type { AlbumInfo, ContentRequest, GeniusNotice, PageScrape } from "../../src/shared/messages";
 
 export const FAST_CLIENT: ClientTiming = { tabLoadMs: 200, requestMs: 100, pollMs: 5 };
