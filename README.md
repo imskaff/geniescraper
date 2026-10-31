@@ -187,7 +187,7 @@ A glowing **Connect your browser extension** card on the start screen appears wh
 > [!WARNING]
 > Without the extension the app cannot see Genius. You click each field yourself, then press `F8`; it cannot tell what is already filled in (use **Skip** for those), and it presses Enter on whatever suggestion Genius shows first, so it cannot check that an artist with that name exists. This mode is kept as it is and is not being developed further.
 
-- Click the field on Genius, then press `F8` (or the **Next** button, which switches back to Genius first, like Alt+Tab) to paste the current value and move on. `F7` goes back, **Skip** leaves a field alone, `Esc` ends pasting for the song.
+- Click the field on Genius, then press `F8` (or the **Next** button, which first switches back to the last Genius page you had in front, and pastes nothing if there is none) to paste the current value and move on. `F7` goes back, **Skip** leaves a field alone, `Esc` ends pasting for the song.
 - After each paste the app moves between Genius fields and confirms the suggestion for you:
 
   | After pasting…                 | Action                                   |

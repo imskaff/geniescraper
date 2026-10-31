@@ -12,8 +12,8 @@ from utils.config import settings
 
 _f = theme.font
 
-# How long Windows needs to bring the previous window forward after Alt+Tab, before the paste goes to it.
-_FOCUS_RETURN_WAIT = 0.35
+# A short settle after the Genius window comes forward, before the paste goes to it.
+_FOCUS_RETURN_WAIT = 0.1
 
 
 class AssistantKeysMixin(ChromeMixin):
@@ -47,9 +47,12 @@ class AssistantKeysMixin(ChromeMixin):
     def _fill_next_by_hand(self) -> None:
         """The Next button without the extension: pressing it moved focus here, so go back to Genius first.
 
-        Alt+Tab returns to the window the user was in; after that it is exactly the F8 key.
+        It brings the last Genius window forward; with none to go back to, nothing is pasted (it would land in
+        whatever window was used last). After that it is exactly the F8 key.
         """
-        keyboard.press_and_release("alt+tab")
+        if not self._genius_windows.hand_back():
+            self.after(0, self._say_no_genius_window)
+            return
         time.sleep(_FOCUS_RETURN_WAIT)
         self._on_hotkey()
 

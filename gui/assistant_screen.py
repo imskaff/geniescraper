@@ -55,7 +55,7 @@ class AssistantScreenMixin(ChromeMixin):
     def _show_assistant_screen(self, *, keep_run: bool = False) -> None:
         self._screen = "assistant"
         self._credits_in_countdown = False
-        self._link_lbl = self._link_before = self._auto_hint_lbl = self._manual_card = None
+        self._link_lbl = self._link_before = self._auto_hint_lbl = self._manual_card = self._handoff_lbl = None
         self._ctl = {}
         self._steps_heads = {}
         self._clear()
@@ -144,6 +144,9 @@ class AssistantScreenMixin(ChromeMixin):
         stop.pack(side="right")
         self._ctl["stop"] = stop
         self._auto_hint_lbl = ctk.CTkLabel(self, text="", font=_f(11), text_color=theme.FAINT, anchor="w")
+        self._handoff_lbl = ctk.CTkLabel(
+            self, text="", font=_f(11), text_color=theme.DANGER, anchor="w", justify="left", wraplength=560
+        )
         if not compact:
             ctk.CTkLabel(
                 self,
@@ -268,6 +271,16 @@ class AssistantScreenMixin(ChromeMixin):
             return
         threading.Thread(target=self._fill_next_by_hand, daemon=True).start()
 
+    def _say_no_genius_window(self) -> None:
+        """The Next button found no Genius window to paste into, so it pasted nothing and moved nowhere."""
+        lbl = self._handoff_lbl
+        if lbl is None or not lbl.winfo_exists():
+            return
+        lbl.configure(
+            text="No Genius page found to paste into. Open it, click the field, then press Next or the hotkey."
+        )
+        lbl.pack(fill="x", padx=theme.SPACE_4, pady=(0, theme.SPACE_1), after=self._ctl["auto"].master)
+
     def _ask_back_to_credits(self) -> None:
         self._show_esc_confirm(to_credits=True)
 
@@ -374,6 +387,8 @@ class AssistantScreenMixin(ChromeMixin):
         ctl = self._ctl
         if not ctl or not ctl["auto"].winfo_exists():
             return
+        if self._handoff_lbl is not None:
+            self._handoff_lbl.pack_forget()
         link = self.link
         finished = self._pos >= len(self._queue)
         bridged = link.bridged

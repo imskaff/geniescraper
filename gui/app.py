@@ -1,4 +1,5 @@
 import asyncio
+import os
 import threading
 
 import customtkinter as ctk
@@ -11,6 +12,7 @@ from gui.chrome import ChromeMixin
 from gui.connect_prompt import ConnectPrompt
 from gui.credits_screen import CreditsScreenMixin
 from gui.done_screen import DoneScreenMixin
+from gui.foreground import GeniusWindowTracker, Win32Api
 from gui.host import Host
 from gui.link import LinkController, OpenPage
 from gui.link_glue import LinkGlueMixin
@@ -86,11 +88,16 @@ class App(
         self._steps_open = {"done": False, "left": True}  # the step lists' disclosures: done closed, left open
         self._esc_from_key = False
         self._app_focused: bool = False
+        self._genius_windows = GeniusWindowTracker(
+            Win32Api(), os.getpid()
+        )  # where the Next button hands the keyboard back to
+        self._genius_windows.start()
 
         self._link_lbl: ctk.CTkLabel | None = None
         self._link_before: ctk.CTkLabel | None = None
         self._ctl: dict[str, ctk.CTkButton] = {}
         self._auto_hint_lbl: ctk.CTkLabel | None = None
+        self._handoff_lbl: ctk.CTkLabel | None = None  # why the Next button could not paste
         self._manual_card: ctk.CTkFrame | None = None  # the 'Manual mode' notice, shown only without the extension
         self._steps_heads: dict[str, ctk.CTkButton] = {}
         # The 'Open in your browser' card on the start screen, and what it currently shows.

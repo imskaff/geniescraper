@@ -110,8 +110,19 @@ def _check_hotkey_path(window: Any) -> dict[str, Any]:
             after_clipboard = list(keys)
             keys.clear()
             window._pos = 0
-            window._fill_next_by_hand()  # the Next button: leave the app for Genius, then the same as the key
-            by_hand = list(keys)
+            tracker = mock.Mock()
+            with mock.patch.object(window, "_genius_windows", tracker):
+                tracker.hand_back.return_value = True
+                window._fill_next_by_hand()  # the Next button: back to the Genius window, then the same as the key
+                by_hand = list(keys)
+                window._pos = 0
+                keys.clear()
+                tracker.hand_back.return_value = False
+                with mock.patch.object(window, "after") as after:
+                    window._fill_next_by_hand()  # no Genius window known: nothing is pasted
+                pasted_without_genius = list(keys)
+                said_no_window = after.call_args.args[1] == window._say_no_genius_window
+                pos_without_genius = window._pos
             with mock.patch("threading.Thread") as thread:
                 window._next_clicked()
             click_runs_off_the_ui_thread = thread.call_args.kwargs.get("target") == window._fill_next_by_hand
@@ -121,6 +132,9 @@ def _check_hotkey_path(window: Any) -> dict[str, Any]:
         "name": after_name,
         "clipboard": after_clipboard,
         "by_hand": by_hand,
+        "pasted_without_genius": pasted_without_genius,
+        "said_no_window": said_no_window,
+        "pos_without_genius": pos_without_genius,
         "click_runs_off_the_ui_thread": click_runs_off_the_ui_thread,
         "iconified": iconify.called,
         "window_state": window.state(),
@@ -726,9 +740,15 @@ def test_manual_mode_has_a_next_button_and_never_iconifies_the_window(walk):
 
 def test_the_next_button_without_the_extension_returns_to_genius_then_does_what_the_key_does(walk):
     path = walk["hotkey_path"]
-    assert path["by_hand"][0] == "alt+tab"
-    assert path["by_hand"][1:] == path["name"]
+    assert "alt+tab" not in path["by_hand"]
+    assert path["by_hand"] == path["name"]
     assert path["click_runs_off_the_ui_thread"]
+
+
+def test_the_next_button_pastes_nothing_and_stays_put_when_no_genius_window_is_known(walk):
+    path = walk["hotkey_path"]
+    assert path["pasted_without_genius"] == [] and path["pos_without_genius"] == 0
+    assert path["said_no_window"]
 
 
 def test_the_notice_follows_the_connection_without_rebuilding_the_screen(walk):
