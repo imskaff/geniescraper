@@ -15,6 +15,7 @@
 //            --lang de-DE        Chrome UI and Accept-Language for the whole run
 //            --intl en           add the /intl-en/ URL prefix (default: none; "none" is also accepted)
 //            --limit 3           album only: how many tracks to open credits for (0 = all)
+//            --force-en          send Accept-Language: en-US for the probe's tab with a session declarativeNetRequest rule (adds that permission)
 //            --fetch-meta        also GET the page once more and read the server-rendered meta tags
 //
 // Rules: signed out, no credentials, open.spotify.com only, one page at a time, one window in a throwaway profile
@@ -46,6 +47,7 @@ const lang = option("--lang", "");
 const intl = option("--intl", "none");
 const limit = Number(option("--limit", "3"));
 const wantMeta = args.includes("--fetch-meta");
+const forceEn = args.includes("--force-en");
 const outFile = option("--out", "");
 const port = 9371;
 if (!chromePath || steps.length === 0) throw new Error("Pass --chrome and --steps.");
@@ -96,8 +98,22 @@ self.drive = async (job) => {
   try {
     if (job.env === "tab") {
       win = await chrome.windows.create({ url: "about:blank", focused: false, width: 1100, height: 800 });
-      const tab = await chrome.tabs.create({ windowId: win.id, url: job.url, active: false });
+      const tab = await chrome.tabs.create({ windowId: win.id, url: job.forceEn ? "about:blank" : job.url, active: false });
       job.tabId = tab.id;
+      if (job.forceEn) {
+        await chrome.declarativeNetRequest.updateSessionRules({
+          removeRuleIds: [1],
+          addRules: [
+            {
+              id: 1,
+              priority: 1,
+              action: { type: "modifyHeaders", requestHeaders: [{ header: "Accept-Language", operation: "set", value: "en-US,en;q=0.9" }] },
+              condition: { requestDomains: ["open.spotify.com"], tabIds: [tab.id], resourceTypes: ["main_frame", "sub_frame", "xmlhttprequest", "script", "other"] },
+            },
+          ],
+        });
+        await chrome.tabs.update(tab.id, { url: job.url });
+      }
     } else if (job.env === "minimised") {
       win = await chrome.windows.create({ url: job.url, state: "minimized" });
       job.tabId = win.tabs[0].id;
@@ -119,6 +135,7 @@ self.drive = async (job) => {
     return { loadedMs, tabActive: tab.active, windowState: (await chrome.windows.get(win.id)).state, result };
   } finally {
     if (win) await chrome.windows.remove(win.id).catch(() => undefined);
+    if (job.forceEn) await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds: [1] }).catch(() => undefined);
   }
 };
 `;
@@ -130,7 +147,7 @@ writeFileSync(
     manifest_version: 3,
     name: "Spotify probe (throwaway)",
     version: "0.0.1",
-    permissions: ["scripting"],
+    permissions: forceEn ? ["scripting", "declarativeNetRequest"] : ["scripting"],
     host_permissions: ["https://open.spotify.com/*"],
     background: { service_worker: "background/worker.js" },
   }),
@@ -156,7 +173,7 @@ try {
   await waitUntilReady(worker);
   for (const step of steps) {
     const url = spotifyUrl(step.kind, step.id, { intl: intl === "none" ? "" : intl });
-    const job = { url, env: step.env, message: { kind: step.kind, limit, meta: wantMeta } };
+    const job = { url, forceEn, env: step.env, message: { kind: step.kind, limit, meta: wantMeta } };
     const record = { ...step, intl, lang };
     const t0 = Date.now();
     try {

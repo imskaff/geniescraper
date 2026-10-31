@@ -244,9 +244,9 @@ export function spotifyReader() {
    *   no-item       a menu appeared but has no credits entry
    *   no-dialog     the entry was clicked but no dialog appeared
    *   blocked       a captcha / rate-limit text is showing
-   * `steps` holds the milliseconds each stage took.
+   * `steps` holds the milliseconds each stage took; a failed click is retried once (`attempt` says which one worked).
    */
-  async function readCredits(doc, { button, timeoutMs = 10000 } = {}) {
+  async function readCredits(doc, { button, timeoutMs = 10000, attempts = 2 } = {}) {
     const steps = {};
     const t0 = Date.now();
     const mark = (name) => (steps[name] = Date.now() - t0);
@@ -254,23 +254,37 @@ export function spotifyReader() {
     const more = button ?? (await until(() => findMoreButton(doc), timeoutMs));
     mark("button");
     if (!more) return { status: "no-button", steps };
-    more.click();
-    const item = await until(() => findCreditsItem(doc), 4000);
-    mark("menu");
-    const menu = [...doc.querySelectorAll("[role='menu'] [role='menuitem']")].map((e) => norm(e.textContent));
-    if (!item) {
-      more.click(); // the options button toggles: leave no menu behind
-      return { status: menu.length > 0 ? "no-item" : "no-menu", steps, menu };
+    let last = { status: "no-menu" };
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      if (attempt > 1) {
+        // A click that did nothing (seen once on a cold first load): leave no menu behind, then try again.
+        if (doc.querySelector("[role='menu']")) more.click();
+        await until(() => !doc.querySelector("[role='menu']"), 1500);
+        await sleep(500);
+      }
+      more.click();
+      const item = await until(() => findCreditsItem(doc), 4000);
+      mark("menu" + String(attempt));
+      const menu = [...doc.querySelectorAll("[role='menu'] [role='menuitem']")].map((e) => norm(e.textContent));
+      if (!item) {
+        last = { status: menu.length > 0 ? "no-item" : "no-menu", menu };
+        continue;
+      }
+      item.el.click();
+      const dialog = await until(() => findDialog(doc), 5000);
+      mark("dialog" + String(attempt));
+      if (!dialog) {
+        last = { status: "no-dialog", menu, how: item.how };
+        continue;
+      }
+      // The rows are rendered together with the dialog; a short settle covers a late second render.
+      await sleep(150);
+      const parsed = parseDialog(dialog);
+      mark("parsed");
+      return { status: parsed.rows.length > 0 ? "ok" : "no-credits", attempt, steps, menu, how: item.how, ...parsed };
     }
-    item.el.click();
-    const dialog = await until(() => findDialog(doc), 5000);
-    mark("dialog");
-    if (!dialog) return { status: "no-dialog", steps, menu, how: item.how };
-    // The rows are rendered together with the dialog; a short settle covers a late second render.
-    await sleep(150);
-    const parsed = parseDialog(dialog);
-    mark("parsed");
-    return { status: parsed.rows.length > 0 ? "ok" : "no-credits", steps, menu, how: item.how, ...parsed };
+    if (doc.querySelector("[role='menu']")) more.click();
+    return { ...last, attempt: attempts, steps };
   }
 
   /** Close the dialog (the close button is the only `button[aria-label]` directly in its header) and wait for it. */
