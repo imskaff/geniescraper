@@ -153,7 +153,13 @@ describe("picking a Spotify page before the user has allowed Spotify", () => {
 describe("open Spotify tabs", () => {
   it("are listed with their source next to Apple Music pages", async () => {
     const openTabs: OpenTab[] = [
-      { tabId: 1, url: TRACK, title: "One - song and lyrics by Band | Spotify", current: true },
+      {
+        tabId: 1,
+        url: TRACK,
+        title: "Race My Mind - song and lyrics by Drake | Spotify",
+        pageTitle: "One by Band",
+        current: true,
+      },
       { tabId: 2, url: ALBUM.url, title: "Demo Album - Apple Music", current: false },
     ];
     const { root } = await mount({ openTabs });
@@ -164,6 +170,7 @@ describe("open Spotify tabs", () => {
       "Apple Music · Album",
     ]);
     expect(section.textContent).toContain("One by Band");
+    expect(section.textContent).not.toContain("Race My Mind");
   });
 });
 

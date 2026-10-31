@@ -9,6 +9,8 @@ export interface OpenTab {
   tabId: number;
   url: string;
   title: string;
+  /** The page's own title, read from the page, for a provider whose tab titles cannot be trusted (`liveTitle`). */
+  pageTitle?: string;
   /** The tab the user is looking at: the active one in the current window. */
   current: boolean;
 }
@@ -35,7 +37,10 @@ const CONTROL = /[\p{Cc}\p{Co}]/gu;
 
 function nameOf(provider: CreditsProvider, tab: OpenTab, kind: PageKind): string {
   // Titles carry no-break and thin spaces and the odd tab; the desktop app shows the same one-line name.
-  const plain = tab.title.replace(INVISIBLE, "").replace(/\s+/g, " ").replace(CONTROL, "");
+  // A provider that cannot trust the tab title is named from the page's own title, or from nothing: a name the page
+  // does not have is never shown.
+  const source = provider.liveTitle === true ? (tab.pageTitle ?? "") : tab.title;
+  const plain = source.replace(INVISIBLE, "").replace(/\s+/g, " ").replace(CONTROL, "");
   const name = provider.tabName(plain, tab.url, kind);
   return name.length > MAX_NAME ? `${name.slice(0, MAX_NAME - 1)}…` : name;
 }

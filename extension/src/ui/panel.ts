@@ -4,6 +4,8 @@ import { PanelController, type Env, type HostPermissions, type SourcePermissions
 import { OPTIONAL_LOOKUP_HOSTS, hostOrigin, type OptionalHost } from "../lookups/http";
 import { PROVIDERS } from "../providers/registry";
 import { PanelView } from "./view";
+import { withPageTitles } from "./pageTitles";
+import { readPageLabel, type PageLabel } from "../spotify/pageLabel";
 import { PASTE_KEY, normalisePaste } from "../core/paste";
 import { chromeStores } from "../shared/storage";
 import { POPUP_CLASS, isPopupSurface, reportsClosing } from "./surface";
@@ -45,6 +47,12 @@ const sources: SourcePermissions = {
   },
 };
 
+/** The page's own title and artists, read by a script run in the tab (only tabs of a host the extension may read). */
+async function readLabelFromTab(tabId: number): Promise<PageLabel | null> {
+  const [injection] = await chrome.scripting.executeScript({ target: { tabId }, func: readPageLabel });
+  return injection?.result ?? null;
+}
+
 const env: Env = {
   api: createWorkerApi(chromeSend),
   hosts,
@@ -66,13 +74,15 @@ const env: Env = {
       Promise.all(PROVIDERS.map((provider) => chrome.tabs.query({ url: [...provider.origins] }).catch(() => []))),
       chrome.tabs.query({ active: true, currentWindow: true }),
     ]);
-    return lists
+    const open = lists
       .flat()
       .flatMap((tab) =>
         tab.id !== undefined && tab.url
           ? [{ tabId: tab.id, url: tab.url, title: tab.title ?? "", current: tab.id === inView?.id }]
           : [],
       );
+    // Some sites rewrite the tab's title (Spotify shows the song that is playing): those are named from the page.
+    return withPageTitles(open, readLabelFromTab);
   },
 };
 

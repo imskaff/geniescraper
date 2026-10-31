@@ -41,6 +41,12 @@ export interface CreditsProvider {
   readonly readGapMs?: number;
   /** For a polite site: how many pages may load at once while it behaves (1 when absent). One failure drops it to 1. */
   readonly readConcurrency?: number;
+  /**
+   * True when the browser tab's title is not the page's own (Spotify rewrites it to the song that is playing). The
+   * open-pages list then names such a tab only from `OpenTab.pageTitle`, which the panel reads from the page itself,
+   * and never from the tab title.
+   */
+  readonly liveTitle?: boolean;
   /** Overrides of the shared waits, for a site that needs longer. */
   readonly timing?: Partial<ClientTiming>;
   readonly messages: ProviderMessages;

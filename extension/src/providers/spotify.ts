@@ -17,6 +17,8 @@ export const SPOTIFY_PROVIDER: CreditsProvider = {
   worksHidden: true,
   // Page loads are spread out and few at once: three hidden tabs, starts at least 0.15 s apart. Measured live to
   // behave (no error in 32 reads at 2 and 3 at once); any failed or blocked read drops it to one (see the router).
+  // The tab title follows the playing song, so the list reads each page's own title instead.
+  liveTitle: true,
   readGapMs: 150,
   readConcurrency: 3,
   messages: {
