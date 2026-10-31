@@ -279,15 +279,7 @@ describe("router: opening a song on Genius", () => {
         return Promise.resolve({ status: "none" as const });
       },
     };
-    const route = createRouter(
-      browser.ports,
-      FAST_CLIENT,
-      pasteFor(browser),
-      NO_COVERS,
-      undefined,
-      undefined,
-      genius,
-    );
+    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), NO_COVERS, undefined, undefined, genius);
     expect(await route({ type: "genius-open", title: "Fortnight", artist: "Taylor Swift" })).toEqual({
       ok: true,
       data: { status: "none" },

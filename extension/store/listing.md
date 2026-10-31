@@ -52,17 +52,17 @@ Copy song credits from Apple Music into the Genius song edit form.
 
 ## Permission justifications
 
-| Permission                                   | Justification to enter                                                                                                                                            |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `storage`                                    | Saves the user's settings, and keeps the album and credits being worked on while the side panel is closed and reopened.                                           |
-| `scripting`                                  | Reads the credits from the Apple Music page the user asked for, in a minimized browser window (or a background tab), by running the extension's own reader there. |
-| `sidePanel`                                  | The extension's main screen is a side panel, so it stays beside the Genius form while the user pastes.                                                            |
-| Host `https://music.apple.com/*`             | Reads the credits of the Apple Music album or song the user gave.                                                                                                 |
+| Permission                                   | Justification to enter                                                                                                                                                                                            |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `storage`                                    | Saves the user's settings, and keeps the album and credits being worked on while the side panel is closed and reopened.                                                                                           |
+| `scripting`                                  | Reads the credits from the Apple Music page the user asked for, in a minimized browser window (or a background tab), by running the extension's own reader there.                                                 |
+| `sidePanel`                                  | The extension's main screen is a side panel, so it stays beside the Genius form while the user pastes.                                                                                                            |
+| Host `https://music.apple.com/*`             | Reads the credits of the Apple Music album or song the user gave.                                                                                                                                                 |
 | Host `https://genius.com/*`                  | Fills the fields of the Genius song edit form when the user presses the Next key, and, when the user presses Open on Genius, searches Genius for the song and opens its page and Edit Metadata form. Never saves. |
-| Host `https://itunes.apple.com/*`            | Finds the exact cover art for the song from Apple's public catalog.                                                                                               |
-| Optional host `https://api.deezer.com/*`     | Cover-art fallback; requested only when the user turns it on.                                                                                                     |
-| Optional host `https://www.youtube.com/*`    | Finds a YouTube link for the song; requested only when the user turns it on.                                                                                      |
-| Optional host `https://www.googleapis.com/*` | Finds the YouTube link through Google's official service with the user's own key; requested only when the user adds a key.                                        |
+| Host `https://itunes.apple.com/*`            | Finds the exact cover art for the song from Apple's public catalog.                                                                                                                                               |
+| Optional host `https://api.deezer.com/*`     | Cover-art fallback; requested only when the user turns it on.                                                                                                                                                     |
+| Optional host `https://www.youtube.com/*`    | Finds a YouTube link for the song; requested only when the user turns it on.                                                                                                                                      |
+| Optional host `https://www.googleapis.com/*` | Finds the YouTube link through Google's official service with the user's own key; requested only when the user adds a key.                                                                                        |
 
 ## Companion desktop app (no extra permission)
 

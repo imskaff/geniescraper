@@ -96,11 +96,11 @@ Each takes `--chrome <path to chrome.exe>` or the `CHROME_PATH` environment vari
 
 ## Permissions
 
-| Permission                                          | Why                                                              |
-| --------------------------------------------------- | ---------------------------------------------------------------- |
-| `storage`                                           | Settings, the working session and the optional YouTube key.      |
-| `sidePanel`                                         | The panel itself.                                                |
-| `scripting`                                         | Reading an Apple Music page and filling the Genius form.         |
+| Permission                                          | Why                                                                                                           |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `storage`                                           | Settings, the working session and the optional YouTube key.                                                   |
+| `sidePanel`                                         | The panel itself.                                                                                             |
+| `scripting`                                         | Reading an Apple Music page and filling the Genius form.                                                      |
 | `genius.com`, `music.apple.com`, `itunes.apple.com` | The pages it reads and fills, Genius's own song search for Open on Genius, and Apple's catalog for cover art. |
 
 Three more hosts are optional and asked for in the panel only when you switch the feature on: `api.deezer.com` (cover art), `www.youtube.com` (finding a video link) and `www.googleapis.com` (finding it with your own YouTube key).
@@ -129,15 +129,15 @@ The store text is in [store/listing.md](store/listing.md).
 
 ## Layout
 
-| Folder            | Contents                                                                  |
-| ----------------- | ------------------------------------------------------------------------- |
-| `src/apple/`      | Reading Apple Music pages (credits, titles, cover art).                   |
+| Folder            | Contents                                                                     |
+| ----------------- | ---------------------------------------------------------------------------- |
+| `src/apple/`      | Reading Apple Music pages (credits, titles, cover art).                      |
 | `src/background/` | The service worker: hidden tabs, the paste session, covers, YouTube, Genius. |
-| `src/genius/`     | The content script that fills the Genius form.                            |
-| `src/lookups/`    | YouTube, Deezer and iTunes lookups.                                       |
-| `src/core/`       | Pure logic shared by the rest: the paste queue, roles, track health.      |
-| `src/ui/`         | The side panel: controller, view and stylesheet.                          |
-| `src/shared/`     | Messages, settings and session formats used on both sides.                |
-| `scripts/`        | Build, packaging and the live checks.                                     |
-| `test/`           | Tests.                                                                    |
-| `data/`           | `roles.json`, the table that maps Apple Music roles to Genius role names. |
+| `src/genius/`     | The content script that fills the Genius form.                               |
+| `src/lookups/`    | YouTube, Deezer and iTunes lookups.                                          |
+| `src/core/`       | Pure logic shared by the rest: the paste queue, roles, track health.         |
+| `src/ui/`         | The side panel: controller, view and stylesheet.                             |
+| `src/shared/`     | Messages, settings and session formats used on both sides.                   |
+| `scripts/`        | Build, packaging and the live checks.                                        |
+| `test/`           | Tests.                                                                       |
+| `data/`           | `roles.json`, the table that maps Apple Music roles to Genius role names.    |
