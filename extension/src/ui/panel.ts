@@ -4,7 +4,6 @@ import { PanelController, type Env, type HostPermissions, type SourcePermissions
 import { OPTIONAL_LOOKUP_HOSTS, hostOrigin, type OptionalHost } from "../lookups/http";
 import { PROVIDERS } from "../providers/registry";
 import { PanelView } from "./view";
-import { PROVIDERS } from "../providers/registry";
 import { PASTE_KEY, normalisePaste } from "../core/paste";
 import { chromeStores } from "../shared/storage";
 import { POPUP_CLASS, isPopupSurface, reportsClosing } from "./surface";
