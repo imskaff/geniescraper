@@ -13,7 +13,7 @@ import type { KeyValueStore, Stores } from "../../src/shared/storage";
 import type { WorkerApi } from "../../src/ui/api";
 import type { OptionalHost } from "../../src/lookups/http";
 import type { OpenTab } from "../../src/core/musicTabs";
-import type { ActiveTab, Env, HostPermissions } from "../../src/ui/controller";
+import type { ActiveTab, Env, HostPermissions, SourcePermissions } from "../../src/ui/controller";
 
 export function memoryStore(initial: Record<string, unknown> = {}): KeyValueStore & { data: Map<string, unknown> } {
   const data = new Map<string, unknown>(Object.entries(initial));
@@ -199,9 +199,15 @@ export interface FakeEnv extends Env {
   openTabs: OpenTab[];
   api: FakeApi;
   hosts: FakeHosts;
+  sources: FakeSources;
   settingsStore: ReturnType<typeof memoryStore>;
   secretsStore: ReturnType<typeof memoryStore>;
   sessionStore: ReturnType<typeof memoryStore>;
+}
+
+export interface FakeSources extends SourcePermissions {
+  log: string[];
+  state: Record<string, boolean>;
 }
 
 export function fakeEnv(
@@ -215,6 +221,8 @@ export function fakeEnv(
     youtubeKey?: string;
     /** Start with an empty settings store, as a new user's browser has, so the set-up shows. */
     firstRun?: boolean;
+    /** Which sources the user has allowed; Spotify is allowed unless a test says otherwise. */
+    sources?: { spotify?: boolean; allow?: boolean };
   } = {},
 ): FakeEnv {
   // Tests start past the first-time set-up unless they ask for it: a store with nothing in it would show it.
@@ -224,6 +232,18 @@ export function fakeEnv(
   const sessionStore = memoryStore(options.session === undefined ? {} : { session: options.session });
   const stores: Stores = { settings: settingsStore, session: sessionStore };
   const secretsStore = memoryStore(options.youtubeKey === undefined ? {} : { youtubeApiKey: options.youtubeKey });
+  const sourceState: Record<string, boolean> = { apple: true, spotify: options.sources?.spotify ?? true };
+  const sources: FakeSources = {
+    log: [],
+    state: sourceState,
+    granted: () => Promise.resolve({ ...sourceState }),
+    request(id) {
+      sources.log.push(`request:${id}`);
+      const allow = options.sources?.allow ?? true;
+      if (allow) sourceState[id] = true;
+      return Promise.resolve(allow);
+    },
+  };
   const tab = options.tab ?? null;
   const openTabs = [...(options.openTabs ?? [])];
   return {
@@ -231,6 +251,7 @@ export function fakeEnv(
     appleTabs: () => Promise.resolve([...openTabs]),
     api: fakeApi(options.api),
     hosts: fakeHosts(options.hosts),
+    sources,
     stores,
     secrets: secretsStore,
     activeTab: () => Promise.resolve(tab),

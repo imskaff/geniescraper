@@ -2,7 +2,7 @@
 
 ## How do I use it?
 
-1. Open the side panel from the toolbar button and paste an Apple Music album or song link.
+1. Open the side panel from the toolbar button and paste an Apple Music or Spotify album or song link.
 2. Pick the tracks and press Get credits.
 3. Open the Genius song's Edit Metadata form in a tab and press Start pasting: the extension fills the fields by itself.
    (Step by step fills one field per press of your fill key, F8 by default.)
@@ -67,6 +67,25 @@ It only opens a song whose title and artist match exactly (a remix, a live versi
 If Genius shows no such song, it may not be on Genius yet, and nothing is opened; if it shows several, they are listed as links so you open the right one yourself.
 If it says the page has no Edit Metadata button, you are not signed in to Genius in this browser.
 It never saves, and it never reuses a Genius tab that shows something else, because that tab may hold a form you have not saved.
+
+## Why does Chrome ask to read open.spotify.com?
+
+Spotify is a second source, and its host is optional.
+The first time you pick a Spotify page the panel explains what will happen, and only your click on Allow makes Chrome show its own prompt.
+Géniescraper then opens that page in a hidden window, presses Spotify's own "View credits" button and reads the names and roles in the box that opens.
+It only does this for pages you pick, one at a time, and nothing it reads is sent anywhere.
+You can refuse, and Apple Music keeps working; you can also remove the access later in `chrome://extensions`.
+Until you have allowed it, your open Spotify tabs do not show up in the panel's list, because Chrome hides the address of a tab from an extension that may not read that site.
+
+## What is different about credits from Spotify?
+
+- Spotify's credits box does not show the release date or the ISRC, so the panel says so beside the credits, and those fields are not filled from Spotify.
+  A track's page shows only the year; an album page's date is used when it is in English.
+- Spotify role names are read in English only. If Spotify shows its page in your language, the roles it cannot match are listed under "About this read" as left out, and you can add them on Genius yourself.
+- Roles that Genius has no name for are listed under "About this read" too, instead of being guessed.
+- A long album shows only its first tracks on Spotify's page, so the track list marks the rest as "No Spotify page". Open one of those tracks on its own page and read it from there.
+- Cover art comes from Apple's catalog or Deezer by title and artist, as for Apple Music.
+- If Spotify asks for a captcha, reading from Spotify stops for 15 minutes. Open open.spotify.com, check it works, and try again.
 
 ## What leaves my browser?
 

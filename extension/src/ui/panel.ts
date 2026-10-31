@@ -1,7 +1,8 @@
 // Panel entry point: wire the real worker, storage and tabs into the controller and mount the view.
 import { createWorkerApi, chromeSend } from "./api";
-import { PanelController, type Env, type HostPermissions } from "./controller";
+import { PanelController, type Env, type HostPermissions, type SourcePermissions } from "./controller";
 import { OPTIONAL_LOOKUP_HOSTS, hostOrigin, type OptionalHost } from "../lookups/http";
+import { PROVIDERS } from "../providers/registry";
 import { PanelView } from "./view";
 import { PROVIDERS } from "../providers/registry";
 import { PASTE_KEY, normalisePaste } from "../core/paste";
@@ -25,9 +26,30 @@ const hosts: HostPermissions = {
   },
 };
 
+const sources: SourcePermissions = {
+  async granted() {
+    const entries = await Promise.all(
+      PROVIDERS.map(
+        async (provider) =>
+          [
+            provider.id,
+            provider.permission === "required" ||
+              (await chrome.permissions.contains({ origins: [...provider.origins] })),
+          ] as const,
+      ),
+    );
+    return Object.fromEntries(entries);
+  },
+  request(providerId) {
+    const provider = PROVIDERS.find((candidate) => candidate.id === providerId);
+    return provider ? chrome.permissions.request({ origins: [...provider.origins] }) : Promise.resolve(false);
+  },
+};
+
 const env: Env = {
   api: createWorkerApi(chromeSend),
   hosts,
+  sources,
   stores: chromeStores(),
   // The YouTube key stays in this browser: local storage, never the synced area.
   secrets: {
@@ -39,16 +61,19 @@ const env: Env = {
     return tab?.id !== undefined && tab.url ? { tabId: tab.id, url: tab.url } : null;
   },
   async appleTabs() {
-    // The extension already has access to the providers' sites, so Chrome lists these tabs with their addresses and titles.
-    const [tabs, [inView]] = await Promise.all([
-      chrome.tabs.query({ url: PROVIDERS.flatMap((provider) => [...provider.origins]) }),
+    // Chrome lists a tab's address and title only for a host the extension may read, so a source the user has not
+    // allowed yet shows no tabs. Each source is asked on its own, so one that fails cannot hide the others.
+    const [lists, [inView]] = await Promise.all([
+      Promise.all(PROVIDERS.map((provider) => chrome.tabs.query({ url: [...provider.origins] }).catch(() => []))),
       chrome.tabs.query({ active: true, currentWindow: true }),
     ]);
-    return tabs.flatMap((tab) =>
-      tab.id !== undefined && tab.url
-        ? [{ tabId: tab.id, url: tab.url, title: tab.title ?? "", current: tab.id === inView?.id }]
-        : [],
-    );
+    return lists
+      .flat()
+      .flatMap((tab) =>
+        tab.id !== undefined && tab.url
+          ? [{ tabId: tab.id, url: tab.url, title: tab.title ?? "", current: tab.id === inView?.id }]
+          : [],
+      );
   },
 };
 

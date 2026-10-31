@@ -83,7 +83,7 @@ describe("detect", () => {
     const none = { ...ALBUM, trackUrls: ["", "", ""] };
     const { panel } = await open({ api: { detect: () => Promise.resolve({ ok: true, data: none }) } });
     await panel.detect(ALBUM_URL);
-    expect(panel.state.error).toBe(MESSAGES.noPage);
+    expect(panel.state.error).toBe(MESSAGES.noPage("Apple Music"));
   });
 });
 

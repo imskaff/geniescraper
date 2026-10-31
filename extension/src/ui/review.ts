@@ -252,6 +252,7 @@ export function trackDetail(v: ViewContext, state: PanelState, result: TrackResu
     song.credits.length === 0
       ? el("p", { class: "problem attn", text: "No credits were found for this track." })
       : groups,
+    ...(song.notes && song.notes.length > 0 ? [sourceNotes(song.notes)] : []),
     ...(needsOwnLink ? [youtubeLinkSection(v, state, result.index, song)] : []),
     queue.length === 0
       ? el("p", { class: "help", text: "Nothing to paste with the current settings." })
@@ -268,6 +269,16 @@ export function trackDetail(v: ViewContext, state: PanelState, result: TrackResu
         ),
   );
   return section;
+}
+
+/** What the source could not give and what was left out, said next to the credits so no gap is a mystery. */
+function sourceNotes(notes: readonly string[]): HTMLElement {
+  return el(
+    "aside",
+    { class: "source-notes", attrs: { "data-key": "source-notes", "aria-label": "About this read" } },
+    el("h4", { text: "About this read" }),
+    el("ul", {}, ...notes.map((note) => el("li", { text: note }))),
+  );
 }
 
 /**

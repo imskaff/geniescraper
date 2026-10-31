@@ -137,7 +137,7 @@ describe("walking through the set-up", () => {
     const { root, env } = await mount({ firstRun: true });
     await goTo(root, SETUP_STEPS - 1);
     await press(root, "Start using Géniescraper");
-    expect(heading(root)).toBe("Get credits from Apple Music");
+    expect(heading(root)).toBe("Get credits from Apple Music or Spotify");
     expect($(root, "#settings-toggle").hidden).toBe(false);
     expect(env.settingsStore.data.get("settings")).toMatchObject({ onboarded: true });
     const again = fakeEnv({ settings: env.settingsStore.data.get("settings") });

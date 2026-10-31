@@ -82,7 +82,7 @@ describe("link screen", () => {
     const { root } = await mount();
     expectAccessible(root);
     const input = $input(root, "#link");
-    expect(accessibleName(input)).toBe("Apple Music album or song link");
+    expect(accessibleName(input)).toBe("Apple Music or Spotify album or song link");
     expect($(root, "#link-help").textContent).toContain("paste its link");
   });
 
@@ -100,7 +100,7 @@ describe("link screen", () => {
   it("announces an invalid link in the alert region and reads nothing", async () => {
     const { root, env } = await mount();
     await submitLink(root, "https://example.com/");
-    expect($(root, "#alert").textContent).toBe("That is not an Apple Music album or song link.");
+    expect($(root, "#alert").textContent).toBe("That is not an Apple Music or Spotify album or song link.");
     expect(env.api.calls).toEqual([]);
   });
 
@@ -445,7 +445,7 @@ describe("review screen", () => {
     expect($(root, "h2").textContent).toBe("Demo Album");
     byText(root, "button", "Back to main menu").click();
     await flush();
-    expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
+    expect($(root, "h2").textContent).toBe("Get credits from Apple Music or Spotify");
   });
 
   it("says when a track has no credits", async () => {
@@ -497,7 +497,7 @@ describe("settings screen", () => {
 
     root.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     await flush();
-    expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
+    expect($(root, "h2").textContent).toBe("Get credits from Apple Music or Spotify");
   });
 
   it("saves a toggled setting", async () => {

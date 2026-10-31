@@ -1,6 +1,6 @@
 # Géniescraper extension
 
-A Chrome (Manifest V3) extension that copies song credits from Apple Music into the Genius song edit form.
+A Chrome (Manifest V3) extension that copies song credits from Apple Music or Spotify into the Genius song edit form.
 It reads an Apple Music album or song page, lists the credits in a side panel, and fills the Genius form one field at a time when you press a hotkey.
 It never presses Save on Genius: you check the form and save it yourself.
 
@@ -103,7 +103,7 @@ Each takes `--chrome <path to chrome.exe>` or the `CHROME_PATH` environment vari
 | `scripting`                                         | Reading an Apple Music page and filling the Genius form.                                                      |
 | `genius.com`, `music.apple.com`, `itunes.apple.com` | The pages it reads and fills, Genius's own song search for Open on Genius, and Apple's catalog for cover art. |
 
-Three more hosts are optional and asked for in the panel only when you switch the feature on: `api.deezer.com` (cover art), `www.youtube.com` (finding a video link) and `www.googleapis.com` (finding it with your own YouTube key).
+Four more hosts are optional and asked for in the panel only when you switch the feature on or first pick a page from that source: `open.spotify.com` (reading a Spotify track or album page; the panel explains it first, and the extension never signs in or sends anything), `api.deezer.com` (cover art), `www.youtube.com` (finding a video link) and `www.googleapis.com` (finding it with your own YouTube key).
 Nothing is sent to any server of ours, because there is none.
 See [PRIVACY.md](PRIVACY.md).
 
@@ -132,6 +132,8 @@ The store text is in [store/listing.md](store/listing.md).
 | Folder            | Contents                                                                     |
 | ----------------- | ---------------------------------------------------------------------------- |
 | `src/apple/`      | Reading Apple Music pages (credits, titles, cover art).                      |
+| `src/spotify/`    | Reading Spotify pages (credits dialog, album tracks) and its role tables.    |
+| `src/providers/`  | The provider interface and one module per source.                            |
 | `src/background/` | The service worker: hidden tabs, the paste session, covers, YouTube, Genius. |
 | `src/genius/`     | The content script that fills the Genius form.                               |
 | `src/lookups/`    | YouTube, Deezer and iTunes lookups.                                          |
