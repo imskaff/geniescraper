@@ -109,7 +109,9 @@ export async function scrapeTrack(
   request: { url: string; trackTitle: string },
   timing: Timing,
 ): Promise<PageScrape> {
+  const started = Date.now();
   await waitForHeader(doc, timing);
+  const headerMs = Date.now() - started;
   const header = readHeader(doc);
   const read = await readCredits(doc, timing);
   switch (read.status) {
@@ -140,5 +142,6 @@ export async function scrapeTrack(
     releaseDate: "",
     warnings: mapped.credits.length === 0 ? ["No credits were found on this track's page."] : [],
     notes,
+    timings: { header: headerMs, ...read.steps },
   };
 }

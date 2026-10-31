@@ -38,11 +38,13 @@ interface PageOptions {
   dialog?: string;
   credits?: boolean;
   failFirstClick?: boolean;
+  /** The dialog opens with only its first credit row and gets the rest a moment later (a late second render). */
+  lateRows?: boolean;
   withButton?: boolean;
 }
 
 /** A track page whose options button opens the saved menu, whose credits entry opens the saved dialog. */
-function trackPage({ dialog = "credits-many-roles.html", credits = true, failFirstClick = false, withButton = true }: PageOptions = {}): void {
+function trackPage({ dialog = "credits-many-roles.html", credits = true, failFirstClick = false, withButton = true, lateRows = false }: PageOptions = {}): void {
   setBody(
     `<main>${HEADER}${
       withButton ? '<div data-testid="action-bar-row"><button data-testid="more-button"></button></div>' : ""
@@ -65,6 +67,14 @@ function trackPage({ dialog = "credits-many-roles.html", credits = true, failFir
     holder.querySelector(BARE)?.addEventListener("click", () => {
       if (failFirstClick && opened === 1) return;
       document.body.append(...nodesOf(fixture(dialog)));
+      if (lateRows) {
+        const groups = [...document.querySelectorAll("dialog [role='group'][aria-labelledby]")];
+        const later = groups.slice(2).map((group) => ({ group, parent: group.parentElement }));
+        for (const { group } of later) group.remove();
+        setTimeout(() => {
+          for (const { group, parent } of later) parent?.append(group);
+        }, 0);
+      }
     });
   });
 }
@@ -103,6 +113,14 @@ describe("scrapeTrack on a saved track page", () => {
     const scrape = await scrapeTrack(document, { url: TRACK, trackTitle: "" }, FAST);
     expect(scrape.credits).toEqual([]);
     expect(scrape.warnings).toEqual(["No credits were found on this track's page."]);
+  });
+
+  it("waits for a late second render instead of reading half a dialog", async () => {
+    trackPage({ lateRows: true });
+    const late = await scrapeTrack(document, { url: TRACK, trackTitle: "" }, FAST);
+    trackPage();
+    const whole = await scrapeTrack(document, { url: TRACK, trackTitle: "" }, FAST);
+    expect(late.credits).toEqual(whole.credits);
   });
 
   it("retries once when the first click on the entry opened nothing", async () => {

@@ -150,6 +150,36 @@ export type ReadStatus = "ok" | "no-credits" | "no-button" | "no-menu" | "no-ite
 export interface ReadResult {
   status: ReadStatus;
   dialog?: ParsedDialog;
+  /** Milliseconds from the start of the read to each stage, for measuring where the time goes. */
+  steps?: Record<string, number>;
+}
+
+/** One turn of the event loop through a message channel: unlike `setTimeout`, a hidden tab does not throttle it. */
+function nextTask(): Promise<void> {
+  return new Promise((resolve) => {
+    const { port1, port2 } = new MessageChannel();
+    port1.onmessage = () => {
+      port1.close();
+      resolve();
+    };
+    port2.postMessage(0);
+  });
+}
+
+/** Wait until the dialog's rows have not changed for 40 ms (at most half a second), turn by turn, never on a timer. */
+async function settled(dialog: Element): Promise<void> {
+  const count = (): number => dialog.querySelectorAll("[role='group']").length;
+  const start = Date.now();
+  let changed = start;
+  let last = count();
+  while (Date.now() - changed < 40 && Date.now() - start < 500) {
+    await nextTask();
+    const now = count();
+    if (now !== last) {
+      last = now;
+      changed = Date.now();
+    }
+  }
 }
 
 /**
@@ -161,7 +191,13 @@ export interface ReadResult {
  */
 export async function readCredits(doc: Document, timing: Timing, button?: HTMLElement): Promise<ReadResult> {
   if (isBlocked(doc)) return { status: "blocked" };
+  const t0 = Date.now();
+  const steps: Record<string, number> = {};
+  const mark = (name: string): void => {
+    steps[name] = Date.now() - t0;
+  };
   const more = button ?? (await until(doc, () => findMoreButton(doc), timing.buttonMs, timing.stepMs));
+  mark("button");
   if (!more) return { status: isBlocked(doc) ? "blocked" : "no-button" };
   let last: ReadStatus = "no-menu";
   for (let attempt = 1; attempt <= 2; attempt++) {
@@ -173,20 +209,23 @@ export async function readCredits(doc: Document, timing: Timing, button?: HTMLEl
     }
     more.click();
     const item = await until(doc, () => findCreditsItem(doc), timing.menuMs, timing.stepMs);
+    mark("menu");
     if (!item) {
       last = doc.querySelector("[role='menu'] [role='menuitem']") ? "no-item" : "no-menu";
       continue;
     }
     item.click();
     const dialog = await until(doc, () => findDialog(doc), timing.dialogMs, timing.stepMs);
+    mark("dialog");
     if (!dialog) {
       last = "no-dialog";
       continue;
     }
-    // The rows come with the dialog; a short settle covers a late second render.
-    await sleep(150);
+    // The rows come with the dialog; a late second render is caught by waiting until the row count holds still.
+    await settled(dialog);
     const parsed = parseDialog(dialog);
-    return { status: parsed.rows.length > 0 ? "ok" : "no-credits", dialog: parsed };
+    mark("parsed");
+    return { status: parsed.rows.length > 0 ? "ok" : "no-credits", dialog: parsed, steps };
   }
   if (doc.querySelector("[role='menu']")) more.click();
   return { status: isBlocked(doc) ? "blocked" : last };

@@ -34,6 +34,8 @@ export interface PageScrape {
   warnings: string[];
   /** Plain remarks for the user about what this source could not give, and which roles were left out. */
   notes?: string[];
+  /** Milliseconds per stage of the read, for measuring; absent from sources that do not report it. */
+  timings?: Record<string, number>;
 }
 
 /** The worker's answer to a YouTube look-up. */
