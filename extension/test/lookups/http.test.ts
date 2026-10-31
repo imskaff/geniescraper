@@ -66,9 +66,9 @@ describe("fetchJson", () => {
     expect(calls[0]?.init?.redirect).toBe("error");
   });
 
-  it("lists exactly the hosts the manifest grants, two required and three optional", () => {
-    expect([...REQUIRED_LOOKUP_HOSTS]).toEqual(["itunes.apple.com", "genius.com"]);
-    expect(Object.values(OPTIONAL_LOOKUP_HOSTS)).toEqual(["api.deezer.com", "www.youtube.com", "www.googleapis.com"]);
+  it("lists exactly the hosts the manifest grants, three required and three optional", () => {
+    expect([...REQUIRED_LOOKUP_HOSTS]).toEqual(["itunes.apple.com", "genius.com", "api.deezer.com"]);
+    expect(Object.values(OPTIONAL_LOOKUP_HOSTS)).toEqual(["www.youtube.com", "www.googleapis.com"]);
     expect([...LOOKUP_HOSTS].sort()).toEqual([
       "api.deezer.com",
       "genius.com",
@@ -80,9 +80,9 @@ describe("fetchJson", () => {
 });
 
 describe("an optional host", () => {
-  const URLS = { deezer: "https://api.deezer.com/search?q=x", youtube: "https://www.youtube.com/results?q=x" };
+  const URLS = { youtube: "https://www.youtube.com/results?q=x" };
 
-  it.each(["deezer", "youtube"] as const)("is never contacted while %s is not granted", async (host) => {
+  it.each(["youtube"] as const)("is never contacted while %s is not granted", async (host) => {
     const calls = stubFetch(ok({}));
     const asked: string[] = [];
     const get = createFetchJson((origin) => {
@@ -94,7 +94,7 @@ describe("an optional host", () => {
     expect(asked).toEqual([hostOrigin(host)]);
   });
 
-  it.each(["deezer", "youtube"] as const)("is contacted once %s is granted", async (host) => {
+  it.each(["youtube"] as const)("is contacted once %s is granted", async (host) => {
     const calls = stubFetch(ok({ ok: true }));
     expect(await createFetchJson(() => Promise.resolve(true))(URLS[host])).toEqual({ ok: true });
     expect(calls).toHaveLength(1);
@@ -104,9 +104,9 @@ describe("an optional host", () => {
     const calls = stubFetch(ok({}));
     let granted = true;
     const get = createFetchJson(() => Promise.resolve(granted));
-    await get(URLS.deezer);
+    await get(URLS.youtube);
     granted = false;
-    expect(await get(URLS.deezer)).toBeNull();
+    expect(await get(URLS.youtube)).toBeNull();
     expect(calls).toHaveLength(1);
   });
 
@@ -120,12 +120,13 @@ describe("an optional host", () => {
     expect(await get("https://example.com/x")).toBeNull();
     expect(await get("https://api.deezer.com.evil.example/x")).toBeNull();
     expect(await get("https://itunes.apple.com/lookup")).toEqual({ a: 1 });
+    expect(await get("https://api.deezer.com/search?q=x")).toEqual({ a: 1 });
     expect(asked).toEqual([]);
   });
 
   it("gives null when the permission check itself throws", async () => {
     stubFetch(ok({}));
     const get = createFetchJson(() => Promise.reject(new Error("no chrome")));
-    expect(await get(URLS.deezer)).toBeNull();
+    expect(await get(URLS.youtube)).toBeNull();
   });
 });

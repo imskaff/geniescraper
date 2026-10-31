@@ -1,4 +1,4 @@
-// The settings screen and its smaller sections (reading, YouTube and Deezer permissions).
+// The settings screen and its smaller sections (reading and YouTube).
 import { type OptionalHost } from "../lookups/http";
 import { PARALLEL_CHOICES } from "../shared/settings";
 import { el } from "./dom";
@@ -37,7 +37,6 @@ export function settings(v: ViewContext, state: PanelState): Node[] {
     readingSettings(v, state),
     youtubeSettings(v, state),
     desktopSettings(v, state),
-    deezerSettings(v, state),
   ];
 }
 
@@ -103,21 +102,6 @@ export function hostBox(
     { class: "setting" },
     el("label", { class: "check" }, input, el("span", { text: label })),
     el("p", { class: "help", text: help, attrs: { id: `host-${host}-help` } }),
-  );
-}
-
-/** The Deezer cover search. It comes last in Settings, as it does in the desktop app. */
-export function deezerSettings(v: ViewContext, state: PanelState): HTMLElement {
-  return settingsCard(
-    "settings-deezer",
-    "Cover art look-up",
-    hostBox(
-      v,
-      state,
-      "deezer",
-      "Search Deezer for a cover when Apple has none",
-      "Chrome asks before this contacts api.deezer.com, and you can take the permission back here or in chrome://extensions.",
-    ),
   );
 }
 

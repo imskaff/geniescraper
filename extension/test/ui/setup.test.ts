@@ -236,15 +236,17 @@ describe("the look-ups step", () => {
     expect(root.textContent).toContain("Recommended: tick the YouTube box");
   });
 
-  it("has the Deezer and YouTube boxes, which ask Chrome inside the click", async () => {
+  it("has the YouTube box, which asks Chrome inside the click, and no Deezer box (Deezer is always the fallback)", async () => {
     const { root, env } = await mount({ firstRun: true });
     await goTo(root, 3);
-    const deezer = box(root, "host-deezer");
-    deezer.checked = true;
-    deezer.dispatchEvent(new Event("change", { bubbles: true }));
-    expect(env.hosts.log).toEqual(["request:deezer"]);
+    expect(root.querySelector('[data-key="host-deezer"]')).toBeNull();
+    expect(root.textContent).not.toContain("Deezer");
+    const youtube = box(root, "host-youtube");
+    youtube.checked = true;
+    youtube.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(env.hosts.log).toEqual(["request:youtube"]);
     await flush();
-    expect(box(root, "host-deezer").checked).toBe(true);
+    expect(box(root, "host-youtube").checked).toBe(true);
   });
 
   it("has the YouTube key box with its step-by-step help, and saving a key works from here", async () => {
@@ -272,7 +274,6 @@ describe("the summary", () => {
     );
     expect(text).toContain("Reading: 3 tracks at a time.");
     expect(text).toContain("Genius keys: F8 fills the next step, F7 goes back.");
-    expect(text).toContain("Covers from Deezer when Apple has none: off.");
     expect(text).toContain("YouTube links: not looked up (you can add a key in Settings).");
     expect(text).toContain("press Start pasting");
   });
@@ -280,7 +281,7 @@ describe("the summary", () => {
   it("follows the choices made", async () => {
     const { root, panel } = await mount({
       firstRun: true,
-      hosts: { deezer: true, youtubeApi: true },
+      hosts: { youtubeApi: true },
       youtubeKey: "AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q",
     });
     await panel.setSetting("scrapeCore", false);
@@ -292,7 +293,6 @@ describe("the summary", () => {
     expect(text).toContain("Pasting: additional credits, copyright lines, the PNG cover link, the release date.");
     expect(text).toContain("Reading: every track at once.");
     expect(text).toContain("F9 fills the next step");
-    expect(text).toContain("Covers from Deezer when Apple has none: on.");
     expect(text).toContain("from Google's official service, with your key");
   });
 

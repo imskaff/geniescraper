@@ -42,7 +42,6 @@ const ALLOWED_HOSTS = new Set([
   "https://www.googleapis.com/*",
 ]);
 const ALLOWED_OPTIONAL_HOSTS = new Set([
-  "https://api.deezer.com/*",
   "https://open.spotify.com/*",
   "https://www.youtube.com/*",
   "https://www.googleapis.com/*",

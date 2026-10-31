@@ -182,7 +182,7 @@ export class PanelController {
     if (JSON.stringify(sources) !== JSON.stringify(this.current.sources)) this.update({ sources });
     const hosts = await this.env.hosts.granted().catch(() => this.current.hosts);
     const now = this.current.hosts;
-    if (hosts.deezer !== now.deezer || hosts.youtube !== now.youtube || hosts.youtubeApi !== now.youtubeApi) {
+    if (hosts.youtube !== now.youtube || hosts.youtubeApi !== now.youtubeApi) {
       this.update({ hosts });
     }
   }

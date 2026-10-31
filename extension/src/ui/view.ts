@@ -8,7 +8,7 @@ import type { ViewContext } from "./viewContext";
 import { linkScreen, tracksScreen } from "./link";
 import { reviewScreen } from "./review";
 import { doneScreen, pasteScreen } from "./paste";
-import { deezerSettings, settings, youtubeSettings } from "./settings";
+import { settings, youtubeSettings } from "./settings";
 import { geniusMessage } from "./geniusText";
 
 export class PanelView implements ViewContext {
@@ -159,7 +159,7 @@ export class PanelView implements ViewContext {
               this.button(text, variant, key, onClick, disabled, wide),
             heading: (text) => this.heading(text),
             youtubeFieldset: () => youtubeSettings(this, state),
-            deezerFieldset: () => deezerSettings(this, state),
+
             animateWelcome: () => this.playWelcome(),
           })
         : state.settingsOpen

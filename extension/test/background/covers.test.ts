@@ -157,7 +157,7 @@ describe("realCovers", () => {
     const covers = realCovers(getJson);
     expect(await covers.exact("https://music.apple.com/us/album/sos/1658650093")).toBe(GOOD_PNG);
     expect(await covers.search("SOS", "SZA")).toBe(GOOD_PNG);
-    expect(seen).toEqual(["/lookup", "/search", "/search"]);
+    expect(seen).toEqual(["/lookup", "/search"]);
   });
 
   const only =
@@ -178,6 +178,28 @@ describe("realCovers", () => {
     expect(await realCovers(only("api.deezer.com", DEEZER)).search("SOS", "SZA")).toBe(
       "https://cdn-images.dzcdn.net/images/cover/abc/1000x1000-000000-80-0-0.png",
     );
+  });
+
+  it("does not ask Deezer at all when Apple's search found the cover", async () => {
+    const asked: string[] = [];
+    const getJson: GetJson = (url) => {
+      asked.push(new URL(url).hostname);
+      return Promise.resolve({ results: [{ artworkUrl100: GOOD, trackName: "SOS", artistName: "SZA" }] });
+    };
+    expect(await realCovers(getJson).search("SOS", "SZA")).toBe(GOOD_PNG);
+    expect(asked).not.toContain("api.deezer.com");
+  });
+
+  it("asks Deezer only after Apple's search found nothing, with just the title and artist", async () => {
+    const urls: string[] = [];
+    const getJson: GetJson = (url) => {
+      urls.push(url);
+      return Promise.resolve(new URL(url).hostname === "api.deezer.com" ? DEEZER : { results: [] });
+    };
+    await realCovers(getJson).search("SOS", "SZA");
+    expect(urls.map((u) => new URL(u).hostname)).toEqual(["itunes.apple.com", "api.deezer.com"]);
+    expect([...new URL(urls[1] ?? "").searchParams.keys()].sort()).toEqual(["limit", "q"]);
+    expect(new URL(urls[1] ?? "").searchParams.get("q")).toBe("SZA SOS");
   });
 
   it("prefers Apple's search over Deezer when both have a cover", async () => {

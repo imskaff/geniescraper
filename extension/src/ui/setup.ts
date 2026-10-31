@@ -17,10 +17,8 @@ export interface SetupParts {
     wide?: boolean,
   ): HTMLElement;
   heading(text: string): HTMLElement;
-  /** The Deezer and YouTube page-reading boxes (each asks Chrome for permission inside its click). */
+  /** The YouTube page-reading box and the key box with its step-by-step help (each asks Chrome inside its click). */
   youtubeFieldset(): HTMLElement;
-  /** The YouTube key box with its step-by-step help. */
-  deezerFieldset(): HTMLElement;
   /** True the first time the welcome is drawn, so the intro plays once and a redraw does not replay it. */
   animateWelcome(): boolean;
 }
@@ -106,7 +104,6 @@ export function setupSummary(state: PanelState): string[] {
     `Pasting: ${parts.length > 0 ? parts.join(", ") : "nothing is selected yet"}.`,
     `Reading: ${reads === 0 ? "every track at once" : reads === 1 ? "one track at a time" : `${String(reads)} tracks at a time`}.`,
     `Genius keys: ${settings.nextHotkey} fills the next step, ${settings.backHotkey} goes back.`,
-    `Covers from Deezer when Apple has none: ${hosts.deezer ? "on" : "off"}.`,
     `YouTube links: ${youtube}.`,
   ];
 }
@@ -274,10 +271,9 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
           text: "These look things up on other websites, so Chrome asks your permission for each one. Skip them and everything else still works.",
         }),
         el("p", {
-          text: "Recommended: tick the YouTube box to find a link for each track; a free key from Google makes that reliable, and the steps walk you through it. The Deezer box below finds a cover when Apple has none.",
+          text: "Recommended: tick the YouTube box to find a link for each track; a free key from Google makes that reliable, and the steps walk you through it.",
         }),
         parts.youtubeFieldset(),
-        parts.deezerFieldset(),
       );
       break;
     default:
