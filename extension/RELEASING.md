@@ -76,11 +76,11 @@ Pushing a tag named `extension-v<version>` runs `.github/workflows/extension-rel
 The workflow stops with a message if the tag and the version differ.
 
 ```bash
-git tag extension-v0.6.0
+git tag extension-v0.6.1
 ```
 
 ```bash
-git push origin extension-v0.6.0
+git push origin extension-v0.6.1
 ```
 
 Do this from the commit you tested, after it is on `main`.
