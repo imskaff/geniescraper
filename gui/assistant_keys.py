@@ -12,6 +12,9 @@ from utils.config import settings
 
 _f = theme.font
 
+# A short settle after the Genius window comes forward, before the paste goes to it.
+_FOCUS_RETURN_WAIT = 0.1
+
 
 class AssistantKeysMixin(ChromeMixin):
     """The assistant's global hotkeys, the Esc listener and the confirm overlay."""
@@ -40,6 +43,18 @@ class AssistantKeysMixin(ChromeMixin):
             if self._pos > 0:
                 self._pos -= 1
                 self.after(0, self._render_assistant)
+
+    def _fill_next_by_hand(self) -> None:
+        """The Next button without the extension: pressing it moved focus here, so go back to Genius first.
+
+        It brings the last Genius window forward; with none to go back to, nothing is pasted (it would land in
+        whatever window was used last). After that it is exactly the F8 key.
+        """
+        if not self._genius_windows.hand_back():
+            self.after(0, self._say_no_genius_window)
+            return
+        time.sleep(_FOCUS_RETURN_WAIT)
+        self._on_hotkey()
 
     def _on_hotkey(self) -> None:
         with self._lock:

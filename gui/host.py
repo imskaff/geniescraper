@@ -12,6 +12,7 @@ import keyboard
 from PIL import Image as PILImage
 
 from gui.connect_prompt import ConnectPrompt
+from gui.foreground import GeniusWindowTracker
 from gui.link import LinkController, OpenPage
 from gui.settings_window import SettingsWindow
 from scraper.apple_music import AlbumTrackInfo
@@ -51,6 +52,7 @@ class Host(ctk.CTk):
     _settings_win: SettingsWindow | None
     _normal_height: int
     _app_focused: bool
+    _genius_windows: GeniusWindowTracker
 
     # Start screen.
     _busy: bool
@@ -84,6 +86,7 @@ class Host(ctk.CTk):
     _link_lbl: ctk.CTkLabel | None
     _link_before: ctk.CTkLabel | None
     _ctl: dict[str, ctk.CTkButton]
+    _handoff_lbl: ctk.CTkLabel | None
     _auto_hint_lbl: ctk.CTkLabel | None
     _manual_card: ctk.CTkFrame | None
     _steps_heads: dict[str, ctk.CTkButton]
@@ -190,6 +193,12 @@ class Host(ctk.CTk):
         raise NotImplementedError
 
     def _on_back_hotkey(self) -> None:
+        raise NotImplementedError
+
+    def _fill_next_by_hand(self) -> None:
+        raise NotImplementedError
+
+    def _say_no_genius_window(self) -> None:
         raise NotImplementedError
 
     def _begin_link_run(self, resume_at: int) -> None:

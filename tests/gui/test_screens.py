@@ -108,11 +108,34 @@ def _check_hotkey_path(window: Any) -> dict[str, Any]:
             window._pos = 2
             window._on_hotkey()  # a cover link is only copied: nothing to confirm
             after_clipboard = list(keys)
+            keys.clear()
+            window._pos = 0
+            tracker = mock.Mock()
+            with mock.patch.object(window, "_genius_windows", tracker):
+                tracker.hand_back.return_value = True
+                window._fill_next_by_hand()  # the Next button: back to the Genius window, then the same as the key
+                by_hand = list(keys)
+                window._pos = 0
+                keys.clear()
+                tracker.hand_back.return_value = False
+                with mock.patch.object(window, "after") as after:
+                    window._fill_next_by_hand()  # no Genius window known: nothing is pasted
+                pasted_without_genius = list(keys)
+                said_no_window = after.call_args.args[1] == window._say_no_genius_window
+                pos_without_genius = window._pos
+            with mock.patch("threading.Thread") as thread:
+                window._next_clicked()
+            click_runs_off_the_ui_thread = thread.call_args.kwargs.get("target") == window._fill_next_by_hand
     finally:
         window._queue, window._pos = old_queue, old_pos
     return {
         "name": after_name,
         "clipboard": after_clipboard,
+        "by_hand": by_hand,
+        "pasted_without_genius": pasted_without_genius,
+        "said_no_window": said_no_window,
+        "pos_without_genius": pos_without_genius,
+        "click_runs_off_the_ui_thread": click_runs_off_the_ui_thread,
         "iconified": iconify.called,
         "window_state": window.state(),
     }
@@ -627,7 +650,7 @@ def test_pasting_screen_without_the_extension(walk):
     start, auto = seen["at_start"], seen["at_start"]["auto"]
     assert auto["text"] == "Auto-paste: OFF" and not auto["enabled"]
     assert seen["hint"] == "Connect the browser extension in Settings to use Auto-paste"
-    assert not start["next"]["shown"]
+    assert start["next"]["shown"] and start["next"]["enabled"] and start["next"]["text"].startswith("Next (")
     assert start["back"]["text"].startswith("Previous (")
     assert start["stop"]["text"] == "Back to credits"
     assert "Paste into Genius" in seen["texts"] and "CHIHIRO  ·  Billie Eilish" in seen["texts"]
@@ -648,7 +671,7 @@ def test_previous_is_off_at_the_first_step_and_skip_and_next_when_finished(walk)
     seen = walk["unlinked"]
     assert not seen["at_start"]["back"]["enabled"]
     assert seen["middle"]["back"]["enabled"]
-    assert not seen["finished"]["skip"]["enabled"] and not seen["finished"]["next"]["shown"]
+    assert not seen["finished"]["skip"]["enabled"] and not seen["finished"]["next"]["enabled"]
     assert seen["finished"]["back"]["enabled"]
     assert seen["finished_progress"] == "All steps done"
     assert seen["middle_progress"] == "Step 22 of 48"
@@ -707,11 +730,25 @@ def test_manual_mode_instruction_says_to_click_the_field_before_the_hotkey(walk)
     assert "Click the field on Genius first" in seen["instruction"] and "F8" in seen["instruction"]
 
 
-def test_manual_mode_has_no_next_button_and_never_touches_the_window(walk):
+def test_manual_mode_has_a_next_button_and_never_iconifies_the_window(walk):
     seen = walk["unlinked"]
-    assert not seen["at_start"]["next"]["shown"] and not seen["middle"]["next"]["shown"]
+    assert seen["at_start"]["next"]["shown"] and seen["middle"]["next"]["shown"]
+    assert seen["finished"]["next"]["shown"] and not seen["finished"]["next"]["enabled"]
     assert seen["window_state"] == "normal"
     assert walk["hotkey_path"]["window_state"] == "normal" and not walk["hotkey_path"]["iconified"]
+
+
+def test_the_next_button_without_the_extension_returns_to_genius_then_does_what_the_key_does(walk):
+    path = walk["hotkey_path"]
+    assert "alt+tab" not in path["by_hand"]
+    assert path["by_hand"] == path["name"]
+    assert path["click_runs_off_the_ui_thread"]
+
+
+def test_the_next_button_pastes_nothing_and_stays_put_when_no_genius_window_is_known(walk):
+    path = walk["hotkey_path"]
+    assert path["pasted_without_genius"] == [] and path["pos_without_genius"] == 0
+    assert path["said_no_window"]
 
 
 def test_the_notice_follows_the_connection_without_rebuilding_the_screen(walk):
