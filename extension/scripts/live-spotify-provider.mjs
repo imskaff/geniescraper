@@ -29,6 +29,8 @@ const albumTracks = Number(option("--album-tracks", "3"));
 const trackIds = option("--tracks", "").split(",").filter(Boolean);
 const wantUnavailable = args.includes("--unavailable");
 const wantTab = args.includes("--tab");
+// The open-pages card must name the page, not the song that is playing: the tab title is rewritten here to another song.
+const wantDetector = args.includes("--detector");
 // The shipped build as it is: Spotify not allowed yet. Nothing is loaded from Spotify; the explanation card shows.
 const ungranted = args.includes("--ungranted");
 // Timing runs: `--all` reads every listed track of the album and prints when each one finished; `--before` patches the
@@ -239,6 +241,29 @@ try {
       text.split("\n").find((l) => /playable|Could not/.test(l)) ?? "",
     );
     await shot("5-unavailable");
+  }
+
+  // Phase 3b: Spotify rewrites a tab's title to the song that is playing; the card must still name the page itself.
+  if (wantDetector) {
+    console.log("\n== detector with a different song playing");
+    const spotifyTab = await browser.openTab(`https://open.spotify.com/album/${albumId || "4yP0hdKOZPNshxUOjY0cZj"}`);
+    loads += 1;
+    await sleep(6000);
+    const tabSession = await connect(spotifyTab.webSocketDebuggerUrl);
+    await tabSession.evaluate("document.title = 'Race My Mind - song and lyrics by Drake | Spotify'");
+    const tabTitle = await tabSession.evaluate("document.title");
+    tabSession.close?.();
+    await evalPanel("location.reload()");
+    await sleep(2500);
+    const text = await pageText();
+    console.log("tab title: " + tabTitle);
+    console.log(text.split("\n").slice(0, 16).join(" | "));
+    check("the tab title was rewritten to another song", /Race My Mind/.test(tabTitle));
+    check("the card names the page itself", /After Hours by The Weeknd/.test(text));
+    check("the card never shows the playing song", !/Race My Mind|Drake/.test(text));
+    await shot("7-detector-playing-elsewhere");
+    await fetch(`http://127.0.0.1:9341/json/close/${spotifyTab.id}`).catch(() => undefined);
+    await sleep(800);
   }
 
   // Phase 4: a Spotify tab the user already has open shows up in the open-pages list.
