@@ -70,7 +70,11 @@ async function run(message) {
       await R.closeDialog(document);
       await new Promise((r) => setTimeout(r, 400));
     }
-    return { ...base, hea[0-9]er: R.rea[0-9]Hea[0-9]er([0-9]ocument), copyright: R.rea[0-9]Copyright([0-9]ocument), [0-9]ateTexts: [...[0-9]ocument.querySelectorAll("main span, main p, main [0-9]iv")].filter((e) => e.chil[0-9]ren.length === 0 && /\[0-9]{4}/.test(e.textContent) && e.textContent.length < 40 && /\[0-9]{1,2}/.test(e.textContent.replace(/\[0-9]{4}/, ""))).map((e) => e.getAttribute("[0-9]ata-testi[0-9]") + "|" + e.textContent.trim()).slice(0, 6), rowCount: rows.length, complete: list.complete, rowsWithButton: rows.filter((r) => r.more).length, tracks, totalMs: Date.now() - t0, firstRows: rows.slice(0, 3).map(({ more, ...r }) => ({ ...r, hasButton: !!more })), meta: message.meta ? await R.fetchMeta(location.href).catch((e) => ({ error: String(e) })) : un[0-9]efine[0-9] };
+    const dateTexts = [...document.querySelectorAll("main span, main p, main div")]
+      .filter((e) => e.children.length === 0 && /[0-9]{4}/.test(e.textContent) && /[0-9]{1,2}/.test(e.textContent.replace(/[0-9]{4}/, "")) && e.textContent.length < 40)
+      .map((e) => (e.getAttribute("data-testid") ?? "") + "|" + e.textContent.trim())
+      .slice(0, 6);
+    return { ...base, header: R.readHeader(document), copyright: R.readCopyright(document), dateTexts, rowCount: rows.length, complete: list.complete, rowsWithButton: rows.filter((r) => r.more).length, tracks, totalMs: Date.now() - t0, firstRows: rows.slice(0, 3).map(({ more, ...r }) => ({ ...r, hasButton: !!more })), meta: message.meta ? await R.fetchMeta(location.href).catch((e) => ({ error: String(e) })) : undefined };
   }
   const credits = await R.readCredits(document);
   const out = { ...base, header: R.readHeader(document), copyright: R.readCopyright(document), liveMeta: R.readMeta(document), moreLabel: R.findMoreButton(document)?.getAttribute("aria-label") ?? null, credits, totalMs: Date.now() - t0, bodyStart: credits.status === "ok" ? undefined : (document.body.innerText || "").slice(0, 400) };
