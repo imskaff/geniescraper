@@ -66,6 +66,7 @@ export function spotifyReader() {
         title: norm(link.textContent),
         number: Number(norm(row.querySelector("[aria-colindex='1'] > div > span")?.textContent)) || null,
         explicit: !!row.querySelector("[role='img'][aria-label][title]"),
+        el: row,
         more: row.querySelector("button[data-testid='more-button']"),
       });
     }
@@ -73,11 +74,31 @@ export function spotifyReader() {
   }
 
   /**
-   * The album's tracks once the list has finished rendering: rows appear in batches, so wait until the count has
-   * not changed for `settleMs`. `complete` says the disc numbers run 1..n without a gap (a cheap integrity check;
-   * a very long list may be virtualized, which this would show as a gap or as rows without a button).
+   * The track count printed in an album header ("2010 • 100 songs, about 6 hr"): the integer in the part after the
+   * year. Language independent as long as the page uses Western digits; null when it cannot be found.
    */
-  async function readAlbumTracks(doc, { settleMs = 1200, timeoutMs = 12000 } = {}) {
+  function readAlbumTrackCount(doc) {
+    const header = doc.querySelector("[data-testid='entity-header']");
+    const parts = (header?.textContent ?? "").split("•").map(norm);
+    const year = norm(doc.querySelector("[data-testid='release-date']")?.textContent);
+    const at = parts.findIndex((p) => /^[0-9]{4}$/.test(p) || (year && p === year));
+    const n = Number(/[0-9]+/.exec(parts[at + 1] ?? "")?.[0]);
+    return at >= 0 && n > 0 ? n : null;
+  }
+
+  /**
+   * The album's tracks. Rows appear in batches, and a long album is a windowed list: the first ~25 rows render, more
+   * appear (and old ones are recycled) as the list is scrolled, which only happens in a visible tab (a hidden one
+   * stayed at 25 of 100). So: wait until the count settles, scroll the last row into view while that adds rows, and
+   * keep what was seen in `tracks`. `rows` are the rows in the DOM right now (with their buttons). `complete` is true
+   * when `tracks` covers 1..expected, `expected` being the header's track count.
+   */
+  async function readAlbumTracks(doc, { settleMs = 1200, timeoutMs = 12000, maxScrolls = 40 } = {}) {
+    const seen = new Map();
+    const remember = () => {
+      for (const row of trackRows(doc))
+        seen.set(row.id, { id: row.id, title: row.title, number: row.number, explicit: row.explicit });
+    };
     const end = Date.now() + timeoutMs;
     let last = -1;
     let since = Date.now();
@@ -89,9 +110,26 @@ export function spotifyReader() {
       } else if (n > 0 && Date.now() - since >= settleMs) break;
       await sleep(150);
     }
-    const rows = trackRows(doc);
-    const numbers = rows.map((r) => r.number);
-    return { rows, complete: rows.length > 0 && numbers.every((n, i) => n === i + 1) };
+    remember();
+    const first = trackRows(doc);
+    let scrolls = 0;
+    for (; scrolls < maxScrolls; scrolls++) {
+      const before = trackRows(doc);
+      before.at(-1)?.el.scrollIntoView({ block: "end" });
+      const grew = await until(() => trackRows(doc).at(-1)?.id !== before.at(-1)?.id, 2500);
+      if (!grew) break;
+      await sleep(200);
+      remember();
+    }
+    const tracks = [...seen.values()].sort((x, y) => (x.number ?? 0) - (y.number ?? 0));
+    const expected = readAlbumTrackCount(doc);
+    return {
+      rows: first,
+      tracks,
+      scrolls,
+      expected,
+      complete: expected !== null && tracks.length === expected && tracks.every((r, i) => r.number === i + 1),
+    };
   }
 
   /**
@@ -233,6 +271,87 @@ export function spotifyReader() {
   const isBlocked = (doc) =>
     /captcha|unusual traffic|access denied|too many requests/i.test((doc.body?.innerText ?? "").slice(0, 2000));
 
+  // ---- making fixtures: no names, no ids ----
+
+  /** Replace every occurrence of each key with its value in all attribute values below `root`, longest key first. */
+  function replaceInAttributes(root, map) {
+    const keys = [...map.keys()].sort((x, y) => y.length - x.length);
+    for (const el of [root, ...root.querySelectorAll("*")]) {
+      for (const attr of [...el.attributes]) {
+        let value = attr.value;
+        for (const key of keys) value = value.split(key).join(map.get(key));
+        value = value.replace(/spotify:(artist|track|album):[A-Za-z0-9]+/g, "spotify:$1:SAMPLE");
+        value = value.replace(/(\/(?:artist|track|album)\/)[A-Za-z0-9]{22}/g, "$1SAMPLE");
+        if (/^(src|srcset)$/.test(attr.name)) value = "";
+        if (value !== attr.value) el.setAttribute(attr.name, value);
+      }
+    }
+  }
+
+  /** Strip icon drawings so a fixture stays small. */
+  function stripSvg(root) {
+    for (const svg of root.querySelectorAll("svg")) svg.replaceChildren();
+  }
+
+  /**
+   * A copy of the credits dialog's markup with people and the track replaced by placeholders ("Person 1", "Sample
+   * Song", "Sample Label"), consistently in text and in the ids that embed names. Structure and every UI string
+   * (headings, role names) are kept, since those are what a reader is tested against.
+   */
+  function sanitizeDialog(dialog) {
+    const copy = dialog.cloneNode(true);
+    const map = new Map();
+    const person = (name) => {
+      if (!map.has(name)) map.set(name, `Person ${String(map.size + 1)}`);
+      return map.get(name);
+    };
+    const title = norm(copy.querySelector("h2")?.textContent);
+    if (title) map.set(title, "Sample Song");
+    for (const span of copy.querySelectorAll("span[dir='auto']")) span.textContent = person(norm(span.textContent));
+    for (const group of copy.querySelectorAll("[role='group'][aria-labelledby]")) {
+      if (group.querySelector("span[dir='auto']")) continue;
+      const spans = group.querySelectorAll("span");
+      const value = spans[spans.length - 1];
+      if (spans.length >= 2 && value) value.textContent = "Sample Label";
+    }
+    const h2 = copy.querySelector("h2");
+    if (h2) h2.textContent = "Sample Song";
+    replaceInAttributes(copy, map);
+    stripSvg(copy);
+    return copy.outerHTML;
+  }
+
+  /** A copy of the open options menu with ids removed; the menu text is UI wording and is kept. */
+  function sanitizeMenu(menu) {
+    const copy = menu.cloneNode(true);
+    replaceInAttributes(copy, new Map());
+    stripSvg(copy);
+    return copy.outerHTML;
+  }
+
+  /** The first `count` album rows with titles and artists replaced by placeholders. */
+  function sanitizeRows(doc, count = 3) {
+    const map = new Map();
+    const out = [];
+    for (const row of [...doc.querySelectorAll("[data-testid='tracklist-row']")].slice(0, count)) {
+      const copy = row.cloneNode(true);
+      const n = out.length + 1;
+      const link = copy.querySelector("a[data-testid='internal-track-link']");
+      const title = norm(link?.textContent);
+      if (title) map.set(title, `Sample Track ${String(n)}`);
+      for (const a of copy.querySelectorAll("a[href^='/artist/']")) {
+        map.set(norm(a.textContent), "Artist One");
+        a.textContent = "Artist One";
+      }
+      const titleEl = link?.querySelector("div");
+      if (titleEl) titleEl.textContent = `Sample Track ${String(n)}`;
+      replaceInAttributes(copy, map);
+      stripSvg(copy);
+      out.push(copy.outerHTML);
+    }
+    return out;
+  }
+
   // ---- the read procedure ----
 
   /**
@@ -246,7 +365,7 @@ export function spotifyReader() {
    *   blocked       a captcha / rate-limit text is showing
    * `steps` holds the milliseconds each stage took; a failed click is retried once (`attempt` says which one worked).
    */
-  async function readCredits(doc, { button, timeoutMs = 10000, attempts = 2 } = {}) {
+  async function readCredits(doc, { button, timeoutMs = 10000, attempts = 2, capture = false } = {}) {
     const steps = {};
     const t0 = Date.now();
     const mark = (name) => (steps[name] = Date.now() - t0);
@@ -270,6 +389,7 @@ export function spotifyReader() {
         last = { status: menu.length > 0 ? "no-item" : "no-menu", menu };
         continue;
       }
+      const menuHtml = capture ? sanitizeMenu(item.el.closest("[role='menu']")) : undefined;
       item.el.click();
       const dialog = await until(() => findDialog(doc), 5000);
       mark("dialog" + String(attempt));
@@ -281,7 +401,16 @@ export function spotifyReader() {
       await sleep(150);
       const parsed = parseDialog(dialog);
       mark("parsed");
-      return { status: parsed.rows.length > 0 ? "ok" : "no-credits", attempt, steps, menu, how: item.how, ...parsed };
+      const html = capture ? { menuHtml, dialogHtml: sanitizeDialog(dialog) } : {};
+      return {
+        status: parsed.rows.length > 0 ? "ok" : "no-credits",
+        attempt,
+        steps,
+        menu,
+        how: item.how,
+        ...parsed,
+        ...html,
+      };
     }
     if (doc.querySelector("[role='menu']")) more.click();
     return { ...last, attempt: attempts, steps };
@@ -301,9 +430,13 @@ export function spotifyReader() {
     findMoreButton,
     trackRows,
     readAlbumTracks,
+    readAlbumTrackCount,
     findCreditsItem,
     findDialog,
     parseDialog,
+    sanitizeDialog,
+    sanitizeMenu,
+    sanitizeRows,
     readHeader,
     readCopyright,
     readMeta,

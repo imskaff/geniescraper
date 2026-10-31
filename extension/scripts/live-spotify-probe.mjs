@@ -16,6 +16,7 @@
 //            --intl en           add the /intl-en/ URL prefix (default: none; "none" is also accepted)
 //            --limit 3           album only: how many tracks to open credits for (0 = all)
 //            --force-en          send Accept-Language: en-US for the probe's tab with a session declarativeNetRequest rule (adds that permission)
+//            --capture <dir>     save sanitized dialog / menu / album-row markup (names and ids replaced) as fixtures
 //            --fetch-meta        also GET the page once more and read the server-rendered meta tags
 //
 // Rules: signed out, no credentials, open.spotify.com only, one page at a time, one window in a throwaway profile
@@ -48,6 +49,7 @@ const intl = option("--intl", "none");
 const limit = Number(option("--limit", "3"));
 const wantMeta = args.includes("--fetch-meta");
 const forceEn = args.includes("--force-en");
+const captureDir = option("--capture", "");
 const outFile = option("--out", "");
 const port = 9371;
 if (!chromePath || steps.length === 0) throw new Error("Pass --chrome and --steps.");
@@ -67,8 +69,8 @@ async function run(message) {
     for (const row of wanted) {
       const t1 = Date.now();
       row.more?.scrollIntoView({ block: "center" });
-      const result = row.more ? await R.readCredits(document, { button: row.more, timeoutMs: 3000 }) : { status: "no-button" };
-      tracks.push({ id: row.id, title: row.title, ms: Date.now() - t1, status: result.status, rows: result.rows?.length ?? 0, how: result.how, heading: result.heading, menu: result.menu, dialogTitle: result.title, steps: result.steps });
+      const result = row.more ? await R.readCredits(document, { button: row.more, timeoutMs: 3000, capture: message.capture }) : { status: "no-button" };
+      tracks.push({ id: row.id, title: row.title, ms: Date.now() - t1, status: result.status, rows: result.rows?.length ?? 0, how: result.how, heading: result.heading, menu: result.menu, dialogTitle: result.title, steps: result.steps, menuHtml: result.menuHtml });
       await R.closeDialog(document);
       await new Promise((r) => setTimeout(r, 400));
     }
@@ -76,10 +78,10 @@ async function run(message) {
       .filter((e) => e.children.length === 0 && /[0-9]{4}/.test(e.textContent) && /[0-9]{1,2}/.test(e.textContent.replace(/[0-9]{4}/, "")) && e.textContent.length < 40)
       .map((e) => (e.getAttribute("data-testid") ?? "") + "|" + e.textContent.trim())
       .slice(0, 6);
-    return { ...base, header: R.readHeader(document), copyright: R.readCopyright(document), dateTexts, rowCount: rows.length, complete: list.complete, rowsWithButton: rows.filter((r) => r.more).length, tracks, totalMs: Date.now() - t0, firstRows: rows.slice(0, 3).map(({ more, ...r }) => ({ ...r, hasButton: !!more })), meta: message.meta ? await R.fetchMeta(location.href).catch((e) => ({ error: String(e) })) : undefined };
+    return { ...base, header: R.readHeader(document), copyright: R.readCopyright(document), dateTexts, rowCount: rows.length, complete: list.complete, expected: list.expected, seen: list.tracks.length, headerText: (document.querySelector("[data-testid='entity-header']")?.innerText || '').slice(0, 200), scrolls: list.scrolls, dateParent: (document.evaluate("//*[not(*)][contains(text(), ', 20') or contains(text(), ', 19')]", document.querySelector('main'), null, 9, null).singleNodeValue?.parentElement?.outerHTML || '').slice(0, 1200), rowsWithButton: rows.filter((r) => r.more).length, tracks, totalMs: Date.now() - t0, firstRows: rows.slice(0, 3).map(({ more, el, ...r }) => ({ ...r, hasButton: !!more })), meta: message.meta ? await R.fetchMeta(location.href).catch((e) => ({ error: String(e) })) : undefined };
   }
-  const credits = await R.readCredits(document);
-  const out = { ...base, header: R.readHeader(document), copyright: R.readCopyright(document), liveMeta: R.readMeta(document), moreLabel: R.findMoreButton(document)?.getAttribute("aria-label") ?? null, credits, totalMs: Date.now() - t0, bodyStart: credits.status === "ok" ? undefined : (document.body.innerText || "").slice(0, 400) };
+  const credits = await R.readCredits(document, { capture: message.capture });
+  const out = { ...base, rowsHtml: message.capture ? R.sanitizeRows(document) : undefined, pageTitle: document.title, trackPage: !!document.querySelector("[data-testid='track-page']"), isrcHits: (document.documentElement.innerHTML.match(/isrc/gi) || []).length, scriptJsonTracks: document.querySelectorAll('script[type="application/ld+json"]').length, header: R.readHeader(document), copyright: R.readCopyright(document), liveMeta: R.readMeta(document), moreLabel: R.findMoreButton(document)?.getAttribute("aria-label") ?? null, credits, totalMs: Date.now() - t0, bodyStart: credits.status === "ok" ? undefined : (document.body.innerText || "").slice(0, 400) };
   if (message.meta) out.fetchedMeta = await R.fetchMeta(location.href).catch((e) => ({ error: String(e) }));
   await R.closeDialog(document);
   return out;
@@ -173,7 +175,12 @@ try {
   await waitUntilReady(worker);
   for (const step of steps) {
     const url = spotifyUrl(step.kind, step.id, { intl: intl === "none" ? "" : intl });
-    const job = { url, forceEn, env: step.env, message: { kind: step.kind, limit, meta: wantMeta } };
+    const job = {
+      url,
+      forceEn,
+      env: step.env,
+      message: { kind: step.kind, limit, meta: wantMeta, capture: !!captureDir },
+    };
     const record = { ...step, intl, lang };
     const t0 = Date.now();
     try {
@@ -199,6 +206,20 @@ try {
   worker?.close();
   await browser.stop();
   rmSync(extDir, { recursive: true, force: true });
+}
+if (captureDir) {
+  mkdirSync(captureDir, { recursive: true });
+  records.forEach((record, i) => {
+    const credits = record.result?.credits;
+    const first = record.result?.tracks?.[0];
+    const name = `${String(i + 1).padStart(2, "0")}-${record.kind}-${lang || "default"}`;
+    if (credits?.dialogHtml) writeFileSync(join(captureDir, `${name}-dialog.html`), credits.dialogHtml);
+    if (credits?.menuHtml ?? first?.menuHtml)
+      writeFileSync(join(captureDir, `${name}-menu.html`), credits?.menuHtml ?? first.menuHtml);
+    if (record.result?.rowsHtml)
+      writeFileSync(join(captureDir, `${name}-rows.html`), record.result.rowsHtml.join("\n"));
+    if (record.result?.credits) delete record.result.credits.dialogHtml;
+  });
 }
 const summary = { loads: records.length, blocker, records };
 if (outFile) {
