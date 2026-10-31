@@ -141,7 +141,7 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
           el("div", { class: "welcome-title" }, parts.heading("Welcome to Géniescraper")),
           el("p", {
             class: "welcome-lead",
-            text: "Géniescraper copies a song's credits from Apple Music into Genius's Edit Metadata form, one field at a time, when you press a key.",
+            text: "Géniescraper copies a song's credits from Apple Music or Spotify into Genius's Edit Metadata form, one field at a time, when you press a key.",
           }),
           el(
             "ul",
@@ -290,7 +290,7 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
           "ol",
           { class: "plain-list" },
           el("li", {
-            text: "Open an Apple Music album or song and click the Géniescraper icon. Tip: pin it with the puzzle-piece button in Chrome's toolbar.",
+            text: "Open an Apple Music or Spotify album or song and click the Géniescraper icon. Tip: pin it with the puzzle-piece button in Chrome's toolbar.",
           }),
           el("li", { text: "Choose the tracks and press Get credits." }),
           el("li", {

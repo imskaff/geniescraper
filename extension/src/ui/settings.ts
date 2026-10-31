@@ -75,7 +75,7 @@ export function readingSettings(v: ViewContext, state: PanelState): HTMLElement 
       "setting-parallelReads",
       reads,
       "setting-parallelReads-help",
-      "More at once is faster for an album, but opens that many hidden tabs on Apple Music together. One by one is the gentlest; three is the default.",
+      "More at once is faster for an album, but opens that many hidden tabs on Apple Music together. One by one is the gentlest; three is the default. Spotify is always read one page at a time, whatever you choose.",
     ),
   );
 }
