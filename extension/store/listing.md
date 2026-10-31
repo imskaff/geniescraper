@@ -40,10 +40,9 @@ You stay in control:
 Optional extras, off until you turn them on (Chrome asks first):
 
 - Reading credits from Spotify pages (Chrome asks the first time you pick a Spotify page).
-- A cover-art fallback from Deezer.
 - YouTube links, found by searching YouTube, or through Google's official YouTube service if you add your own free key. The panel walks you through getting one.
 
-Private by design: no accounts, no analytics, no tracking. Song titles and artists are sent only to the services above when you use them.
+Private by design: no accounts, no analytics, no tracking. Song titles and artists are sent only to the services above when you use them; Deezer is asked for a cover, with only the title and artist, when Apple's catalog has none.
 
 Géniescraper is not affiliated with Apple or Genius.
 
@@ -61,7 +60,7 @@ Copy song credits from Apple Music or Spotify into the Genius song edit form.
 | Host `https://music.apple.com/*`             | Reads the credits of the Apple Music album or song the user gave.                                                                                                                                                 |
 | Host `https://genius.com/*`                  | Fills the fields of the Genius song edit form when the user presses the Next key, and, when the user presses Open on Genius, searches Genius for the song and opens its page and Edit Metadata form. Never saves. |
 | Host `https://itunes.apple.com/*`            | Finds the exact cover art for the song from Apple's public catalog.                                                                                                                                               |
-| Optional host `https://api.deezer.com/*`     | Cover-art fallback; requested only when the user turns it on.                                                                                                                                                     |
+| Host `https://api.deezer.com/*` | Cover-art fallback when Apple's catalog has none (always so for Spotify); only the song title and artist are sent, and only when Apple's search found nothing. |
 | Optional host `https://open.spotify.com/*`   | Reads the credits of the Spotify track or album page the user picks, in a minimized window; requested only when the user first picks a Spotify page. |
 | Optional host `https://www.youtube.com/*`    | Finds a YouTube link for the song; requested only when the user turns it on.                                                                                                                                      |
 | Optional host `https://www.googleapis.com/*` | Finds the YouTube link through Google's official service with the user's own key; requested only when the user adds a key.                                                                                        |

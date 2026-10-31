@@ -1,14 +1,17 @@
 # Géniescraper extension
 
 A Chrome (Manifest V3) extension that copies song credits from Apple Music or Spotify into the Genius song edit form.
-It reads an Apple Music album or song page, lists the credits in a side panel, and fills the Genius form one field at a time when you press a hotkey.
+It reads an Apple Music or Spotify album or song page, lists the credits in a side panel, and fills the Genius form one field at a time when you press a hotkey.
 It never presses Save on Genius: you check the form and save it yourself.
 
 ![The side panel listening for Apple Music pages, finding one, reading the album and pasting the credits automatically](../img/extension-demo.gif)
 
 What it does:
 
-- **Detects open pages.** The link screen listens for Apple Music albums and songs already open in your browser and offers each in one press, the page you are on first.
+- **Detects open pages.** The link screen listens for Apple Music and Spotify albums and songs already open in your browser and offers each in one press, labelled with its source and named from the page itself, the page you are on first.
+- **Reads Spotify too.** A Spotify track or album is read from its credits box in a hidden window.
+  Chrome asks for access to `open.spotify.com` the first time you press Get credits on a Spotify page, after the panel has explained why; the desktop app does not read Spotify.
+  A Spotify read has no ISRC and no track release date (the panel says so), and roles are matched in English, German, Spanish, French, Portuguese, Italian, Dutch, Polish, Swedish, Turkish, Japanese, Korean and Russian; others are listed as left out.
 - **Reads the credits** of a whole album at once and marks what is missing.
 - **Open on Genius** finds the song on Genius (an exact title and artist match only), opens it in a new tab and presses its Edit Metadata button, then leaves the pasting to you.
   With no match, several matches, or a Genius you are not signed in to, it opens nothing and says why.
@@ -103,7 +106,9 @@ Each takes `--chrome <path to chrome.exe>` or the `CHROME_PATH` environment vari
 | `scripting`                                         | Reading an Apple Music page and filling the Genius form.                                                      |
 | `genius.com`, `music.apple.com`, `itunes.apple.com` | The pages it reads and fills, Genius's own song search for Open on Genius, and Apple's catalog for cover art. |
 
-Four more hosts are optional and asked for in the panel only when you switch the feature on or first pick a page from that source: `open.spotify.com` (reading a Spotify track or album page; the panel explains it first, and the extension never signs in or sends anything), `api.deezer.com` (cover art), `www.youtube.com` (finding a video link) and `www.googleapis.com` (finding it with your own YouTube key).
+One more host is optional and asked for only when you first press Get credits on a Spotify page, after the panel explains it: `open.spotify.com` (reading a Spotify track or album page; the extension never signs in or sends anything).
+Two more are optional and asked for in the panel only when you switch the feature on: `www.youtube.com` (finding a video link) and `www.googleapis.com` (finding it with your own YouTube key).
+`api.deezer.com` is a required host: it is the permanent cover fallback when Apple's catalog has no cover, and it is sent only the song title and artist.
 Nothing is sent to any server of ours, because there is none.
 See [PRIVACY.md](PRIVACY.md).
 

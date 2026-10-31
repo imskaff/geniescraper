@@ -71,7 +71,7 @@ It never saves, and it never reuses a Genius tab that shows something else, beca
 ## Why does Chrome ask to read open.spotify.com?
 
 Spotify is a second source, and its host is optional.
-The first time you pick a Spotify page the panel explains what will happen, and only your click on Allow makes Chrome show its own prompt.
+Chrome only shows its prompt after a click, so it appears the first time you press Get credits on a Spotify page: the panel explains what will happen, and only your click on Allow access to Spotify makes Chrome show its own prompt.
 Géniescraper then opens that page in a hidden window, presses Spotify's own "View credits" button and reads the names and roles in the box that opens.
 It only does this for pages you pick, one at a time, and nothing it reads is sent anywhere.
 You can refuse, and Apple Music keeps working; you can also remove the access later in `chrome://extensions`.
@@ -85,8 +85,14 @@ Until you have allowed it, your open Spotify tabs do not show up in the panel's 
 - Spotify is read three pages at a time, a fraction of a second apart; one failed or blocked read drops that to one at a time.
 - Roles that Genius has no name for are listed under "About this read" too, instead of being guessed.
 - A long album shows only its first tracks on Spotify's page, so the track list marks the rest as "No Spotify page". Open one of those tracks on its own page and read it from there.
-- Cover art comes from Apple's catalog or Deezer by title and artist, as for Apple Music.
+- Cover art comes from Apple's catalog by title and artist, then from Deezer when Apple has none (see the next question).
 - If Spotify asks for a captcha, reading from Spotify stops for 15 minutes. Open open.spotify.com, check it works, and try again.
+
+## Why does the extension contact api.deezer.com?
+
+Deezer is the permanent cover fallback: when Apple's catalog has no cover for a song, which is always the case for a Spotify link, the extension asks Deezer for one.
+It sends only the song title and artist, and only when Apple's search found nothing.
+It is a required permission of the extension, no longer an option in Settings, so Chrome shows it in the install prompt.
 
 ## What leaves my browser?
 

@@ -4,10 +4,10 @@
 
 <h1>Géniescraper</h1>
 
-<p><b>Apple Music metadata straight into Genius</b></p>
+<p><b>Apple Music and Spotify metadata straight into Genius</b></p>
 
 <p>
-Géniescraper reads the credits of an Apple Music page and fills them into the Genius song metadata form for you:<br>
+Géniescraper reads the credits of an Apple Music or Spotify page and fills them into the Genius song metadata form for you:<br>
 songwriters, producers, every additional role, the ℗ and © lines, the exact cover art and the official YouTube video.<br>
 It never presses Save: you check the form and save it yourself.
 </p>
@@ -35,9 +35,10 @@ It never presses Save: you check the form and save it yourself.
 
 ### Reading the credits
 
-- 🔍 **Finds what you have open** – The extension listens for Apple Music albums and songs already open in your browser and offers each one in a single press. The desktop app lists them too once the two are paired.
+- 🔍 **Finds what you have open** – The extension listens for Apple Music and Spotify albums and songs already open in your browser and offers each one in a single press, labelled with where it is from. The desktop app lists the Apple Music ones too once the two are paired.
+- 🟢 **Apple Music and Spotify** – Spotify tracks and albums are read from their credits box by the extension. The desktop app does not read Spotify.
 - 🎼 **Complete credits** – Songwriters, producers, every additional role, the ℗ / © lines and the release date of an album or a song, with roles named the way Genius names them.
-- 🖼️ **Exact cover art** – The 1000×1000 PNG of the exact release you opened, found by its Apple Music catalog ID.
+- 🖼️ **Exact cover art** – The 1000×1000 PNG of the exact release you opened, found by its Apple Music catalog ID. For Spotify, which has no such ID, it is found by title and artist in Apple's catalog, and then on Deezer.
 - ▶️ **The right YouTube link** – No more manual search for the correct YouTube link.
 - ⚡ ***Extremely fast*** – The credits of a track take a few seconds and the next tracks of an album are read in the background while you paste.
 
@@ -54,9 +55,9 @@ It never presses Save: you check the form and save it yourself.
 |                           | Browser extension                                   | Desktop app                                                  |
 |---------------------------|-----------------------------------------------------|--------------------------------------------------------------|
 | **Runs on**               | Chromium (Chrome, Brave, Opera, Arc, etc.) and Edge, Windows and macOS| Windows                                    |
-| **Reads the credits**     | Yes, from the pages you have open                   | Yes, with its own browser (Playwright)                       |
+| **Reads the credits**     | Yes, Apple Music and Spotify, from the pages you have open | Yes, Apple Music only, with its own browser (Playwright) |
 | **Fills the Genius form** | Yes: Auto-paste or step by step, exact matches only | Through the extension once paired; otherwise manual hotkeys  |
-| **Finds open pages**      | Yes                                                 | Yes, once paired                                             |
+| **Finds open pages**      | Yes, Apple Music and Spotify                        | Yes, Apple Music pages, once paired                          |
 | **Install**               | Download, unzip, load                               | Clone, `uv sync`                                             |
 
 Use the extension alone, or pair it with the desktop app: the app reads and reviews the credits, and the extension fills Genius.
@@ -65,7 +66,9 @@ Use the extension alone, or pair it with the desktop app: the app reads and revi
 
 - No accounts, no analytics, no servers of ours. Everything stays in your browser and on your computer.
 - The link between the extension and the desktop app stays on your computer (`127.0.0.1`), needs a one-time pairing code and never shares your Genius sign-in: you stay signed in to Genius in your own browser.
-- Lookups on other sites (YouTube, Deezer) are optional and ask your permission first. An optional YouTube key stays in your browser and is sent only to Google.
+- YouTube lookups are optional and ask your permission first. An optional YouTube key stays in your browser and is sent only to Google.
+- Reading Spotify is optional too: Chrome asks for access to `open.spotify.com` the first time you press **Get credits** on a Spotify page, after the panel has explained why. Nothing read from Spotify is sent anywhere.
+- When Apple's catalog has no cover for a song (always the case for a Spotify link), the extension asks Deezer, sending only the song title and artist. That permission is part of the install and cannot be switched off.
 - Details: [extension/PRIVACY.md](extension/PRIVACY.md).
 
 ## Installation
@@ -97,6 +100,7 @@ The steps are the same on **Windows** and **macOS**, apart from how you unzip th
 - **Checking a download.** Compare its SHA-256 with `SHA256SUMS.txt` from the same release.
   - **Windows** (PowerShell): `Get-FileHash .\geniescraper-extension-<version>.zip -Algorithm SHA256`
   - **macOS** (Terminal): `shasum -a 256 geniescraper-extension-<version>.zip`
+- **Permissions.** Chrome shows the install-time access (Genius, Apple Music, iTunes and Deezer, which is the cover fallback) when you load the extension. Access to `open.spotify.com` is asked for later, the first time you press **Get credits** on a Spotify page.
 - **Questions and fixes:** [extension/FAQ.md](extension/FAQ.md).
 
 ### Desktop app (Windows)
@@ -143,7 +147,7 @@ Pair them once; the pairing is remembered. This is optional but recommended: it 
 
 ### With the browser extension
 
-1. **Open an album or a song on Apple Music** and click the Géniescraper icon. The panel offers the page you are on, and any other Apple Music pages you have open appear under **Listening for Apple Music pages…**. Pick one, or paste a link and press **Get credits**.
+1. **Open an album or a song on Apple Music or Spotify** and click the Géniescraper icon. The panel offers the page you are on, and any other Apple Music or Spotify pages you have open appear under **Listening for Apple Music or Spotify pages…**. Pick one, or paste a link and press **Get credits**.
 2. **Choose the tracks** of an album with **Select all** or by ticking them (none are ticked for you). Their credits are read in the background.
 3. **Review** each track: the credits, the ℗ / © lines, the cover and the YouTube link that will be pasted. A track that says **Needs a look** is missing something; open it to see what.
 4. **Open the song's Edit Metadata form on Genius** (signed in, in the same browser) and press **Start pasting**.
@@ -160,6 +164,14 @@ Pair them once; the pairing is remembered. This is optional but recommended: it 
 6. **Check the form and save it on Genius yourself.** Nothing is saved for you.
 
 When Genius has no exact match for a name or a role, the text stays typed and nothing is chosen for you: pick a suggestion yourself or press **Skip**. A few Apple roles have no Genius equivalent; those steps are left for you.
+
+**Reading from Spotify**
+
+- **The permission.** Chrome only shows its prompt after a click, so it appears when you press **Get credits** on a Spotify page for the first time: the panel first explains what will happen, and its **Allow access to Spotify** button asks Chrome for access to `open.spotify.com`. If you refuse, Apple Music keeps working. Until you allow it, your open Spotify tabs are not listed.
+- **How it reads.** The extension opens the Spotify page in a hidden window, presses Spotify's own **View credits** button and reads the names and roles in the box that opens, a few pages at a time, and closes the window. It never signs in and sends nothing anywhere.
+- **What a Spotify read cannot give.** Spotify's credits box shows no ISRC and no release date for a track (only the year), so the release date is filled in only when you read an album and its page prints the date in English. The panel says so under **About this read**.
+- **Languages.** Spotify writes role names in the language of its page. The extension knows them in English, German, Spanish, French, Portuguese, Italian, Dutch, Polish, Swedish, Turkish, Japanese, Korean and Russian. In another language some roles may be missing: they are left out and listed under **About this read**, which also names the language Spotify showed.
+- **Long albums.** A hidden Spotify page lists only about the first 25 tracks, so the rest are marked **No Spotify page**. Open such a track on its own page and read it from there.
 
 > [!TIP]
 > **On a Mac,** the `F7` and `F8` keys are usually media keys. Hold `Fn` while you press them, or turn on **Use F1, F2, etc. keys as standard function keys** in **System Settings → Keyboard → Keyboard Shortcuts… → Function Keys**. The **Next**, **Previous** and **Skip** buttons in the panel work without the keys.
@@ -227,9 +239,9 @@ Both apps have a **Settings** screen. In the desktop app it opens over any scree
 | **Reading credits**    | How many tracks are read at the same time (3 by default).                                                                              |
 | **YouTube links**      | Find a YouTube link for each track (recommended), and an optional free YouTube key for more reliable links; the panel walks you through getting one. |
 | **Desktop app**        | Pair with the desktop app: pairing code, **Paste**, **Pair**, **Unpair**.                                                              |
-| **Cover art look-up**  | Search Deezer for a cover when Apple has none.                                                                                         |
 
-The YouTube and Deezer lookups are off until you tick them; the browser then asks for permission to contact `www.youtube.com` or `api.deezer.com`, and you can take it back in Settings or in `chrome://extensions`.
+The YouTube lookup is off until you tick it; the browser then asks for permission to contact `www.youtube.com`, and you can take it back in Settings or in `chrome://extensions`.
+Deezer is always the cover fallback and has no setting.
 
 ### Desktop app
 

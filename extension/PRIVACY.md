@@ -30,7 +30,7 @@ The extension sends song titles and artist names (public text from the page you 
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
 | `itunes.apple.com`   | Always, to find the exact cover art                                                                                                                    | The Apple Music catalog id of the album or song, or the song title and artist                          |
 | `genius.com`         | Only when you press "Open on Genius", or have "Open each song on Genius before pasting it" ticked and start pasting a song                             | Search terms made of the song title and artist, to find the song's Genius page. No cookies, no sign-in |
-| `api.deezer.com`     | Only if you tick "Search Deezer for a cover" and allow Chrome's permission prompt                                                                      | Song title and artist                                                                                  |
+| `api.deezer.com` | Only when Apple's catalog has no cover for the song (always so for a Spotify link). A required permission, not a setting | Song title and artist |
 | `www.youtube.com`    | Only if you tick "Find a YouTube link" and allow Chrome's permission prompt. Then it happens for every track whose credits are read, one after another | Search terms made of the song title and artist, and the id of candidate videos                         |
 | `www.googleapis.com` | Only if you add your own YouTube key and allow Chrome's permission prompt. Then it happens for every track whose credits are read                      | Search terms (song title and artist), the id of candidate videos, and your key, in a request header    |
 
@@ -49,6 +49,7 @@ Apple Music pages are opened in a minimized window of your own browser (a backgr
 Because that is a real visit, Apple Music sees it as it would see any visit from your browser, including any cookies you already have for it; the extension reads only the page's public credits text.
 The side panel also lists the Apple Music album and song pages you already have open (their addresses and titles, read from your own tabs with the access to `music.apple.com` the extension already has), so you can pick one.
 Once you have allowed Spotify, it lists your open Spotify track and album pages the same way, labelled with their source.
+Spotify rewrites a tab's title to the song that is playing, so for those tabs the extension reads the page's own heading (title and artists) with a small script run in the tab; the text stays in the panel and is not stored or sent.
 That list stays in the panel; it is not stored and not sent anywhere, except to your own desktop app on your own computer if you have paired it (see below).
 If you add the optional YouTube link by pasting one yourself, nothing is sent anywhere: the link is only copied into the Genius form.
 The extension does not send anything to the developer or to any other party.
