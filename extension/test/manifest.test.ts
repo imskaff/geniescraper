@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { LOOKUP_HOSTS } from "../src/lookups/http";
+import { PROVIDERS } from "../src/providers/registry";
 import { BRIDGE_HOST } from "../src/shared/bridge";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -242,8 +243,11 @@ describe("the companion link to the desktop app", () => {
     const manifest = JSON.parse(read("manifest.json")) as { permissions: string[]; host_permissions: string[] };
     expect(manifest.permissions).not.toContain("tabs");
     expect(manifest.host_permissions).toContain("https://music.apple.com/*");
-    // The worker queries only Apple Music tabs, by address filter.
-    expect(read("src/background/worker.ts")).toContain('chrome.tabs.query({ url: "https://music.apple.com/*" })');
+    // The worker queries only the providers' own origins, by address filter; Apple Music's is the one provider.
+    expect(read("src/background/worker.ts")).toContain(
+      "chrome.tabs.query({ url: PROVIDERS.flatMap((provider) => [...provider.origins]) })",
+    );
+    expect(PROVIDERS.flatMap((provider) => [...provider.origins])).toEqual(["https://music.apple.com/*"]);
   });
 
   it("keeps the secret out of the synced area and out of logs", () => {

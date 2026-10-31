@@ -14,8 +14,8 @@ export interface BrowserPorts {
   /** Current state of a tab, or null when it no longer exists. */
   getTab(tabId: number): Promise<TabState | null>;
   removeTab(tabId: number): Promise<void>;
-  /** Inject the Apple Music content script (idempotent in the page). */
-  injectContentScript(tabId: number): Promise<void>;
+  /** Inject a provider's content script, Apple Music's by default (idempotent in the page). */
+  injectContentScript(tabId: number, file?: string): Promise<void>;
   sendMessage(tabId: number, message: ContentRequest): Promise<unknown>;
   /** Tabs showing genius.com, so a paste session can tell them it started or ended. */
   geniusTabIds(): Promise<number[]>;
@@ -68,8 +68,8 @@ export function chromePorts(): BrowserPorts {
     async removeTab(tabId) {
       await chrome.tabs.remove(tabId);
     },
-    async injectContentScript(tabId) {
-      await chrome.scripting.executeScript({ target: { tabId }, files: [CONTENT_SCRIPT_FILE] });
+    async injectContentScript(tabId, file = CONTENT_SCRIPT_FILE) {
+      await chrome.scripting.executeScript({ target: { tabId }, files: [file] });
     },
     sendMessage(tabId, message) {
       return chrome.tabs.sendMessage(tabId, message);

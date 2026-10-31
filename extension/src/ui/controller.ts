@@ -1,8 +1,8 @@
 // The panel's behaviour: one object holds the state, the actions change it, and the view only renders it.
 // Everything that touches the outside (the worker, storage, the browser's tabs) is injected, so the whole flow
 // runs in tests with fakes.
-import { parseAppleMusicUrl } from "../apple/url";
-import { appleTabEntries, type AppleTabEntry } from "../core/appleTabs";
+import { musicTabEntries, type MusicTabEntry } from "../core/musicTabs";
+import { recogniseUrl } from "../providers/registry";
 import { geniusRole } from "../core/geniusRoles";
 import { typedQueue, type QueueItem } from "../core/models";
 import type { PasteCommand } from "../shared/messages";
@@ -51,7 +51,7 @@ export class PanelController {
     settings: Settings,
     session: Session,
     pageUrl: string,
-    appleTabs: AppleTabEntry[] = [],
+    appleTabs: MusicTabEntry[] = [],
     paste: PasteState = { ...IDLE_PASTE },
     hosts: Record<OptionalHost, boolean> = { ...NO_HOSTS },
     keySaved = false,
@@ -117,13 +117,13 @@ export class PanelController {
       loadYoutubeKey(env.secrets),
       env.appleTabs().catch(() => []),
     ]);
-    const pageUrl = tab && parseAppleMusicUrl(tab.url) ? tab.url : "";
+    const pageUrl = tab && recogniseUrl(tab.url) ? tab.url : "";
     const controller = new PanelController(
       env,
       settings,
       session,
       pageUrl,
-      appleTabEntries(open),
+      musicTabEntries(open),
       paste,
       hosts,
       key !== "",
@@ -248,8 +248,8 @@ export class PanelController {
       this.env.activeTab().catch(() => null),
       this.env.appleTabs().catch(() => []),
     ]);
-    const pageUrl = tab && parseAppleMusicUrl(tab.url) ? tab.url : "";
-    const appleTabs = appleTabEntries(open);
+    const pageUrl = tab && recogniseUrl(tab.url) ? tab.url : "";
+    const appleTabs = musicTabEntries(open);
     const same = JSON.stringify(appleTabs) === JSON.stringify(this.current.appleTabs);
     if (pageUrl !== this.current.pageUrl || !same) this.update({ pageUrl, appleTabs });
   }
@@ -259,7 +259,7 @@ export class PanelController {
   /** Read the album or song behind `rawUrl` and move to the track list. */
   async detect(rawUrl: string): Promise<void> {
     const url = rawUrl.trim();
-    if (!parseAppleMusicUrl(url)) {
+    if (!recogniseUrl(url)) {
       this.update({ error: MESSAGES.invalidLink, status: "" });
       return;
     }

@@ -2,7 +2,7 @@
 // Album detection runs one at a time. Track reads run as many at once as the panel asks for, never more than
 // MAX_OPEN_TABS, so a long album cannot open a tab per track. Paste changes are serialised by the paste service.
 import { isPasteCommand, isWorkerRequest, type AlbumInfo, type Result } from "../shared/messages";
-import { detectAlbum, scrapeTrack, type ClientTiming } from "./appleClient";
+import { detectAlbum, scrapeTrack, type ClientTiming } from "./providerClient";
 import type { CoverService } from "./covers";
 import { NO_YOUTUBE, type YoutubeService } from "./youtube";
 import type { KeyCheck } from "../shared/messages";

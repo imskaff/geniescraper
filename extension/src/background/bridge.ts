@@ -2,7 +2,7 @@
 // It connects to 127.0.0.1 only, proves it knows the pairing secret without sending it, and then drives the
 // existing paste session with the commands it receives. It never presses Save, and it forwards nothing to the
 // router: the desktop app can reach the paste commands and nothing else.
-import type { OpenTab } from "../core/appleTabs";
+import type { OpenTab } from "../core/musicTabs";
 import { PASTE_KEY, normalisePaste, type PasteState } from "../core/paste";
 import {
   BRIDGE_HOST,

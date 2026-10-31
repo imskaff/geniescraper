@@ -12,7 +12,7 @@ import type {
 import type { KeyValueStore, Stores } from "../../src/shared/storage";
 import type { WorkerApi } from "../../src/ui/api";
 import type { OptionalHost } from "../../src/lookups/http";
-import type { OpenTab } from "../../src/core/appleTabs";
+import type { OpenTab } from "../../src/core/musicTabs";
 import type { ActiveTab, Env, HostPermissions } from "../../src/ui/controller";
 
 export function memoryStore(initial: Record<string, unknown> = {}): KeyValueStore & { data: Map<string, unknown> } {

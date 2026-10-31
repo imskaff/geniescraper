@@ -3,6 +3,7 @@ import { createWorkerApi, chromeSend } from "./api";
 import { PanelController, type Env, type HostPermissions } from "./controller";
 import { OPTIONAL_LOOKUP_HOSTS, hostOrigin, type OptionalHost } from "../lookups/http";
 import { PanelView } from "./view";
+import { PROVIDERS } from "../providers/registry";
 import { PASTE_KEY, normalisePaste } from "../core/paste";
 import { chromeStores } from "../shared/storage";
 import { POPUP_CLASS, isPopupSurface, reportsClosing } from "./surface";
@@ -38,9 +39,9 @@ const env: Env = {
     return tab?.id !== undefined && tab.url ? { tabId: tab.id, url: tab.url } : null;
   },
   async appleTabs() {
-    // The extension already has access to Apple Music, so Chrome lists these tabs with their addresses and titles.
+    // The extension already has access to the providers' sites, so Chrome lists these tabs with their addresses and titles.
     const [tabs, [inView]] = await Promise.all([
-      chrome.tabs.query({ url: "https://music.apple.com/*" }),
+      chrome.tabs.query({ url: PROVIDERS.flatMap((provider) => [...provider.origins]) }),
       chrome.tabs.query({ active: true, currentWindow: true }),
     ]);
     return tabs.flatMap((tab) =>
