@@ -146,9 +146,17 @@ describe("opening a song on Genius", () => {
     expect((await nav.open("Fortnight", "Taylor Swift")).status).toBe("failed");
   });
 
-  it("does nothing while a paste is running", async () => {
-    const { browser, nav, session, searches } = setup([FORTNIGHT]);
+  it("opens the song during a step-by-step or paused paste", async () => {
+    const { nav, session } = setup([FORTNIGHT]);
     await session.set(PASTE_KEY, startPaste("Song", [["written_by", "A"]]));
+    expect((await nav.open("Fortnight", "Taylor Swift")).status).toBe("opened");
+    await session.set(PASTE_KEY, { ...startPaste("Song", [["written_by", "A"]]), auto: "paused" });
+    expect((await nav.open("Fortnight", "Taylor Swift")).status).toBe("opened");
+  });
+
+  it("does nothing while an automatic paste is running", async () => {
+    const { browser, nav, session, searches } = setup([FORTNIGHT]);
+    await session.set(PASTE_KEY, { ...startPaste("Song", [["written_by", "A"]]), auto: "running" });
     expect(await nav.open("Fortnight", "Taylor Swift")).toEqual({ status: "busy" });
     expect(searches).toEqual([]);
     expect(browser.log).toEqual([]);

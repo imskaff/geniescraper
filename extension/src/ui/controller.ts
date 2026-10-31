@@ -210,8 +210,10 @@ export class PanelController {
 
   /** Find this track's song on Genius and open its Edit Metadata form. Pasting is left to the user. */
   async openOnGenius(index: number): Promise<void> {
-    if (this.current.paste.active && !isFinished(this.current.paste)) return;
     this.cancelCountdown();
+    // A page that loads under a running automatic paste pauses it anyway: pause it cleanly first, and the user
+    // turns it back on with the Auto-paste switch once the form is open.
+    if (this.current.paste.auto === "running") await this.pasteCommand({ type: "paste-auto-pause" });
     await this.genius.open(index);
   }
 

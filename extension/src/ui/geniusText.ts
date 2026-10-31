@@ -42,6 +42,6 @@ export function geniusMessage(genius: GeniusOpenState): GeniusMessage | null {
         text: `Could not find ${name} on Genius: Genius did not answer or its page did not load. Try again.`,
       };
     case "busy":
-      return { tone: "problem", text: "A paste is running. Finish or stop it before opening another song." };
+      return { tone: "problem", text: "Automatic pasting is running. Pause it, then open the song." };
   }
 }

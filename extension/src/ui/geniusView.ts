@@ -13,6 +13,7 @@ export function geniusButton(
   index: number,
   title: string,
   busy: boolean,
+  extraClass = "",
 ): HTMLElement {
   const button = v.button(
     "Open on Genius",
@@ -21,6 +22,7 @@ export function geniusButton(
     () => void v.panel.openOnGenius(index),
     busy || state.genius.phase === "working",
   );
+  if (extraClass) button.classList.add(extraClass);
   button.setAttribute("aria-label", title ? `Open ${title} on Genius` : "Open on Genius");
   return button;
 }

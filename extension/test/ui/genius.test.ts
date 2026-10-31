@@ -110,7 +110,7 @@ describe("what it says when it cannot go on", () => {
     ["sign-in", { status: "sign-in", song: SONG }, "has no Edit Metadata button"],
     ["no-form", { status: "no-form", song: SONG }, "its edit form did not"],
     ["failed", { status: "failed" }, "Genius did not answer"],
-    ["busy", { status: "busy" }, "A paste is running"],
+    ["busy", { status: "busy" }, "Automatic pasting is running"],
   ];
 
   it.each(CASES)("%s: tells the user, assertively, and nothing starts", async (_name, answer, words) => {
@@ -227,7 +227,7 @@ describe("the setting: open each song on Genius before pasting it", () => {
 
     button(root, "Paste next track").click();
     await flush();
-    expect($(root, "h2").textContent).toBe("Paste into Genius");
+    expect($(root, "h2").textContent).toMatch(/^Demo Artist - [A-Za-z]+$/);
     expect(env.api.pasteState.title).toBe("Three");
   });
 
@@ -242,5 +242,95 @@ describe("the setting: open each song on Genius before pasting it", () => {
     await flush();
     expect(panel.state.settings.openOnGenius).toBe(true);
     expect(env.settingsStore.data.get("settings")).toMatchObject({ openOnGenius: true });
+  });
+});
+
+describe("Open on Genius beside the paste screen's heading", () => {
+  async function pasting(options: Options = {}) {
+    const ui = await toReview(options);
+    await ui.panel.startPaste(0, "manual");
+    await flush();
+    return ui;
+  }
+
+  it("titles the screen 'Artist - Song name' with a plain dash, and says so once", async () => {
+    const { root } = await pasting();
+    const heading = $(root, "h2");
+    expect(heading.textContent).toBe("Demo Artist - One");
+    expect(heading.textContent).not.toContain("—");
+    // The song name is not repeated under the heading any more.
+    expect(root.querySelectorAll(".help").length).toBeGreaterThan(0);
+    expect([...root.querySelectorAll("p")].some((p) => p.textContent === "One")).toBe(false);
+  });
+
+  it("puts a labelled control next to the heading that does what the review button does", async () => {
+    const { root, env, panel } = await pasting({ api: { openOnGenius: () => ok({ status: "opened", song: SONG }) } });
+    const head = $(root, ".screen-head");
+    const open = head.querySelector<HTMLButtonElement>("button");
+    expect(open?.textContent).toBe("Open on Genius");
+    expect(open?.getAttribute("aria-label")).toBe("Open One on Genius");
+    expect(head.firstElementChild?.tagName).toBe("H2");
+    open?.click();
+    await flush();
+    expect(geniusCalls(env.api.calls)).toEqual(["genius-open:Demo Artist|One"]);
+    expect(panel.state.genius.phase).toBe("opened");
+    expect($(root, "#status").textContent).toContain("The edit form for “One” is open");
+    // The paste carries on from where it was: nothing was restarted.
+    expect(pasteCalls(env.api.calls).filter((c) => c === "paste:paste-start")).toHaveLength(1);
+  });
+
+  it.each<[string, GeniusOpenAnswer, string]>([
+    ["none", { status: "none" }, "matches “One” exactly"],
+    ["several", { status: "several", songs: [SONG, SONG] }, "Several Genius pages"],
+    ["sign-in", { status: "sign-in", song: SONG }, "no Edit Metadata button"],
+  ])("shows the %s state once, under the heading", async (_name, answer, words) => {
+    const { root } = await pasting({ api: { openOnGenius: () => ok(answer) } });
+    $(root, ".screen-head button").click();
+    await flush();
+    expect($(root, '[data-key="genius-notice"]').textContent).toContain(words);
+    expect($(root, "#alert").textContent).toContain(words);
+    // The red paste error box does not repeat the notice.
+    expect(root.querySelector(".paste-error")).toBeNull();
+  });
+
+  it("is disabled while searching", async () => {
+    const answer = deferred<Result<GeniusOpenAnswer>>();
+    const { root } = await pasting({ api: { openOnGenius: () => answer.promise } });
+    $(root, ".screen-head button").click();
+    await flush();
+    expect(($(root, ".screen-head button") as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("pauses a running automatic paste first, so the new page does not pause it by surprise", async () => {
+    const ui = await toReview();
+    await ui.panel.startPaste(0, "auto");
+    await flush();
+    expect(ui.panel.state.paste.auto).toBe("running");
+    $(ui.root, ".screen-head button").click();
+    await flush();
+    const order = ui.env.api.calls.filter((c) => c === "paste:paste-auto-pause" || c.startsWith("genius-open:"));
+    expect(order).toEqual(["paste:paste-auto-pause", "genius-open:Demo Artist|One"]);
+    expect(ui.panel.state.paste.auto).toBe("paused");
+  });
+
+  it("is not shown, and the heading is just the song, when it is not known which track is being pasted", async () => {
+    document.body.replaceChildren();
+    const root = document.createElement("div");
+    document.body.append(root);
+    const env = fakeEnv();
+    env.sessionStore.data.set("paste", {
+      active: true,
+      title: "Song",
+      queue: [["written_by", "Writer One"]],
+      position: 0,
+      awaiting: false,
+      busy: false,
+      busySince: 0,
+      message: "",
+      tone: "info",
+    });
+    new PanelView(root, await PanelController.create(env));
+    expect($(root, "h2").textContent).toBe("Song");
+    expect(root.querySelector(".screen-head button")).toBeNull();
   });
 });

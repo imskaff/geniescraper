@@ -83,7 +83,7 @@ Every case stops and tells the user; none continues on its own and none guesses.
 
 Order matters, because a Genius page that loads while an automatic run is running pauses it ("page-changed"):
 
-1. Never navigate while a paste session is active; Open on Genius is not offered then.
+1. Never open a page under a running automatic paste: a page that loads then pauses the run from the page. The panel pauses the run first (the user turns Auto-paste back on once the form is open), and the worker refuses while one is still running. A step-by-step, paused or finished paste may open a page.
 2. Search, open or find the tab, wait for the form.
 3. Only after the form is confirmed open does the panel start the paste (`paste-start`, then `paste-auto-start` in auto mode), exactly as Start pasting does today.
 

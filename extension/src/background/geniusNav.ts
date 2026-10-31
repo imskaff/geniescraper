@@ -73,8 +73,9 @@ export function createGeniusNavigator(
   return {
     async open(title, artist) {
       const paste = normalisePaste(await stores.session.get(PASTE_KEY).catch(() => undefined));
-      // A finished track is not a run in progress: the next song's page may be opened from the finished screen.
-      if (paste.active && paste.position < paste.queue.length) return { status: "busy" };
+      // A new Genius page loading under a running automatic paste would pause it from the page; the panel pauses the
+      // run first, and a run still going is left alone. A step-by-step paste or a finished one may open a page.
+      if (paste.active && paste.auto === "running") return { status: "busy" };
 
       const hits = await search(title, artist).catch(() => null);
       if (hits === null) return { status: "failed" };
