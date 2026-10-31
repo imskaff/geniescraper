@@ -34,7 +34,7 @@ describe("providerClient with a second provider", () => {
 
       expect(result.ok).toBe(true);
       expect(injected).toEqual(["fake/content.js"]);
-      expect(browser.log[0]).toBe(`create:${FAKE_SONG}:active=true`);
+      expect(browser.log.filter((entry) => entry !== "access")[0]).toBe(`create:${FAKE_SONG}:active=true`);
       expect(browser.openTabs.size).toBe(0);
     }),
   );

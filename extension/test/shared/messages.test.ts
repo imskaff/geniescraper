@@ -76,3 +76,35 @@ describe("build wiring", () => {
     expect(build).toContain('"apple/content": "src/apple/content.ts"');
   });
 });
+
+describe("Spotify requests and results", () => {
+  const URL_ = "https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT";
+
+  it("accepts a Spotify content request and rejects a malformed one", () => {
+    expect(isContentRequest({ type: "spotify/detect", url: URL_ })).toBe(true);
+    expect(isContentRequest({ type: "spotify/scrape", url: URL_, trackTitle: "" })).toBe(true);
+    expect(isContentRequest({ type: "spotify/scrape", url: URL_ })).toBe(false);
+    expect(isContentRequest({ type: "deezer/detect", url: URL_ })).toBe(false);
+  });
+
+  it("checks the optional notes and album note", () => {
+    const scrape = { title: "", artist: "", credits: [], coverArtUrl: "", releaseDate: "", warnings: [] };
+    expect(isPageScrape(scrape)).toBe(true);
+    expect(isPageScrape({ ...scrape, notes: ["a"] })).toBe(true);
+    expect(isPageScrape({ ...scrape, notes: [1] })).toBe(false);
+    const album = {
+      url: URL_,
+      albumTitle: "",
+      artist: "",
+      trackCount: 0,
+      trackTitles: [],
+      trackUrls: [],
+      phonographicCopyright: "",
+      copyrightNotice: "",
+      coverArtUrl: "",
+      releaseDate: "",
+    };
+    expect(isAlbumInfo({ ...album, note: "n" })).toBe(true);
+    expect(isAlbumInfo({ ...album, note: 5 })).toBe(false);
+  });
+});
