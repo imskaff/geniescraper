@@ -1550,21 +1550,6 @@ main > .help {
   padding: 0 0 0 var(--space-4);
 }
 
-/* The explanation before Chrome asks for a source's host: the same card shape as the detector, in the accent. */
-.access {
-  display: grid;
-  gap: var(--space-3);
-  margin: 0 0 var(--space-4);
-  padding: var(--space-3);
-  background: var(--surface);
-  border: 1px solid var(--accent);
-  border-radius: 10px;
-}
-
-.access h3 {
-  margin: 0;
-}
-
 .credit {
   max-width: 40rem;
   margin: 0 auto;

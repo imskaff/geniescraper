@@ -6,9 +6,7 @@
 //   node scripts/live-spotify-provider.mjs --chrome <chrome.exe> [--lang en-US] [--screenshots <folder>]
 //        [--album <id>] [--album-tracks 3] [--tracks <id>,<id>] [--unavailable] [--tab] [--plain]
 //
-// An optional host permission cannot be granted from a script (Chrome's prompt needs a real click), so this check
-// loads a scratch copy of dist/ whose manifest lists open.spotify.com as a required host. Everything else is the
-// shipped build; the permission prompt flow itself is covered by the panel tests, not here.
+// This check loads a scratch copy of dist/ (the shipped build, patched only where a flag below says so).
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -32,12 +30,8 @@ const wantUnavailable = args.includes("--unavailable");
 const wantTab = args.includes("--tab");
 // The open-pages card must name the page, not the song that is playing: the tab title is rewritten here to another song.
 const wantDetector = args.includes("--detector");
-// What Chrome tells the panel about an open Spotify tab while access is not granted (needs --ungranted).
 // With --detector: also move inside the player (a track link click, no page load) while a song plays, and watch the card.
 const wantSpa = args.includes("--spa");
-const wantNoAccessTab = args.includes("--noaccess-tab");
-// The shipped build as it is: Spotify not allowed yet. Nothing is loaded from Spotify; the explanation card shows.
-const ungranted = args.includes("--ungranted");
 // Timing runs: `--all` reads every listed track of the album and prints when each one finished; `--before` patches the
 // scratch build to the old schedule (one page at a time, 2.5 s apart) so the same album can be timed both ways.
 const readAll = args.includes("--all");
@@ -54,11 +48,9 @@ const check = (name, ok, detail = "") => {
   if (!ok) failures.push(name);
 };
 
-// A scratch copy of the build with the Spotify host required, so the prompt is not needed.
+// A scratch copy of the build, so the patches below never touch dist/.
 const scratch = mkdtempSync(join(tmpdir(), "geniescraper-spotify-dist-"));
 cpSync(join(root, "dist"), scratch, { recursive: true });
-const manifestPath = join(scratch, "manifest.json");
-const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
 if (before) {
   const workerPath = join(scratch, "background", "worker.js");
   const code = readFileSync(workerPath, "utf-8");
@@ -81,13 +73,6 @@ if (noGuard) {
   if (!code.includes('readerGuard: "spotify/guard.js"'))
     throw new Error("--no-guard: the guard was not found in the build.");
   writeFileSync(workerPath, code.replace('readerGuard: "spotify/guard.js"', "readerGuard: void 0"));
-}
-if (!ungranted) {
-  manifest.optional_host_permissions = manifest.optional_host_permissions.filter(
-    (h) => h !== "https://open.spotify.com/*",
-  );
-  manifest.host_permissions = [...manifest.host_permissions, "https://open.spotify.com/*"];
-  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 }
 
 let loads = 0;
@@ -143,46 +128,6 @@ try {
   };
   const clickKey = (key) => evalPanel(`document.querySelector('[data-key=${JSON.stringify(key)}]').click()`);
   const blocked = async () => /captcha|asking for a captcha|limiting requests/i.test(await pageText());
-
-  if (ungranted) {
-    console.log("\n== Spotify not allowed yet");
-    const before = await pageText();
-    check("the detector says Spotify pages need access first", /once you have allowed access/.test(before));
-    await shot("0-link-ungranted");
-    await evalPanel(
-      `(() => { const i = document.querySelector('#link'); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(i, 'https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT'); i.dispatchEvent(new Event('input', { bubbles: true })); document.querySelector('form').requestSubmit(); })()`,
-    );
-    await sleep(800);
-    const text = await pageText();
-    console.log(text.split("\n").slice(0, 16).join(" | "));
-    check("the explanation shows before Chrome is asked", /Allow Géniescraper to read Spotify pages\?/.test(text));
-    check(
-      "nothing was loaded from Spotify",
-      (await browser.targets()).every((t) => !/open\.spotify\.com/.test(t.url)),
-    );
-    await shot("0-access-card");
-    await evalPanel("document.querySelector('[data-key=access-decline]').click()");
-    await sleep(500);
-    check("Not now closes the explanation", !/Allow Géniescraper to read/.test(await pageText()));
-    await shot("0-after-decline");
-  }
-
-  if (wantNoAccessTab) {
-    console.log("\n== open Spotify tab, access not granted");
-    const spotifyTab = await browser.openTab(`https://open.spotify.com/album/${albumId || "4yP0hdKOZPNshxUOjY0cZj"}`);
-    loads += 1;
-    await sleep(6000);
-    const seen = await evalPanel(
-      "chrome.tabs.query({}).then((tabs) => tabs.filter((t) => (t.url || '').includes('spotify') || (t.title || '').includes('Spotify')).map((t) => ({ url: t.url ?? null, title: t.title ?? null })))",
-    );
-    console.log("tabs the panel can see: " + JSON.stringify(seen));
-    const byPattern = await evalPanel(
-      "chrome.tabs.query({ url: ['https://open.spotify.com/*'] }).then((tabs) => tabs.map((t) => ({ url: t.url ?? null, title: t.title ?? null })))",
-    );
-    console.log("by host pattern: " + JSON.stringify(byPattern));
-    await fetch(`http://127.0.0.1:9341/json/close/${spotifyTab.id}`).catch(() => undefined);
-    await sleep(800);
-  }
 
   // Phase 1: an album, a few of its tracks.
   if (albumUrl) {

@@ -64,9 +64,7 @@ export type ErrorCode =
   /** The site has the page but not this track (removed, or not available in the user's country). */
   | "unavailable"
   /** The site is asking for a captcha or limiting requests: reading stops until the user has looked. */
-  | "blocked"
-  /** The user has not allowed the extension to read the site yet. */
-  | "no-access";
+  | "blocked";
 
 export interface AppError {
   code: ErrorCode;

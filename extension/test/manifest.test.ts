@@ -41,11 +41,7 @@ const ALLOWED_HOSTS = new Set([
   "https://www.youtube.com/*",
   "https://www.googleapis.com/*",
 ]);
-const ALLOWED_OPTIONAL_HOSTS = new Set([
-  "https://open.spotify.com/*",
-  "https://www.youtube.com/*",
-  "https://www.googleapis.com/*",
-]);
+const ALLOWED_OPTIONAL_HOSTS = new Set(["https://www.youtube.com/*", "https://www.googleapis.com/*"]);
 
 describe("manifest", () => {
   it("is Manifest V3", () => {
@@ -76,6 +72,11 @@ describe("manifest", () => {
     for (const host of manifest.optional_host_permissions ?? []) {
       expect(ALLOWED_OPTIONAL_HOSTS, `optional host ${host}`).toContain(host);
     }
+  });
+
+  it("requires Spotify like Apple Music, so no Chrome prompt is ever needed to read it", () => {
+    expect(manifest.host_permissions).toContain("https://open.spotify.com/*");
+    expect(manifest.optional_host_permissions ?? []).not.toContain("https://open.spotify.com/*");
   });
 
   it("never matches every site", () => {

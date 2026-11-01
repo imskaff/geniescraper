@@ -35,7 +35,7 @@ Manifest of the throwaway test extension that produced the numbers above:
 - No `tabs` permission was needed: `chrome.tabs.create`, `get`, `update`, `sendMessage` and `chrome.windows.create`/`get`/`remove` all worked with only the host permission.
 - No `debugger`, `webRequest`, `activeTab`, `storage` or content script declaration.
 - English needs no extra permission: the reader opens `?locale=en` (see "Other ways to English roles"). The tab-scoped `declarativeNetRequest` rule below was the earlier recipe and is kept as the option on paper if Spotify ever removes the parameter.
-- If the project keeps host permissions optional, `open.spotify.com` has to be granted before the first read.
+- `open.spotify.com` is a required host permission of the shipped extension (it was optional up to 0.6.2), so no prompt is needed before the first read.
 
 ## Read procedure, step by step
 

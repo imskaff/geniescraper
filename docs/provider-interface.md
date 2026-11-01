@@ -52,9 +52,8 @@ The worker asks through `providerClient.ts`:
   The strings that name the site come from `provider.messages`.
 - **Message names:** `apple/detect`, `apple/scrape`, `spotify/detect` and `spotify/scrape` are the content requests; each content script answers only its own prefix.
   A further provider adds `<id>/detect` and `<id>/scrape` to `ContentRequest` and validates its own prefix in its handler.
-- **Access:** a provider whose host is optional is checked with `ports.hasAccess(origins)` before any tab is opened; without it the client answers `no-access` and opens nothing.
 - **Polite reading:** `provider.readGapMs` (Spotify: 150) and `provider.readConcurrency` (Spotify: 3) make the router read that provider in order, at most that many pages at once and no two starts closer than the gap, whatever the panel asks for. A `blocked`, `tab-failed`, `timeout` or `internal` answer drops it to one page at a time for the rest of the worker's life, and a `blocked` answer also stops reading it for 15 minutes. Reading the user's own tab opens nothing and skips the queue. The panel queues every picked track at once, so the rest of an album is read in the background in album order while the user reviews and pastes the first.
-- **Error codes:** besides the shared ones, `unavailable` (the site has no page for the track), `blocked` (captcha or rate limit) and `no-access` (host not allowed yet) carry wording made for the user.
+- **Error codes:** besides the shared ones, `unavailable` (the site has no page for the track), `blocked` (captcha or rate limit) carry wording made for the user.
   The panel never sees these messages, so the panel-to-worker contract (`detect`, `scrape` with a URL) needs no `source` field: the worker derives the source from the URL.
 
 ## 3. Role mapping
@@ -71,7 +70,7 @@ Every provider has `normaliseRole(raw)`, which maps a raw role label from that s
 
 `musicTabEntries(tabs, providers = PROVIDERS)` replaces `appleTabEntries`.
 For each open tab it finds the provider by URL, keeps album and song pages only, labels the entry with the provider's name (`source`), names the tab with `provider.tabName(title, url, kind)` (the title arrives with invisible marks and extra spaces removed; the name is capped at 120 characters), merges the same page open twice, and puts the page in view first.
-The panel queries each provider's origins on its own (one that fails cannot hide another), so only hosts the extension has permission for are listed; an optional host that was never allowed lists nothing, because Chrome hides a tab's address from an extension that may not read that site.
+The panel queries each provider's origins on its own (one that fails cannot hide another), so only hosts the extension has permission for are listed (every provider's host is a required permission).
 `toBridgePages` (desktop link) uses the same function but only with the Apple provider, and the worker queries only Apple's origins for it: the desktop app cannot read Spotify, so it is never told of Spotify pages.
 The desktop link payload (`url`, `title`, `kind`, `current`) is unchanged; `source` is extra in the panel's entries only.
 The panel's state field is still called `appleTabs`; renaming it is left to a follow-up so this change stays out of `ui/`.
@@ -81,11 +80,12 @@ The panel's state field is still called `appleTabs`; renaming it is left to a fo
 A provider declares:
 
 - `origins`: exact origins, such as `https://music.apple.com/*`.
-- `permission`: `"required"` (in `host_permissions`, Apple's case) or `"optional"` (in `optional_host_permissions`, requested at runtime on first use).
 - `contentScript`: the bundle path; `scripts/build.mjs` has one entry per provider (`apple/content`).
 
-The manifest stays hand-written and reviewed by the owner; a unit test checks that every provider's origins appear in the manifest under the declared kind and that every `contentScript` is a build entry.
-Adding Spotify means one provider module, one build entry, and one manifest line, after the owner approves the permission.
+The manifest stays hand-written and reviewed by the owner; a unit test checks that every provider's origins appear in the manifest's `host_permissions` and that every `contentScript` is a build entry.
+Adding a provider means one provider module, one build entry, and one `host_permissions` line, after the owner approves the permission.
+Every provider's host is required: a user never has to approve a site by hand, and the panel has no per-source permission prompt.
+A future provider with an optional host would need that prompt flow built again.
 
 ## 6. What stays Apple-only for now
 

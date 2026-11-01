@@ -1,5 +1,5 @@
 // The link screen, the open-pages detector and the track list.
-import { PROVIDERS, recogniseUrl } from "../providers/registry";
+import { recogniseUrl } from "../providers/registry";
 import { type AlbumInfo } from "../shared/messages";
 import { el } from "./dom";
 import { type PanelState } from "./controller";
@@ -78,45 +78,7 @@ export function linkScreen(v: ViewContext, state: PanelState): Node[] {
     }),
     go,
   );
-  return [
-    v.heading("Get credits from Apple Music or Spotify"),
-    ...(state.sourceAsk ? [accessCard(v, state.sourceAsk)] : []),
-    form,
-    ...openPages(v, state),
-  ];
-}
-
-/**
- * Why a source needs the user's yes, in plain words, before Chrome asks. The button is the click Chrome needs for its
- * own prompt, so the request is made straight from it.
- */
-function accessCard(v: ViewContext, ask: NonNullable<PanelState["sourceAsk"]>): HTMLElement {
-  const provider = PROVIDERS.find((candidate) => candidate.id === ask.providerId);
-  const label = provider?.label ?? "this site";
-  const host = provider ? new URL(provider.origins[0] ?? "https://example.invalid").hostname : "";
-  return el(
-    "section",
-    { class: "access", attrs: { "data-key": "source-access", "aria-labelledby": "access-title" } },
-    el("h3", { text: `Allow Géniescraper to read ${label} pages?`, attrs: { id: "access-title" } }),
-    el("p", {
-      class: "help",
-      text: `To get credits, Géniescraper opens the ${label} page you pick in a hidden window, presses its "View credits" button and reads the names and roles shown. It only does this on ${host}, only for pages you pick, and nothing it reads is sent anywhere. Chrome will ask you to confirm access to ${host}.`,
-    }),
-    el(
-      "div",
-      { class: "row" },
-      v.button(`Allow access to ${label}`, "primary", "access-allow", () => void v.panel.allowSource(), false),
-      v.button(
-        "Not now",
-        "quiet",
-        "access-decline",
-        () => {
-          v.panel.declineSource();
-        },
-        false,
-      ),
-    ),
-  );
+  return [v.heading("Get credits from Apple Music or Spotify"), form, ...openPages(v, state)];
 }
 
 /**
@@ -133,17 +95,9 @@ export function openPages(v: ViewContext, state: PanelState): Node[] {
     : pages.length === 1
       ? "Music page detected"
       : `${String(pages.length)} music pages detected`;
-  const waiting = PROVIDERS.filter(
-    (provider) => provider.permission === "optional" && state.sources[provider.id] !== true,
-  );
   const hint = found
     ? "Pick one to get its credits."
     : "Open an album or song on Apple Music or Spotify in your browser and it shows up here.";
-  // A source the user has not allowed cannot be listened to: Chrome hides the address of its tabs.
-  const allowHint =
-    waiting.length > 0
-      ? `${waiting.map((provider) => provider.label).join(" and ")} pages show up here once you have allowed access, which Chrome asks for the first time you pick one.`
-      : "";
   const items = pages.map((page, index) =>
     el(
       "li",
@@ -199,7 +153,6 @@ export function openPages(v: ViewContext, state: PanelState): Node[] {
           { class: "detector-text" },
           el("h3", { class: "detector-title", text: title }),
           el("p", { class: "detector-hint", text: hint }),
-          allowHint ? el("p", { class: "detector-hint", text: allowHint }) : null,
         ),
       ),
       found ? el("ul", { class: "open-pages" }, ...items) : null,

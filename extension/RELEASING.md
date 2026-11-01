@@ -11,6 +11,11 @@ Nothing here submits anything on its own.
 - Read `PRIVACY.md` and `store/listing.md` against what changed since the last release.
   If a new host, permission, stored value or request was added, the policy, the listing's justification table and the dashboard's data-use answers change with it.
   The tests catch a host or permission that is missing from the policy or the listing; they cannot see the dashboard.
+- First release that makes `open.spotify.com` a required host (it was optional up to 0.6.2): Chrome disables an extension whose update adds a host permission until the user accepts it.
+  Users updating from 0.6.2 will see the extension turned off with an "Enable" prompt in `chrome://extensions` (and a badge on the toolbar menu) until they accept the new Spotify access.
+  Say so in the release notes and the store's "What's new", and expect a drop in active users until people re-enable it.
+  Unpacked (manual) installs are unaffected: reloading the folder applies the manifest.
+  Re-check the dashboard's data-use answers and the single-purpose text at the same time.
 
 ## 2. Build and check
 
@@ -57,7 +62,7 @@ The pass, using a public album with several tracks and a Genius song you can ope
 6. Finish a track: the next-track countdown runs and starts the next one; after the last track the menu countdown returns to the main menu.
 7. Settings: change a setting, close and reopen the panel, and see it kept; the YouTube hosts ask Chrome for permission only when switched on, and can be taken back.
    There is no Deezer option: Deezer is a required host and the permanent cover fallback.
-   Spotify: open a Spotify track in a tab with something else playing and check the open-pages card names the page, not the playing song; press Get credits on a Spotify album and check the explanation card, then Chrome's prompt after Allow, then the track list and the credits with their "About this read" notes; a Spotify song has a cover (from Apple's catalog or Deezer) but no ISRC or track release date.
+   Spotify: open a Spotify track in a tab with something else playing and check the open-pages card names the page, not the playing song; press Get credits on a Spotify album and check that no permission card or Chrome prompt appears, then the track list and the credits with their "About this read" notes; a Spotify song has a cover (from Apple's catalog or Deezer) but no ISRC or track release date.
 8. Reload the extension on the extensions page and reopen the panel: the session is restored, nothing breaks.
 9. Edge only: the side panel and F-key suppression behave the same as in Chrome.
 

@@ -14,8 +14,6 @@ export interface BrowserPorts {
   /** Current state of a tab, or null when it no longer exists. */
   getTab(tabId: number): Promise<TabState | null>;
   removeTab(tabId: number): Promise<void>;
-  /** Whether the user has allowed the extension to read these origins (an optional host that was never granted: no). */
-  hasAccess(origins: readonly string[]): Promise<boolean>;
   /** Register `file` to run in the page's own world at document_start on `origins` (idempotent). */
   armReaderGuard(file: string, origins: readonly string[]): Promise<void>;
   /** Inject a provider's content script, Apple Music's by default (idempotent in the page). */
@@ -72,7 +70,6 @@ export function chromePorts(): BrowserPorts {
     async removeTab(tabId) {
       await chrome.tabs.remove(tabId);
     },
-    hasAccess: (origins) => chrome.permissions.contains({ origins: [...origins] }),
     async armReaderGuard(file, origins) {
       const script = {
         id: `guard:${file}`,

@@ -24,7 +24,6 @@ export const APPLE_PROVIDER: CreditsProvider = {
   id: "apple",
   label: "Apple Music",
   origins: ["https://music.apple.com/*"],
-  permission: "required",
   contentScript: "apple/content.js",
   worksHidden: true,
   messages: {

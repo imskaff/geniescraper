@@ -89,7 +89,7 @@ The steps are the same on **Windows** and **macOS**, apart from how you unzip th
 - **Checking a download.** Compare its SHA-256 with `SHA256SUMS.txt` from the same release.
   - **Windows** (PowerShell): `Get-FileHash .\geniescraper-extension-<version>.zip -Algorithm SHA256`
   - **macOS** (Terminal): `shasum -a 256 geniescraper-extension-<version>.zip`
-- **Permissions.** Chrome shows the install-time access (Genius, Apple Music, iTunes and Deezer, which is the cover fallback) when you load the extension. Access to `open.spotify.com` is asked for later, the first time you press **Get credits** on a Spotify page.
+- **Permissions.** Chrome shows the install-time access (Genius, Apple Music, Spotify, iTunes and Deezer, which is the cover fallback) when you load the extension. Nothing is asked for later when you read a Spotify page.
 - **Questions and fixes:** [extension/FAQ.md](extension/FAQ.md).
 
 ### Desktop app (Windows)
@@ -156,7 +156,7 @@ When Genius has no exact match for a name or a role, the text stays typed and no
 
 **Reading from Spotify**
 
-- **The permission.** Chrome only shows its prompt after a click, so it appears when you press **Get credits** on a Spotify page for the first time: the panel first explains what will happen, and its **Allow access to Spotify** button asks Chrome for access to `open.spotify.com`. If you refuse, Apple Music keeps working. Until you allow it, your open Spotify tabs are not listed.
+- **The permission.** Access to `open.spotify.com` is part of the install, like Apple Music, so a Spotify page is read and your open Spotify tabs are listed with no prompt.
 - **How it reads.** The extension opens the Spotify page in a hidden window, presses Spotify's own **View credits** button and reads the names and roles in the box that opens, a few pages at a time, and closes the window. It never signs in and sends nothing anywhere.
 - **What a Spotify read cannot give.** Spotify's credits box shows no ISRC and no release date for a track, so the release date is read from the track's public embed page (an album read also uses the album page's English date line); a release Spotify knows only by year is left empty. The panel says so under **About this read**.
 - **Languages.** Spotify writes role names in the language of its page, so the extension opens the English version of the page (it adds `?locale=en` to the address of its own hidden window, which changes nothing in your account or your own tabs) and every role comes back in English. That parameter is not documented by Spotify: if the page does not come back in English, the extension falls back to its role words for German, Spanish, French, Portuguese, Italian, Dutch, Polish, Swedish, Turkish, Japanese, Korean and Russian, and roles in other languages are then left out and listed under **About this read**, which names the language Spotify showed only in that case. Roles are typed under the exact names on Genius's standardized list; one Genius has removed (such as Studio Personnel) is left out and listed under **About this read**.
@@ -270,7 +270,7 @@ A `.env` in the project root from older versions is still read until the first s
 - The link between the extension and the desktop app stays on your computer (`127.0.0.1`), needs a one-time pairing code and never shares your Genius sign-in: you stay signed in to Genius in your own browser.
 - **Open on Genius** sends the song title and artist to Genius's own search, only when you press it (or turn on opening each song before pasting). No cookies, no sign-in and nothing goes to anyone else.
 - YouTube lookups are optional and ask your permission first. An optional YouTube key stays in your browser and is sent only to Google.
-- Reading Spotify is optional too: Chrome asks for access to `open.spotify.com` the first time you press **Get credits** on a Spotify page, after the panel has explained why. Nothing read from Spotify is sent anywhere.
+- Reading Spotify uses the `open.spotify.com` access that is part of the install, like Apple Music. Nothing read from Spotify is sent anywhere except the song title and artist, which go to Deezer for a cover when Apple's catalog has none, and to Genius only when you press **Open on Genius**.
 - When Apple's catalog has no cover for a song (always the case for a Spotify link), the extension asks Deezer, sending only the song title and artist. That permission is part of the install and cannot be switched off.
 
 ## Contact

@@ -13,8 +13,8 @@
 //   D  as A, but the reader is injected as soon as the page commits, not at load completion
 //   E  one album tab; each track read from its own row's options menu (no navigation at all)
 //   F  as B with early injection (B + D)
-// Like live-spotify-provider.mjs, the host is made required in a scratch copy of dist/ (a script cannot click Chrome's prompt).
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
+// Like live-spotify-provider.mjs, it runs from a scratch copy of dist/.
+import { cpSync, mkdtempSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,13 +36,6 @@ if (!chromePath) throw new Error("Pass --chrome <path> (or set CHROME_PATH).");
 
 const scratch = mkdtempSync(join(tmpdir(), "geniescraper-bench-"));
 cpSync(join(root, "dist"), scratch, { recursive: true });
-const manifestPath = join(scratch, "manifest.json");
-const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
-manifest.optional_host_permissions = manifest.optional_host_permissions.filter(
-  (h) => h !== "https://open.spotify.com/*",
-);
-manifest.host_permissions = [...manifest.host_permissions, "https://open.spotify.com/*"];
-writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 // Variant E reads through the rows of the album page; the research reader does that (bench only, not shipped).
 mkdirSync(join(scratch, "bench"), { recursive: true });
 writeFileSync(

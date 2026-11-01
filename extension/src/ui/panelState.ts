@@ -48,19 +48,9 @@ export const BRIDGE_MESSAGES = {
   notAccepted: `The desktop app did not accept the code. Check that: the desktop app is open and showing a pairing code (it listens on ports ${PORT_RANGE} of this computer); the code is the one on screen now (a code expires after a short time and works once); and you have not typed it wrongly 5 times (then the app locks that code, so show a new code in the desktop app and try again).`,
 } as const;
 
-/** Whether the user has allowed each music source to be read, by provider id; a source that needs no asking is true. */
-export type SourceAccess = Record<string, boolean>;
-
-export interface SourcePermissions {
-  granted(): Promise<SourceAccess>;
-  /** Ask Chrome for one source's host. Must be called straight from the user's click, like `HostPermissions.request`. */
-  request(providerId: string): Promise<boolean>;
-}
-
 export interface Env {
   api: WorkerApi;
   hosts: HostPermissions;
-  sources: SourcePermissions;
   stores: Stores;
   /** Where the user's YouTube key is kept: this browser only, never synced. */
   secrets: KeyValueStore;
@@ -128,10 +118,6 @@ export interface PanelState {
   error: string;
   /** Progress and results; announced politely. */
   status: string;
-  /** Which music sources the user has allowed, as Chrome reports it. */
-  sources: SourceAccess;
-  /** A page of a source that is not allowed yet: the panel explains and waits for the user's click before asking. */
-  sourceAsk: { url: string; providerId: string } | null;
   /** The music page the user is on, offered as the default link ("" when there is none). */
   pageUrl: string;
   /** The album and song pages already open in the browser, offered on the link screen; the page in view first. */
@@ -140,8 +126,6 @@ export interface PanelState {
 
 export const MESSAGES = {
   invalidLink: "That is not an Apple Music or Spotify album or song link.",
-  noAccess:
-    "Without access to that site Géniescraper cannot read its pages. You can allow it any time you pick a page from it.",
   noTracks: "Pick at least one track.",
   noPage: (source: string) => `${source} has no page for this track, so its credits cannot be read.`,
   lookingForYoutube: "Looking for the YouTube link…",
@@ -170,7 +154,6 @@ export function describeError(error: AppError, source = "Apple Music"): string {
       return `${source} took too long to respond. Try again.`;
     case "unavailable":
     case "blocked":
-    case "no-access":
       // These come from the worker or the page worded for the user already.
       return error.message;
     case "tab-failed":

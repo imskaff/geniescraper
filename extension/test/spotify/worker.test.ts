@@ -105,18 +105,6 @@ describe("reading Spotify through the worker", () => {
     }
   });
 
-  it("asks nothing and opens nothing until the user has allowed Spotify", async () => {
-    const browser = fakeBrowser({ noAccess: true });
-    for (const result of [
-      await scrapeTrack(browser.ports, TRACK, "Song", FAST_CLIENT),
-      await detectAlbum(browser.ports, ALBUM, undefined, FAST_CLIENT),
-      await detectAlbum(browser.ports, ALBUM, 7, FAST_CLIENT),
-    ]) {
-      expect(result).toMatchObject({ ok: false, error: { code: "no-access" } });
-    }
-    expect(browser.log.every((entry) => entry === "access")).toBe(true);
-  });
-
   it("refuses an album address for a credits read and anything that is not a Spotify page", async () => {
     const browser = fakeBrowser();
     expect(await scrapeTrack(browser.ports, ALBUM, "x", FAST_CLIENT)).toEqual({
