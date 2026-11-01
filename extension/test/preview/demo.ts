@@ -146,6 +146,7 @@ const scenes: Record<string, () => Promise<void>> = {
         title: "Spotify",
         pageTitle: "Demo Single",
         pageArtist: "Demo Artist",
+        pageSingle: true,
         current: false,
       },
     );
