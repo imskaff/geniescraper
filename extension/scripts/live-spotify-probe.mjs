@@ -15,6 +15,7 @@
 //            --lang de-DE        Chrome UI and Accept-Language for the whole run
 //            --intl en           add the /intl-en/ URL prefix (default: none; "none" is also accepted)
 //            --limit 3           album only: how many tracks to open credits for (0 = all)
+//            --query ?locale=en  append a query string to the page address
 //            --force-en          send Accept-Language: en-US for the probe's tab with a session declarativeNetRequest rule (adds that permission)
 //            --capture <dir>     save sanitized dialog / menu / album-row markup (names and ids replaced) as fixtures
 //            --fetch-meta        also GET the page once more and read the server-rendered meta tags
@@ -46,6 +47,7 @@ const steps = option("--steps", "")
 const delay = Number(option("--delay", "5000"));
 const lang = option("--lang", "");
 const intl = option("--intl", "none");
+const query = option("--query", "");
 const limit = Number(option("--limit", "3"));
 const wantMeta = args.includes("--fetch-meta");
 const forceEn = args.includes("--force-en");
@@ -174,7 +176,7 @@ try {
   worker = await connect((await findServiceWorker(browser)).webSocketDebuggerUrl);
   await waitUntilReady(worker);
   for (const step of steps) {
-    const url = spotifyUrl(step.kind, step.id, { intl: intl === "none" ? "" : intl });
+    const url = spotifyUrl(step.kind, step.id, { intl: intl === "none" ? "" : intl }) + query;
     const job = {
       url,
       forceEn,
