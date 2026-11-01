@@ -452,3 +452,18 @@ Options for the full release date if it is needed: read it from the album page (
   It supersedes `live-spotify.mjs` and `live-spotify-open.mjs`, which used raw page scripts and could not reset a hidden page.
 - `extension/test/spotify/`: sanitized fixtures (`credits-*.html`, `menu-*.html`, `album-page.html`) and `reader.test.ts` (19 tests: parsing in English and German, structural entry finder including the "must not pick Open in Desktop app" case, album rows, fake-page end-to-end for ok, no-button, no-item and the retry).
 - Fixtures contain placeholders only ("Person N", "Sample Song", "Sample Label", `SAMPLE` ids); the old `credits-major.html` and `credits-self-released.html` stay as they were.
+
+## Reading must never play anything
+
+Owner report: after reading a whole album from a signed-in web player, Spotify was playing one of the tracks ("Playing on Web Player (Chrome)").
+That bar means another Connect device is playing, so the likely culprit is a reader tab: a signed-in page registers as a player device and can start or take over playback.
+It was not reproducible signed out (a signed-out player has no Connect device); `scripts/live-spotify-provider.mjs` now watches every Spotify page for a playing media element, a "playing" media session or a `play()` call, and fails the run if it sees one.
+
+What was changed, and what is an assumption:
+
+- Reader tabs (and only those, marked by `?geniescraper=read` in the address the worker opens) get `spotify/guard.js`, registered for `document_start` in the page's own world: `HTMLMediaElement.play()` rejects, a media element that starts anyway is muted and paused, and `requestMediaKeySystemAccess` rejects so the player cannot get a key system for protected audio.
+  The user's own Spotify tabs are never touched.
+  That a player without a key system does not register as a Connect device is an assumption that only a signed-in run can confirm.
+- The credits entry is the plain button directly before the last expandable entry (Share), and an entry whose text names play, queue, save, like, add, remove, taste and similar is never clicked; an unexpected menu gives `no-item` and nothing is clicked.
+  The signed-in menu was never seen: the test markup for it is made up.
+- If the guard cannot be registered the worker opens no tab and the read fails.

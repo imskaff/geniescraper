@@ -28,8 +28,11 @@ export function canonicalSpotifyUrl(url: string): string | null {
   return parsed ? `${HOST}/${parsed.kind === "song" ? "track" : "album"}/${parsed.id}` : null;
 }
 
+/** Query parameter that marks a page as opened by the worker; the playback guard (guard.ts) acts only on such pages. */
+export const READ_MARKER = "geniescraper";
+
 /**
- * The address the worker opens in its own tab: the plain page plus `?locale=en`, which makes Spotify serve that one
+ * The address the worker opens in its own tab: the plain page plus `?locale=en` and the read marker, which makes Spotify serve that one
  * request in English (measured: the credits dialog, its headings and its role names, in German, Polish, Japanese,
  * Arabic and Thai browsers) without writing a cookie, so the user's own Spotify tabs keep their language. The locale
  * prefix, the tracking query and the fragment are dropped, since the page is told by the id alone. `null` when `url`
@@ -38,7 +41,7 @@ export function canonicalSpotifyUrl(url: string): string | null {
  */
 export function spotifyOpenUrl(url: string): string | null {
   const plain = canonicalSpotifyUrl(url);
-  return plain ? `${plain}?locale=en` : null;
+  return plain ? `${plain}?locale=en&${READ_MARKER}=read` : null;
 }
 
 /** Address of a track by id, for reading a track of an album through its own page. */

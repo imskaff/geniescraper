@@ -78,8 +78,8 @@ describe("reading Spotify through the worker", () => {
     expect(detected.ok).toBe(true);
 
     expect(browser.log.filter((entry) => entry.startsWith("create:"))).toEqual([
-      `create:${TRACK}?locale=en:active=false`,
-      `create:${ALBUM}?locale=en:active=false`,
+      `create:${TRACK}?locale=en&geniescraper=read:active=false`,
+      `create:${ALBUM}?locale=en&geniescraper=read:active=false`,
     ]);
     expect(messages).toEqual(["spotify/scrape", "spotify/detect"]);
     expect(injected).toEqual(["spotify/content.js", "spotify/content.js"]);
@@ -208,7 +208,7 @@ describe("the router and Spotify", () => {
     const route = routerFor(browser, clock);
     const urls = [TRACK, TRACK_B, ALBUM_TRACK_3, ALBUM_TRACK_4];
     await Promise.all(urls.map((url) => route({ type: "scrape-track", url, trackTitle: "Song" })));
-    expect(opened).toEqual(urls.map((url) => `${url}?locale=en`));
+    expect(opened).toEqual(urls.map((url) => `${url}?locale=en&geniescraper=read`));
   });
 
   it("falls back to one at a time after a read fails for a reason that is not the track's own", async () => {

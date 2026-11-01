@@ -16,6 +16,7 @@ const ENTRY_POINTS = {
   "background/worker": "src/background/worker.ts",
   "apple/content": "src/apple/content.ts",
   "spotify/content": "src/spotify/content.ts",
+  "spotify/guard": "src/spotify/guard.ts",
   "ui/panel": "src/ui/panel.ts",
   "genius/content": "src/genius/content.ts",
 };

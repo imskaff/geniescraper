@@ -78,23 +78,28 @@ export const findMoreButton = (doc: Document): HTMLElement | null =>
   doc.querySelector<HTMLElement>("[data-testid='action-bar-row'] button[data-testid='more-button']") ??
   doc.querySelector<HTMLElement>("main button[data-testid='more-button']");
 
+/** Entries that start, queue or change something. Whatever the menu looks like, none of them is ever clicked. */
+const ACTION_WORDS = /\b(play|queue|radio|save|like|add|remove|exclude|taste|follow|block|hide|download)/i;
+
 /**
  * The "View credits" entry of the open menu, found by structure. Of the `button[role=menuitem]` entries with neither
- * `aria-disabled` nor `aria-expanded`, two exist: "View credits" and "Open in Desktop app". The credits entry is the
- * one followed by "Share", which has `aria-expanded`; requiring that follower means a menu without a credits entry
- * gives null and never the desktop-app entry, which would try to launch another program.
+ * `aria-disabled` nor `aria-expanded`, two exist signed out: "View credits" and "Open in Desktop app". The credits
+ * entry is the one directly before the last entry with `aria-expanded` ("Share"); requiring that neighbour means a
+ * menu without a credits entry gives null and never the desktop-app entry, which would try to launch another program.
+ * A signed-in menu has more entries (queue, Liked Songs, taste profile): an entry whose own text names one of those
+ * is refused, so a menu of an unexpected shape gives null and nothing is clicked.
  */
 export function findCreditsItem(doc: Document): HTMLElement | null {
   const items = [...doc.querySelectorAll<HTMLElement>("[role='menu'] [role='menuitem']")];
-  return (
-    items.find(
-      (item, i) =>
-        item.tagName === "BUTTON" &&
-        !item.hasAttribute("aria-expanded") &&
-        !item.hasAttribute("aria-disabled") &&
-        items[i + 1]?.hasAttribute("aria-expanded") === true,
-    ) ?? null
-  );
+  const share = items.map((item) => item.hasAttribute("aria-expanded")).lastIndexOf(true);
+  const item = share > 0 ? items[share - 1] : undefined;
+  return item &&
+    item.tagName === "BUTTON" &&
+    !item.hasAttribute("aria-expanded") &&
+    !item.hasAttribute("aria-disabled") &&
+    !ACTION_WORDS.test(norm(item.textContent))
+    ? item
+    : null;
 }
 
 /** The credits dialog: a native `<dialog aria-label>` (`role=dialog` is the language and country pickers). */

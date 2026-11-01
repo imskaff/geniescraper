@@ -50,11 +50,11 @@ describe("canonicalSpotifyUrl", () => {
 });
 
 describe("spotifyOpenUrl", () => {
-  const track = `https://open.spotify.com/track/${ID}?locale=en`;
+  const track = `https://open.spotify.com/track/${ID}?locale=en&geniescraper=read`;
 
   it("asks for English on a plain track and album address", () => {
     expect(spotifyOpenUrl(`https://open.spotify.com/track/${ID}`)).toBe(track);
-    expect(spotifyOpenUrl(`https://open.spotify.com/album/${ALBUM}`)).toBe(`https://open.spotify.com/album/${ALBUM}?locale=en`);
+    expect(spotifyOpenUrl(`https://open.spotify.com/album/${ALBUM}`)).toBe(`https://open.spotify.com/album/${ALBUM}?locale=en&geniescraper=read`);
   });
 
   it("replaces a tracking query, a fragment, a trailing slash and an existing locale", () => {
@@ -62,7 +62,7 @@ describe("spotifyOpenUrl", () => {
       `https://open.spotify.com/track/${ID}?si=abc123`,
       `https://open.spotify.com/track/${ID}/?si=abc&locale=de`,
       `https://open.spotify.com/track/${ID}#x`,
-      `https://open.spotify.com/track/${ID}?locale=en`,
+      `https://open.spotify.com/track/${ID}?locale=en&geniescraper=read`,
     ]) {
       expect(spotifyOpenUrl(url), url).toBe(track);
     }
@@ -71,7 +71,7 @@ describe("spotifyOpenUrl", () => {
   it("drops a locale prefix instead of keeping the browser language's address", () => {
     expect(spotifyOpenUrl(`https://open.spotify.com/intl-de/track/${ID}?si=1`)).toBe(track);
     expect(spotifyOpenUrl(`https://open.spotify.com/intl-es-419/album/${ALBUM}`)).toBe(
-      `https://open.spotify.com/album/${ALBUM}?locale=en`,
+      `https://open.spotify.com/album/${ALBUM}?locale=en&geniescraper=read`,
     );
   });
 
@@ -95,7 +95,7 @@ describe("the Spotify provider", () => {
 
   it("opens the English address and keys a page by the plain one", () => {
     const url = `https://open.spotify.com/intl-de/track/${ID}?si=1`;
-    expect(SPOTIFY_PROVIDER.openUrl(url)).toBe(`https://open.spotify.com/track/${ID}?locale=en`);
+    expect(SPOTIFY_PROVIDER.openUrl(url)).toBe(`https://open.spotify.com/track/${ID}?locale=en&geniescraper=read`);
     expect(SPOTIFY_PROVIDER.pageKey(url)).toBe(SPOTIFY_PROVIDER.pageKey(`https://open.spotify.com/track/${ID}`));
   });
 
