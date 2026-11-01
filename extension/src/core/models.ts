@@ -1,5 +1,6 @@
 // Port of scraper.models: credits, the merge rules and the paste queue in Genius form order.
 import { extractLabels } from "./copyright";
+import { deriveLabelInfo, type LabelInfo } from "./labels";
 import { MONTHS, formatReleaseDate, splitReleaseDate } from "./releaseDate";
 
 export interface Credit {
@@ -124,10 +125,21 @@ export function producedBy(song: Pick<SongCredits, "credits">): string[] {
     .flatMap((credit) => credit.artists);
 }
 
+/** Label and Distributor derived from the ℗ line; a role the credits already carry is never repeated. */
+export function labelInfo(song: Pick<SongCredits, "phonographicCopyright" | "credits">): LabelInfo {
+  const info = deriveLabelInfo(song.phonographicCopyright, extractLabels(song.phonographicCopyright));
+  const have = new Set(song.credits.map((credit) => credit.role.toLowerCase().trim()));
+  return {
+    ...info,
+    label: have.has("label") ? "" : info.label,
+    distributor: have.has("distributor") ? "" : info.distributor,
+  };
+}
+
 /**
  * The paste queue, in the order of the Genius metadata form:
  * Writer, Producer, then each additional role followed by its artists,
- * then the ℗ and © labels, the YouTube link, the cover art URL and the release date (month, day, year).
+ * then Label and Distributor (role and artist pairs derived from the ℗ line), the ℗ and © labels, the YouTube link, the cover art URL and the release date (month, day, year).
  */
 export function typedQueue(song: SongCredits, options: QueueOptions = {}): QueueItem[] {
   const { includeCore = true, includeAdditional = true, includeCopyright = true } = options;
@@ -145,6 +157,13 @@ export function typedQueue(song: SongCredits, options: QueueOptions = {}): Queue
     }
   }
   if (includeCopyright) {
+    const info = labelInfo(song);
+    for (const [role, name] of [
+      ["Label", info.label],
+      ["Distributor", info.distributor],
+    ] as const) {
+      if (name) queue.push(["role", role], ["artist", name]);
+    }
     const phonographic = song.phonographicCopyright ? extractLabels(song.phonographicCopyright) : [];
     const copyright = song.copyrightNotice ? extractLabels(song.copyrightNotice) : phonographic;
     if (phonographic.length > 0) {

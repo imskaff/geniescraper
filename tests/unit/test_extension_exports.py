@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from tools import export_roles, export_vectors
+from tools import export_labels, export_roles, export_vectors
 
 
 def _committed(path: Path) -> str:
@@ -16,6 +16,11 @@ _STALE = "stale: run `uv run python -m tools.{tool}` and commit the result"
 def test_roles_json_matches_role_map():
     committed = _committed(export_roles.OUTPUT)
     assert committed == export_roles.build(), _STALE.format(tool="export_roles")
+
+
+def test_labels_json_matches_label_table():
+    committed = _committed(export_labels.OUTPUT)
+    assert committed == export_labels.build(), _STALE.format(tool="export_labels")
 
 
 def test_vectors_json_matches_reference_implementation():

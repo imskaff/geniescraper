@@ -31,6 +31,7 @@ from scraper.deezer import (
     _same_track,  # pyright: ignore[reportPrivateUsage]
     catalog_ref,
 )
+from scraper.labels import derive_label_info
 from scraper.models import Credit, SongCredits, _extract_labels  # pyright: ignore[reportPrivateUsage]
 from scraper.release_date import (
     date_from_meta,
@@ -77,6 +78,20 @@ COPYRIGHT_LINES = [
     "℗ 2024",
     "",
     "℗ 2021 Label A, distributed by Label B, released by Label C",
+]
+
+LABEL_LINES = [
+    "℗ 2026 Atlantic Recording Corporation",
+    "℗ 2022 Top Dawg Entertainment, under exclusive license to RCA Records",
+    "℗ 2024 Darkroom/Interscope Records",
+    "℗ 2023 Island Records, a division of UMG Recordings, Inc.",
+    "℗ 2021 Chance the Rapper LLC, distributed by Ditto Music",
+    "℗ 2021 Some Label, distributed by Universal Music Group",
+    "℗ 2021 Some Label, distributed by Ditto Music under exclusive license to Foo Records",
+    "℗ 2020 Warner Records Inc., marketed by Republic Records",
+    "℗ 2024 Taylor Swift",
+    "℗ 2024",
+    "",
 ]
 
 FOOTERS = [
@@ -259,6 +274,11 @@ SONGS: dict[str, SongCredits] = {
             Credit(role="Producer", artists=["P1"]),
         ]
     ),
+    "atlantic": _song(
+        credits=[Credit(role="Songwriter", artists=["W1"]), Credit(role="Distributor", artists=["Already Credited"])],
+        phonographic_copyright="℗ 2026 Atlantic Recording Corporation",
+        copyright_notice="© 2026 Atlantic Recording Corporation",
+    ),
     "phono_only": _song(
         credits=[Credit(role="Songwriter", artists=["W1"])],
         phonographic_copyright="℗ 2021 Label A",
@@ -427,11 +447,22 @@ def _youtube_scores() -> dict[str, dict[str, list[int]]]:
     return scores
 
 
+def _label_info(line: str) -> dict[str, str]:
+    info = derive_label_info(line, _extract_labels(line))
+    return {
+        "label": info.label,
+        "distributor": info.distributor,
+        "label_source": info.label_source,
+        "distributor_source": info.distributor_source,
+    }
+
+
 def build_vectors() -> dict[str, Any]:
     return {
         "songs": {name: song.model_dump() for name, song in SONGS.items()},
         "typed_queue": _typed_queue_cases(),
         "extract_labels": [{"input": s, "output": _extract_labels(s)} for s in COPYRIGHT_LINES],
+        "label_info": [{"input": line, "output": _label_info(line)} for line in LABEL_LINES],
         "split_copyright": [{"input": s, "output": list(split_copyright(s))} for s in FOOTERS],
         "track_count_from_footer": [{"input": s, "output": track_count_from_footer(s)} for s in FOOTERS],
         "autotab_steps": [

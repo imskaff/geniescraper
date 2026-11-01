@@ -12,6 +12,15 @@
 
 The read worked, but something it was asked to find is missing.
 The words name it: credits, copyright, cover art or YouTube link.
+
+## Where do Label and Distributor come from?
+
+From the ℗ line, which is all Apple Music and Spotify publish: neither names a distributor.
+A fixed, reviewed table maps well-known imprints and legal names (for example "Atlantic Recording Corporation" to Label "Atlantic Records") and their owning group (Warner Music Group, Universal Music Group, Sony Music Entertainment) to the Genius names.
+A "distributed by" in the line is used as written.
+If the line names no known label, or labels of different groups, both stay empty.
+The panel shows each value with where it came from, and a step can be skipped.
+Self-released songs and aggregators (DistroKid, TuneCore and so on) are not detected.
 The same item is marked in amber in the track's credits.
 Open the track and fix it: a missing YouTube link can be found through the "Find on YouTube" button and pasted into the box under it.
 A step you switched off in Settings is never reported as missing.

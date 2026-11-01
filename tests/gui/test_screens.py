@@ -674,12 +674,12 @@ def test_previous_is_off_at_the_first_step_and_skip_and_next_when_finished(walk)
     assert not seen["finished"]["skip"]["enabled"] and not seen["finished"]["next"]["enabled"]
     assert seen["finished"]["back"]["enabled"]
     assert seen["finished_progress"] == "All steps done"
-    assert seen["middle_progress"] == "Step 22 of 48"
+    assert seen["middle_progress"] == "Step 22 of 52"
 
 
 def test_step_lists_are_disclosures_done_closed_and_left_open(walk):
     seen = walk["unlinked"]
-    assert seen["done_header"].endswith("Steps done (21)") and seen["left_header"].endswith("Steps left (27)")
+    assert seen["done_header"].endswith("Steps done (21)") and seen["left_header"].endswith("Steps left (31)")
     assert seen["done_rows_hidden"] and seen["done_rows_shown_after_toggle"]
 
 
