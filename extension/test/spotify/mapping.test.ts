@@ -59,6 +59,37 @@ describe("spotifyRole", () => {
     expect(spotifyRole("studio personnel", "de")).toBeNull();
   });
 
+  it("never types a role Genius removed, whichever table would have produced it", () => {
+    const removed = [
+      "Studio Personnel",
+      "Performer",
+      "Associate Performer",
+      "Manager",
+      "Management",
+      "Manager/Management",
+      "Booking",
+      "Licensing",
+      "Performance Rights",
+    ];
+    for (const label of removed) {
+      expect(spotifyRole(label), label).toBeNull();
+      expect(spotifyRole(label.toUpperCase(), "de"), label).toBeNull();
+    }
+    // Apple's table has "performers" -> "Performer": the fallback to Apple's names must not let it through.
+    expect(spotifyRole("Performers")).toBeNull();
+  });
+
+  it("lists a removed role under 'Left out' in About this read", () => {
+    const row = (name: string, roles: string[]): DialogRow => ({ section: "x", sectionIndex: 2, name, roles, artistId: null });
+    const mapped = creditsFromDialog({
+      rows: [row("Sample Studio", ["Studio Personnel"]), row("Person 1", ["Producer", "Performer"])],
+    });
+    expect(mapped.credits.map((c) => c.role)).toEqual(["Producer"]);
+    expect(skippedNote(mapped.skipped)).toBe(
+      "Left out because Genius has no matching role: Studio Personnel (Sample Studio); Performer (Person 1).",
+    );
+  });
+
   it("ignores case, spacing and a trailing colon", () => {
     expect(spotifyRole("  mixing   ENGINEER: ")).toBe("Mixing Engineer");
   });

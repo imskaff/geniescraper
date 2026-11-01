@@ -5,8 +5,23 @@
 import { roleMap } from "../core/roles";
 import { ROLE_TABLES } from "./roleTables";
 
-/** Roles Genius has removed from its additional roles; a label that spells one is left out, not typed. */
-const REMOVED_GENIUS_ROLES: ReadonlySet<string> = new Set(["Studio Personnel"]);
+/**
+ * Roles Genius lists under "Major Roles Removed". A label that spells one, or that any table would map to one (Apple's
+ * names include "Performer" and "Studio Personnel"), is left out and listed under "About this read", never typed.
+ */
+const REMOVED_GENIUS_ROLES: ReadonlySet<string> = new Set(
+  [
+    "Studio Personnel",
+    "Performer",
+    "Associate Performer",
+    "Manager",
+    "Management",
+    "Manager/Management",
+    "Booking",
+    "Licensing",
+    "Performance Rights",
+  ].map((name) => roleKey(name)),
+);
 
 const ALIASES: Readonly<Record<string, string>> = {
   // Composition & Lyrics: Genius has one field for all of them ("Writer").
@@ -48,9 +63,7 @@ const ALIASES: Readonly<Record<string, string>> = {
 
 /** Names Genius lists, lowercase to their spelling: a label that already is one is kept as is. */
 const GENIUS_NAMES: ReadonlyMap<string, string> = new Map(
-  Object.values(roleMap())
-    .filter((name) => !REMOVED_GENIUS_ROLES.has(name))
-    .map((name) => [roleKey(name), name]),
+  Object.values(roleMap()).map((name) => [roleKey(name), name]),
 );
 
 /**
@@ -84,7 +97,9 @@ export function spotifyRoleTargets(): string[] {
 /** Genius role for a Spotify role label, or null when the label is not one the table knows (kept out, not guessed). */
 export function spotifyRole(raw: string, language = "en"): string | null {
   const key = roleKey(raw);
-  return ALIASES[key] ?? ROLE_TABLES[baseLanguage(language)]?.[key] ?? GENIUS_NAMES.get(key) ?? null;
+  if (REMOVED_GENIUS_ROLES.has(key)) return null;
+  const role = ALIASES[key] ?? ROLE_TABLES[baseLanguage(language)]?.[key] ?? GENIUS_NAMES.get(key) ?? null;
+  return role !== null && REMOVED_GENIUS_ROLES.has(roleKey(role)) ? null : role;
 }
 
 /** Interface form: an unknown label comes back as written, like Apple's. The credits mapping uses `spotifyRole`. */
