@@ -2,7 +2,6 @@
 import type { OpenTab } from "../core/musicTabs";
 import { recogniseUrl } from "../providers/registry";
 import type { PageLabel } from "../spotify/pageLabel";
-import { labelText } from "../spotify/pageLabel";
 
 /** How the label is read from a tab: null when the tab cannot be read (no access, closed, still loading). */
 export type ReadLabel = (tabId: number) => Promise<PageLabel | null>;
@@ -34,9 +33,8 @@ export async function withPageTitles(tabs: readonly OpenTab[], read: ReadLabel):
       if (!label) return tab;
       // A heading of another page: the player is moving, and a tab title could be the old page's too, so no name.
       if (label.path !== pathOf(tab.url)) return { ...tab, pageTitle: "" };
-      const text = labelText(label);
       // No heading yet (the page has not rendered): unknown, so a provable tab title may stand in and a re-read follows.
-      return text ? { ...tab, pageTitle: text } : tab;
+      return label.title ? { ...tab, pageTitle: label.title, pageArtist: label.artists.join(", ") } : tab;
     }),
   );
 }

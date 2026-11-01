@@ -11,6 +11,8 @@ export interface OpenTab {
   title: string;
   /** The page's own title, read from the page, for a provider whose tab titles cannot be trusted (`liveTitle`). */
   pageTitle?: string;
+  /** The artists the page itself shows, with `pageTitle`. */
+  pageArtist?: string;
   /** The tab the user is looking at: the active one in the current window. */
   current: boolean;
 }
@@ -35,15 +37,25 @@ const MAX_NAME = 120;
 /** Control and private-use characters, which belong in no name. Spaces are turned into plain ones before this. */
 const CONTROL = /[\p{Cc}\p{Co}]/gu;
 
-function nameOf(provider: CreditsProvider, tab: OpenTab, kind: PageKind): string {
+function clean(text: string): string {
   // Titles carry no-break and thin spaces and the odd tab; the desktop app shows the same one-line name.
-  // A provider that cannot trust the tab title is named from the page's own title, or from nothing: a name the page
-  // does not have is never shown.
-  // When the page could not be read at all, a tab title is used only if the provider can prove it is the page's own.
-  const own = provider.isOwnTitle?.(tab.title) === true ? tab.title : "";
-  const source = provider.liveTitle === true ? (tab.pageTitle ?? own) : tab.title;
-  const plain = source.replace(INVISIBLE, "").replace(/\s+/g, " ").replace(CONTROL, "");
-  const name = provider.tabName(plain, tab.url, kind);
+  return text.replace(INVISIBLE, "").replace(/\s+/g, " ").replace(CONTROL, "").trim();
+}
+
+function nameOf(provider: CreditsProvider, tab: OpenTab, kind: PageKind): string {
+  let name: string;
+  if (provider.liveTitle !== true) {
+    name = provider.tabName(clean(tab.title), tab.url, kind);
+  } else if (tab.pageTitle) {
+    // The page's own heading: "Artist - Title", from fields, never from a tab title.
+    const artist = clean(tab.pageArtist ?? "");
+    name = artist ? `${artist} - ${clean(tab.pageTitle)}` : clean(tab.pageTitle);
+  } else {
+    // A provider that cannot trust the tab title uses it only when the page could not be read at all and the title is
+    // provably the page's own; a heading of another page ("") or no heading gives a generic name. Never a playing song.
+    const own = tab.pageTitle === undefined && provider.isOwnTitle?.(tab.title) === true ? tab.title : "";
+    name = provider.tabName(clean(own), tab.url, kind);
+  }
   return name.length > MAX_NAME ? `${name.slice(0, MAX_NAME - 1)}…` : name;
 }
 
@@ -57,16 +69,20 @@ export function musicTabEntries(
     const recognised = recogniseUrl(tab.url, providers);
     if (!recognised) continue;
     // The same page in two tabs, or with a track picked after the address, is one entry.
-    const key = recognised.provider.pageKey(tab.url);
+    // An album address with a song picked is that song: it is listed, and read, as a song.
+    const songUrl = recognised.provider.songOfAlbumUrl?.(tab.url) ?? null;
+    const url = songUrl ?? tab.url;
+    const kind = songUrl ? "song" : recognised.url.kind;
+    const key = recognised.provider.pageKey(url);
     const known = byPage.get(key);
     if (known) {
       if (tab.current) known.current = true;
       continue;
     }
     byPage.set(key, {
-      url: tab.url,
-      name: nameOf(recognised.provider, tab, recognised.url.kind),
-      kind: recognised.url.kind,
+      url,
+      name: nameOf(recognised.provider, tab, kind),
+      kind,
       source: recognised.provider.label,
       current: tab.current,
     });

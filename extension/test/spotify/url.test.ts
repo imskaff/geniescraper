@@ -62,13 +62,12 @@ describe("the Spotify provider", () => {
     expect(SPOTIFY_PROVIDER.pageKey(url)).toBe(SPOTIFY_PROVIDER.pageKey(`https://open.spotify.com/track/${ID}`));
   });
 
-  it("names tabs from their titles", () => {
+  it("names tabs from their titles as Artist - Title, and generically when it cannot", () => {
     const name = (title: string): string => SPOTIFY_PROVIDER.tabName(title, "", "song");
-    expect(name("Blinding Lights - song and lyrics by The Weeknd | Spotify")).toBe("Blinding Lights by The Weeknd");
-    expect(name("After Hours - Album by The Weeknd | Spotify")).toBe("After Hours by The Weeknd");
-    expect(name("Blinding Lights – Titel und Songtext von The Weeknd | Spotify")).toBe(
-      "Blinding Lights – Titel und Songtext von The Weeknd",
-    );
+    expect(name("Blinding Lights - song and lyrics by The Weeknd | Spotify")).toBe("The Weeknd - Blinding Lights");
+    expect(name("After Hours - Album by The Weeknd | Spotify")).toBe("The Weeknd - After Hours");
+    expect(name("Blinding Lights – Musik und Lyrics von The Weeknd | Spotify")).toBe("The Weeknd - Blinding Lights");
+    expect(name("Blinding Lights – Titel und Songtext von The Weeknd | Spotify")).toBe("Spotify track");
     expect(name("")).toBe("Spotify track");
     expect(SPOTIFY_PROVIDER.tabName(" | Spotify", "", "album")).toBe("Spotify album");
   });

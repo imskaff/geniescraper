@@ -61,8 +61,13 @@ export interface CreditsProvider {
   pageKey(url: string): string;
   /** The address to open in a background tab for a recognised `url`: a provider may drop a locale prefix or tracking. */
   openUrl(url: string): string;
-  /** Name for the open-pages list; `title` has its invisible marks and extra spaces removed already. */
+  /**
+   * Name for the open-pages list, "Artist - Title" (the title alone when the artist is not known), from a tab title
+   * that has its invisible marks and extra spaces removed already; a generic name when nothing can be made of it.
+   */
   tabName(title: string, url: string, kind: PageKind): string;
+  /** An album address that points at one song of it: the song's own address (Apple's `?i=`), else null. */
+  songOfAlbumUrl?(url: string): string | null;
   /** Genius role name for a raw role label as this site shows it. */
   normaliseRole(raw: string): string;
 }

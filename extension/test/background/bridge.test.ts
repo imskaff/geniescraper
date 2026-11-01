@@ -473,7 +473,7 @@ describe("open Apple Music pages", () => {
         type: "pages",
         v: 1,
         pages: [
-          { url: ALBUM, title: "Hit Me Hard And Soft by Billie Eilish", kind: "album", current: true },
+          { url: ALBUM, title: "Billie Eilish - Hit Me Hard And Soft", kind: "album", current: true },
           { url: SONG, title: "Chihiro", kind: "song", current: false },
         ],
       },

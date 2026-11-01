@@ -1,10 +1,8 @@
 // Apple Music as the first credits provider. The reader itself stays in src/apple/.
 import { parseAppleMusicUrl } from "../apple/url";
 import { normaliseRole } from "../core/roles";
+import { appleTitleParts } from "./tabTitles";
 import type { CreditsProvider, PageKind } from "./types";
-
-/** The site's name closing a title, in any of the ways Apple's titles join it: " - ", " – ", " — ", " | " or " on ". */
-const SITE_SUFFIX = /\s*(?:[-–—|]\s*|\bon\s+)?Apple Music\s*$/i;
 
 /** "/us/album/hit-me-hard-and-soft/123" is "Hit Me Hard And Soft"; with no name in the address, just the kind. */
 function nameFromAddress(url: string, kind: PageKind): string {
@@ -44,8 +42,16 @@ export const APPLE_PROVIDER: CreditsProvider = {
     return origin + pathname;
   },
   openUrl: (url) => url,
+  songOfAlbumUrl(url) {
+    // An album address with a song picked ("?i=<song id>") is a song: its own address names it directly.
+    const parsed = parseAppleMusicUrl(url);
+    const song = parsed?.kind === "album" ? /^\d+$/.exec(new URL(url).searchParams.get("i") ?? "")?.[0] : undefined;
+    return parsed && song ? `https://music.apple.com/${parsed.storefront}/song/song/${song}` : null;
+  },
   tabName(title, url, kind) {
-    return title.trim().replace(SITE_SUFFIX, "").trim() || nameFromAddress(url, kind);
+    const { title: name, artist } = appleTitleParts(title);
+    if (!name) return nameFromAddress(url, kind);
+    return artist ? `${artist} - ${name}` : name;
   },
   normaliseRole,
 };

@@ -16,12 +16,13 @@ beforeEach(() => {
   document.body.replaceChildren(...new DOMParser().parseFromString(PAGE, "text/html").body.childNodes);
 });
 
-const tab = (url: string, title: string, pageTitle?: string): OpenTab => ({
+const tab = (url: string, title: string, pageTitle?: string, pageArtist?: string): OpenTab => ({
   tabId: 1,
   url,
   title,
   current: true,
   ...(pageTitle === undefined ? {} : { pageTitle }),
+  ...(pageArtist === undefined ? {} : { pageArtist }),
 });
 
 describe("readPageLabel", () => {
@@ -42,15 +43,15 @@ describe("readPageLabel", () => {
 describe("naming a Spotify tab whose title follows the playing song", () => {
   /** What Spotify makes of the title while a song plays: no site name at the end. */
   const PLAYING = "Race My Mind • Drake";
-  const name = (url: string, title: string, pageTitle?: string): string | undefined =>
-    musicTabEntries([tab(url, title, pageTitle)])[0]?.name;
+  const name = (url: string, title: string, pageTitle?: string, pageArtist?: string): string | undefined =>
+    musicTabEntries([tab(url, title, pageTitle, pageArtist)])[0]?.name;
 
   it("prefers the page's own heading over any tab title", () => {
-    expect(name(ALBUM, PLAYING, "Heavy Is The Crown by Anderson .Paak, Cordae")).toBe(
-      "Heavy Is The Crown by Anderson .Paak, Cordae",
+    expect(name(ALBUM, PLAYING, "Heavy Is The Crown", "Anderson .Paak, Cordae")).toBe(
+      "Anderson .Paak, Cordae - Heavy Is The Crown",
     );
-    expect(name(ALBUM, "Other - Album by Someone | Spotify", "Heavy Is The Crown by Cordae")).toBe(
-      "Heavy Is The Crown by Cordae",
+    expect(name(ALBUM, "Other - Album by Someone | Spotify", "Heavy Is The Crown", "Cordae")).toBe(
+      "Cordae - Heavy Is The Crown",
     );
   });
 
@@ -62,13 +63,19 @@ describe("naming a Spotify tab whose title follows the playing song", () => {
   });
 
   it.each([
-    ["English track", TRACK, "Blinding Lights - song and lyrics by The Weeknd | Spotify", "Blinding Lights by The Weeknd"],
-    ["Danish (English text) album", ALBUM, "Listen to After Hours - Album by The Weeknd | Spotify", "After Hours by The Weeknd"],
-    ["German track", TRACK, "Blinding Lights – Musik und Lyrics von The Weeknd | Spotify", "Blinding Lights – Musik und Lyrics von The Weeknd"],
-    ["German album", ALBUM, "Streame After Hours – Album von The Weeknd | Spotify", "Streame After Hours – Album von The Weeknd"],
-    ["Japanese album", ALBUM, "ザ・ウィークエンドのアルバム - After Hoursを聴く | Spotify", "ザ・ウィークエンドのアルバム - After Hoursを聴く"],
+    ["English track", TRACK, "Blinding Lights - song and lyrics by The Weeknd | Spotify", "The Weeknd - Blinding Lights"],
+    ["Danish (English text) album", ALBUM, "Listen to After Hours - Album by The Weeknd | Spotify", "The Weeknd - After Hours"],
+    ["German track", TRACK, "Blinding Lights – Musik und Lyrics von The Weeknd | Spotify", "The Weeknd - Blinding Lights"],
+    ["German album", ALBUM, "Streame After Hours – Album von The Weeknd | Spotify", "The Weeknd - After Hours"],
+    ["Japanese album", ALBUM, "ザ・ウィークエンドのアルバム - After Hoursを聴く | Spotify", "ザ・ウィークエンド - After Hours"],
+    ["Japanese track", TRACK, "Blinding Lights ‑ 曲・歌詞：ザ・ウィークエンド | Spotify", "ザ・ウィークエンド - Blinding Lights"],
   ])("uses a title that is provably the page's own when the page could not be read: %s", (_label, url, title, expected) => {
     expect(name(url, title)).toBe(expected);
+  });
+
+  it("keeps a generic name for a Spotify title in a wording not seen live, and one with no site name", () => {
+    expect(name(ALBUM, "Blinding Lights - Titel und Songtext von The Weeknd | Spotify")).toBe("Spotify album");
+    expect(name(TRACK, "Blinding Lights - song and lyrics by The Weeknd")).toBe("Spotify track");
   });
 
   it("keeps a generic name when the heading was read from another page, whatever the title says", () => {
@@ -89,7 +96,7 @@ describe("withPageTitles", () => {
       return Promise.resolve({ path: "/album/1uyf3l2d4XYwiEqAb7t7fX", title: "Heavy Is The Crown", artists: ["Cordae"] });
     });
     expect(read).toEqual(["1"]);
-    expect(out[0]?.pageTitle).toBe("Heavy Is The Crown by Cordae");
+    expect([out[0]?.pageTitle, out[0]?.pageArtist]).toEqual(["Heavy Is The Crown", "Cordae"]);
     expect(out[1]?.pageTitle).toBeUndefined();
   });
 
@@ -112,7 +119,7 @@ describe("withPageTitles", () => {
     const out = await withPageTitles([tab(TRACK, "x")], () =>
       Promise.resolve({ path: "/intl-de/track/4cOdK2wGLETKBW3PvgPWqT", title: "Song", artists: ["A"] }),
     );
-    expect(out[0]?.pageTitle).toBe("Song by A");
+    expect([out[0]?.pageTitle, out[0]?.pageArtist]).toEqual(["Song", "A"]);
   });
 });
 

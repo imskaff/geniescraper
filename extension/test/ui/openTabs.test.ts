@@ -48,8 +48,8 @@ describe("the open Apple Music pages on the link screen", () => {
     expect(section.querySelector("h3")?.textContent).toBe("2 music pages detected");
     const items = [...section.querySelectorAll<HTMLElement>("li")];
     expect(items.map((li) => li.querySelector(".open-name")?.textContent)).toEqual([
-      "Chihiro - Song by Demo Artist",
-      "Demo Album - Album by Demo Artist",
+      "Demo Artist - Chihiro",
+      "Demo Artist - Demo Album",
     ]);
     expect(items.map((li) => li.querySelector(".tag")?.textContent)).toEqual([
       "Apple Music · Song · this page",
@@ -221,5 +221,20 @@ describe("the Get credits button needs a link", () => {
     ($(root, "form") as HTMLFormElement).requestSubmit();
     await flush();
     expect(env.api.calls.some((call) => call.startsWith("detect:"))).toBe(false);
+  });
+});
+
+describe("an Apple Music album address with a song picked", () => {
+  it("is listed as a Song under the song's own name, and is read as that song", async () => {
+    const withSong = `${ALBUM.url}?i=1739659140`;
+    const { root, env } = await mount({
+      openTabs: tabs([withSong, "LONELY AT THE TOP - Song with Lyrics by Joey Bada$$ - Apple Music", true]),
+    });
+    const item = $(root, '[data-key="open-page-0"]');
+    expect(item.querySelector(".open-name")?.textContent).toBe("Joey Bada$$ - LONELY AT THE TOP");
+    expect(item.querySelector(".tag")?.textContent).toBe("Apple Music · Song · this page");
+    item.click();
+    await flush();
+    expect(env.api.calls[0]).toContain("music.apple.com/us/song/song/1739659140");
   });
 });
