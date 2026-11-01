@@ -13,10 +13,11 @@ It never presses Save: you check the form and save it yourself.
 </p>
 
 <p>
-<a href="#features">Features</a> ·
+<b><a href="#features">Features</a> ·
 <a href="#installation">Installation</a> ·
 <a href="#usage">Usage</a> ·
-<a href="#configuration">Configuration</a> ·
+<a href="#configuration">Configuration</a></b>
+   
 <a href="extension/FAQ.md">FAQ</a> ·
 <a href="extension/PRIVACY.md">Privacy</a> ·
 <a href="#contact">Contact</a> ·
