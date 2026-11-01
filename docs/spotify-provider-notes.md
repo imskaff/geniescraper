@@ -66,7 +66,7 @@ Synthetic keyboard events do nothing (0 of 10, earlier run), so do not bother wi
 ### Forcing English
 
 Spotify localizes on the server from the `Accept-Language` request header of the page load.
-These did **not** work: the `/intl-en/` URL prefix (the page redirects and stays in the browser language), and overriding `navigator.language` in the page.
+These did **not** work: the `/intl-en/` URL prefix (the page redirects and stays in the browser language, measured again 2026-11-01 in German, Polish and Japanese: see below), and overriding `navigator.language` in the page.
 This worked (2 of 2, Chrome set to German, page came back with `lang="en"`, heading "Credits", English sections and roles):
 
 ```js
@@ -83,6 +83,43 @@ await chrome.declarativeNetRequest.updateSessionRules({
 
 Two traps: `main_frame` must be listed explicitly (it is excluded by default for `modifyHeaders`), and the rule must be limited to the probe's `tabIds` so the user's own Spotify tabs keep their language.
 Remove the rule when the job ends.
+
+### English by address: measured again on 2026-11-01, does not work
+
+Re-measured before building anything, in a throwaway Chrome profile per run (`--lang` and `--accept-lang` set), signed out, 11 page loads in all, one at a time, no captcha or 429.
+
+| Run | Address asked for | Address after load | `lang` | Dialog heading | Read time |
+|---|---|---|---|---|---|
+| de-DE | `/track/<id>` | `/intl-de/track/<id>` | de | Songinfos | 2845 ms |
+| de-DE | `/intl-en/track/<id>` | `/intl-de/track/<id>` | de | Songinfos | 2717 ms |
+| pl-PL | `/intl-en/track/<id>` | `/track/<id>` | pl | Autorzy treści | 2410 ms |
+| ja-JP | `/intl-en/track/<id>` | `/intl-ja/track/<id>` | ja | 楽曲クレジット | 2702 ms |
+| de-DE | `/intl-en/album/<album id>` and the plain album address | `/intl-de/album/<id>` | de | not read (the album id used had no track rows, so only the redirect is a result) | 16.7 s both (waiting for rows that never came) |
+
+- The `/intl-en/` prefix is dropped by a redirect to the address of the browser language in every case (4 of 4), so the page, its dialog and its role names stay in that language.
+  The click path was untouched, and the read was not slower, but it also did not help.
+- `/intl-en/` is not a spelling the web player writes.
+  What the player does when its language picker is used (button `[data-testid="language-selection-button"]`, then `[data-testid="language-option-en"]`, a button and not a link) was watched in a throwaway profile: it sets the cookie **`sp_locale=en`** and reloads the page on the **unprefixed** address.
+  There is no `sp_locale` cookie before that, and no other cookie or address changes; English has no prefix, other languages get `/intl-xx/`.
+- Setting `document.cookie = "sp_locale=en; path=/"` from the page (no permission needed, the cookie is not `HttpOnly`) and loading the plain address gave `lang="en"` (1 of 1).
+  This is not usable as the reader's way: the cookie belongs to the whole `open.spotify.com` origin, so the user's own Spotify tabs would switch language on their next load, and an `sp_locale` the user already chose would have to be saved and restored (even a crash between set and restore leaves their player in English).
+  It would also be the extension writing to the user's browsing state, which the project avoids.
+
+Nothing was built from this: the English address is not an option.
+
+#### Option on paper: tab-scoped `Accept-Language` rule (the recipe above)
+
+- Needs `declarativeNetRequestWithHostAccess` (a `modifyHeaders` rule on a site needs the host permission, which the extension already has for `open.spotify.com`).
+  Plain `declarativeNetRequest` also works but is the wider permission (its install prompt line is, to the best of my knowledge, "Block content on any page"); the `WithHostAccess` variant is, to the best of my knowledge, listed without any line of its own in Chrome's prompt, so it adds nothing a reader would see.
+  Both statements come from memory of Chrome's documentation and were **not** verified in this session.
+- It can probably be an optional permission (`optional_permissions`) and be requested from a click when a read is about to happen in a language without an alias table; not verified.
+  A request from a click shows Chrome's own small "allow" dialog naming the permission.
+- The rule is a session rule limited to the reader's `tabId`, removed when the job ends: the user's own tabs are not affected, no cookie is written.
+  Cost: the tab has to be created on `about:blank`, the rule added, then navigated (one extra call, a few ms); the 2 of 2 earlier forced-English reads had normal timings.
+- Safari: the API exists in Safari's web extensions, but support for `modifyHeaders` with `tabIds` there was not checked.
+
+Recommendation: keep the alias tables for the 12 languages they cover and add the tab-scoped rule as an optional permission, asked for only on the first read in a language the tables do not cover (or when the fallback was used), so no user sees a new permission unless they would otherwise lose roles.
+The cookie route is the only permission-free way to English and is rejected for the reasons above.
 
 ## Selectors
 
