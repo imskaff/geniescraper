@@ -4,7 +4,7 @@
 //
 //   npm run build
 //   node scripts/live-spotify-provider.mjs --chrome <chrome.exe> [--lang en-US] [--screenshots <folder>]
-//        [--album <id>] [--album-tracks 3] [--tracks <id>,<id>] [--unavailable] [--tab]
+//        [--album <id>] [--album-tracks 3] [--tracks <id>,<id>] [--unavailable] [--tab] [--plain]
 //
 // An optional host permission cannot be granted from a script (Chrome's prompt needs a real click), so this check
 // loads a scratch copy of dist/ whose manifest lists open.spotify.com as a required host. Everything else is the
@@ -41,6 +41,8 @@ const ungranted = args.includes("--ungranted");
 // scratch build to the old schedule (one page at a time, 2.5 s apart) so the same album can be timed both ways.
 const readAll = args.includes("--all");
 const before = args.includes("--before");
+// `--plain` patches the scratch build to open the plain address (no ?locale=en), to time and compare the old read.
+const plain = args.includes("--plain");
 
 const failures = [];
 const check = (name, ok, detail = "") => {
@@ -62,6 +64,12 @@ if (before) {
     workerPath,
     code.replace(/readGapMs: 300,\s*readConcurrency: 2/, "readGapMs: 2500, readConcurrency: 1"),
   );
+}
+if (plain) {
+  const workerPath = join(scratch, "background", "worker.js");
+  const code = readFileSync(workerPath, "utf-8");
+  if (!code.includes("?locale=en")) throw new Error("--plain: the English query was not found in the build.");
+  writeFileSync(workerPath, code.replaceAll("?locale=en", ""));
 }
 if (!ungranted) {
   manifest.optional_host_permissions = manifest.optional_host_permissions.filter(
