@@ -28,6 +28,8 @@ export interface SongCredits {
   youtubeKind?: VideoKind;
   /** True when the user pasted this link themselves, instead of the look-up finding it. */
   youtubeByUser?: boolean;
+  /** Remarks about how this was read: what its source cannot give, and roles left out. Shown beside the credits. */
+  notes?: string[];
 }
 
 /** Year, month (1-12) and day of the song's release date; null when it is unknown. */

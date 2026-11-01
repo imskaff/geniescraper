@@ -55,7 +55,9 @@ The pass, using a public album with several tracks and a Genius song you can ope
    Check each way it should stop and resume: click in the form (it pauses), Esc and the Auto-paste switch (ON glows, OFF is gray and lights up on hover), closing the panel, a name Genius has no exact match for (it waits, then carries on after you choose), and turning Auto-paste back on.
    Then Step by step: the fill key fills one field per press, and Back and Skip work.
 6. Finish a track: the next-track countdown runs and starts the next one; after the last track the menu countdown returns to the main menu.
-7. Settings: change a setting, close and reopen the panel, and see it kept; the optional hosts ask Chrome for permission only when switched on, and can be taken back.
+7. Settings: change a setting, close and reopen the panel, and see it kept; the YouTube hosts ask Chrome for permission only when switched on, and can be taken back.
+   There is no Deezer option: Deezer is a required host and the permanent cover fallback.
+   Spotify: open a Spotify track in a tab with something else playing and check the open-pages card names the page, not the playing song; press Get credits on a Spotify album and check the explanation card, then Chrome's prompt after Allow, then the track list and the credits with their "About this read" notes; a Spotify song has a cover (from Apple's catalog or Deezer) but no ISRC or track release date.
 8. Reload the extension on the extensions page and reopen the panel: the session is restored, nothing breaks.
 9. Edge only: the side panel and F-key suppression behave the same as in Chrome.
 
@@ -74,11 +76,11 @@ Pushing a tag named `extension-v<version>` runs `.github/workflows/extension-rel
 The workflow stops with a message if the tag and the version differ.
 
 ```bash
-git tag extension-v0.6.0
+git tag extension-v0.6.1
 ```
 
 ```bash
-git push origin extension-v0.6.0
+git push origin extension-v0.6.1
 ```
 
 Do this from the commit you tested, after it is on `main`.

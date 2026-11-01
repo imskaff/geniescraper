@@ -82,7 +82,7 @@ describe("link screen", () => {
     const { root } = await mount();
     expectAccessible(root);
     const input = $input(root, "#link");
-    expect(accessibleName(input)).toBe("Apple Music album or song link");
+    expect(accessibleName(input)).toBe("Apple Music or Spotify album or song link");
     expect($(root, "#link-help").textContent).toContain("paste its link");
   });
 
@@ -100,7 +100,7 @@ describe("link screen", () => {
   it("announces an invalid link in the alert region and reads nothing", async () => {
     const { root, env } = await mount();
     await submitLink(root, "https://example.com/");
-    expect($(root, "#alert").textContent).toBe("That is not an Apple Music album or song link.");
+    expect($(root, "#alert").textContent).toBe("That is not an Apple Music or Spotify album or song link.");
     expect(env.api.calls).toEqual([]);
   });
 
@@ -445,7 +445,7 @@ describe("review screen", () => {
     expect($(root, "h2").textContent).toBe("Demo Album");
     byText(root, "button", "Back to main menu").click();
     await flush();
-    expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
+    expect($(root, "h2").textContent).toBe("Get credits from Apple Music or Spotify");
   });
 
   it("says when a track has no credits", async () => {
@@ -482,7 +482,6 @@ describe("settings screen", () => {
       "Open each song on Genius before pasting it",
       "Find a YouTube link for each track (recommended)",
       "Show the key",
-      "Search Deezer for a cover when Apple has none",
     ]);
     // Selects and the number box are named by their labels too (expectAccessible checks every control).
     expect([...root.querySelectorAll<HTMLElement>("select, input[type=number]")].map(accessibleName)).toEqual([
@@ -497,7 +496,7 @@ describe("settings screen", () => {
 
     root.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     await flush();
-    expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
+    expect($(root, "h2").textContent).toBe("Get credits from Apple Music or Spotify");
   });
 
   it("saves a toggled setting", async () => {
@@ -553,40 +552,14 @@ describe("untrusted text", () => {
   });
 });
 
-describe("the Deezer look-up box", () => {
-  const open = async (options: Parameters<typeof fakeEnv>[0] = {}) => {
-    const ui = await mount(options);
-    byText(ui.root, "button", "Settings").click();
+describe("the cover look-up in Settings", () => {
+  it("has no Deezer option: Deezer is always the fallback when Apple finds no cover", async () => {
+    const { root } = await mount();
+    byText(root, "button", "Settings").click();
     await flush();
-    return { ...ui, box: ui.root.querySelector<HTMLInputElement>('[data-key="host-deezer"]') as HTMLInputElement };
-  };
-
-  it("shows the permission Chrome has, not a saved choice", async () => {
-    expect((await open()).box.checked).toBe(false);
-    expect((await open({ hosts: { deezer: true } })).box.checked).toBe(true);
-  });
-
-  it("asks Chrome inside the click itself, before anything is awaited", async () => {
-    const { env, box } = await open();
-    box.checked = true;
-    box.dispatchEvent(new Event("change", { bubbles: true }));
-    expect(env.hosts.log).toEqual(["request:deezer"]);
-  });
-
-  it("unticks again when the user declines Chrome's prompt", async () => {
-    const { env, root, box } = await open();
-    env.hosts.allow = false;
-    box.checked = true;
-    box.dispatchEvent(new Event("change", { bubbles: true }));
-    await flush();
-    expect(root.querySelector<HTMLInputElement>('[data-key="host-deezer"]')?.checked).toBe(false);
-  });
-
-  it("unticks live when the permission is taken back in chrome://extensions", async () => {
-    const { env, root } = await open({ hosts: { deezer: true } });
-    env.hosts.changeElsewhere("deezer", false);
-    await flush();
-    expect(root.querySelector<HTMLInputElement>('[data-key="host-deezer"]')?.checked).toBe(false);
+    expect(root.querySelector('[data-key="host-deezer"]')).toBeNull();
+    expect(root.querySelector('[data-key="settings-deezer"]')).toBeNull();
+    expect(root.textContent).not.toContain("Deezer");
   });
 });
 

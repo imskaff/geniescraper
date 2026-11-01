@@ -70,6 +70,25 @@ async function waitForLoad(
   return "timeout";
 }
 
+/** The content request for this provider; each provider's script answers only its own prefix. */
+function request(
+  provider: CreditsProvider,
+  kind: "detect" | "scrape",
+  url: string,
+  trackTitle: string,
+): ContentRequest {
+  if (provider.id === "spotify") {
+    return kind === "detect" ? { type: "spotify/detect", url } : { type: "spotify/scrape", url, trackTitle };
+  }
+  return kind === "detect" ? { type: "apple/detect", url } : { type: "apple/scrape", url, trackTitle };
+}
+
+/** An optional host the user has not allowed yet: nothing is opened, and the panel is told what to ask for. */
+async function missingAccess(ports: BrowserPorts, provider: CreditsProvider): Promise<Result<never> | null> {
+  if (provider.permission === "required" || (await ports.hasAccess(provider.origins))) return null;
+  return fail("no-access", `Allow Géniescraper to read ${provider.label} pages first, then try again.`);
+}
+
 /** Ask the content script of `tabId` one question and check the shape of the answer. */
 async function ask<T>(
   ports: BrowserPorts,
@@ -127,11 +146,13 @@ export async function detectAlbum(
   if (!recognised) return fail("invalid-url", unsupportedLinkMessage("album-or-song"));
   const { provider } = recognised;
   const timing = withOverrides(baseTiming, provider);
-  const request: ContentRequest = { type: "apple/detect", url };
+  const denied = await missingAccess(ports, provider);
+  if (denied) return denied;
+  const message = request(provider, "detect", url, "");
 
   if (tabId === undefined) {
-    return inBackgroundTab(ports, url, timing, provider, (id) =>
-      ask(ports, id, request, timing, provider, isAlbumInfo),
+    return inBackgroundTab(ports, provider.openUrl(url), timing, provider, (id) =>
+      ask(ports, id, message, timing, provider, isAlbumInfo),
     );
   }
   // The user's tab is only read, never navigated or closed, and only if it really shows this page.
@@ -139,7 +160,7 @@ export async function detectAlbum(
     const tab = await ports.getTab(tabId);
     if (tab?.url !== url) return fail("invalid-url", provider.messages.tabNotShowing);
     await ports.injectContentScript(tabId, provider.contentScript);
-    return await ask(ports, tabId, request, timing, provider, isAlbumInfo);
+    return await ask(ports, tabId, message, timing, provider, isAlbumInfo);
   } catch (error) {
     return fail("tab-failed", error instanceof Error ? error.message : "Could not read the tab.");
   }
@@ -157,6 +178,10 @@ export async function scrapeTrack(
   const { provider } = recognised;
   if (recognised.url.kind !== "song") return fail("invalid-url", provider.messages.notSong);
   const timing = withOverrides(baseTiming, provider);
-  const request: ContentRequest = { type: "apple/scrape", url, trackTitle };
-  return inBackgroundTab(ports, url, timing, provider, (id) => ask(ports, id, request, timing, provider, isPageScrape));
+  const denied = await missingAccess(ports, provider);
+  if (denied) return denied;
+  const message = request(provider, "scrape", url, trackTitle);
+  return inBackgroundTab(ports, provider.openUrl(url), timing, provider, (id) =>
+    ask(ports, id, message, timing, provider, isPageScrape),
+  );
 }

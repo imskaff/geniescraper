@@ -17,7 +17,7 @@ Productivity
 
 ## Detailed description
 
-Géniescraper copies the credits of an Apple Music song into the Genius song edit form, so you do not have to type them.
+Géniescraper copies the credits of an Apple Music or Spotify song into the Genius song edit form, so you do not have to type them.
 
 How it works:
 
@@ -39,16 +39,16 @@ You stay in control:
 
 Optional extras, off until you turn them on (Chrome asks first):
 
-- A cover-art fallback from Deezer.
+- Reading credits from Spotify pages (Chrome asks the first time you pick a Spotify page).
 - YouTube links, found by searching YouTube, or through Google's official YouTube service if you add your own free key. The panel walks you through getting one.
 
-Private by design: no accounts, no analytics, no tracking. Song titles and artists are sent only to the services above when you use them.
+Private by design: no accounts, no analytics, no tracking. Song titles and artists are sent only to the services above when you use them; Deezer is asked for a cover, with only the title and artist, when Apple's catalog has none.
 
 Géniescraper is not affiliated with Apple or Genius.
 
 ## Single purpose
 
-Copy song credits from Apple Music into the Genius song edit form.
+Copy song credits from Apple Music or Spotify into the Genius song edit form.
 
 ## Permission justifications
 
@@ -60,7 +60,8 @@ Copy song credits from Apple Music into the Genius song edit form.
 | Host `https://music.apple.com/*`             | Reads the credits of the Apple Music album or song the user gave.                                                                                                                                                 |
 | Host `https://genius.com/*`                  | Fills the fields of the Genius song edit form when the user presses the Next key, and, when the user presses Open on Genius, searches Genius for the song and opens its page and Edit Metadata form. Never saves. |
 | Host `https://itunes.apple.com/*`            | Finds the exact cover art for the song from Apple's public catalog.                                                                                                                                               |
-| Optional host `https://api.deezer.com/*`     | Cover-art fallback; requested only when the user turns it on.                                                                                                                                                     |
+| Host `https://api.deezer.com/*`              | Cover-art fallback when Apple's catalog has none (always so for Spotify); only the song title and artist are sent, and only when Apple's search found nothing.                                                    |
+| Optional host `https://open.spotify.com/*`   | Reads the credits of the Spotify track or album page the user picks, in a minimized window; requested only when the user first picks a Spotify page.                                                              |
 | Optional host `https://www.youtube.com/*`    | Finds a YouTube link for the song; requested only when the user turns it on.                                                                                                                                      |
 | Optional host `https://www.googleapis.com/*` | Finds the YouTube link through Google's official service with the user's own key; requested only when the user adds a key.                                                                                        |
 
@@ -85,7 +86,7 @@ Suggested answers (check them against the dashboard's current wording at submiss
 - Personally identifiable information, health, financial, personal communications, location, web history, user activity: not collected.
 - Authentication information: the optional YouTube key is typed in by the user, stored only on their device and sent only to Google, in a request header, to look up a link. If the dashboard counts that as handled, tick it and say "to give the user the feature they turned on".
 - Web history: not collected. The titles and addresses of the Apple Music pages the user has open are sent only to the user's own desktop app on the same computer, and only if they paired it.
-- Website content: song titles, artist names and credits are read from the Apple Music page the user asked for, and the title and artist are sent to iTunes (always), to Genius (only when the user presses Open on Genius or turns on opening each song before pasting), and to Deezer, YouTube and Google (only when the user turns those on), to find a cover, a link or the song's Genius page. Tick it if the dashboard counts text sent to those services, with the purpose "core functionality".
+- Website content: song titles, artist names and credits are read from the Apple Music or Spotify page the user asked for, and the title and artist are sent to iTunes (always), to Genius (only when the user presses Open on Genius or turns on opening each song before pasting), and to Deezer, YouTube and Google (only when the user turns those on), to find a cover, a link or the song's Genius page. Tick it if the dashboard counts text sent to those services, with the purpose "core functionality".
 - Certifications: not sold or transferred to third parties apart from the requests above, which the user asked for; not used for anything unrelated to the single purpose; not used for creditworthiness or lending.
 
 ## Privacy policy

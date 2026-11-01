@@ -22,6 +22,14 @@ export interface ProviderMessages {
   slowResponse: string;
 }
 
+/** The title and artists a page shows for itself, read from the page. */
+export interface PageLabel {
+  /** Path of the page the heading belongs to, so a label read mid-navigation can be told from the address. */
+  path: string;
+  title: string;
+  artists: string[];
+}
+
 export interface CreditsProvider {
   readonly id: SourceId;
   /** Shown in the UI and in errors: "Apple Music". */
@@ -34,12 +42,39 @@ export interface CreditsProvider {
   readonly contentScript: string;
   /** Whether a minimized background window can run the in-page reader. */
   readonly worksHidden: boolean;
+  /**
+   * Set for a site that is read politely: at least this many milliseconds between the starts of two page loads, and no
+   * reading at all for a while after the site asked for a captcha. Absent for a site that tolerates parallel reads.
+   */
+  readonly readGapMs?: number;
+  /** For a polite site: how many pages may load at once while it behaves (1 when absent). One failure drops it to 1. */
+  readonly readConcurrency?: number;
+  /**
+   * True when the browser tab's title is not the page's own (Spotify rewrites it to the song that is playing). The
+   * open-pages list then names such a tab only from `OpenTab.pageTitle`, which the panel reads from the page itself,
+   * and never from the tab title.
+   */
+  liveTitle?(url: string): boolean;
+  /** For a `liveTitle` provider: the function run in the tab (self-contained) to read the page's own title and artists. */
+  readonly readPageLabel?: () => PageLabel;
+  /**
+   * For a `liveTitle` provider: whether a tab title is certainly the page's own and not a rewritten one. Used only when
+   * the page's heading could not be read. Spotify's own titles end with "| Spotify"; a playing song's does not.
+   */
+  isOwnTitle?(title: string): boolean;
   /** Overrides of the shared waits, for a site that needs longer. */
   readonly timing?: Partial<ClientTiming>;
   readonly messages: ProviderMessages;
   /** Strict address check; null for anything that is not an album or song page of this site. */
   parseUrl(url: string): MusicUrl | null;
-  /** Name for the open-pages list; `title` has its invisible marks and extra spaces removed already. */
+  /** What names the page in an address: two addresses with the same key are one page (the open-pages list merges them). */
+  pageKey(url: string): string;
+  /** The address to open in a background tab for a recognised `url`: a provider may drop a locale prefix or tracking. */
+  openUrl(url: string): string;
+  /**
+   * Name for the open-pages list, "Artist - Title" (the title alone when the artist is not known), from a tab title
+   * that has its invisible marks and extra spaces removed already; a generic name when nothing can be made of it.
+   */
   tabName(title: string, url: string, kind: PageKind): string;
   /** Genius role name for a raw role label as this site shows it. */
   normaliseRole(raw: string): string;

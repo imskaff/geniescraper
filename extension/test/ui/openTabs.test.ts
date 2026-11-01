@@ -45,20 +45,23 @@ describe("the open Apple Music pages on the link screen", () => {
     });
     const section = $(root, '[data-key="open-pages"]');
     expect(section.getAttribute("data-state")).toBe("found");
-    expect(section.querySelector("h3")?.textContent).toBe("2 Apple Music pages detected");
+    expect(section.querySelector("h3")?.textContent).toBe("2 music pages detected");
     const items = [...section.querySelectorAll<HTMLElement>("li")];
     expect(items.map((li) => li.querySelector(".open-name")?.textContent)).toEqual([
-      "Chihiro - Song by Demo Artist",
-      "Demo Album - Album by Demo Artist",
+      "Demo Artist - Chihiro",
+      "Demo Artist - Demo Album",
     ]);
-    expect(items.map((li) => li.querySelector(".tag")?.textContent)).toEqual(["Song · this page", "Album"]);
+    expect(items.map((li) => li.querySelector(".tag")?.textContent)).toEqual([
+      "Apple Music · Song · this page",
+      "Apple Music · Album",
+    ]);
   });
 
   it("says it is listening when no Apple Music page is open, and tells what to do", async () => {
     const { root } = await mount({ openTabs: [] });
     const section = $(root, '[data-key="open-pages"]');
     expect(section.getAttribute("data-state")).toBe("listening");
-    expect(section.querySelector("h3")?.textContent).toBe("Listening for Apple Music pages…");
+    expect(section.querySelector("h3")?.textContent).toBe("Listening for Apple Music or Spotify pages…");
     expect(section.textContent).toContain("Open an album or song");
     expect(section.querySelector("li")).toBeNull();
     // The link box and the Scrape button are as they were.
@@ -70,7 +73,7 @@ describe("the open Apple Music pages on the link screen", () => {
       openTabs: tabs(["https://music.apple.com/us/browse", "Browse - Apple Music"], [ALBUM.url, "Demo Album"]),
     });
     expect(root.querySelectorAll('[data-key="open-pages"] li')).toHaveLength(1);
-    expect($(root, '[data-key="open-pages"] h3').textContent).toBe("Apple Music page detected");
+    expect($(root, '[data-key="open-pages"] h3').textContent).toBe("Music page detected");
   });
 
   it("makes the page the user is on stand out from the others", async () => {
@@ -218,5 +221,29 @@ describe("the Get credits button needs a link", () => {
     ($(root, "form") as HTMLFormElement).requestSubmit();
     await flush();
     expect(env.api.calls.some((call) => call.startsWith("detect:"))).toBe(false);
+  });
+});
+
+describe("an Apple Music album address with a song picked", () => {
+  it("is listed as the Album, named by its header, and Get credits reads the whole album", async () => {
+    const withSong = `${ALBUM.url}?i=1739659140`;
+    const { root, env } = await mount({
+      openTabs: [
+        {
+          tabId: 1,
+          url: withSong,
+          title: "LONELY AT THE TOP - Song with Lyrics by Joey Bada$$ - Apple Music",
+          pageTitle: "Lonely At The Top",
+          pageArtist: "Joey Bada$$",
+          current: true,
+        },
+      ],
+    });
+    const item = $(root, '[data-key="open-page-0"]');
+    expect(item.querySelector(".open-name")?.textContent).toBe("Joey Bada$$ - Lonely At The Top");
+    expect(item.querySelector(".tag")?.textContent).toBe("Apple Music · Album · this page");
+    item.click();
+    await flush();
+    expect(env.api.calls[0]).toContain(withSong);
   });
 });

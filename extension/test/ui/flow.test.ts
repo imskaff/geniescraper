@@ -111,7 +111,7 @@ describe("Back to main menu", () => {
     const { root, panel } = await toReview();
     button(root, "Back to main menu").click();
     await flush();
-    expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
+    expect($(root, "h2").textContent).toBe("Get credits from Apple Music or Spotify");
     expect(panel.state.session).toMatchObject({ screen: "link", album: null, results: [], selected: [] });
   });
 
@@ -310,7 +310,7 @@ describe("the finished screen", () => {
     for (const [label, expected] of [
       ["Back to the credits", "Credits"],
       ["Back to the track list", "Demo Album"],
-      ["Back to main menu", "Get credits from Apple Music"],
+      ["Back to main menu", "Get credits from Apple Music or Spotify"],
     ] as const) {
       const { root, panel } = await toDone();
       button(root, label).click();
@@ -405,7 +405,7 @@ describe("returning to the main menu after the last step", () => {
     const { root, panel } = await timed();
     await tick(30);
     await flush();
-    expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
+    expect($(root, "h2").textContent).toBe("Get credits from Apple Music or Spotify");
     expect(panel.state.paste.active).toBe(false);
     expect(panel.state.doneCountdown).toBeNull();
   });
@@ -424,7 +424,7 @@ describe("returning to the main menu after the last step", () => {
     (document.activeElement as HTMLElement).blur();
     await tick(28);
     await flush();
-    expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
+    expect($(root, "h2").textContent).toBe("Get credits from Apple Music or Spotify");
   });
 
   it("does not hold for the heading having focus, which is where focus lands on this screen", async () => {
@@ -432,7 +432,7 @@ describe("returning to the main menu after the last step", () => {
     expect(document.activeElement).toBe($(root, "h2"));
     await tick(30);
     await flush();
-    expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
+    expect($(root, "h2").textContent).toBe("Get credits from Apple Music or Spotify");
   });
 
   it("stops when the user chooses a way out or goes back a step", async () => {
@@ -502,7 +502,7 @@ describe("returning to the main menu after the last step", () => {
     expect(button(root, "Back to main menu").textContent).toBe("Back to main menu (12s)");
     await tick(12);
     await flush();
-    expect($(root, "h2").textContent).toBe("Get credits from Apple Music");
+    expect($(root, "h2").textContent).toBe("Get credits from Apple Music or Spotify");
   });
 
   it("does not start the next track by itself when its seconds are zero, and keeps the button", async () => {

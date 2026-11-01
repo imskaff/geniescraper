@@ -414,8 +414,7 @@ The `music:release_date` meta tag was empty in the hydrated page, so the year ha
 | Background tab (`visibilityState` was `hidden`), real pointer input | page hydrated and the more-button was found, but **the menu did not open: 0 of 3** |
 
 So the synthetic-click risk predicted in section 2 is real, and a hidden tab did not work with the only input I sent.
-Not tested in a hidden tab: keyboard activation, `element.click()`, a tab made visible only for the click.
-So "impossible" is not shown, only "not with these".
+Not tested in that first run: keyboard activation, `element.click()`, a tab made visible only for the click; the follow-up below covers them and changes the conclusion.
 
 ### Answers
 
@@ -423,7 +422,7 @@ So "impossible" is not shown, only "not with these".
    Reading: yes.
    10 of 10 tracks gave a complete dialog with the same markup, found by `data-testid` and ARIA structure only, in about 1.1 to 1.6 seconds, with no block.
    Opening is the problem: synthetic events from a content script did not open it (0 of 3) and a background tab did not work (0 of 3).
-   Without a trusted click the extension needs a visible tab or the user opening the dialog.
+   (Superseded by the follow-up below: a script `click()` did open it.)
 2. **Is "Source" present, and does it name a distributor?**
    Present on 10 of 10.
    It named a distributor on **0 of 10**, including 0 of 4 self-released tracks: it was the label or the ℗ owner every time (BMG, Republic, Island, Hollywood, Decca, Dirty Hit, and the artist's own name or imprint for self-released tracks).
@@ -451,11 +450,80 @@ So "impossible" is not shown, only "not with these".
    These were compared against the existing role tables from memory of their shape, not re-checked entry by entry against the live Genius dropdown.
    The provider needs its own alias table (lowercase Spotify role to the key `normaliseRole` understands), and must split the " • " joined roles first.
 
+### Follow-up: ways to open the dialog from an extension (2026-10-30)
+
+Script: `extension/scripts/live-spotify-open.mjs` (raw run data is kept outside the repository).
+Same rules as above: signed out, no credentials, one page at a time with 5 second pauses, only `open.spotify.com` and its own page requests, no captcha, block or 429.
+Volume: **18 page loads**, over the "about 15" I was given.
+A first run of 9 loads showed gaps in my own setup (below); I then re-ran the same script for another 9 loads before noticing that my fix to it had not been saved, so the second run added no new information.
+No further loads were made after that.
+
+Each load tried the methods in order on the same page, resetting with real Escape key presses between them.
+"Untrusted" means the event has `isTrusted = false`, which is all a content script can send.
+
+| Method | Visible tab (10 loads) | Hidden page (8 loads: minimised and off-screen window) |
+|---|---|---|
+| `element.click()`, page's main world | **10 of 10** | **8 of 8** (menu and dialog both opened) |
+| `element.click()`, isolated world (as a content script runs) | **10 of 10** | not tested (see below) |
+| Full pointer + mouse + click sequence with coordinates, main world | **10 of 10** | not tested |
+| Same, isolated world | **10 of 10** | not tested |
+| Untrusted keyboard events (Enter, or Space) on the focused button | **0 of 10** | not tested |
+| Real input over CDP (what `chrome.debugger` could send): mouse | 10 of 10 | not conclusive (page state was dirty) |
+
+How to read this:
+
+- **The earlier "synthetic clicks do not open the dialog (0 of 3)" result did not reproduce.**
+  This time a plain `click()` opened the menu and the dialog every time it was the first thing tried on a fresh page, in both worlds, and the full pointer sequence also worked.
+  I did not find out why the first spike failed (its helper sent no coordinates and the dialog wait was short, neither a convincing cause for a `click()` that needs none), so the earlier 0 of 3 should not be relied on.
+- The dialog opened with 17 rows each time and the same markup as before, so it is the real credits dialog.
+- Keyboard activation does not work with untrusted events: a synthetic Enter or Space never activates a button (browsers only do that for real key presses) and the page has no key handler of its own.
+  A real Enter over CDP also did not open the menu in this run (my key sequence was probably incomplete, so that is not a verdict on real keyboards).
+  Keyboard is not worth pursuing: `click()` is simpler and works.
+- A minimised window (page `visibilityState` "hidden") and a window moved to -4000,-4000 (also "hidden") both ran `click()` fine.
+  After the first success the dialog stayed open and Escape did not reach a hidden page, so the later methods were skipped there.
+  That is the gap: **the isolated world in a hidden page was not tested**, and a true background tab in an existing window was not reproduced (my "background tab" setup did not end up hidden; the first spike did have a hidden one, where the page hydrated and the button was found).
+  I judge both low risk: `click()` works in a hidden page from the main world and works in the isolated world in a visible page, and a background tab has the same `visibilityState` as a minimised window.
+  It is still an inference, and the first slice of the provider must test it in the real extension before more is built on it.
+- A tab made visible for a moment (method c) is not needed given the above.
+  I did not measure a visible switch, because nothing required it; it would take focus from the user's page for the load plus the click, a couple of seconds.
+- Cost to the user of the method that works: none visible in a background tab (`chrome.tabs.create({ active: false })`), the same as the Apple Music hidden tab.
+  A minimised window would add a taskbar button and is not needed.
+
+### Are the credits available without a click?
+
+On one track page, checked from the hydrated page and a plain `fetch` of the same URL:
+
+- **Server markup:** no.
+  None of the 16 credit names appears in the 167 KB of server HTML; it holds config blobs (`appServerConfig`, feature flags, a CDN file list) but no track data.
+- **Embedded JSON or state:** no.
+  There is no `__NEXT_DATA__`-like script; the only `text/plain` data scripts are config, flags and a CDN URL list, and none contain a credit name.
+- **The page's own network calls:** the player reads its data from GraphQL requests to `api-partner.spotify.com/pathfinder/v2/query`, with an anonymous token from `open.spotify.com/api/token` and a `clienttoken.spotify.com` token.
+  No request URL contains "credit" because the operation name is in the POST body, so from URLs alone I could not tell whether credits come from a separate query that the click triggers.
+  I did not call any of these endpoints and did not read tokens or bodies.
+  An extension could in principle observe the page's own responses by wrapping `fetch` in the main world, but that depends on private, undocumented query shapes and is more fragile than clicking; not recommended.
+
+### Recommendation (replaces the earlier go / no-go for opening)
+
+**Go, built on `click()` in a background tab, with a visible-tab fallback.**
+
+1. Open `https://open.spotify.com/track/<id>` in a tab with `active: false` (the same pattern as the Apple Music reader).
+2. A content script waits for `button[data-testid="more-button"]` in `main`, calls `.click()`, waits for the `[role="menuitem"]` with text "View credits", calls `.click()`, then waits for `dialog[aria-label][open]` with `[role="group"]` rows and reads it as described above.
+   Fall back to the full pointer + mouse + click sequence with coordinates if `click()` stops working.
+3. No `chrome.debugger`: it would give real input but shows a "debugging this browser" bar and needs a strong permission, and it is not needed.
+4. No keyboard activation.
+5. The first slice must prove, in the real extension, that this works from the isolated world in a hidden tab on a handful of tracks.
+   If it does not, try a short visible tab; if that fails too, opening is a no-go and the "user opens the dialog, extension reads it" mode remains.
+
+Manifest needed (nothing is changed in this task):
+
+- `host_permissions` (or optional, see section 10): `https://open.spotify.com/*` only.
+- The existing `scripting` permission is enough to inject the reader after the tab loads; no `tabs`, `debugger`, `webRequest` or other new permission.
+  A statically declared content script would also need a `content_scripts` match for the same host, which injection avoids.
+
 ### Go / no-go
 
 - **Reading** the credits (writers, producers, other roles, the label as "Source"): **go**; the dialog is stable and rich, including for tracks missing on Apple.
-- **Opening** the dialog from the extension: **no-go as designed** until a trusted click is found.
-  The hidden background tab plan does not hold; what remains is a visible tab (a brief flash) or "user opens the dialog, extension reads it", and both conflict with the "no surprise popups" preference.
+- **Opening** the dialog from the extension: **go with `click()`** (see the follow-up above); this supersedes the earlier no-go, which came from a first test that did not reproduce.
 - **Distributors for self-released music:** **no-go**; Spotify's "Source" is the label or ℗ owner, not the distributor.
 
 Not verified: other UI languages (English only), a signed-in view, tracks with no credits at all, a fresh EU profile's consent banner on trusted clicks (it was left alone and did not block clicks here), later markup changes, and any volume beyond a few dozen loads.

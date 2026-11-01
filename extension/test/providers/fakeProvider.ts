@@ -25,6 +25,8 @@ export const FAKE_PROVIDER: CreditsProvider = {
     if (kind === "track") return { kind: "song", region: "" };
     return null;
   },
+  pageKey: (url) => url.split(/[?#]/)[0] ?? url,
+  openUrl: (url) => url,
   tabName(title) {
     return title.replace(/\s*\|\s*Tunes$/, "").trim() || "Tunes page";
   },

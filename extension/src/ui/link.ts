@@ -1,4 +1,5 @@
 // The link screen, the open-pages detector and the track list.
+import { PROVIDERS, recogniseUrl } from "../providers/registry";
 import { type AlbumInfo } from "../shared/messages";
 import { el } from "./dom";
 import { type PanelState } from "./controller";
@@ -40,7 +41,7 @@ export function linkScreen(v: ViewContext, state: PanelState): Node[] {
       name: "link",
       autocomplete: "off",
       spellcheck: "false",
-      placeholder: "https://music.apple.com/…",
+      placeholder: "Paste an Apple Music or Spotify link",
       "aria-describedby": "link-help",
       ...(state.error ? { "aria-invalid": "true" } : {}),
     },
@@ -66,18 +67,56 @@ export function linkScreen(v: ViewContext, state: PanelState): Node[] {
         },
       },
     },
-    el("label", { text: "Apple Music album or song link", attrs: { for: "link" } }),
+    el("label", { text: "Apple Music or Spotify album or song link", attrs: { for: "link" } }),
     input,
     el("p", {
       class: "help",
       text: state.pageUrl
-        ? "You are on an Apple Music page, so its link is filled in. Paste another to use a different one."
-        : "Open an album or song on Apple Music and paste its link.",
+        ? "You are on a music page, so its link is filled in. Paste another to use a different one."
+        : "Open an album or song on Apple Music or Spotify and paste its link.",
       attrs: { id: "link-help" },
     }),
     go,
   );
-  return [v.heading("Get credits from Apple Music"), form, ...openPages(v, state)];
+  return [
+    v.heading("Get credits from Apple Music or Spotify"),
+    ...(state.sourceAsk ? [accessCard(v, state.sourceAsk)] : []),
+    form,
+    ...openPages(v, state),
+  ];
+}
+
+/**
+ * Why a source needs the user's yes, in plain words, before Chrome asks. The button is the click Chrome needs for its
+ * own prompt, so the request is made straight from it.
+ */
+function accessCard(v: ViewContext, ask: NonNullable<PanelState["sourceAsk"]>): HTMLElement {
+  const provider = PROVIDERS.find((candidate) => candidate.id === ask.providerId);
+  const label = provider?.label ?? "this site";
+  const host = provider ? new URL(provider.origins[0] ?? "https://example.invalid").hostname : "";
+  return el(
+    "section",
+    { class: "access", attrs: { "data-key": "source-access", "aria-labelledby": "access-title" } },
+    el("h3", { text: `Allow Géniescraper to read ${label} pages?`, attrs: { id: "access-title" } }),
+    el("p", {
+      class: "help",
+      text: `To get credits, Géniescraper opens the ${label} page you pick in a hidden window, presses its "View credits" button and reads the names and roles shown. It only does this on ${host}, only for pages you pick, and nothing it reads is sent anywhere. Chrome will ask you to confirm access to ${host}.`,
+    }),
+    el(
+      "div",
+      { class: "row" },
+      v.button(`Allow access to ${label}`, "primary", "access-allow", () => void v.panel.allowSource(), false),
+      v.button(
+        "Not now",
+        "quiet",
+        "access-decline",
+        () => {
+          v.panel.declineSource();
+        },
+        false,
+      ),
+    ),
+  );
 }
 
 /**
@@ -90,13 +129,21 @@ export function openPages(v: ViewContext, state: PanelState): Node[] {
   const found = pages.length > 0;
   const busy = state.busy !== null;
   const title = !found
-    ? "Listening for Apple Music pages…"
+    ? "Listening for Apple Music or Spotify pages…"
     : pages.length === 1
-      ? "Apple Music page detected"
-      : `${String(pages.length)} Apple Music pages detected`;
+      ? "Music page detected"
+      : `${String(pages.length)} music pages detected`;
+  const waiting = PROVIDERS.filter(
+    (provider) => provider.permission === "optional" && state.sources[provider.id] !== true,
+  );
   const hint = found
     ? "Pick one to get its credits."
-    : "Open an album or song on Apple Music in your browser and it shows up here.";
+    : "Open an album or song on Apple Music or Spotify in your browser and it shows up here.";
+  // A source the user has not allowed cannot be listened to: Chrome hides the address of its tabs.
+  const allowHint =
+    waiting.length > 0
+      ? `${waiting.map((provider) => provider.label).join(" and ")} pages show up here once you have allowed access, which Chrome asks for the first time you pick one.`
+      : "";
   const items = pages.map((page, index) =>
     el(
       "li",
@@ -125,7 +172,7 @@ export function openPages(v: ViewContext, state: PanelState): Node[] {
           el("span", { class: "open-name name", text: page.name }),
           el("span", {
             class: "tag",
-            text: `${page.kind === "album" ? "Album" : "Song"}${page.current ? " · this page" : ""}`,
+            text: `${page.source} · ${page.kind === "album" ? "Album" : "Song"}${page.current ? " · this page" : ""}`,
           }),
         ),
         el("span", { class: "go", text: "Get credits", attrs: { "aria-hidden": "true" } }),
@@ -152,6 +199,7 @@ export function openPages(v: ViewContext, state: PanelState): Node[] {
           { class: "detector-text" },
           el("h3", { class: "detector-title", text: title }),
           el("p", { class: "detector-hint", text: hint }),
+          allowHint ? el("p", { class: "detector-hint", text: allowHint }) : null,
         ),
       ),
       found ? el("ul", { class: "open-pages" }, ...items) : null,
@@ -176,6 +224,7 @@ export function tracksScreen(v: ViewContext, state: PanelState): Node[] {
       class: "help",
       text: `${album.artist}: ${String(album.trackCount)} ${album.trackCount === 1 ? "track" : "tracks"}`,
     }),
+    ...(album.note ? [el("p", { class: "help", text: album.note })] : []),
     el(
       "fieldset",
       { class: "stack" },
@@ -234,7 +283,9 @@ export function trackRow(
       { class: unavailable ? "check muted" : "check" },
       box,
       el("span", { text: `${String(index + 1)}. ${title}` }),
-      unavailable ? el("span", { class: "tag", text: "No Apple Music page" }) : null,
+      unavailable
+        ? el("span", { class: "tag", text: `No ${recogniseUrl(album.url)?.provider.label ?? "Apple Music"} page` })
+        : null,
     ),
   );
 }

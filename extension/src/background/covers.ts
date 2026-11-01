@@ -16,11 +16,7 @@ export function realCovers(getJson: GetJson = fetchJson): CoverService {
     // Apple's own catalog first, being the same catalog as Apple Music, then Deezer, as in the desktop app. Deezer
     // answers "" at once, without a request, unless the user has granted its permission.
     async search(title, artist) {
-      const [itunes, deezer] = await Promise.all([
-        searchCover(getJson, title, artist),
-        deezerCover(getJson, title, artist),
-      ]);
-      return itunes || deezer;
+      return (await searchCover(getJson, title, artist)) || (await deezerCover(getJson, title, artist));
     },
   };
 }

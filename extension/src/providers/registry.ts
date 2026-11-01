@@ -1,8 +1,9 @@
 // The providers the extension ships, in the order they are asked about an address.
 import { APPLE_PROVIDER } from "./apple";
+import { SPOTIFY_PROVIDER } from "./spotify";
 import type { CreditsProvider, MusicUrl } from "./types";
 
-export const PROVIDERS: readonly CreditsProvider[] = [APPLE_PROVIDER];
+export const PROVIDERS: readonly CreditsProvider[] = [APPLE_PROVIDER, SPOTIFY_PROVIDER];
 
 export interface RecognisedUrl {
   provider: CreditsProvider;

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "__MSG_extDescription__",
   "default_locale": "en",
   "minimum_chrome_version": "120",
@@ -21,9 +21,14 @@
     "default_path": "ui/panel.html"
   },
   "permissions": ["scripting", "sidePanel", "storage"],
-  "host_permissions": ["https://genius.com/*", "https://itunes.apple.com/*", "https://music.apple.com/*"],
-  "optional_host_permissions": [
+  "host_permissions": [
     "https://api.deezer.com/*",
+    "https://genius.com/*",
+    "https://itunes.apple.com/*",
+    "https://music.apple.com/*"
+  ],
+  "optional_host_permissions": [
+    "https://open.spotify.com/*",
     "https://www.googleapis.com/*",
     "https://www.youtube.com/*"
   ],

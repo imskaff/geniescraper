@@ -342,7 +342,6 @@ describe("the automatic pasting settings", () => {
       "Reading credits",
       "YouTube links",
       "Desktop app",
-      "Cover art look-up",
     ]);
     for (const card of cards) {
       const heading = card.querySelector("h3");

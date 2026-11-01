@@ -4,11 +4,10 @@
 import type { GetJson } from "./itunes";
 
 /** Lookup hosts the manifest grants outright. */
-export const REQUIRED_LOOKUP_HOSTS: ReadonlySet<string> = new Set(["itunes.apple.com", "genius.com"]);
+export const REQUIRED_LOOKUP_HOSTS: ReadonlySet<string> = new Set(["itunes.apple.com", "genius.com", "api.deezer.com"]);
 
 /** Lookup hosts the user turns on in Settings; Chrome asks for each one, and the user can take it back. */
 export const OPTIONAL_LOOKUP_HOSTS = {
-  deezer: "api.deezer.com",
   youtube: "www.youtube.com",
   /** Google's official YouTube service, used only when the user has entered their own key. */
   youtubeApi: "www.googleapis.com",

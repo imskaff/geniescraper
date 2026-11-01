@@ -34,14 +34,82 @@ describe("the open Apple Music pages the panel offers", () => {
     expect(musicTabEntries([tab(ALBUM), tab(SONG)]).map((e) => e.kind)).toEqual(["album", "song"]);
   });
 
-  it("lists a page once, however many tabs show it and whatever follows its address", () => {
-    const entries = musicTabEntries([
-      tab(ALBUM, "A", false, 1),
-      tab(`${ALBUM}?i=1739659140`, "B", false, 2),
-      tab(ALBUM, "C", false, 3),
-    ]);
+  it("lists a page once, however many tabs show it", () => {
+    const entries = musicTabEntries([tab(ALBUM, "A", false, 1), tab(ALBUM, "C", false, 3)]);
     expect(entries).toHaveLength(1);
     expect(entries[0]?.url).toBe(ALBUM);
+  });
+
+  it("lists an album address with a song picked as the same Album page, once, at its own address", () => {
+    const withSong = `${ALBUM}?i=1739659140`;
+    const entries = musicTabEntries([
+      tab(withSong, "A", false, 1),
+      tab(ALBUM, "B", false, 2),
+      tab(withSong, "C", false, 3),
+    ]);
+    expect(entries.map((e) => [e.kind, e.url])).toEqual([["album", withSong]]);
+  });
+
+  it("keeps Song for a real song page, with or without an album view", () => {
+    const entries = musicTabEntries([
+      tab(SONG, "CHIHIRO - Song with Lyrics by Billie Eilish - Apple Music", false, 1),
+      tab(
+        "https://music.apple.com/us/song/lunch/1739659140",
+        "LUNCH - Song with Lyrics by Billie Eilish - Apple Music",
+        false,
+        2,
+      ),
+    ]);
+    expect(entries.map((e) => e.kind)).toEqual(["song", "song"]);
+  });
+
+  describe("an album address with a song picked, whose tab is titled after that song", () => {
+    const ADDRESS = "https://music.apple.com/us/album/lonely-at-the-top/1835726721?i=1835726995";
+    const titled = (title: string, pageTitle?: string, pageArtist?: string): OpenTab => ({
+      tabId: 1,
+      url: ADDRESS,
+      title,
+      current: true,
+      ...(pageTitle === undefined ? {} : { pageTitle }),
+      ...(pageArtist === undefined ? {} : { pageArtist }),
+    });
+
+    it.each([
+      ["English", "‎LONELY AT THE TOP - Song with Lyrics by Joey Bada$$ - Apple Music"],
+      ["German", "‎LONELY AT THE TOP – Titel mit Gesang von Joey Bada$$ – Apple Music"],
+    ])("is named from the album's own header, never the song's tab title: %s", (_language, title) => {
+      const [entry] = musicTabEntries([titled(title, "Lonely At The Top", "Joey Bada$$")]);
+      expect(entry).toMatchObject({
+        name: "Joey Bada$$ - Lonely At The Top",
+        kind: "album",
+        source: "Apple Music",
+        current: true,
+      });
+    });
+
+    it.each([
+      ["English", "‎LONELY AT THE TOP - Song with Lyrics by Joey Bada$$ - Apple Music"],
+      ["German", "‎LONELY AT THE TOP – Titel mit Gesang von Joey Bada$$ – Apple Music"],
+    ])(
+      "falls back to the album's name from its address when the header is unknown, not the song: %s",
+      (_language, title) => {
+        const [entry] = musicTabEntries([titled(title)]);
+        expect(entry?.name).toBe("Lonely At The Top");
+        expect(entry?.kind).toBe("album");
+      },
+    );
+
+    it("names an Apple album address without a song picked from its tab title, as before", () => {
+      const [entry] = musicTabEntries([
+        {
+          tabId: 1,
+          url: "https://music.apple.com/us/album/lonely-at-the-top/1835726721",
+          title: "LONELY AT THE TOP - Album by Joey Bada$$ - Apple Music",
+          current: true,
+        },
+      ]);
+      expect(entry?.name).toBe("Joey Bada$$ - LONELY AT THE TOP");
+    });
   });
 
   it("keeps pages of different storefronts apart", () => {
@@ -50,17 +118,35 @@ describe("the open Apple Music pages the panel offers", () => {
   });
 
   it.each([
-    ["‎Hit Me Hard And Soft - Album by Billie Eilish - Apple Music", "Hit Me Hard And Soft - Album by Billie Eilish"],
+    ["‎Hit Me Hard And Soft - Album by Billie Eilish - Apple Music", "Billie Eilish - Hit Me Hard And Soft"],
+    ["LONELY AT THE TOP - Song with Lyrics by Joey Bada$$ - Apple Music", "Joey Bada$$ - LONELY AT THE TOP"],
+    ["LUNCH – Titel mit Gesang von Billie Eilish – Apple Music", "Billie Eilish - LUNCH"],
+    ["HIT ME HARD AND SOFT – Album von Billie Eilish – Apple Music", "Billie Eilish - HIT ME HARD AND SOFT"],
+    ["LUNCH – Morceau avec paroles par Billie Eilish – Apple Music", "Billie Eilish - LUNCH"],
+    ["HIT ME HARD AND SOFT – Album par Billie Eilish – Apple Music", "Billie Eilish - HIT ME HARD AND SOFT"],
+    ["LUNCH - ビリー・アイリッシュの曲（歌詞付き）- Apple Music", "ビリー・アイリッシュ - LUNCH"],
     [
-      "Hit Me Hard And Soft – album artysty Billie Eilish – Apple Music",
-      "Hit Me Hard And Soft – album artysty Billie Eilish",
+      "HIT ME HARD AND SOFT - ビリー・アイリッシュのアルバム - Apple Music",
+      "ビリー・アイリッシュ - HIT ME HARD AND SOFT",
     ],
-    ["CHIHIRO - Song by Billie Eilish | Apple Music", "CHIHIRO - Song by Billie Eilish"],
-    ["Float (INDIGO) — Song by Insane Shinobi — Apple Music", "Float (INDIGO) — Song by Insane Shinobi"],
-    ["SOS by SZA on Apple Music", "SOS by SZA"],
+    // A wording not seen live: the title alone, never a half-translated marketing phrase.
+    ["Hit Me Hard And Soft – album artysty Billie Eilish – Apple Music", "Hit Me Hard And Soft"],
+    ["CHIHIRO - Song by Billie Eilish | Apple Music", "Billie Eilish - CHIHIRO"],
+    ["Float (INDIGO) — Song by Insane Shinobi — Apple Music", "Insane Shinobi - Float (INDIGO)"],
+    ["SOS by SZA on Apple Music", "SZA - SOS"],
+    ["Stand by Me by Ben E. King on Apple Music", "Ben E. King - Stand by Me"],
     ["  ‏SOS  ", "SOS"],
-  ])("names a page from its tab title: %j", (title, name) => {
+  ])("names a page from its tab title as Artist - Title: %j", (title, name) => {
     expect(musicTabEntries([tab(ALBUM, title)])[0]?.name).toBe(name);
+  });
+
+  it("never leaves a source's marketing text in a name", () => {
+    for (const title of [
+      "LUNCH - Song with Lyrics by Billie Eilish - Apple Music",
+      "LUNCH – Titel mit Gesang von Billie Eilish – Apple Music",
+    ]) {
+      expect(musicTabEntries([tab(ALBUM, title)])[0]?.name).not.toMatch(/with Lyrics|Gesang|Song by|Album/i);
+    }
   });
 
   it("falls back to the address when the title says nothing", () => {

@@ -3,6 +3,8 @@
 // runs in tests with fakes.
 import { musicTabEntries, type MusicTabEntry } from "../core/musicTabs";
 import { recogniseUrl } from "../providers/registry";
+import type { CreditsProvider } from "../providers/types";
+import { needsLabel } from "./pageTitles";
 import { geniusRole } from "../core/geniusRoles";
 import { typedQueue, type QueueItem } from "../core/models";
 import type { PasteCommand } from "../shared/messages";
@@ -22,6 +24,7 @@ import {
   buildSong,
   type Env,
   type PanelState,
+  type SourceAccess,
 } from "./panelState";
 import type { PanelHost } from "./panelHost";
 import { YoutubeKey } from "./youtubeKey";
@@ -32,6 +35,15 @@ import { GeniusOpener } from "./geniusOpener";
 
 export * from "./panelState";
 
+/** How often, and how many times, a missing page name is read again. */
+const LABEL_RETRY_MS = 1000;
+const LABEL_RETRIES = 30;
+
+/** The name of the site an address belongs to, for wording; Apple Music when no source claims it. */
+function sourceLabel(url: string): string {
+  return recogniseUrl(url)?.provider.label ?? "Apple Music";
+}
+
 type Listener = () => void;
 
 export class PanelController {
@@ -39,6 +51,9 @@ export class PanelController {
   private readonly listeners = new Set<Listener>();
   /** Bumped whenever a scrape run is stopped or replaced, so a late answer from the old run is dropped. */
   private run = 0;
+  /** Re-reads of a page name that is still missing, and the timer of the next one. */
+  private labelRetries = 0;
+  private labelTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly host: PanelHost;
   private readonly key: YoutubeKey;
   private readonly countdown: Countdown;
@@ -55,6 +70,7 @@ export class PanelController {
     paste: PasteState = { ...IDLE_PASTE },
     hosts: Record<OptionalHost, boolean> = { ...NO_HOSTS },
     keySaved = false,
+    sources: SourceAccess = {},
   ) {
     this.host = this.makeHost(env);
     this.key = new YoutubeKey(this.host, () => this.refreshHosts());
@@ -75,6 +91,8 @@ export class PanelController {
       paste,
       pasteIndex,
       hosts,
+      sources,
+      sourceAsk: null,
       youtubeKey: { saved: keySaved, message: "", tone: "", busy: false },
       bridge: { known: false, paired: false, connected: false, busy: false, message: "", tone: "" },
       genius: NO_GENIUS,
@@ -108,7 +126,7 @@ export class PanelController {
 
   /** Load settings, the stored session and the active tab, and build the controller from them. */
   static async create(env: Env): Promise<PanelController> {
-    const [settings, session, paste, tab, hosts, key, open] = await Promise.all([
+    const [settings, session, paste, tab, hosts, key, open, sources] = await Promise.all([
       loadSettings(env.stores),
       loadSession(env.stores),
       loadPaste(env.stores),
@@ -116,6 +134,7 @@ export class PanelController {
       env.hosts.granted().catch(() => ({ ...NO_HOSTS })),
       loadYoutubeKey(env.secrets),
       env.appleTabs().catch(() => []),
+      env.sources.granted().catch((): SourceAccess => ({})),
     ]);
     const pageUrl = tab && recogniseUrl(tab.url) ? tab.url : "";
     const controller = new PanelController(
@@ -127,9 +146,12 @@ export class PanelController {
       paste,
       hosts,
       key !== "",
+      sources,
     );
     // A permission taken back in chrome://extensions, or granted elsewhere, changes the Settings box at once.
     env.hosts.subscribe(() => void controller.refreshHosts());
+    // A page that is open but not rendered yet when the panel opens is read again shortly (see refreshPage).
+    if (needsLabel(open)) void controller.refreshPage();
     // Tracks that were mid-read when the panel closed were restored as pending: carry on with them.
     if (session.screen === "review" && session.results.some((r) => r.status === "pending")) {
       void controller.scrapePending();
@@ -166,9 +188,15 @@ export class PanelController {
 
   /** Read the permissions again from Chrome, the only place that knows them. */
   async refreshHosts(): Promise<void> {
+    const sources = await this.env.sources.granted().catch(() => this.current.sources);
+    if (JSON.stringify(sources) !== JSON.stringify(this.current.sources)) {
+      this.update({ sources });
+      // A source that was just allowed makes its open tabs visible: list them now, without waiting for a tab event.
+      await this.refreshPage();
+    }
     const hosts = await this.env.hosts.granted().catch(() => this.current.hosts);
     const now = this.current.hosts;
-    if (hosts.deezer !== now.deezer || hosts.youtube !== now.youtube || hosts.youtubeApi !== now.youtubeApi) {
+    if (hosts.youtube !== now.youtube || hosts.youtubeApi !== now.youtubeApi) {
       this.update({ hosts });
     }
   }
@@ -252,6 +280,14 @@ export class PanelController {
     const appleTabs = musicTabEntries(open);
     const same = JSON.stringify(appleTabs) === JSON.stringify(this.current.appleTabs);
     if (pageUrl !== this.current.pageUrl || !same) this.update({ pageUrl, appleTabs });
+    // A page that was not rendered yet when it was read gets its name a moment later, without any tab event: a
+    // playing song keeps the tab title still, so nothing else would ask again.
+    if (needsLabel(open) && this.labelRetries < LABEL_RETRIES) {
+      this.labelRetries++;
+      this.labelTimer = setTimeout(() => void this.refreshPage(), LABEL_RETRY_MS);
+    } else if (!needsLabel(open)) {
+      this.labelRetries = 0;
+    }
   }
 
   // ── link ────────────────────────────────────────────────────────────
@@ -259,17 +295,23 @@ export class PanelController {
   /** Read the album or song behind `rawUrl` and move to the track list. */
   async detect(rawUrl: string): Promise<void> {
     const url = rawUrl.trim();
-    if (!recogniseUrl(url)) {
+    const recognised = recogniseUrl(url);
+    if (!recognised) {
       this.update({ error: MESSAGES.invalidLink, status: "" });
       return;
     }
+    // A source that needs the user's permission is explained first; the request itself waits for their click.
+    if (!this.allowed(recognised.provider)) {
+      this.update({ sourceAsk: { url, providerId: recognised.provider.id }, error: "", status: "" });
+      return;
+    }
     this.run++;
-    this.update({ busy: "detect", error: "", status: "Reading the page…" });
+    this.update({ busy: "detect", error: "", status: "Reading the page…", sourceAsk: null });
     const tab = await this.env.activeTab().catch(() => null);
     // The user's own tab is read in place when it shows this page: nothing opens, nothing flashes.
     const result = await this.env.api.detect(url, tab?.url === url ? tab.tabId : undefined);
     if (!result.ok) {
-      this.update({ busy: null, error: describeError(result.error), status: "" });
+      this.update({ busy: null, error: describeError(result.error, recognised.provider.label), status: "" });
       return;
     }
     const album = result.data;
@@ -288,7 +330,33 @@ export class PanelController {
     this.update({ busy: null, status: "" });
     // One track has nothing to choose from.
     if (onlyTrack) await this.getCredits();
-    else if (available.length === 0) this.update({ error: MESSAGES.noPage });
+    else if (available.length === 0) this.update({ error: MESSAGES.noPage(sourceLabel(url)) });
+  }
+
+  /** Whether a source may be read now: one that needs no permission always, the others once the user has allowed it. */
+  private allowed(provider: CreditsProvider): boolean {
+    return provider.permission === "required" || this.current.sources[provider.id] === true;
+  }
+
+  /**
+   * The user's yes to the explanation: ask Chrome for the source's host, then read the page they picked. The request
+   * is the first thing done, before any wait, because Chrome only shows its prompt for a call made straight from a click.
+   */
+  async allowSource(): Promise<void> {
+    const ask = this.current.sourceAsk;
+    if (!ask) return;
+    const granted = await this.env.sources.request(ask.providerId).catch(() => false);
+    await this.refreshHosts();
+    if (!granted) {
+      this.update({ sourceAsk: null, error: MESSAGES.noAccess });
+      return;
+    }
+    await this.detect(ask.url);
+  }
+
+  /** The user changed their mind about the explanation. */
+  declineSource(): void {
+    this.update({ sourceAsk: null });
   }
 
   // ── tracks ──────────────────────────────────────────────────────────
@@ -352,7 +420,10 @@ export class PanelController {
           await this.setResult(next.index, { status: "done", song: buildSong(album, next, answer.data), error: "" });
           this.youtube.queue(next.index);
         } else if (!answer.ok) {
-          await this.setResult(next.index, { status: "error", error: describeError(answer.error) });
+          await this.setResult(next.index, {
+            status: "error",
+            error: describeError(answer.error, sourceLabel(next.url)),
+          });
         }
       }
     };

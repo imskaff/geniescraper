@@ -22,7 +22,7 @@ Introducing it is a pure refactor: no user-visible change, and the message contr
 `provider.parseUrl(url)` returns `{ kind, region }` or `null`.
 `kind` is `"album"` or `"song"`; "song" means a page of exactly one track, whatever the site calls it.
 The check is strict (exact host, https, path shape), because the worker opens tabs for URLs that arrive in messages: anything a provider does not recognise is refused before a tab exists.
-Normalising is the provider's job: it decides which part of an address names the page (for Apple the path, so a track picked after the address does not make a second page).
+Normalising is the provider's job, through two methods: `pageKey(url)` says which part of an address names the page (for Apple the origin and path, so a track picked after the address does not make a second page; for Spotify the plain `/track/<id>` address, so `/intl-de/track/<id>?si=...` is the same page), and `openUrl(url)` gives the address to open in a background tab (Apple's unchanged, Spotify's without the locale prefix and query).
 
 `providerForUrl(url)` in the registry asks each provider in order and returns the first match with its parsed URL.
 Nothing outside `providers/` and the provider's own folder names a site.
@@ -50,8 +50,11 @@ The worker asks through `providerClient.ts`:
   A provider may raise them with `provider.timing` (a partial override); Apple does not.
 - **Errors:** every failure comes back as data (`Result`), with the existing codes (`invalid-url`, `timeout`, `tab-failed`, ...).
   The strings that name the site come from `provider.messages`.
-- **Message names:** the content request keeps `apple/detect` and `apple/scrape` for now, and only Apple's content script answers them.
-  A second provider adds `<id>/detect` and `<id>/scrape` to `ContentRequest` and validates its own prefix in its handler.
+- **Message names:** `apple/detect`, `apple/scrape`, `spotify/detect` and `spotify/scrape` are the content requests; each content script answers only its own prefix.
+  A further provider adds `<id>/detect` and `<id>/scrape` to `ContentRequest` and validates its own prefix in its handler.
+- **Access:** a provider whose host is optional is checked with `ports.hasAccess(origins)` before any tab is opened; without it the client answers `no-access` and opens nothing.
+- **Polite reading:** `provider.readGapMs` (Spotify: 150) and `provider.readConcurrency` (Spotify: 3) make the router read that provider in order, at most that many pages at once and no two starts closer than the gap, whatever the panel asks for. A `blocked`, `tab-failed`, `timeout` or `internal` answer drops it to one page at a time for the rest of the worker's life, and a `blocked` answer also stops reading it for 15 minutes. Reading the user's own tab opens nothing and skips the queue. The panel queues every picked track at once, so the rest of an album is read in the background in album order while the user reviews and pastes the first.
+- **Error codes:** besides the shared ones, `unavailable` (the site has no page for the track), `blocked` (captcha or rate limit) and `no-access` (host not allowed yet) carry wording made for the user.
   The panel never sees these messages, so the panel-to-worker contract (`detect`, `scrape` with a URL) needs no `source` field: the worker derives the source from the URL.
 
 ## 3. Role mapping
@@ -60,16 +63,17 @@ Every provider has `normaliseRole(raw)`, which maps a raw role label from that s
 
 - Apple's stays the data-driven `data/roles.json` (generated from `scraper/roles.py` by `tools/export_roles.py`) behind `core/roles.ts`, and is parity-tested against Python.
 - A new provider ships its own alias table inside `providers/<id>/` (label as the site shows it, lowercase, to a Genius role) and never edits Apple's table or the Python map.
-  Unknown labels are kept as written, as Apple's are.
-  Where the site groups roles in sections, the provider may fall back to the section.
+  Apple's unknown labels are kept as written.
+  Spotify exposes `spotifyRole(raw, language)`, which returns `null` for an unknown label (English table first, then the table of the page's `<html lang>` in `src/spotify/roleTables.ts`, then Genius's own names, all by a normalised key): the credits mapping leaves such a role out and lists it (with who holds it) in the track's notes, so a role in another language is never typed into Genius by mistake.
+  Every value in Spotify's table must be a role name Genius lists (a test checks it against the names Apple's table produces).
 
 ## 4. Open-tab discovery
 
 `musicTabEntries(tabs, providers = PROVIDERS)` replaces `appleTabEntries`.
-For each open tab it finds the provider by URL, keeps album and song pages only, names the tab with `provider.tabName(title, url, kind)` (the title arrives with invisible marks and extra spaces removed; the name is capped at 120 characters), merges the same page open twice, and puts the page in view first.
-The worker's tab query uses the union of `provider.origins` (as match patterns), so only hosts the extension already has permission for are listed.
-`toBridgePages` (desktop link) and the panel use the same list.
-The entry shape (`url`, `name`, `kind`, `current`) is unchanged, so the desktop link payload is unchanged; a `provider` field can be added when the desktop needs it.
+For each open tab it finds the provider by URL, keeps album and song pages only, labels the entry with the provider's name (`source`), names the tab with `provider.tabName(title, url, kind)` (the title arrives with invisible marks and extra spaces removed; the name is capped at 120 characters), merges the same page open twice, and puts the page in view first.
+The panel queries each provider's origins on its own (one that fails cannot hide another), so only hosts the extension has permission for are listed; an optional host that was never allowed lists nothing, because Chrome hides a tab's address from an extension that may not read that site.
+`toBridgePages` (desktop link) uses the same function but only with the Apple provider, and the worker queries only Apple's origins for it: the desktop app cannot read Spotify, so it is never told of Spotify pages.
+The desktop link payload (`url`, `title`, `kind`, `current`) is unchanged; `source` is extra in the panel's entries only.
 The panel's state field is still called `appleTabs`; renaming it is left to a follow-up so this change stays out of `ui/`.
 
 ## 5. Host permissions and content script
