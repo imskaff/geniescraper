@@ -291,10 +291,33 @@ try {
     console.log("tab title: " + tabTitle);
     console.log(text.split("\n").slice(0, 16).join(" | "));
     check("the tab title was rewritten to another song", /Race My Mind/.test(tabTitle));
-    check("the card names the page itself, not a generic name", / by /.test(text.split("Pick one to get its credits.")[1] ?? "") && !/Spotify (album|track)b/.test((text.split("Pick one to get its credits.")[1] ?? "").split("Get credits")[0] ?? ""));
+    check("the card names the page itself, not a generic name", / - /.test(text.split("Pick one to get its credits.")[1] ?? "") && !/Spotify (album|track)/.test((text.split("Pick one to get its credits.")[1] ?? "").split("Get credits")[0] ?? ""));
     check("the card never shows the playing song", !/Race My Mind|Drake/.test(text));
     await shot("7-detector-playing-elsewhere");
     await fetch(`http://127.0.0.1:9341/json/close/${spotifyTab.id}`).catch(() => undefined);
+    await sleep(800);
+  }
+
+  // Phase 3c: Apple Music tabs next to the Spotify card: same "Artist - Title" format, and a song picked inside an
+  // album address (?i=) is a Song. The panel stays open: the list must update by itself, with no tab switch.
+  if (args.includes("--apple-tabs")) {
+    console.log("\n== Apple Music tabs");
+    const opened = [];
+    for (const url of [
+      "https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134?i=1739659140",
+      "https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134",
+    ]) {
+      opened.push(await browser.openTab(url));
+      await sleep(4500);
+    }
+    await sleep(1500);
+    const text = await pageText();
+    console.log(text.split("\n").slice(0, 24).join(" | "));
+    check("the Apple song address is listed as a Song in Artist - Title form", /Billie Eilish - LUNCH\s*\|?\s*Apple Music · Song/.test(text.replace(/\n/g, " | ")) || (/Billie Eilish - LUNCH/.test(text) && /Apple Music · Song/.test(text)));
+    check("the Apple album is listed as an Album", /Billie Eilish - HIT ME HARD AND SOFT/.test(text) && /Apple Music · Album/.test(text));
+    check("no marketing text in any name", !/with Lyrics|Song by|Album by/.test(text));
+    await shot("8-apple-tabs");
+    for (const t of opened) await fetch(`http://127.0.0.1:9341/json/close/${t.id}`).catch(() => undefined);
     await sleep(800);
   }
 
