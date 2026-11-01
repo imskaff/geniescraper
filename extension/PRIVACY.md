@@ -38,7 +38,7 @@ The Genius search needs no extra permission: the extension already has access to
 When exactly one Genius song matches the title and artist, the extension opens that song's page in a new tab of your own browser and presses its Edit Metadata button, which is the only button it presses outside the form; it never presses Save or Cancel.
 With none or several matching songs it opens nothing and tells you.
 Requests carry no cookies and no referrer.
-The credits of a Spotify page are read from `open.spotify.com`, which is an optional permission: Chrome asks for it the first time you pick a Spotify page, after the panel has explained what will happen, and you can refuse it, or take it back at any time in `chrome://extensions`.
+The credits of a Spotify page are read from `open.spotify.com`, which is a required permission like `music.apple.com`: Chrome shows it when you install the extension and asks nothing more when you pick a Spotify page.
 Then the extension opens that Spotify page in a minimized window of your own browser, with `?locale=en` added to its address so that Spotify answers in English (this changes nothing in your Spotify account or cookies and does not affect your own Spotify tabs; Spotify does not document the parameter, and if it stops working the extension reads the page in your language with its own lists of role words), presses the page's own "View credits" button for you, reads the names and roles in the box that opens, and closes the window.
 It reads only that credits box and the page's title, artist and copyright lines, and the text stays in your browser.
 Spotify sees this as a visit from your browser, including any cookies you already have for it, so if you are signed in to Spotify in that browser the page is the one you would see.
@@ -48,7 +48,7 @@ Spotify's credits box does not show the song's release date or ISRC, so the exte
 Apple Music pages are opened in a minimized window of your own browser (a background tab if that is not possible), as if you had visited them, and closed again when read.
 Because that is a real visit, Apple Music sees it as it would see any visit from your browser, including any cookies you already have for it; the extension reads only the page's public credits text.
 The side panel also lists the Apple Music album and song pages you already have open (their addresses and titles, read from your own tabs with the access to `music.apple.com` the extension already has), so you can pick one.
-Once you have allowed Spotify, it lists your open Spotify track and album pages the same way, labelled with their source.
+It lists your open Spotify track and album pages the same way, labelled with their source.
 Spotify rewrites a tab's title to the song that is playing, so for those tabs the extension reads the page's own heading (title and artists) with a small script run in the tab; the text stays in the panel and is not stored or sent.
 That list stays in the panel; it is not stored and not sent anywhere, except to your own desktop app on your own computer if you have paired it (see below).
 If you add the optional YouTube link by pasting one yourself, nothing is sent anywhere: the link is only copied into the Genius form.
@@ -73,7 +73,7 @@ You can unpair at any time, which deletes the secret.
 - It has no analytics, telemetry, advertising or tracking.
 - It does not sell or share data, and it does not use data for purposes unrelated to its single purpose.
 - It does not load or run code from the internet: everything it runs ships in the package.
-- It does not read other sites: its access is limited to `music.apple.com`, `genius.com`, `open.spotify.com` (only after you allow it) and the services above.
+- It does not read other sites: its access is limited to `music.apple.com`, `genius.com`, `open.spotify.com` and the services above.
 - It does not accept connections from the internet or from web pages: the link to the desktop app is one the extension opens itself, to your own computer, after you paired it.
 
 ## Your control

@@ -80,12 +80,10 @@ It never saves, and it never reuses a Genius tab that shows something else, beca
 
 ## Why does Chrome ask to read open.spotify.com?
 
-Spotify is a second source, and its host is optional.
-Chrome only shows its prompt after a click, so it appears the first time you press Get credits on a Spotify page: the panel explains what will happen, and only your click on Allow access to Spotify makes Chrome show its own prompt.
-Géniescraper then opens that page in a hidden window, presses Spotify's own "View credits" button and reads the names and roles in the box that opens.
+Spotify is a second source, and its host is a required permission, like Apple Music's, so Chrome shows it in the install prompt and never asks again.
+Géniescraper opens the page you pick in a hidden window, presses Spotify's own "View credits" button and reads the names and roles in the box that opens.
 It only does this for pages you pick, one at a time, and nothing it reads is sent anywhere.
-You can refuse, and Apple Music keeps working; you can also remove the access later in `chrome://extensions`.
-Until you have allowed it, your open Spotify tabs do not show up in the panel's list, because Chrome hides the address of a tab from an extension that may not read that site.
+Your open Spotify tabs show up in the panel's list like Apple Music ones.
 
 ## What is different about credits from Spotify?
 

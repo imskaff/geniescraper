@@ -83,12 +83,6 @@ function request(
   return kind === "detect" ? { type: "apple/detect", url } : { type: "apple/scrape", url, trackTitle };
 }
 
-/** An optional host the user has not allowed yet: nothing is opened, and the panel is told what to ask for. */
-async function missingAccess(ports: BrowserPorts, provider: CreditsProvider): Promise<Result<never> | null> {
-  if (provider.permission === "required" || (await ports.hasAccess(provider.origins))) return null;
-  return fail("no-access", `Allow Géniescraper to read ${provider.label} pages first, then try again.`);
-}
-
 /** Ask the content script of `tabId` one question and check the shape of the answer. */
 async function ask<T>(
   ports: BrowserPorts,
@@ -148,8 +142,6 @@ export async function detectAlbum(
   if (!recognised) return fail("invalid-url", unsupportedLinkMessage("album-or-song"));
   const { provider } = recognised;
   const timing = withOverrides(baseTiming, provider);
-  const denied = await missingAccess(ports, provider);
-  if (denied) return denied;
   const message = request(provider, "detect", url, "");
 
   if (tabId === undefined) {
@@ -180,8 +172,6 @@ export async function scrapeTrack(
   const { provider } = recognised;
   if (recognised.url.kind !== "song") return fail("invalid-url", provider.messages.notSong);
   const timing = withOverrides(baseTiming, provider);
-  const denied = await missingAccess(ports, provider);
-  if (denied) return denied;
   const message = request(provider, "scrape", url, trackTitle);
   return inBackgroundTab(ports, provider.openUrl(url), timing, provider, (id) =>
     ask(ports, id, message, timing, provider, isPageScrape),

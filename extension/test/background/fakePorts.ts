@@ -37,8 +37,6 @@ export interface FakeBehaviour {
   tabGone?: boolean;
   createFails?: boolean;
   injectFails?: boolean;
-  /** The user has not allowed the extension to read optional hosts. */
-  noAccess?: boolean;
   /** Answer to a content request; defaults to a successful answer with the matching sample data. */
   answer?: (request: ContentRequest) => Promise<unknown>;
   /** Tabs that exist before the test starts, as the user's own tabs. */
@@ -102,10 +100,6 @@ export function fakeBrowser(behaviour: FakeBehaviour = {}): FakeBrowser {
       log.push(`remove:${String(tabId)}`);
       openTabs.delete(tabId);
       return Promise.resolve();
-    },
-    hasAccess() {
-      log.push("access");
-      return Promise.resolve(!behaviour.noAccess);
     },
     armReaderGuard(file) {
       log.push(`guard:${file}`);

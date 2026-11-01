@@ -10,7 +10,7 @@ What it does:
 
 - **Detects open pages.** The link screen listens for Apple Music and Spotify albums and songs already open in your browser and offers each in one press, labelled with its source and named from the page itself, the page you are on first.
 - **Reads Spotify too.** A Spotify track or album is read from its credits box in a hidden window.
-  Chrome asks for access to `open.spotify.com` the first time you press Get credits on a Spotify page, after the panel has explained why; the desktop app does not read Spotify.
+  Access to `open.spotify.com` is part of the install, like Apple Music, so nothing is asked when you pick a Spotify page; the desktop app does not read Spotify.
   A Spotify read has no ISRC and no track release date (the panel says so), and the page is asked for in English (`?locale=en`), so roles come back in English whatever language your browser is set to. Spotify does not document that parameter: if it stops working, the role words of German, Spanish, French, Portuguese, Italian, Dutch, Polish, Swedish, Turkish, Japanese, Korean and Russian are matched instead, and roles in other languages are listed as left out. Roles are typed under the exact names on Genius's standardized list; one Genius has removed (such as Studio Personnel) is left out and listed under "About this read".
 - **Reads the credits** of a whole album at once and marks what is missing.
 - **Open on Genius** finds the song on Genius (an exact title and artist match only), opens it in a new tab and presses its Edit Metadata button, then leaves the pasting to you.
@@ -99,15 +99,15 @@ Each takes `--chrome <path to chrome.exe>` or the `CHROME_PATH` environment vari
 
 ## Permissions
 
-| Permission                                          | Why                                                                                                           |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `storage`                                           | Settings, the working session and the optional YouTube key.                                                   |
-| `sidePanel`                                         | The panel itself.                                                                                             |
-| `scripting`                                         | Reading an Apple Music page and filling the Genius form.                                                      |
-| `genius.com`, `music.apple.com`, `itunes.apple.com` | The pages it reads and fills, Genius's own song search for Open on Genius, and Apple's catalog for cover art. |
+| Permission                                                              | Why                                                                                                                                             |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `storage`                                                               | Settings, the working session and the optional YouTube key.                                                                                     |
+| `sidePanel`                                                             | The panel itself.                                                                                                                               |
+| `scripting`                                                             | Reading an Apple Music page and filling the Genius form.                                                                                        |
+| `genius.com`, `music.apple.com`, `open.spotify.com`, `itunes.apple.com` | The pages it reads and fills (Apple Music and Spotify credits), Genius's own song search for Open on Genius, and Apple's catalog for cover art. |
 
-One more host is optional and asked for only when you first press Get credits on a Spotify page, after the panel explains it: `open.spotify.com` (reading a Spotify track or album page; the extension never signs in or sends anything).
-Two more are optional and asked for in the panel only when you switch the feature on: `www.youtube.com` (finding a video link) and `www.googleapis.com` (finding it with your own YouTube key).
+`open.spotify.com` is a required host like `music.apple.com`: the extension reads a Spotify track or album page the way it reads an Apple Music one, never signs in and sends nothing read from it anywhere.
+Two hosts are optional and asked for in the panel only when you switch the feature on: `www.youtube.com` (finding a video link) and `www.googleapis.com` (finding it with your own YouTube key).
 `api.deezer.com` is a required host: it is the permanent cover fallback when Apple's catalog has no cover, and it is sent only the song title and artist.
 Nothing is sent to any server of ours, because there is none.
 See [PRIVACY.md](PRIVACY.md).

@@ -38,8 +38,6 @@ export interface CreditsProvider {
   readonly label: string;
   /** Match patterns of the hosts the provider reads; the tab query and the manifest check use them. */
   readonly origins: readonly string[];
-  /** Whether the manifest lists the origins as required or optional host permissions. */
-  readonly permission: "required" | "optional";
   /** Content script bundle that answers this provider's requests, relative to dist. */
   readonly contentScript: string;
   /** Whether a minimized background window can run the in-page reader. */

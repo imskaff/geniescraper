@@ -8,7 +8,6 @@ export const FAKE_PROVIDER: CreditsProvider = {
   id: "fake",
   label: "Tunes",
   origins: ["https://tunes.example/*"],
-  permission: "optional",
   contentScript: "fake/content.js",
   worksHidden: false,
   timing: { requestMs: 77 },

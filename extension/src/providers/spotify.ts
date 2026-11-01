@@ -9,7 +9,6 @@ export const SPOTIFY_PROVIDER: CreditsProvider = {
   id: "spotify",
   label: "Spotify",
   origins: ["https://open.spotify.com/*"],
-  permission: "optional",
   contentScript: "spotify/content.js",
   // The page is a web player: a signed-in one can start or take over playback, so reader tabs get it switched off.
   readerGuard: "spotify/guard.js",

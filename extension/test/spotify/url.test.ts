@@ -87,9 +87,8 @@ describe("spotifyOpenUrl", () => {
 });
 
 describe("the Spotify provider", () => {
-  it("is found by address and declares an optional host", () => {
+  it("is found by address and declares a host", () => {
     expect(recogniseUrl(`https://open.spotify.com/intl-fr/album/${ALBUM}`)?.provider).toBe(SPOTIFY_PROVIDER);
-    expect(SPOTIFY_PROVIDER.permission).toBe("optional");
     expect(SPOTIFY_PROVIDER.origins).toEqual(["https://open.spotify.com/*"]);
   });
 
