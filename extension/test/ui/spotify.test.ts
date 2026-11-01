@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { OpenTab } from "../../src/core/musicTabs";
 import type { AlbumInfo, PageScrape } from "../../src/shared/messages";
 import { PanelController, MESSAGES, describeError } from "../../src/ui/controller";
@@ -231,5 +231,41 @@ describe("describeError for Spotify", () => {
       "Spotify could not find that page. Check the link and try again.",
     );
     expect(describeError({ code: "timeout", message: "" })).toBe("Apple Music took too long to respond. Try again.");
+  });
+});
+
+describe("open Spotify tabs and access", () => {
+  const tab: OpenTab = {
+    tabId: 1,
+    url: SPOTIFY_ALBUM,
+    title: "Race My Mind • Drake",
+    pageTitle: "Heavy Is The Crown by Cordae",
+    current: true,
+  };
+
+  it("are not listed until access is granted, and then appear with the real name without a reload", async () => {
+    const { env, panel } = await mount({ sources: { spotify: false }, openTabs: [tab] });
+    expect(panel.state.appleTabs).toEqual([]);
+    env.sources.state["spotify"] = true;
+    await panel.refreshHosts();
+    expect(panel.state.appleTabs.map((entry) => entry.name)).toEqual(["Heavy Is The Crown by Cordae"]);
+  });
+
+  it("reads a page's name again a moment later when it had no heading yet, then stops", async () => {
+    vi.useFakeTimers();
+    try {
+      const unnamed: OpenTab = { tabId: 1, url: SPOTIFY_ALBUM, title: "Race My Mind • Drake", current: true };
+      const env = fakeEnv({ openTabs: [unnamed] });
+      const panel = await PanelController.create(env);
+      expect(panel.state.appleTabs.map((entry) => entry.name)).toEqual(["Spotify album"]);
+      env.openTabs[0] = { ...unnamed, pageTitle: "Heavy Is The Crown by Cordae" };
+      await vi.advanceTimersByTimeAsync(1100);
+      expect(panel.state.appleTabs.map((entry) => entry.name)).toEqual(["Heavy Is The Crown by Cordae"]);
+      const reads = env.openTabs.length;
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(env.openTabs.length).toBe(reads);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

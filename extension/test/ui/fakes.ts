@@ -248,7 +248,11 @@ export function fakeEnv(
   const openTabs = [...(options.openTabs ?? [])];
   return {
     openTabs,
-    appleTabs: () => Promise.resolve([...openTabs]),
+    // Chrome hides the tabs of a host the extension may not read, so they are not listed until it is allowed.
+    appleTabs: () =>
+      Promise.resolve(
+        openTabs.filter((t) => !t.url.startsWith("https://open.spotify.com/") || sourceState["spotify"] === true),
+      ),
     api: fakeApi(options.api),
     hosts: fakeHosts(options.hosts),
     sources,

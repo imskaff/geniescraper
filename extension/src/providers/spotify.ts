@@ -3,6 +3,8 @@ import { normaliseSpotifyRole } from "../spotify/roles";
 import { canonicalSpotifyUrl, parseSpotifyUrl } from "../spotify/url";
 import type { CreditsProvider, PageKind } from "./types";
 
+/** Spotify's own page titles close with the site name; the title of a playing song ("Song • Artist") does not. */
+const OWN_TITLE = /\|\s*Spotify\s*$/i;
 const SITE_SUFFIX = /\s*\|\s*Spotify\s*$/i;
 /** English page titles: "Song - song and lyrics by Artist" and "Album - Album by Artist". */
 const ENGLISH_TITLE = /^(.+?)\s+-\s+(?:song and lyrics|album|single|ep)\s+by\s+(.+)$/i;
@@ -19,6 +21,7 @@ export const SPOTIFY_PROVIDER: CreditsProvider = {
   // behave (no error in 32 reads at 2 and 3 at once); any failed or blocked read drops it to one (see the router).
   // The tab title follows the playing song, so the list reads each page's own title instead.
   liveTitle: true,
+  isOwnTitle: (title) => OWN_TITLE.test(title),
   readGapMs: 150,
   readConcurrency: 3,
   messages: {
@@ -34,7 +37,12 @@ export const SPOTIFY_PROVIDER: CreditsProvider = {
   pageKey: (url) => canonicalSpotifyUrl(url) ?? url,
   openUrl: (url) => canonicalSpotifyUrl(url) ?? url,
   tabName(title, _url, kind: PageKind) {
-    const bare = title.trim().replace(SITE_SUFFIX, "").trim();
+    // "Listen to After Hours - Album by The Weeknd": the English album form starts with a call to action.
+    const bare = title
+      .trim()
+      .replace(SITE_SUFFIX, "")
+      .trim()
+      .replace(/^Listen to\s+/i, "");
     const english = ENGLISH_TITLE.exec(bare);
     if (english?.[1] && english[2]) return `${english[1]} by ${english[2]}`;
     return bare || (kind === "album" ? "Spotify album" : "Spotify track");

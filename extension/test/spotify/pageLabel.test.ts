@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { musicTabEntries, type OpenTab } from "../../src/core/musicTabs";
 import { labelText, readPageLabel } from "../../src/spotify/pageLabel";
-import { withPageTitles } from "../../src/ui/pageTitles";
+import { needsLabel, withPageTitles } from "../../src/ui/pageTitles";
 
 const ALBUM = "https://open.spotify.com/album/1uyf3l2d4XYwiEqAb7t7fX";
 const TRACK = "https://open.spotify.com/intl-de/track/4cOdK2wGLETKBW3PvgPWqT?si=1";
@@ -40,23 +40,43 @@ describe("readPageLabel", () => {
 });
 
 describe("naming a Spotify tab whose title follows the playing song", () => {
-  const PLAYING = "Race My Mind - song and lyrics by Drake | Spotify";
+  /** What Spotify makes of the title while a song plays: no site name at the end. */
+  const PLAYING = "Race My Mind • Drake";
+  const name = (url: string, title: string, pageTitle?: string): string | undefined =>
+    musicTabEntries([tab(url, title, pageTitle)])[0]?.name;
 
-  it("uses the page's own title and ignores the tab title", () => {
-    const [entry] = musicTabEntries([tab(ALBUM, PLAYING, "Heavy Is The Crown by Anderson .Paak, Cordae")]);
-    expect(entry?.name).toBe("Heavy Is The Crown by Anderson .Paak, Cordae");
+  it("prefers the page's own heading over any tab title", () => {
+    expect(name(ALBUM, PLAYING, "Heavy Is The Crown by Anderson .Paak, Cordae")).toBe(
+      "Heavy Is The Crown by Anderson .Paak, Cordae",
+    );
+    expect(name(ALBUM, "Other - Album by Someone | Spotify", "Heavy Is The Crown by Cordae")).toBe(
+      "Heavy Is The Crown by Cordae",
+    );
   });
 
-  it("never shows the tab title when the page's own title is not known: a generic name instead", () => {
-    const [album] = musicTabEntries([tab(ALBUM, PLAYING)]);
-    expect(album?.name).toBe("Spotify album");
-    const [track] = musicTabEntries([tab(TRACK, PLAYING)]);
-    expect(track?.name).toBe("Spotify track");
+  it("never shows a playing song's title when the page could not be read: a generic name instead", () => {
+    expect(name(ALBUM, PLAYING)).toBe("Spotify album");
+    expect(name(TRACK, PLAYING)).toBe("Spotify track");
+    expect(name(TRACK, "")).toBe("Spotify track");
+    expect(name(TRACK, "Race My Mind - song and lyrics by Drake")).toBe("Spotify track");
+  });
+
+  it.each([
+    ["English track", TRACK, "Blinding Lights - song and lyrics by The Weeknd | Spotify", "Blinding Lights by The Weeknd"],
+    ["Danish (English text) album", ALBUM, "Listen to After Hours - Album by The Weeknd | Spotify", "After Hours by The Weeknd"],
+    ["German track", TRACK, "Blinding Lights – Musik und Lyrics von The Weeknd | Spotify", "Blinding Lights – Musik und Lyrics von The Weeknd"],
+    ["German album", ALBUM, "Streame After Hours – Album von The Weeknd | Spotify", "Streame After Hours – Album von The Weeknd"],
+    ["Japanese album", ALBUM, "ザ・ウィークエンドのアルバム - After Hoursを聴く | Spotify", "ザ・ウィークエンドのアルバム - After Hoursを聴く"],
+  ])("uses a title that is provably the page's own when the page could not be read: %s", (_label, url, title, expected) => {
+    expect(name(url, title)).toBe(expected);
+  });
+
+  it("keeps a generic name when the heading was read from another page, whatever the title says", () => {
+    expect(name(ALBUM, "Blinding Lights - song and lyrics by The Weeknd | Spotify", "")).toBe("Spotify album");
   });
 
   it("still names an Apple Music tab from its title", () => {
-    const [entry] = musicTabEntries([tab("https://music.apple.com/us/album/x/1", "Demo - Apple Music")]);
-    expect(entry?.name).toBe("Demo");
+    expect(name("https://music.apple.com/us/album/x/1", "Demo - Apple Music")).toBe("Demo");
   });
 });
 
@@ -77,7 +97,7 @@ describe("withPageTitles", () => {
     const out = await withPageTitles([tab(ALBUM, "x")], () =>
       Promise.resolve({ path: "/track/4cOdK2wGLETKBW3PvgPWqT", title: "Race My Mind", artists: ["Drake"] }),
     );
-    expect(out[0]?.pageTitle).toBeUndefined();
+    expect(out[0]?.pageTitle).toBe("");
     expect(musicTabEntries(out)[0]?.name).toBe("Spotify album");
   });
 
@@ -93,5 +113,19 @@ describe("withPageTitles", () => {
       Promise.resolve({ path: "/intl-de/track/4cOdK2wGLETKBW3PvgPWqT", title: "Song", artists: ["A"] }),
     );
     expect(out[0]?.pageTitle).toBe("Song by A");
+  });
+});
+
+describe("a page that has not rendered yet", () => {
+  it("is read again later: no heading means no name yet", async () => {
+    const out = await withPageTitles([tab(ALBUM, "x")], () => Promise.resolve({ path: "/album/1uyf3l2d4XYwiEqAb7t7fX", title: "", artists: [] }));
+    expect(out[0]?.pageTitle).toBeUndefined();
+    expect(needsLabel(out)).toBe(true);
+  });
+
+  it("stops being retried once the heading is read, and never retries an Apple Music tab", async () => {
+    const named = await withPageTitles([tab(ALBUM, "x")], () => Promise.resolve({ path: "/album/1uyf3l2d4XYwiEqAb7t7fX", title: "T", artists: [] }));
+    expect(needsLabel(named)).toBe(false);
+    expect(needsLabel([tab("https://music.apple.com/us/album/x/1", "X")])).toBe(false);
   });
 });

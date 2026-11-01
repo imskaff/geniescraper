@@ -47,6 +47,11 @@ export interface CreditsProvider {
    * and never from the tab title.
    */
   readonly liveTitle?: boolean;
+  /**
+   * For a `liveTitle` provider: whether a tab title is certainly the page's own and not a rewritten one. Used only when
+   * the page's heading could not be read. Spotify's own titles end with "| Spotify"; a playing song's does not.
+   */
+  isOwnTitle?(title: string): boolean;
   /** Overrides of the shared waits, for a site that needs longer. */
   readonly timing?: Partial<ClientTiming>;
   readonly messages: ProviderMessages;

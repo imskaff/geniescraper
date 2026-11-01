@@ -31,6 +31,10 @@ const wantUnavailable = args.includes("--unavailable");
 const wantTab = args.includes("--tab");
 // The open-pages card must name the page, not the song that is playing: the tab title is rewritten here to another song.
 const wantDetector = args.includes("--detector");
+// What Chrome tells the panel about an open Spotify tab while access is not granted (needs --ungranted).
+// With --detector: also move inside the player (a track link click, no page load) while a song plays, and watch the card.
+const wantSpa = args.includes("--spa");
+const wantNoAccessTab = args.includes("--noaccess-tab");
 // The shipped build as it is: Spotify not allowed yet. Nothing is loaded from Spotify; the explanation card shows.
 const ungranted = args.includes("--ungranted");
 // Timing runs: `--all` reads every listed track of the album and prints when each one finished; `--before` patches the
@@ -140,6 +144,19 @@ try {
     await sleep(500);
     check("Not now closes the explanation", !/Allow Géniescraper to read/.test(await pageText()));
     await shot("0-after-decline");
+  }
+
+  if (wantNoAccessTab) {
+    console.log("\n== open Spotify tab, access not granted");
+    const spotifyTab = await browser.openTab(`https://open.spotify.com/album/${albumId || "4yP0hdKOZPNshxUOjY0cZj"}`);
+    loads += 1;
+    await sleep(6000);
+    const seen = await evalPanel("chrome.tabs.query({}).then((tabs) => tabs.filter((t) => (t.url || '').includes('spotify') || (t.title || '').includes('Spotify')).map((t) => ({ url: t.url ?? null, title: t.title ?? null })))");
+    console.log("tabs the panel can see: " + JSON.stringify(seen));
+    const byPattern = await evalPanel("chrome.tabs.query({ url: ['https://open.spotify.com/*'] }).then((tabs) => tabs.map((t) => ({ url: t.url ?? null, title: t.title ?? null })))");
+    console.log("by host pattern: " + JSON.stringify(byPattern));
+    await fetch(`http://127.0.0.1:9341/json/close/${spotifyTab.id}`).catch(() => undefined);
+    await sleep(800);
   }
 
   // Phase 1: an album, a few of its tracks.
@@ -252,6 +269,21 @@ try {
     const tabSession = await connect(spotifyTab.webSocketDebuggerUrl);
     await tabSession.evaluate("document.title = 'Race My Mind - song and lyrics by Drake | Spotify'");
     const tabTitle = await tabSession.evaluate("document.title");
+    if (wantSpa) {
+      const read = async (label) => {
+        const t = await pageText();
+        console.log(label + ": " + t.split("\n").slice(0, 16).join(" | ").replace(/^.*Pick one to get its credits\. \| /, ""));
+      };
+      await sleep(2500);
+      await read("before moving, panel left open");
+      await tabSession.evaluate("document.querySelector(\"a[data-testid='internal-track-link']\")?.click()");
+      await tabSession.evaluate("setTimeout(() => { document.title = 'Race My Mind • Drake'; }, 400)");
+      await sleep(1800);
+      await read("1.8 s after moving inside the player");
+      await sleep(8000);
+      await read("9.8 s after moving");
+      console.log("tab url now: " + (await tabSession.evaluate("location.pathname")));
+    }
     tabSession.close?.();
     await evalPanel("location.reload()");
     await sleep(2500);

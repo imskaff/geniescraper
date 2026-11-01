@@ -16,6 +16,11 @@ function pathOf(url: string): string {
   }
 }
 
+/** Whether a tab of a provider that names pages from their heading still has no name from it (to be read again soon). */
+export function needsLabel(tabs: readonly OpenTab[]): boolean {
+  return tabs.some((tab) => recogniseUrl(tab.url)?.provider.liveTitle === true && !tab.pageTitle);
+}
+
 /**
  * Adds `pageTitle` to the tabs that need it. A label is kept only when it was read from the page the tab's address
  * names: a heading read while the player was still moving to another page is dropped, so the list shows a generic
@@ -26,7 +31,12 @@ export async function withPageTitles(tabs: readonly OpenTab[], read: ReadLabel):
     tabs.map(async (tab) => {
       if (recogniseUrl(tab.url)?.provider.liveTitle !== true) return tab;
       const label = await read(tab.tabId).catch(() => null);
-      return label && label.path === pathOf(tab.url) ? { ...tab, pageTitle: labelText(label) } : tab;
+      if (!label) return tab;
+      // A heading of another page: the player is moving, and a tab title could be the old page's too, so no name.
+      if (label.path !== pathOf(tab.url)) return { ...tab, pageTitle: "" };
+      const text = labelText(label);
+      // No heading yet (the page has not rendered): unknown, so a provable tab title may stand in and a re-read follows.
+      return text ? { ...tab, pageTitle: text } : tab;
     }),
   );
 }

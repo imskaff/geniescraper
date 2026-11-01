@@ -39,7 +39,9 @@ function nameOf(provider: CreditsProvider, tab: OpenTab, kind: PageKind): string
   // Titles carry no-break and thin spaces and the odd tab; the desktop app shows the same one-line name.
   // A provider that cannot trust the tab title is named from the page's own title, or from nothing: a name the page
   // does not have is never shown.
-  const source = provider.liveTitle === true ? (tab.pageTitle ?? "") : tab.title;
+  // When the page could not be read at all, a tab title is used only if the provider can prove it is the page's own.
+  const own = provider.isOwnTitle?.(tab.title) === true ? tab.title : "";
+  const source = provider.liveTitle === true ? (tab.pageTitle ?? own) : tab.title;
   const plain = source.replace(INVISIBLE, "").replace(/\s+/g, " ").replace(CONTROL, "");
   const name = provider.tabName(plain, tab.url, kind);
   return name.length > MAX_NAME ? `${name.slice(0, MAX_NAME - 1)}…` : name;

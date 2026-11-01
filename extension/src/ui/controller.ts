@@ -4,6 +4,7 @@
 import { musicTabEntries, type MusicTabEntry } from "../core/musicTabs";
 import { recogniseUrl } from "../providers/registry";
 import type { CreditsProvider } from "../providers/types";
+import { needsLabel } from "./pageTitles";
 import { geniusRole } from "../core/geniusRoles";
 import { typedQueue, type QueueItem } from "../core/models";
 import type { PasteCommand } from "../shared/messages";
@@ -34,6 +35,10 @@ import { GeniusOpener } from "./geniusOpener";
 
 export * from "./panelState";
 
+/** How often, and how many times, a missing page name is read again. */
+const LABEL_RETRY_MS = 1000;
+const LABEL_RETRIES = 8;
+
 /** The name of the site an address belongs to, for wording; Apple Music when no source claims it. */
 function sourceLabel(url: string): string {
   return recogniseUrl(url)?.provider.label ?? "Apple Music";
@@ -46,6 +51,9 @@ export class PanelController {
   private readonly listeners = new Set<Listener>();
   /** Bumped whenever a scrape run is stopped or replaced, so a late answer from the old run is dropped. */
   private run = 0;
+  /** Re-reads of a page name that is still missing, and the timer of the next one. */
+  private labelRetries = 0;
+  private labelTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly host: PanelHost;
   private readonly key: YoutubeKey;
   private readonly countdown: Countdown;
@@ -142,6 +150,8 @@ export class PanelController {
     );
     // A permission taken back in chrome://extensions, or granted elsewhere, changes the Settings box at once.
     env.hosts.subscribe(() => void controller.refreshHosts());
+    // A page that is open but not rendered yet when the panel opens is read again shortly (see refreshPage).
+    if (needsLabel(open)) void controller.refreshPage();
     // Tracks that were mid-read when the panel closed were restored as pending: carry on with them.
     if (session.screen === "review" && session.results.some((r) => r.status === "pending")) {
       void controller.scrapePending();
@@ -179,7 +189,11 @@ export class PanelController {
   /** Read the permissions again from Chrome, the only place that knows them. */
   async refreshHosts(): Promise<void> {
     const sources = await this.env.sources.granted().catch(() => this.current.sources);
-    if (JSON.stringify(sources) !== JSON.stringify(this.current.sources)) this.update({ sources });
+    if (JSON.stringify(sources) !== JSON.stringify(this.current.sources)) {
+      this.update({ sources });
+      // A source that was just allowed makes its open tabs visible: list them now, without waiting for a tab event.
+      await this.refreshPage();
+    }
     const hosts = await this.env.hosts.granted().catch(() => this.current.hosts);
     const now = this.current.hosts;
     if (hosts.youtube !== now.youtube || hosts.youtubeApi !== now.youtubeApi) {
@@ -266,6 +280,14 @@ export class PanelController {
     const appleTabs = musicTabEntries(open);
     const same = JSON.stringify(appleTabs) === JSON.stringify(this.current.appleTabs);
     if (pageUrl !== this.current.pageUrl || !same) this.update({ pageUrl, appleTabs });
+    // A page that was not rendered yet when it was read gets its name a moment later, without any tab event: a
+    // playing song keeps the tab title still, so nothing else would ask again.
+    if (needsLabel(open) && this.labelRetries < LABEL_RETRIES) {
+      this.labelRetries++;
+      this.labelTimer = setTimeout(() => void this.refreshPage(), LABEL_RETRY_MS);
+    } else if (!needsLabel(open)) {
+      this.labelRetries = 0;
+    }
   }
 
   // ── link ────────────────────────────────────────────────────────────
