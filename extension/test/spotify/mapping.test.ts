@@ -37,6 +37,16 @@ describe("spotifyRole", () => {
     expect(spotifyRole("Recording Arranger")).toBe("Arranger");
   });
 
+  it("types the second engineer as Assistant Engineer, the name Genius's list gives it", () => {
+    expect(spotifyRole("Recording Second Engineer")).toBe("Assistant Engineer");
+  });
+
+  it("types the bass voice as Bass Vocals and leaves out Studio Personnel, which Genius removed", () => {
+    expect(spotifyRole("Bass Vocalist")).toBe("Bass Vocals");
+    expect(spotifyRole("Studio Personnel")).toBeNull();
+    expect(spotifyRole("studio personnel", "de")).toBeNull();
+  });
+
   it("ignores case, spacing and a trailing colon", () => {
     expect(spotifyRole("  mixing   ENGINEER: ")).toBe("Mixing Engineer");
   });
@@ -48,7 +58,7 @@ describe("spotifyRole", () => {
   });
 
   it("does not know labels in other languages or roles Genius lacks", () => {
-    for (const raw of ["Komponist*in", "作曲家", "Kompozytor", "Director", "Recording Second Engineer", ""]) {
+    for (const raw of ["Komponist*in", "作曲家", "Kompozytor", "Director", "Studio Personnel", ""]) {
       expect(spotifyRole(raw), raw).toBeNull();
     }
   });

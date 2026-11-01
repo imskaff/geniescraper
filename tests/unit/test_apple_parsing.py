@@ -44,6 +44,11 @@ class TestCreditsFromCards:
     def test_skips_genius_incompatible_roles(self):
         assert am.credits_from_cards(["A"], ["Performer, Producer"]) == [Credit(role="Producer", artists=["A"])]
 
+    def test_skips_studio_personnel_which_genius_removed(self):
+        assert am.credits_from_cards(["Studio"], ["Studio Personnel"]) == []
+        text = "Studio Personnel\nSome Studio\nProducer\nA\n"
+        assert am.credits_from_text(text) == [Credit(role="Producer", artists=["A"])]
+
     def test_unknown_role_kept_verbatim(self):
         assert am.credits_from_cards(["A"], ["Theremin Wrangler"]) == [Credit(role="Theremin Wrangler", artists=["A"])]
 
