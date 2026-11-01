@@ -96,3 +96,53 @@ def test_song_page_copyright_is_empty_when_the_lookup_fails(monkeypatch: pytest.
         lambda **kw: real(transport=httpx.MockTransport(lambda request: httpx.Response(500)), **kw),
     )
     assert asyncio.run(deezer.fetch_itunes_copyright("https://music.apple.com/us/song/x/1")) == ("", "")
+
+
+@pytest.mark.parametrize(
+    ("line", "label", "distributor"),
+    [
+        # Found by the evaluation in docs/label-distributor-evaluation.md.
+        (
+            "℗ 2017 Asylum Records UK, a division of Atlantic Records UK, a Warner Music Group company.",
+            "Asylum Records",
+            "Warner Music Group",
+        ),
+        (
+            "℗ 1971 Atlantic Recording Corporation, a Warner Music Group Company. Marketed by Rhino Entertainment Company, a Warner Music Group Company.",
+            "Atlantic Records",
+            "Warner Music Group",
+        ),
+        (
+            "℗ 1976 Asylum Records. Marketed by Rhino Entertainment Company, a Warner Music Group Company.",
+            "Asylum Records",
+            "Warner Music Group",
+        ),
+        ("℗ 2017 Aftermath/Interscope (Top Dawg Entertainment)", "Interscope Records", "Universal Music Group"),
+        (
+            "℗ 2020 The Weeknd XO, Inc., marketed by Republic Records, a division of UMG Recordings, Inc.",
+            "Republic Records",
+            "Universal Music Group",
+        ),
+        ("℗ 2023 Mercury Records/Republic Records, a division of UMG Recordings, Inc.", "", "Universal Music Group"),
+        ("℗ 2011 The Island Def Jam Music Group", "", "Universal Music Group"),
+        ("℗ 2008 SONY BMG MUSIC ENTERTAINMENT", "", "Sony Music Entertainment"),
+        ("℗ 2013 Domino Recording Co Ltd", "Domino Recording Company", ""),
+        ("℗ 2011 XL Recordings Ltd", "XL Recordings", ""),
+        ("℗ 2008 Sub Pop Records", "Sub Pop", ""),
+        ("℗ 1995 Rancid, under exclusive license to Epitaph", "Epitaph Records", ""),
+        ("℗ 2018 Night Time Stories Ltd under exclusive license to Dead Oceans", "Dead Oceans", ""),
+        ("℗ 2018 Deutsche Grammophon GmbH, Berlin", "Deutsche Grammophon", "Universal Music Group"),
+        ("℗ 2022 YG Entertainment, distributed through Interscope Records", "", "Universal Music Group"),
+        ("℗ 2021 Chess Club Under Exclusive License to AWAL Recordings", "", "AWAL"),
+        ("℗ 2019 Foo Records, under exclusive license to The Orchard", "", "The Orchard"),
+    ],
+)
+def test_evaluated_lines(line: str, label: str, distributor: str):
+    info = _info(line)
+    assert (info.label, info.distributor) == (label, distributor)
+
+
+def test_distribution_service_source_is_not_called_an_owning_group():
+    info = _info("℗ 2021 Chess Club Under Exclusive License to AWAL Recordings")
+    assert "owning group" not in info.distributor_source
+    assert "AWAL" in info.distributor_source

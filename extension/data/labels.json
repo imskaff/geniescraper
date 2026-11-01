@@ -100,7 +100,7 @@
   "Warner Music Group"
  ],
  [
-  "interscope records",
+  "interscope",
   "Interscope Records",
   "Universal Music Group"
  ],
@@ -160,6 +160,21 @@
   "Universal Music Group"
  ],
  [
+  "deutsche grammophon",
+  "Deutsche Grammophon",
+  "Universal Music Group"
+ ],
+ [
+  "decca classics",
+  "Decca Classics",
+  "Universal Music Group"
+ ],
+ [
+  "island def jam music group",
+  "",
+  "Universal Music Group"
+ ],
+ [
   "universal music",
   "",
   "Universal Music Group"
@@ -195,6 +210,11 @@
   "Sony Music Entertainment"
  ],
  [
+  "sony bmg",
+  "",
+  "Sony Music Entertainment"
+ ],
+ [
   "sony music entertainment",
   "",
   "Sony Music Entertainment"
@@ -203,5 +223,110 @@
   "sony music",
   "",
   "Sony Music Entertainment"
+ ],
+ [
+  "xl recordings",
+  "XL Recordings",
+  ""
+ ],
+ [
+  "domino recording",
+  "Domino Recording Company",
+  ""
+ ],
+ [
+  "sub pop",
+  "Sub Pop",
+  ""
+ ],
+ [
+  "epitaph",
+  "Epitaph Records",
+  ""
+ ],
+ [
+  "dead oceans",
+  "Dead Oceans",
+  ""
+ ],
+ [
+  "dirty hit",
+  "Dirty Hit",
+  ""
+ ],
+ [
+  "ato records",
+  "ATO Records",
+  ""
+ ],
+ [
+  "big loud records",
+  "Big Loud Records",
+  ""
+ ],
+ [
+  "rimas entertainment",
+  "Rimas Entertainment",
+  ""
+ ],
+ [
+  "88rising",
+  "88rising",
+  ""
+ ],
+ [
+  "awal",
+  "",
+  "AWAL"
+ ],
+ [
+  "the orchard",
+  "",
+  "The Orchard"
+ ],
+ [
+  "ingrooves",
+  "",
+  "Ingrooves Music Group"
+ ],
+ [
+  "alternative distribution alliance",
+  "",
+  "Alternative Distribution Alliance"
+ ],
+ [
+  "believe sas",
+  "",
+  "Believe"
+ ],
+ [
+  "believe music",
+  "",
+  "Believe"
+ ],
+ [
+  "believe distribution",
+  "",
+  "Believe"
+ ],
+ [
+  "tunecore",
+  "",
+  "TuneCore"
+ ],
+ [
+  "cd baby",
+  "",
+  "CD Baby"
+ ],
+ [
+  "distrokid",
+  "",
+  "DistroKid"
+ ],
+ [
+  "empire distribution",
+  "",
+  "EMPIRE"
  ]
 ]

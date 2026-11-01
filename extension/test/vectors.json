@@ -12506,6 +12506,132 @@
    }
   },
   {
+   "input": "℗ 2017 Asylum Records UK, a division of Atlantic Records UK, a Warner Music Group company.",
+   "output": {
+    "label": "Asylum Records",
+    "distributor": "Warner Music Group",
+    "label_source": "matched “Asylum Records UK” in the ℗ line",
+    "distributor_source": "owning group of “Asylum Records UK” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 1971 Atlantic Recording Corporation, a Warner Music Group Company. Marketed by Rhino Entertainment Company, a Warner Music Group Company.",
+   "output": {
+    "label": "Atlantic Records",
+    "distributor": "Warner Music Group",
+    "label_source": "matched “Atlantic Recording Corporation, a Warner Music Group Company.” in the ℗ line",
+    "distributor_source": "owning group of “Atlantic Recording Corporation, a Warner Music Group Company.” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2017 Aftermath/Interscope (Top Dawg Entertainment)",
+   "output": {
+    "label": "Interscope Records",
+    "distributor": "Universal Music Group",
+    "label_source": "matched “Aftermath/Interscope (Top Dawg Entertainment)” in the ℗ line",
+    "distributor_source": "owning group of “Aftermath/Interscope (Top Dawg Entertainment)” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2023 Mercury Records/Republic Records, a division of UMG Recordings, Inc.",
+   "output": {
+    "label": "",
+    "distributor": "Universal Music Group",
+    "label_source": "",
+    "distributor_source": "owning group of “Mercury Records/Republic Records” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2020 The Weeknd XO, Inc., marketed by Republic Records, a division of UMG Recordings, Inc.",
+   "output": {
+    "label": "Republic Records",
+    "distributor": "Universal Music Group",
+    "label_source": "matched “Republic Records” in the ℗ line",
+    "distributor_source": "owning group of “Republic Records” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2011 The Island Def Jam Music Group",
+   "output": {
+    "label": "",
+    "distributor": "Universal Music Group",
+    "label_source": "",
+    "distributor_source": "owning group of “The Island Def Jam Music Group” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2008 SONY BMG MUSIC ENTERTAINMENT",
+   "output": {
+    "label": "",
+    "distributor": "Sony Music Entertainment",
+    "label_source": "",
+    "distributor_source": "owning group of “SONY BMG MUSIC ENTERTAINMENT” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2013 Domino Recording Co Ltd",
+   "output": {
+    "label": "Domino Recording Company",
+    "distributor": "",
+    "label_source": "matched “Domino Recording Co Ltd” in the ℗ line",
+    "distributor_source": ""
+   }
+  },
+  {
+   "input": "℗ 1995 Rancid, under exclusive license to Epitaph",
+   "output": {
+    "label": "Epitaph Records",
+    "distributor": "",
+    "label_source": "matched “Epitaph” in the ℗ line",
+    "distributor_source": ""
+   }
+  },
+  {
+   "input": "℗ 2021 Chess Club Under Exclusive License to AWAL Recordings",
+   "output": {
+    "label": "",
+    "distributor": "AWAL",
+    "label_source": "",
+    "distributor_source": "distributor “AWAL Recordings” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2019 Foo Records, under exclusive license to The Orchard",
+   "output": {
+    "label": "",
+    "distributor": "The Orchard",
+    "label_source": "",
+    "distributor_source": "distributor “The Orchard” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2018 Night Time Stories Ltd under exclusive license to Dead Oceans",
+   "output": {
+    "label": "Dead Oceans",
+    "distributor": "",
+    "label_source": "matched “Dead Oceans” in the ℗ line",
+    "distributor_source": ""
+   }
+  },
+  {
+   "input": "℗ 2007 Deutsche Grammophon GmbH, Berlin",
+   "output": {
+    "label": "Deutsche Grammophon",
+    "distributor": "Universal Music Group",
+    "label_source": "matched “Deutsche Grammophon GmbH, Berlin” in the ℗ line",
+    "distributor_source": "owning group of “Deutsche Grammophon GmbH, Berlin” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2022 YG Entertainment, distributed through Interscope Records",
+   "output": {
+    "label": "",
+    "distributor": "Universal Music Group",
+    "label_source": "",
+    "distributor_source": "named after “distributed by” in the ℗ line"
+   }
+  },
+  {
    "input": "℗ 2024 Taylor Swift",
    "output": {
     "label": "",
