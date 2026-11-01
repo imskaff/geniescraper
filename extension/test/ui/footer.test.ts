@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { AUTHOR_URL, SUPPORT_URL, footer } from "../../src/ui/footer";
 
