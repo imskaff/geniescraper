@@ -44,7 +44,9 @@ export async function withPageTitles(tabs: readonly OpenTab[], read: ReadLabel):
       // A heading of another page: the player is moving, and a tab title could be the old page's too, so no name.
       if (label.path !== pathOf(tab.url)) return { ...tab, pageTitle: "" };
       // No heading yet (the page has not rendered): unknown, so a provable tab title may stand in and a re-read follows.
-      return label.title ? { ...tab, pageTitle: label.title, pageArtist: label.artists.join(", ") } : tab;
+      return label.title
+        ? { ...tab, pageTitle: label.title, pageArtist: label.artists.join(", "), pageSingle: label.single === true }
+        : tab;
     }),
   );
 }

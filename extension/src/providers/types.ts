@@ -28,6 +28,8 @@ export interface PageLabel {
   path: string;
   title: string;
   artists: string[];
+  /** True when the page's own header says the release is a single (one song released on its own). */
+  single?: boolean;
 }
 
 export interface CreditsProvider {
@@ -57,6 +59,8 @@ export interface CreditsProvider {
   liveTitle?(url: string): boolean;
   /** For a `liveTitle` provider: the function run in the tab (self-contained) to read the page's own title and artists. */
   readonly readPageLabel?: () => PageLabel;
+  /** Whether a tab title (not a `liveTitle` one) names a single release; such an album page is listed as a song. */
+  isSingleTitle?(title: string): boolean;
   /**
    * For a `liveTitle` provider: whether a tab title is certainly the page's own and not a rewritten one. Used only when
    * the page's heading could not be read. Spotify's own titles end with "| Spotify"; a playing song's does not.

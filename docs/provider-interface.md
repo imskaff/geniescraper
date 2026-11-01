@@ -21,6 +21,9 @@ Introducing it is a pure refactor: no user-visible change, and the message contr
 
 `provider.parseUrl(url)` returns `{ kind, region }` or `null`.
 `kind` is `"album"` or `"song"`; "song" means a page of exactly one track, whatever the site calls it.
+`parseUrl` only knows the address, so an album address is `"album"` here; the open-pages list then turns an album address into `"song"` when the release is itself a single (Apple: the tab title has a "Single" segment, as in "Title - Single - Album by Artist", or for a `?i=` link the page header reads "Title - Single"; Spotify: the header type label is "Single").
+EPs and albums stay albums, and so does a `?i=` link to one track of a real album.
+A provider supplies this through `isSingleTitle(title)` (tab titles it trusts) and `PageLabel.single` (the page header).
 The check is strict (exact host, https, path shape), because the worker opens tabs for URLs that arrive in messages: anything a provider does not recognise is refused before a tab exists.
 Normalising is the provider's job, through two methods: `pageKey(url)` says which part of an address names the page (for Apple the origin and path, so a track picked after the address does not make a second page; for Spotify the plain `/track/<id>` address, so `/intl-de/track/<id>?si=...` is the same page), and `openUrl(url)` gives the address to open in a background tab (Apple's unchanged, Spotify's without the locale prefix and query but with `?locale=en`, which makes Spotify answer in English).
 

@@ -13,6 +13,8 @@ export interface OpenTab {
   pageTitle?: string;
   /** The artists the page itself shows, with `pageTitle`. */
   pageArtist?: string;
+  /** Whether the page's own header says the release is a single, with `pageTitle`. */
+  pageSingle?: boolean;
   /** The tab the user is looking at: the active one in the current window. */
   current: boolean;
 }
@@ -59,6 +61,19 @@ function nameOf(provider: CreditsProvider, tab: OpenTab, kind: PageKind): string
   return name.length > MAX_NAME ? `${name.slice(0, MAX_NAME - 1)}…` : name;
 }
 
+/**
+ * A release that is itself a single is a song, not an album; a link to one track of a real album ("?i=") stays an
+ * album, and so does an EP. The page's own header decides where it was read, else a tab title that is the page's own.
+ */
+function kindOf(provider: CreditsProvider, tab: OpenTab, urlKind: PageKind): PageKind {
+  if (urlKind !== "album") return urlKind;
+  const single =
+    provider.liveTitle?.(tab.url) === true
+      ? tab.pageSingle === true
+      : provider.isSingleTitle?.(clean(tab.title)) === true;
+  return single ? "song" : "album";
+}
+
 /** One entry for each album or song page among `tabs`; anything else a provider's site shows is left out. */
 export function musicTabEntries(
   tabs: readonly OpenTab[],
@@ -75,10 +90,11 @@ export function musicTabEntries(
       if (tab.current) known.current = true;
       continue;
     }
+    const kind = kindOf(recognised.provider, tab, recognised.url.kind);
     byPage.set(key, {
       url: tab.url,
-      name: nameOf(recognised.provider, tab, recognised.url.kind),
-      kind: recognised.url.kind,
+      name: nameOf(recognised.provider, tab, kind),
+      kind,
       source: recognised.provider.label,
       current: tab.current,
     });
