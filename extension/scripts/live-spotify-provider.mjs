@@ -151,9 +151,13 @@ try {
     const spotifyTab = await browser.openTab(`https://open.spotify.com/album/${albumId || "4yP0hdKOZPNshxUOjY0cZj"}`);
     loads += 1;
     await sleep(6000);
-    const seen = await evalPanel("chrome.tabs.query({}).then((tabs) => tabs.filter((t) => (t.url || '').includes('spotify') || (t.title || '').includes('Spotify')).map((t) => ({ url: t.url ?? null, title: t.title ?? null })))");
+    const seen = await evalPanel(
+      "chrome.tabs.query({}).then((tabs) => tabs.filter((t) => (t.url || '').includes('spotify') || (t.title || '').includes('Spotify')).map((t) => ({ url: t.url ?? null, title: t.title ?? null })))",
+    );
     console.log("tabs the panel can see: " + JSON.stringify(seen));
-    const byPattern = await evalPanel("chrome.tabs.query({ url: ['https://open.spotify.com/*'] }).then((tabs) => tabs.map((t) => ({ url: t.url ?? null, title: t.title ?? null })))");
+    const byPattern = await evalPanel(
+      "chrome.tabs.query({ url: ['https://open.spotify.com/*'] }).then((tabs) => tabs.map((t) => ({ url: t.url ?? null, title: t.title ?? null })))",
+    );
     console.log("by host pattern: " + JSON.stringify(byPattern));
     await fetch(`http://127.0.0.1:9341/json/close/${spotifyTab.id}`).catch(() => undefined);
     await sleep(800);
@@ -272,7 +276,15 @@ try {
     if (wantSpa) {
       const read = async (label) => {
         const t = await pageText();
-        console.log(label + ": " + t.split("\n").slice(0, 16).join(" | ").replace(/^.*Pick one to get its credits\. \| /, ""));
+        console.log(
+          label +
+            ": " +
+            t
+              .split("\n")
+              .slice(0, 16)
+              .join(" | ")
+              .replace(/^.*Pick one to get its credits\. \| /, ""),
+        );
       };
       await sleep(2500);
       await read("before moving, panel left open");
@@ -291,7 +303,13 @@ try {
     console.log("tab title: " + tabTitle);
     console.log(text.split("\n").slice(0, 16).join(" | "));
     check("the tab title was rewritten to another song", /Race My Mind/.test(tabTitle));
-    check("the card names the page itself, not a generic name", / - /.test(text.split("Pick one to get its credits.")[1] ?? "") && !/Spotify (album|track)\b/.test((text.split("Pick one to get its credits.")[1] ?? "").split("Get credits")[0] ?? ""));
+    check(
+      "the card names the page itself, not a generic name",
+      / - /.test(text.split("Pick one to get its credits.")[1] ?? "") &&
+        !/Spotify (album|track)\b/.test(
+          (text.split("Pick one to get its credits.")[1] ?? "").split("Get credits")[0] ?? "",
+        ),
+    );
     check("the card never shows the playing song", !/Race My Mind|Drake/.test(text));
     await shot("7-detector-playing-elsewhere");
     await fetch(`http://127.0.0.1:9341/json/close/${spotifyTab.id}`).catch(() => undefined);
@@ -313,8 +331,15 @@ try {
     await sleep(1500);
     const text = await pageText();
     console.log(text.split("\n").slice(0, 24).join(" | "));
-    check("the Apple song address is listed as a Song in Artist - Title form", /Billie Eilish - LUNCH\s*\|?\s*Apple Music · Song/.test(text.replace(/\n/g, " | ")) || (/Billie Eilish - LUNCH/.test(text) && /Apple Music · Song/.test(text)));
-    check("the Apple album is listed as an Album", /Billie Eilish - HIT ME HARD AND SOFT/.test(text) && /Apple Music · Album/.test(text));
+    check(
+      "the Apple song address is listed as a Song in Artist - Title form",
+      /Billie Eilish - LUNCH\s*\|?\s*Apple Music · Song/.test(text.replace(/\n/g, " | ")) ||
+        (/Billie Eilish - LUNCH/.test(text) && /Apple Music · Song/.test(text)),
+    );
+    check(
+      "the Apple album is listed as an Album",
+      /Billie Eilish - HIT ME HARD AND SOFT/.test(text) && /Apple Music · Album/.test(text),
+    );
     check("no marketing text in any name", !/with Lyrics|Song by|Album by/.test(text));
     await shot("8-apple-tabs");
     for (const t of opened) await fetch(`http://127.0.0.1:9341/json/close/${t.id}`).catch(() => undefined);

@@ -38,7 +38,9 @@ const scratch = mkdtempSync(join(tmpdir(), "geniescraper-bench-"));
 cpSync(join(root, "dist"), scratch, { recursive: true });
 const manifestPath = join(scratch, "manifest.json");
 const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
-manifest.optional_host_permissions = manifest.optional_host_permissions.filter((h) => h !== "https://open.spotify.com/*");
+manifest.optional_host_permissions = manifest.optional_host_permissions.filter(
+  (h) => h !== "https://open.spotify.com/*",
+);
 manifest.host_permissions = [...manifest.host_permissions, "https://open.spotify.com/*"];
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 // Variant E reads through the rows of the album page; the research reader does that (bench only, not shipped).
@@ -165,14 +167,20 @@ const WORKER_CODE = `
 `;
 
 const failures = [];
-const browser = launchChromium({ chromePath, dist: scratch, port: 9343, extraArgs: [`--lang=${lang}`, `--accept-lang=${lang}`] });
+const browser = launchChromium({
+  chromePath,
+  dist: scratch,
+  port: 9343,
+  extraArgs: [`--lang=${lang}`, `--accept-lang=${lang}`],
+});
 let loads = 0;
 try {
   const workerTarget = await findServiceWorker(browser);
   const worker = await connect(workerTarget.webSocketDebuggerUrl);
   await waitUntilReady(worker);
   await worker.evaluate(WORKER_CODE);
-  const call = (expression) => worker.evaluate(`(async () => JSON.parse(JSON.stringify((await ${expression}) ?? null)))()`);
+  const call = (expression) =>
+    worker.evaluate(`(async () => JSON.parse(JSON.stringify((await ${expression}) ?? null)))()`);
 
   // The album's track ids, through the shipped reader (one page load).
   const albumUrl = `https://open.spotify.com/album/${albumId}`;
@@ -221,7 +229,9 @@ try {
             lastStart = wantStart;
             if (wantStart > Date.now()) await sleep(wantStart - Date.now());
             loads += 1;
-            const r = await call(`self.bench.read(${JSON.stringify(variant)}, ${JSON.stringify(urls[i])})`).catch((e) => ({ error: String(e), ok: false }));
+            const r = await call(`self.bench.read(${JSON.stringify(variant)}, ${JSON.stringify(urls[i])})`).catch(
+              (e) => ({ error: String(e), ok: false }),
+            );
             done[i] = Date.now() - t0;
             if (r.blocked) blocked = true;
             if (r.ok) correct += 1;
@@ -234,13 +244,29 @@ try {
       }
       const finished = done.filter((x) => x !== undefined).sort((a, b) => a - b);
       const whole = finished.at(-1) ?? 0;
-      rows.push({ variant, rep, first: finished[0] ?? 0, whole, per: Math.round(whole / Math.max(1, finished.length)), correct, total: urls.length, errors });
+      rows.push({
+        variant,
+        rep,
+        first: finished[0] ?? 0,
+        whole,
+        per: Math.round(whole / Math.max(1, finished.length)),
+        correct,
+        total: urls.length,
+        errors,
+      });
       console.log(
         `${variant} rep${String(rep)} conc=${String(variant === "E" ? 1 : conc)}: first=${String(Math.round(finished[0] ?? 0))} ms whole=${String(Math.round(whole))} ms per=${String(Math.round(whole / Math.max(1, finished.length)))} ms correct=${String(correct)}/${String(urls.length)} errors=${String(errors)}`,
       );
       if (stages.length) {
         const keys = ["create", "nav", "inject", "content", "close", "header", "button", "menu", "dialog", "parsed"];
-        console.log("   stages (mean ms): " + keys.map((k) => `${k}=${String(Math.round(mean(stages.map((s) => s[k]).filter((v) => typeof v === "number"))))}`).join(" "));
+        console.log(
+          "   stages (mean ms): " +
+            keys
+              .map(
+                (k) => `${k}=${String(Math.round(mean(stages.map((s) => s[k]).filter((v) => typeof v === "number"))))}`,
+              )
+              .join(" "),
+        );
       }
       if (blocked) {
         console.log("CAPTCHA or block seen: stopping now.");
