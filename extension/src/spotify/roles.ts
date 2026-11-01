@@ -5,6 +5,9 @@
 import { roleMap } from "../core/roles";
 import { ROLE_TABLES } from "./roleTables";
 
+/** Roles Genius has removed from its additional roles; a label that spells one is left out, not typed. */
+const REMOVED_GENIUS_ROLES: ReadonlySet<string> = new Set(["Studio Personnel"]);
+
 const ALIASES: Readonly<Record<string, string>> = {
   // Composition & Lyrics: Genius has one field for all of them ("Writer").
   composer: "Songwriter",
@@ -26,7 +29,8 @@ const ALIASES: Readonly<Record<string, string>> = {
   "mastering engineer": "Mastering Engineer",
   masterer: "Mastering Engineer",
   programmer: "Programmer",
-  "studio personnel": "Studio Personnel",
+  // Genius lists Recording Second Engineer nowhere; its own page names "Second Engineer" as Assistant Engineer.
+  "recording second engineer": "Assistant Engineer",
   // Performers
   vocalist: "Vocals",
   vocals: "Vocals",
@@ -34,7 +38,7 @@ const ALIASES: Readonly<Record<string, string>> = {
   "background vocalist": "Background Vocals",
   "background vocals": "Background Vocals",
   "backing vocals": "Background Vocals",
-  "bass vocalist": "Bass (Vocal)",
+  "bass vocalist": "Bass Vocals",
   "drum kit": "Drums",
   drums: "Drums",
   keyboard: "Keyboards",
@@ -43,7 +47,9 @@ const ALIASES: Readonly<Record<string, string>> = {
 
 /** Names Genius lists, lowercase to their spelling: a label that already is one is kept as is. */
 const GENIUS_NAMES: ReadonlyMap<string, string> = new Map(
-  Object.values(roleMap()).map((name) => [roleKey(name), name]),
+  Object.values(roleMap())
+    .filter((name) => !REMOVED_GENIUS_ROLES.has(name))
+    .map((name) => [roleKey(name), name]),
 );
 
 /**

@@ -121,12 +121,14 @@ CARD_CASES = [
         "roles": ["Songwriter, Producer", "Producer, Drums", "Performer", "Drums"],
     },
     {"names": ["X"], "roles": ["Mixed Artist, Lead Vocals"]},
+    {"names": ["Studio", "Y"], "roles": ["Studio Personnel", "Studio Personnel, Producer"]},
 ]
 
 TEXT_CASES = [
     "",
     "Songwriter\nTaylor Swift, Jack Antonoff\nProducer\nJack Antonoff\n© 2024 Label\n",
     "Composition, Lyrics\nSongwriter:\nA & B\nMore by A\nPerformer\nC\nDrums\nD • E\n",
+    "Studio Personnel\nSome Studio\nProducer\nA\n",
 ]
 
 ARTWORK_URLS = [

@@ -5,7 +5,7 @@ import { normaliseRole, roleKeys, roleMap } from "../core/roles";
 import { codePointLength, splitLines, trimColon } from "../core/text";
 
 // Roles that exist on Apple Music credits pages but are not accepted on Genius.
-const SKIP_ROLES: ReadonlySet<string> = new Set(["Performer", "Mixed Artist"]);
+const SKIP_ROLES: ReadonlySet<string> = new Set(["Performer", "Mixed Artist", "Studio Personnel"]);
 
 const NOISE_PREFIXES = ["more by", "© ", "℗ ", "all rights", "℗©", "apple music"];
 

@@ -54,7 +54,7 @@ def _parse_artists(raw: str) -> list[str]:
 _NOISE_PREFIXES = ("more by", "© ", "℗ ", "all rights", "℗©", "apple music")
 
 # Roles that exist on Apple Music credits pages but are not accepted on Genius.
-_SKIP_ROLES: frozenset[str] = frozenset({"Performer", "Mixed Artist"})
+_SKIP_ROLES: frozenset[str] = frozenset({"Performer", "Mixed Artist", "Studio Personnel"})
 
 _SECTION_HEADERS = frozenset(
     {

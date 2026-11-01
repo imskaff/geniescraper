@@ -16286,6 +16286,24 @@
      ]
     }
    ]
+  },
+  {
+   "names": [
+    "Studio",
+    "Y"
+   ],
+   "roles": [
+    "Studio Personnel",
+    "Studio Personnel, Producer"
+   ],
+   "output": [
+    {
+     "role": "Producer",
+     "artists": [
+      "Y"
+     ]
+    }
+   ]
   }
  ],
  "credits_from_text": [
@@ -16328,6 +16346,17 @@
      "artists": [
       "D",
       "E"
+     ]
+    }
+   ]
+  },
+  {
+   "input": "Studio Personnel\nSome Studio\nProducer\nA\n",
+   "output": [
+    {
+     "role": "Producer",
+     "artists": [
+      "A"
      ]
     }
    ]
