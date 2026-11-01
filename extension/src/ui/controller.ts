@@ -207,6 +207,12 @@ export class PanelController {
     await this.refreshHosts();
     // Redraw even when nothing changed, so a box the user ticked and Chrome refused goes back to unticked.
     this.update({ hosts: { ...this.current.hosts }, error: problem });
+    if (on && host === "youtube" && this.current.hosts.youtube) await this.turnYoutubeOnInSetup();
+  }
+
+  /** In the set-up, allowing YouTube (its pages or a key) is the one decision about the link, so it turns the link on. */
+  private async turnYoutubeOnInSetup(): Promise<void> {
+    if (this.current.setup.open && !this.current.settings.scrapeYoutube) await this.setSetting("scrapeYoutube", true);
   }
 
   // ── opening the song on Genius ──────────────────────────────────────
@@ -243,8 +249,9 @@ export class PanelController {
     return this.key.keyIsCurrent(raw);
   }
 
-  saveYoutubeKey(raw: string): Promise<void> {
-    return this.key.save(raw);
+  async saveYoutubeKey(raw: string): Promise<void> {
+    await this.key.save(raw);
+    if (this.current.youtubeKey.saved && this.current.hosts.youtubeApi) await this.turnYoutubeOnInSetup();
   }
 
   /** Show a message under the key box (the view uses it for things only it can know, such as a refused clipboard). */

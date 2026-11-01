@@ -62,7 +62,7 @@ The output is not minified, so a reviewer can read what ships.
 3. Click the toolbar button to open the side panel.
 4. After a rebuild, press the reload icon on the extension's card.
 
-The first time the panel opens it walks through a short set-up.
+The first time the panel opens it walks through a short set-up: what to paste, speed and keys, and one optional step for YouTube links (allowing it, or saving a key, turns the YouTube link on; skipping it leaves it off), then a summary that says what was chosen. Everything can be changed later in Settings.
 
 ## Checks
 

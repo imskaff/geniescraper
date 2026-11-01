@@ -66,7 +66,12 @@ html {
   background: var(--bg);
 }
 
+/* A column as tall as the panel: the credit line sits at the bottom edge on short screens and follows the content
+   on long ones. */
 body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   margin: 0;
   background: var(--bg);
   color: var(--text);
@@ -84,6 +89,8 @@ html.popup body {
 }
 
 #app {
+  flex: 1 0 auto;
+  width: 100%;
   max-width: 40rem;
   margin: 0 auto;
   padding: var(--space-4);
@@ -1551,8 +1558,9 @@ main > .help {
 }
 
 .credit {
+  width: 100%;
   max-width: 40rem;
-  margin: 0 auto;
+  margin: auto auto 0;
   padding: 0 var(--space-4) var(--space-4);
   color: var(--muted);
   font-size: 12px;
