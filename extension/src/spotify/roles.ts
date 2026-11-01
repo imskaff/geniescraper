@@ -29,8 +29,9 @@ const ALIASES: Readonly<Record<string, string>> = {
   "mastering engineer": "Mastering Engineer",
   masterer: "Mastering Engineer",
   programmer: "Programmer",
-  // Genius lists Recording Second Engineer nowhere; its own page names "Second Engineer" as Assistant Engineer.
-  "recording second engineer": "Assistant Engineer",
+  // Genius lists Recording Second Engineer nowhere. Its list names a bare "Second Engineer" Assistant Engineer, but Spotify
+  // names the stage ("Recording"), exactly as in "Recording Engineer", so the stage-named Assistant Recording Engineer fits.
+  "recording second engineer": "Assistant Recording Engineer",
   // Performers
   vocalist: "Vocals",
   vocals: "Vocals",

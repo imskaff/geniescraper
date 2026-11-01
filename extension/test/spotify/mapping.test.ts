@@ -44,8 +44,13 @@ describe("spotifyRole", () => {
     expect(spotifyRole("Recording Arranger")).toBe("Arranger");
   });
 
-  it("types the second engineer as Assistant Engineer, the name Genius's list gives it", () => {
-    expect(spotifyRole("Recording Second Engineer")).toBe("Assistant Engineer");
+  it("types the second engineer as Assistant Recording Engineer, in English and in every language that has it", () => {
+    expect(spotifyRole("Recording Second Engineer")).toBe("Assistant Recording Engineer");
+    expect(spotifyRole("Segundo/a ingeniero/a de grabación", "es")).toBe("Assistant Recording Engineer");
+    expect(spotifyRole("Drugi realizator nagrań", "pl")).toBe("Assistant Recording Engineer");
+    expect(spotifyRole("レコーディングセカンドエンジニア", "ja")).toBe("Assistant Recording Engineer");
+    const tables = Object.values(ROLE_TABLES).flatMap((table) => Object.values(table));
+    expect(tables).not.toContain("Assistant Engineer");
   });
 
   it("types the bass voice as Bass Vocals and leaves out Studio Personnel, which Genius removed", () => {
