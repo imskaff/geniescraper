@@ -1,6 +1,6 @@
 {
   "name": "geniescraper-extension",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "private": true,
   "description": "Copy Apple Music credits into the Genius song edit form.",
   "type": "module",

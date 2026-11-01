@@ -45,7 +45,7 @@ class App(
 ):
     def __init__(self, *, start_link: bool = True) -> None:
         super().__init__()
-        self.title("Géniescraper v0.6.2")
+        self.title("Géniescraper v0.6.3")
         pos = f"+{settings.win_x}+{settings.win_y}" if settings.win_x >= 0 and settings.win_y >= 0 else ""
         self.geometry(f"620x700{pos}")
         self.resizable(False, True)
