@@ -1564,3 +1564,16 @@ main > .help {
 .access h3 {
   margin: 0;
 }
+
+.credit {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 0 var(--space-4) var(--space-4);
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.credit a {
+  color: inherit;
+}

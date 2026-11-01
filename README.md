@@ -19,6 +19,7 @@ It never presses Save: you check the form and save it yourself.
 <a href="#configuration">Configuration</a> ·
 <a href="extension/FAQ.md">FAQ</a> ·
 <a href="extension/PRIVACY.md">Privacy</a> ·
+<a href="#support">Support</a> ·
 <a href="#disclaimer">Disclaimer</a>
 </p>
 
@@ -264,11 +265,18 @@ A `.env` in the project root from older versions is still read until the first s
 - Reading Spotify is optional too: Chrome asks for access to `open.spotify.com` the first time you press **Get credits** on a Spotify page, after the panel has explained why. Nothing read from Spotify is sent anywhere.
 - When Apple's catalog has no cover for a song (always the case for a Spotify link), the extension asks Deezer, sending only the song title and artist. That permission is part of the install and cannot be switched off.
 
+## Support
+
+Géniescraper is free and made by [imskaff](https://github.com/imskaff).
+If it saves you time, you can [buy me a coffee](https://buymeacoffee.com/imskaff).
+
 ## Disclaimer
 
 Géniescraper is an independent, unofficial project. It is **not affiliated with, endorsed by or sponsored by Genius.com (Genius Media Group Inc.) or Apple Inc.** "Genius" and "Apple Music" are trademarks of their respective owners, named here only to say what the tool works with.
 
 It reads the Apple Music pages you open yourself and fills the Genius form of your own signed-in session. It never handles your Genius password and never saves for you: you check the form and save it yourself. Please use it in line with the terms of the services you use.
+
+Géniescraper is free. If it helps you, you can [buy me a coffee](https://buymeacoffee.com/imskaff).
 
 ## License
 
