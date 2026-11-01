@@ -325,6 +325,19 @@ export function readAlbumTrackCount(doc: Document): number | null {
 }
 
 /**
+ * True when the list already holds every track the header prints and the copyright and date lines below it have
+ * rendered too, so waiting for the count to hold still would only add time. Anything missing falls back to settling.
+ */
+function albumComplete(doc: Document, rows: number): boolean {
+  const copyright = readCopyright(doc);
+  return (
+    readAlbumTrackCount(doc) === rows &&
+    (copyright.phonographic !== "" || copyright.copyright !== "") &&
+    readAlbumReleaseDate(doc) !== ""
+  );
+}
+
+/**
  * The album's tracks once the list has settled. A long album is a windowed list that renders only its first rows
  * (about 25) and grows only by scrolling a visible tab, so this does not scroll: it returns the rows there are and the
  * count the header prints, and the caller makes the gap visible.
@@ -338,6 +351,7 @@ export async function readAlbumRows(
   let since = Date.now();
   while (Date.now() < end) {
     const n = trackRows(doc).length;
+    if (n > 0 && albumComplete(doc, n)) break;
     if (n !== last) {
       last = n;
       since = Date.now();

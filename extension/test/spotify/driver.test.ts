@@ -239,6 +239,27 @@ describe("detectAlbum", () => {
     expect((await detectAlbum(document, ALBUM, FAST)).releaseDate).toBe("");
   });
 
+  it("does not wait for the list to settle once every printed track, the date and the copyright are there", async () => {
+    setBody(fixture("album-page.html"));
+    const started = Date.now();
+    const info = await detectAlbum(document, ALBUM, { ...FAST, rowsMs: 5000, settleMs: 3000 });
+    expect(Date.now() - started).toBeLessThan(1000);
+    expect(info.trackTitles).toHaveLength(3);
+  });
+
+  it("still waits for a copyright block that renders after the full list", async () => {
+    const page = fixture("album-page.html");
+    const split = page.indexOf("<div><p>March 20, 2020");
+    const tail = page.slice(split, page.indexOf("</main>"));
+    setBody(page.slice(0, split) + "</main>");
+    setTimeout(() => {
+      document.querySelector("main")?.append(...nodesOf(tail));
+    }, 60);
+    const info = await detectAlbum(document, ALBUM, { ...FAST, rowsMs: 2000, settleMs: 300 });
+    expect(info.releaseDate).toBe("2020-03-20");
+    expect(info.copyrightNotice).toMatch(/^© 2020/);
+  });
+
   it("fails when an album shows no tracks", async () => {
     setBody('<main><div data-testid="entity-header"><span data-testid="entityTitle">X</span></div></main>');
     await expect(detectAlbum(document, ALBUM, FAST)).rejects.toMatchObject({ code: "tab-failed" });
