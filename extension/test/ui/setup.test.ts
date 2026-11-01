@@ -100,11 +100,11 @@ describe("walking through the set-up", () => {
       "Welcome to Géniescraper",
       "What should it paste?",
       "Speed and comfort",
-      "Better covers and links (optional)",
+      "YouTube links (optional)",
       "You're all set",
     ]);
     await press(root, "Back");
-    expect(heading(root)).toBe("Better covers and links (optional)");
+    expect(heading(root)).toBe("YouTube links (optional)");
   });
 
   it("has no Back on the first step, and no Next past the last", async () => {
@@ -185,7 +185,7 @@ describe("the choices in the set-up", () => {
   it("shows the recommended choices ticked on 'What should it paste?', with a sentence under each", async () => {
     const { root } = await mount({ firstRun: true });
     await goTo(root, 1);
-    for (const key of ["scrapeCore", "scrapeAdditional", "scrapeCopyright", "scrapeCoverArt", "scrapeYoutube"]) {
+    for (const key of ["scrapeCore", "scrapeAdditional", "scrapeCopyright", "scrapeCoverArt", "scrapeReleaseDate"]) {
       expect(box(root, `setting-${key}`).checked, key).toBe(true);
       expect(document.getElementById(`help-${key}`)?.textContent.length, key).toBeGreaterThan(20);
     }
@@ -233,7 +233,50 @@ describe("the look-ups step", () => {
     const { root } = await mount({ firstRun: true });
     await goTo(root, 3);
     expect(root.textContent).toContain("Chrome asks your permission");
-    expect(root.textContent).toContain("Recommended: tick the YouTube box");
+    expect(root.textContent).toContain("turns the YouTube link on");
+    expect(root.textContent).toContain("Skip it and the link stays off");
+  });
+
+  it("is the only place the set-up asks about YouTube: step 2 has no YouTube tickbox", async () => {
+    const { root } = await mount({ firstRun: true });
+    await goTo(root, 1);
+    expect(root.querySelector('[data-key="setting-scrapeYoutube"]')).toBeNull();
+    expect(root.textContent).not.toContain("YouTube");
+  });
+
+  it("allowing YouTube turns the link on, even if it was off before", async () => {
+    const { root, panel } = await mount({ firstRun: true, settings: { scrapeYoutube: false } });
+    await goTo(root, 3);
+    const youtube = box(root, "host-youtube");
+    youtube.checked = true;
+    youtube.dispatchEvent(new Event("change", { bubbles: true }));
+    await flush();
+    expect(panel.state.settings.scrapeYoutube).toBe(true);
+  });
+
+  it("saving a key turns the link on", async () => {
+    const { root, panel } = await mount({ firstRun: true, settings: { scrapeYoutube: false } });
+    await goTo(root, 3);
+    const field = $(root, "#youtube-key") as HTMLInputElement;
+    field.value = "AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q";
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    await press(root, "Save and check key");
+    expect(panel.state.settings.scrapeYoutube).toBe(true);
+  });
+
+  it("skipping, or a refused permission, leaves the link off, and the summary says so", async () => {
+    const { root, panel, env } = await mount({ firstRun: true, settings: { scrapeYoutube: false } });
+    await panel.setSetting("scrapeYoutube", false);
+    env.hosts.allow = false;
+    await goTo(root, 3);
+    const youtube = box(root, "host-youtube");
+    youtube.checked = true;
+    youtube.dispatchEvent(new Event("change", { bubbles: true }));
+    await flush();
+    expect(panel.state.settings.scrapeYoutube).toBe(false);
+    await press(root, "Next");
+    expect($(root, "main").textContent).not.toContain("the YouTube link");
+    expect($(root, "main").textContent).toContain("YouTube links: not looked up");
   });
 
   it("has the YouTube box, which asks Chrome inside the click, and no Deezer box (Deezer is always the fallback)", async () => {
@@ -270,11 +313,11 @@ describe("the summary", () => {
     await goTo(root, SETUP_STEPS - 1);
     const text = $(root, "main").textContent;
     expect(text).toContain(
-      "Pasting: songwriters and producers, additional credits, copyright lines, the PNG cover link, the release date, the YouTube link.",
+      "Pasting: songwriters and producers, additional credits, copyright lines, the PNG cover link, the release date.",
     );
     expect(text).toContain("Reading: 3 tracks at a time.");
     expect(text).toContain("Genius keys: F8 fills the next step, F7 goes back.");
-    expect(text).toContain("YouTube links: not looked up (you can add a key in Settings).");
+    expect(text).toContain("YouTube links: not looked up (you can turn it on in Settings).");
     expect(text).toContain("press Start pasting");
   });
 
