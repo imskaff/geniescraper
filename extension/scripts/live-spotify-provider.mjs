@@ -322,8 +322,9 @@ try {
     console.log("\n== Apple Music tabs");
     const opened = [];
     for (const url of [
-      "https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134?i=1739659140",
-      "https://music.apple.com/us/album/hit-me-hard-and-soft/1739659134",
+      "https://music.apple.com/us/album/lonely-at-the-top/1835726721?i=1835726995",
+      "https://music.apple.com/us/album/lonely-at-the-top/1835726721",
+      "https://music.apple.com/us/song/lonely-at-the-top/1835726995",
     ]) {
       opened.push(await browser.openTab(url));
       await sleep(4500);
@@ -331,15 +332,12 @@ try {
     await sleep(1500);
     const text = await pageText();
     console.log(text.split("\n").slice(0, 24).join(" | "));
+    const flat = text.split("\n").join(" | ");
     check(
-      "the Apple song address is listed as a Song in Artist - Title form",
-      /Billie Eilish - LUNCH\s*\|?\s*Apple Music · Song/.test(text.replace(/\n/g, " | ")) ||
-        (/Billie Eilish - LUNCH/.test(text) && /Apple Music · Song/.test(text)),
+      "the album address with a song picked is the Album, named by the album",
+      /Joey Bada\$\$ - Lonely At The Top \| Apple Music . Album/.test(flat),
     );
-    check(
-      "the Apple album is listed as an Album",
-      /Billie Eilish - HIT ME HARD AND SOFT/.test(text) && /Apple Music · Album/.test(text),
-    );
+    check("the real song page is a Song", /Apple Music . Song/.test(flat));
     check("no marketing text in any name", !/with Lyrics|Song by|Album by/.test(text));
     await shot("8-apple-tabs");
     for (const t of opened) await fetch(`http://127.0.0.1:9341/json/close/${t.id}`).catch(() => undefined);
