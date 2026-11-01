@@ -63,7 +63,7 @@ It never presses Save: you check the form and save it yourself.
 
 ### Browser extension <ins>(recommended)</ins>
 
-<img src="img/extension-demo.gif" alt="The side panel listening for Apple Music pages, finding one, reading the album and pasting the credits automatically" width="720">
+<img src="img/extension-demo.gif" alt="The side panel finding open Apple Music and Spotify pages, reading an album, reviewing credits with label, distributor and release date, opening the song on Genius and auto-pasting into the form until it pauses when touched" width="720">
 
 The steps are the same on **Windows** and **macOS**, apart from how you unzip the download (step 2) and how you check it.
 
