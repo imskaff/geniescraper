@@ -89,5 +89,10 @@ async def fetch_track(url: str, track_index: int, track_title: str, artist: str)
         except Exception:
             pass
 
+    if "/song/" in url and not song.phonographic_copyright and not song.copyright_notice:
+        # A song page has no footer; iTunes gives the album's lines (best effort, empty on failure).
+        phonographic, notice = await deezer.fetch_itunes_copyright(url)
+        song = song.model_copy(update={"phonographic_copyright": phonographic, "copyright_notice": notice})
+
     cover_url = song.cover_art_url or cover_url
     return song.model_copy(update={"cover_art_url": cover_url, "youtube_url": yt_url, "youtube_kind": yt_kind})

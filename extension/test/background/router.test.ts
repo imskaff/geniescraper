@@ -53,6 +53,18 @@ describe("router", () => {
     expect(await route({ type: "paste-auto-start" })).toMatchObject({ ok: true, data: { auto: "running" } });
   });
 
+  it("fills a /song/ page's missing copyright lines from the lookup, and leaves an album's own alone", async () => {
+    const covers: CoverService = { ...NO_COVERS, copyright: () => Promise.resolve(["℗ 2026 Looked Up", ""]) };
+    const blank = { ...ALBUM_INFO, phonographicCopyright: "", copyrightNotice: "" };
+    const browser = fakeBrowser({ answer: () => Promise.resolve({ ok: true, data: blank }) });
+    const route = createRouter(browser.ports, FAST_CLIENT, pasteFor(browser), covers);
+    const song = await route({ type: "detect", url: "https://music.apple.com/us/song/trade-places/1878823464" });
+    expect(song).toMatchObject({ ok: true, data: { phonographicCopyright: "℗ 2026 Looked Up" } });
+    const other = createRouter(fakeBrowser().ports, FAST_CLIENT, pasteFor(fakeBrowser()), covers);
+    const album = await other({ type: "detect", url: ALBUM_URL });
+    expect(album).toEqual({ ok: true, data: ALBUM_INFO });
+  });
+
   it("routes a detect request", async () => {
     const route = createRouter(fakeBrowser().ports, FAST_CLIENT, pasteFor(fakeBrowser()), NO_COVERS);
     expect(await route({ type: "detect", url: ALBUM_URL })).toEqual({ ok: true, data: ALBUM_INFO });

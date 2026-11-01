@@ -1,3 +1,10 @@
+import asyncio
+from pathlib import Path
+
+import httpx
+import pytest
+
+from scraper import deezer
 from scraper.labels import derive_label_info
 from scraper.models import Credit, SongCredits, _extract_labels  # pyright: ignore[reportPrivateUsage]
 
@@ -58,3 +65,34 @@ def test_queue_puts_label_and_distributor_before_copyright_and_skips_credited_ro
     ]
     assert ("artist", "Warner Music Group") not in queue
     assert song.typed_queue(include_copyright=False) == [("role", "Distributor"), ("artist", "Already")]
+
+
+def test_song_page_copyright_comes_from_the_albums_itunes_record(monkeypatch: pytest.MonkeyPatch):
+    """A /song/ page has no footer: the song's lookup names the album, and the album's record holds the line."""
+    fixtures = Path(__file__).resolve().parent.parent / "fixtures" / "lookups"
+    asked: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        asked.append(str(request.url))
+        name = (
+            "itunes-song-trade-places.json" if request.url.params["id"] == "1878823464" else "itunes-album-monica.json"
+        )
+        return httpx.Response(200, content=(fixtures / name).read_bytes())
+
+    real = httpx.AsyncClient
+    monkeypatch.setattr(deezer.httpx, "AsyncClient", lambda **kw: real(transport=httpx.MockTransport(handler), **kw))
+    lines = asyncio.run(deezer.fetch_itunes_copyright("https://music.apple.com/us/song/trade-places/1878823464"))
+    assert lines == ("℗ 2026 Atlantic Recording Corporation", "")
+    assert [u.split("?")[1] for u in asked] == ["id=1878823464&country=us", "id=1878823462&country=us"]
+    info = derive_label_info(lines[0], _extract_labels(lines[0]))
+    assert (info.label, info.distributor) == ("Atlantic Records", "Warner Music Group")
+
+
+def test_song_page_copyright_is_empty_when_the_lookup_fails(monkeypatch: pytest.MonkeyPatch):
+    real = httpx.AsyncClient
+    monkeypatch.setattr(
+        deezer.httpx,
+        "AsyncClient",
+        lambda **kw: real(transport=httpx.MockTransport(lambda request: httpx.Response(500)), **kw),
+    )
+    assert asyncio.run(deezer.fetch_itunes_copyright("https://music.apple.com/us/song/x/1")) == ("", "")

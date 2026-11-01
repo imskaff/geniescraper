@@ -216,6 +216,7 @@ Fields are pasted in the order Genius expects them:
 
 Label and Distributor are derived from the ℗ line with a reviewed table (`scraper/labels.py`): "℗ 2026 Atlantic Recording Corporation" gives Label "Atlantic Records" and Distributor "Warner Music Group".
 A "distributed by" in the line is used as written.
+An Apple Music `/song/` link has no copyright footer, so its ℗ and © lines come from the iTunes lookup of the album the song belongs to (best effort, empty on failure).
 When the line names no known label, or names labels of different groups, the field is left empty - never guessed.
 They follow the copyright toggle; the pairs are the same `role`/`artist` queue items as any other additional credit.
 

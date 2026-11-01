@@ -1,6 +1,7 @@
 // Exact cover art from Apple's own catalog, ported from scraper.deezer (the iTunes parts) and scraper.pipeline.
 // Everything here is best-effort: a failed lookup gives "" and never breaks a read. The only host contacted is
 // itunes.apple.com, and an artwork URL is accepted only when it points at Apple's image CDN over https.
+import { splitCopyright } from "../core/copyright";
 import { coreTitleWords, words } from "../core/text";
 
 /** Fetch a URL as JSON; resolves null on any failure (network, status, not JSON). Never throws. */
@@ -76,6 +77,30 @@ export async function lookupCover(getJson: GetJson, appleMusicUrl: string): Prom
   url.searchParams.set("id", ref[1]);
   url.searchParams.set("country", ref[0]);
   return firstArtwork(results(await getJson(url.href)));
+}
+
+/**
+ * The ℗ and © lines of the album a song belongs to, for a /song/ page, which has no footer ([“”, “”] when unknown).
+ * iTunes gives the copyright on the album (collection) record only, so the song's lookup names the album and a
+ * second lookup reads it. Same host as the cover lookup; any failure gives empty lines.
+ */
+export async function lookupCopyright(
+  getJson: GetJson,
+  appleMusicUrl: string,
+): Promise<[phonographic: string, copyright: string]> {
+  const ref = catalogRef(appleMusicUrl);
+  if (!ref) return ["", ""];
+  const [storefront, songId] = ref;
+  const lookup = async (id: string): Promise<Record<string, unknown>> => {
+    const url = new URL(LOOKUP_URL);
+    url.searchParams.set("id", id);
+    url.searchParams.set("country", storefront);
+    return results(await getJson(url.href))[0] ?? {};
+  };
+  const albumId = (await lookup(songId))["collectionId"];
+  if (typeof albumId !== "number") return ["", ""];
+  const line = (await lookup(String(albumId)))["copyright"];
+  return typeof line === "string" ? splitCopyright(line) : ["", ""];
 }
 
 /** Cover of this track found by a title search in the same catalog; "" when no hit is the same track. */
