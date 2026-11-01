@@ -39,7 +39,7 @@ When exactly one Genius song matches the title and artist, the extension opens t
 With none or several matching songs it opens nothing and tells you.
 Requests carry no cookies and no referrer.
 The credits of a Spotify page are read from `open.spotify.com`, which is an optional permission: Chrome asks for it the first time you pick a Spotify page, after the panel has explained what will happen, and you can refuse it, or take it back at any time in `chrome://extensions`.
-Then the extension opens that Spotify page in a minimized window of your own browser, presses the page's own "View credits" button for you, reads the names and roles in the box that opens, and closes the window.
+Then the extension opens that Spotify page in a minimized window of your own browser, with `?locale=en` added to its address so that Spotify answers in English (this changes nothing in your Spotify account or cookies and does not affect your own Spotify tabs; Spotify does not document the parameter, and if it stops working the extension reads the page in your language with its own lists of role words), presses the page's own "View credits" button for you, reads the names and roles in the box that opens, and closes the window.
 It reads only that credits box and the page's title, artist and copyright lines, and the text stays in your browser.
 Spotify sees this as a visit from your browser, including any cookies you already have for it, so if you are signed in to Spotify in that browser the page is the one you would see.
 The extension never signs in, never types a password, and never reads your library, playlists or account.

@@ -34,7 +34,7 @@ Manifest of the throwaway test extension that produced the numbers above:
 - `scripting` plus the host permission is enough to inject the reader (`chrome.scripting.executeScript({ files })`) into the tab the extension opened.
 - No `tabs` permission was needed: `chrome.tabs.create`, `get`, `update`, `sendMessage` and `chrome.windows.create`/`get`/`remove` all worked with only the host permission.
 - No `debugger`, `webRequest`, `activeTab`, `storage` or content script declaration.
-- To force English (recommended, see Languages) add `"declarativeNetRequest"`; the rule is a session rule limited to the probe's tab, and it also needs the host permission already listed.
+- English needs no extra permission: the reader opens `?locale=en` (see "Other ways to English roles"). The tab-scoped `declarativeNetRequest` rule below was the earlier recipe and is kept as the option on paper if Spotify ever removes the parameter.
 - If the project keeps host permissions optional, `open.spotify.com` has to be granted before the first read.
 
 ## Read procedure, step by step
@@ -64,6 +64,8 @@ With a plain 100 ms `setTimeout` poll the same read took 3 to 5 s, because a hid
 Synthetic keyboard events do nothing (0 of 10, earlier run), so do not bother with keys.
 
 ### Forcing English
+
+**Built (2026-11-01):** the worker opens the track or album address as `https://open.spotify.com/<kind>/<id>?locale=en` (locale prefix, tracking query and fragment dropped) and keeps the role tables as the fallback; the recipe below is the earlier header-based way and is not used. Live with the real build (German browser): tracks read in 2903 and 2880 ms with the query against 3158 and 2884 ms plain, and with the plain address in an Arabic browser the roles were not mapped at all (13 role words listed as left out) where the query gives all of them; the German album page found its 14 tracks and the English release date ("March 20, 2020"). The per-language list of role words in the notes below describes what Spotify writes when English is not obtained.
 
 Spotify localizes on the server from the `Accept-Language` request header of the page load.
 These did **not** work: the `/intl-en/` URL prefix (the page redirects and stays in the browser language, measured again 2026-11-01 in German, Polish and Japanese: see below), and overriding `navigator.language` in the page.
