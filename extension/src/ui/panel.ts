@@ -9,6 +9,7 @@ import { tabChangeNeedsRefresh } from "./tabEvents";
 import type { PageLabel } from "../providers/types";
 import { PASTE_KEY, normalisePaste } from "../core/paste";
 import { chromeStores } from "../shared/storage";
+import { footer } from "./footer";
 import { POPUP_CLASS, isPopupSurface, reportsClosing } from "./surface";
 
 const HOSTS = Object.keys(OPTIONAL_LOOKUP_HOSTS) as OptionalHost[];
@@ -114,6 +115,7 @@ if (reportsClosing(popup)) keepConnected();
 
 void PanelController.create(env).then((panel) => {
   new PanelView(root, panel);
+  root.after(footer());
   // The worker is the paste session's only writer; this panel just follows what it stores.
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === "session" && PASTE_KEY in changes) panel.setPaste(normalisePaste(changes[PASTE_KEY].newValue));
