@@ -11,11 +11,6 @@ Nothing here submits anything on its own.
 - Read `PRIVACY.md` and `store/listing.md` against what changed since the last release.
   If a new host, permission, stored value or request was added, the policy, the listing's justification table and the dashboard's data-use answers change with it.
   The tests catch a host or permission that is missing from the policy or the listing; they cannot see the dashboard.
-- First release that makes `open.spotify.com` a required host (it was optional up to 0.6.2): Chrome disables an extension whose update adds a host permission until the user accepts it.
-  Users updating from 0.6.2 will see the extension turned off with an "Enable" prompt in `chrome://extensions` (and a badge on the toolbar menu) until they accept the new Spotify access.
-  Say so in the release notes and the store's "What's new", and expect a drop in active users until people re-enable it.
-  Unpacked (manual) installs are unaffected: reloading the folder applies the manifest.
-  Re-check the dashboard's data-use answers and the single-purpose text at the same time.
 
 ## 2. Build and check
 
