@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { detectAlbum, scrapeTrack } from "../../src/spotify/driver";
 import { handleRequest } from "../../src/spotify/handler";
 import { REAL_TIMING, type Timing } from "../../src/spotify/page";
@@ -80,11 +80,44 @@ function trackPage({ dialog = "credits-many-roles.html", credits = true, failFir
 }
 
 beforeEach(() => {
+  stubEmbed(null);
   setBody("");
   document.documentElement.lang = "";
 });
 
+const embedPage = (iso: string): string =>
+  `<html><script id="__NEXT_DATA__" type="application/json">${JSON.stringify({ props: { pageProps: { state: { data: { entity: { releaseDate: { isoString: iso } } } } } } })}</script></html>`;
+const stubEmbed = (markup: string | null): void => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(() => (markup === null ? Promise.reject(new Error("offline")) : Promise.resolve(new Response(markup)))),
+  );
+};
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe("scrapeTrack on a saved track page", () => {
+  it("fills the release date from the embed page of the same track", async () => {
+    stubEmbed(embedPage("2020-03-20T00:00:00Z"));
+    trackPage();
+    const scrape = await scrapeTrack(document, { url: TRACK, trackTitle: "" }, FAST);
+    expect(scrape.releaseDate).toBe("2020-03-20");
+    expect(vi.mocked(fetch).mock.calls[0]?.[0]).toBe("/embed/track/4cOdK2wGLETKBW3PvgPWqT");
+  });
+
+  it("leaves a year-only release (stored as 1 January) and an unreachable embed page empty", async () => {
+    stubEmbed(embedPage("2004-01-01T00:00:00Z"));
+    trackPage();
+    expect((await scrapeTrack(document, { url: TRACK, trackTitle: "" }, FAST)).releaseDate).toBe("");
+    stubEmbed(null);
+    trackPage();
+    const scrape = await scrapeTrack(document, { url: TRACK, trackTitle: "" }, FAST);
+    expect(scrape.releaseDate).toBe("");
+    expect(scrape.credits.length).toBeGreaterThan(0);
+  });
+
+
   it("returns the mapped credits, the header's title and artists, and says what Spotify cannot give", async () => {
     trackPage();
     const scrape = await scrapeTrack(document, { url: TRACK, trackTitle: "" }, FAST);

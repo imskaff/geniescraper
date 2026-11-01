@@ -1,6 +1,7 @@
 // The two things the worker asks of a Spotify page: a summary (one track, or an album's track list) and the credits
 // of one track. Failures are thrown as SpotifyError and returned as data by the handler.
 import type { AlbumInfo, AppError, ErrorCode, PageScrape } from "../shared/messages";
+import { fetchEmbedReleaseDate } from "./embed";
 import { creditsFromDialog, languageNote, pageLanguage, skippedNote } from "./dialog";
 import {
   isBlocked,
@@ -32,7 +33,7 @@ export class SpotifyError extends Error {
 
 /** What a Spotify track page cannot give, said next to the credits instead of leaving fields silently empty. */
 export const NOT_PROVIDED_NOTE =
-  "Spotify does not show the ISRC. A track's own page shows only the year of its release, so the release date comes from the album page when you read an album, and is empty otherwise.";
+  "Spotify does not show the ISRC. The release date is read from the track's embed page; Spotify keeps only the year for some releases, and then the date is left empty.";
 
 export const UNAVAILABLE_MESSAGE =
   "Spotify has no playable page for this track here. It may be removed or not available in your country.";
@@ -110,6 +111,7 @@ export async function scrapeTrack(
   timing: Timing,
 ): Promise<PageScrape> {
   const started = Date.now();
+  const released = fetchEmbedReleaseDate(parseSpotifyUrl(request.url)?.id ?? "");
   await waitForHeader(doc, timing);
   const headerMs = Date.now() - started;
   const header = readHeader(doc);
@@ -139,7 +141,7 @@ export async function scrapeTrack(
     artist: header.artists.join(", ") || mapped.artists.join(", "),
     credits: mapped.credits,
     coverArtUrl: "",
-    releaseDate: "",
+    releaseDate: await released,
     warnings: mapped.credits.length === 0 ? ["No credits were found on this track's page."] : [],
     notes,
     timings: { header: headerMs, ...read.steps },

@@ -18,7 +18,7 @@ Raw run files are kept outside the repository.
 | Long albums? | A windowed list: only the first ~25 rows exist until scrolled. Scrolling works in a **visible** tab (100 of 100 rows, 5 scrolls, 14 s) and **does not** in a hidden one (stayed at 25). Use track pages, or the album's printed track count to detect the gap. |
 | Other languages? | Structure is identical in 4 of 4 languages (pl, de, ja, en). Text is localized, including the dialog heading, section headings and most role names. A tab-scoped `Accept-Language` rule forces English reliably (2 of 2, German browser). |
 | No credits vs failed to open? | The dialog always has at least the Artist section. A track with "no credits" still opens and parses (2 of 2 rain tracks: Artist section plus Source only). A failed open has a distinct `status` (see failure modes). |
-| Release date, label, ISRC, cover | See "Metadata". Full release date is **not** on a hydrated track page; ISRC is nowhere (0 of 7). |
+| Release date, label, ISRC, cover | See "Metadata". Full release date is **not** on a hydrated track page but is in the embed page (see docs/spotify-release-date.md); ISRC is nowhere (0 of 7). |
 
 ## Permissions needed (exact)
 
@@ -296,7 +296,7 @@ Other fixes and observations:
 
 **Recommendation:** build `?locale=en` into the Spotify reader (open the English-query address of the same track or album in the hidden tab), keep the alias tables as the fallback when the dialog does not come back in English (detected by the heading or a known English role set), and name a language in "About this read" only when the fallback was used.
 Do not add the declarativeNetRequest permission unless a later check shows that signed-in accounts ignore the parameter or Spotify removes it; keep that option written down.
-Consider the embed page as a separate step for the full release date.
+The embed page was then built for the full release date: see docs/spotify-release-date.md.
 
 ## Selectors
 
