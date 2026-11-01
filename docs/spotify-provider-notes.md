@@ -230,6 +230,53 @@ Sample: the 27 rows of the signed-out playlist page "Indie's Top 50" (small and 
   The cause is unknown (cold-profile timing or different row markup in the German page); worth a look when the provider reads albums in non-English browsers.
 - The Japanese `no-credits` read (a dialog without any row) is a case the earlier notes did not have; it showed once in 8.
 
+### Audit of Genius role names against Genius's list
+
+Reference: "Standardized Additional Roles" (`genius.com/Community-guides-standardized-additional-roles-annotated`), read once on 2026-11-01 in a browser pane, signed out.
+Its sections: Base Interface Roles (Artists, Featuring, Producer, Recorded At, Writer), Major Roles Removed (Booking, Licensing, Manager/Management, Performance Rights, Performer/Associate Performer, Studio Personnel, DAW Roles), then Writing, Arranger, Production, Programmer, Studio, Vocal, Label/Publishing, Locations, Artwork, Video, Choir/Orchestra, Other, Instrument Solos, Specific Instrument Roles, Instruments and Additional Roles.
+It lists "AKA" spellings for some roles (for example Mixing Engineer AKA Mixer, Background Vocals AKA Backing Vocals); the name before "AKA" is the one to type.
+
+Every Genius name that `ALIASES` in `extension/src/spotify/roles.ts` and the 14 language tables in `roleTables.ts` can produce, checked against that page:
+
+| Our target | Produced from | On the page | Verdict |
+|---|---|---|---|
+| Songwriter | composer, lyricist, songwriter, author, writer, co-writer and the Composer/Lyricist words of every language | **no** (page: base role "Writer", plus Composer and Lyricist as Writing Roles) | Internal label only. `WRITTEN_BY_ROLES` in `core/models.ts` routes it to the Written By field ("Writer" in the form), and `additionalCredits()` filters it out, so the string "Songwriter" is never pasted as a role. Correct as is; rename it to "Writer" only if the owner wants the internal label to match the page. |
+| Arranger | arranger | yes | ok |
+| Arranger | recording arranger | the page lists **Recording Arranger** separately (Arranger Roles) | **Fix:** map "recording arranger" to "Recording Arranger". |
+| Producer, Co-Producer, Executive Producer | producer, co-producer, executive producer | yes (Production Roles) | ok |
+| Engineer | engineer | yes (Studio Roles) | ok |
+| Recording Engineer | recording engineer | yes | ok |
+| Mixing Engineer | mixing engineer, mixer | yes (AKA Mixer, Mixing) | ok |
+| Mastering Engineer | mastering engineer, masterer | yes (AKA Masterer, Mastering) | ok |
+| Programmer | programmer | yes | ok |
+| **Studio Personnel** | studio personnel | **no: under "Major Roles Removed"** | **Fix:** remove the `"studio personnel"` alias so the role is left out and listed under "Left out because Genius has no matching role". The only place the English fallback can still produce it is `GENIUS_NAMES` (see below). |
+| Vocals | vocalist, vocals | yes (AKA Rap, Rap Vocals) | ok |
+| Lead Vocals | lead vocals | yes | ok |
+| Background Vocals | background vocalist, background vocals, backing vocals | yes (AKA Backing Vocals) | ok |
+| **Bass (Vocal)** | bass vocalist and the bass-vocal word of de, es, fr, it, ja, ko, nl, pl, pt (every table that has one) | **no: the page lists "Bass Vocals"** (Vocal Roles, next to Baritone Vocals and Tenor Vocals) | **Fix:** every `"Bass (Vocal)"` in `roles.ts` and `roleTables.ts` becomes `"Bass Vocals"`. "Bass (Vocal)" is Apple's spelling carried over from `scraper/roles.py` line 145 (a key of the Apple map), not a Genius name. The pasted role must match the picker exactly, so it would not have been found. I could not open the live role picker (needs a signed-in edit form), so the exact picker text is unverified, but the page is the community reference for it and has no parenthesised form anywhere. |
+| Drums | drum kit, drums | yes (Instruments) | ok |
+| Keyboards | keyboard, keyboards | yes (AKA Electronic Keyboard) | ok |
+| Guitar, Synthesizer | guitar, synthesizer | yes (Instruments) | ok |
+
+Questions from the review, answered:
+
+- **"Bass (Vocal)":** our name is wrong; it is Apple's spelling, not how Genius lists it. Use "Bass Vocals".
+- **"Studio Personnel":** Spotify uses it for a studio or company credited without a role (in the self-released fixture, a row "Sample Studio - Studio Personnel" next to a Recording Engineer row). Genius removed the role, so such rows should be left out and shown in the left-out list.
+  The role is also a value of the Apple map, so the rule that every Spotify target must be a value of Apple's map does not catch it (see below).
+- **"Recording Second Engineer":** it is not in the Spotify tables (left out on purpose today). The page offers "Assistant Engineer" (AKA Second Engineer (Tidal)) and "Assistant Recording Engineer". The Tidal AKA covers a bare "Second Engineer"; Spotify's word names the stage ("Recording"), exactly as "Recording Engineer" does, so **"Assistant Recording Engineer"** is the closer target. It is in the Apple map already. Suggest adding `"recording second engineer": "Assistant Recording Engineer"` (and, if ever seen, "mixing second engineer" to "Assistant Mixing Engineer"); it was on "Blinding Lights" in every language and is dropped today, so this recovers a role.
+- **"Songwriter":** confirmed internal, see the table.
+
+Other fixes and observations:
+
+1. **The target check pins the wrong list.** The test that "every target is a Genius name" compares against the values of the Apple map (`data/roles.json`), which contains names the page removed ("Studio Personnel", "Performer") and Apple spellings ("Bass (Vocal)"). Pin the Spotify targets to the page's list instead: store the relevant names (Writing, Arranger, Production, Programmer, Studio, Vocal, Choir/Orchestra, Instruments) in a small fixture and compare, or at least add "Studio Personnel" and "Bass (Vocal)" to a deny list. That check would have caught both fixes above.
+2. **`GENIUS_NAMES` fallback** lets any English label equal to a value of the Apple map through unchanged. For the names Spotify showed in English (Choir, Strings, Violin, Viola, Cello, Trumpet, Trombone, Tuba, Piano, Percussion, Electric Guitar, Bass Guitar) that is right: each is on the page. It also lets "Studio Personnel", "Performer" and "Bass (Vocal)" through, so removing the alias alone is not enough: exclude the page's removed roles in `spotifyRole` (a small deny set: studio personnel, performer, associate performer, manager, management, booking, licensing, performance rights).
+3. **Spotify words with a better or any Genius target:**
+   - Director (Spotify's Other Roles): the page has only qualified names (Video Director, Music Director, Choir Director, Orchestra Director, Screen Director); leave out, as now.
+   - Distributor, Label, Publisher (Label/Publishing Roles, AKA Aggregator): Spotify shows these only in the Sources row, never as a role row (0 of about 60 dialogs), and the Source value is already used for the label line. No mapping needed; if a role row ever says Distributor, map it to "Distributor".
+   - Main Artist / Featured Artist: artist section, not roles; unchanged.
+   - Author: "Writer" family, already goes to Written By.
+4. The Apple-side map (not touched here) also produces names the page does not list as roles ("Performer", "Studio Personnel"); that is the desktop app's table and a separate task.
+
 ### Options
 
 | Option | Fixes | Permission | Reliability (measured) | Effort | Risk |
