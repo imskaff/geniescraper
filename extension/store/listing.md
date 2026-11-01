@@ -40,7 +40,7 @@ You stay in control:
 Optional extras, off until you turn them on (Chrome asks first):
 
 - Reading credits from Spotify pages (Chrome asks the first time you pick a Spotify page).
-- YouTube links, found by searching YouTube, or through Google's official YouTube service if you add your own free key. The panel walks you through getting one.
+- YouTube links, found by searching YouTube, or through Google's official YouTube service if you add your own free key. The set-up has one optional YouTube step; allowing it, or saving a key, turns the link on, and skipping it leaves it off. The panel walks you through getting a key.
 
 Private by design: no accounts, no analytics, no tracking. Song titles and artists are sent only to the services above when you use them; Deezer is asked for a cover, with only the title and artist, when Apple's catalog has none.
 

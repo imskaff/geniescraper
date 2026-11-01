@@ -85,13 +85,15 @@ function select(
 /** What the user has chosen, in plain words, for the last step. Pure, so it can be tested without a screen. */
 export function setupSummary(state: PanelState): string[] {
   const { settings, hosts, youtubeKey } = state;
+  // The link is pasted only when it is ticked and there is a way to look it up (see YoutubeLookups.askable).
+  const youtubeOn = settings.scrapeYoutube && (hosts.youtube || (youtubeKey.saved && hosts.youtubeApi));
   const parts = [
     settings.scrapeCore && "songwriters and producers",
     settings.scrapeAdditional && "additional credits",
     settings.scrapeCopyright && "copyright lines",
     settings.scrapeCoverArt && "the PNG cover link",
     settings.scrapeReleaseDate && "the release date",
-    settings.scrapeYoutube && "the YouTube link",
+    youtubeOn && "the YouTube link",
   ].filter((part): part is string => typeof part === "string");
   const reads = settings.parallelReads;
   const youtube =
@@ -99,7 +101,7 @@ export function setupSummary(state: PanelState): string[] {
       ? "from Google's official service, with your key"
       : hosts.youtube
         ? "by reading YouTube's pages (Google may limit this)"
-        : "not looked up (you can add a key in Settings)";
+        : "not looked up (you can turn it on in Settings)";
   return [
     `Pasting: ${parts.length > 0 ? parts.join(", ") : "nothing is selected yet"}.`,
     `Reading: ${reads === 0 ? "every track at once" : reads === 1 ? "one track at a time" : `${String(reads)} tracks at a time`}.`,
@@ -148,7 +150,7 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
               text: "Nothing is sent to us: there is no account and no tracking. Your settings stay in your browser.",
             }),
             el("li", {
-              text: "A short set-up follows: what to paste, how fast to read, and the optional look-ups. Every choice can be changed later in Settings.",
+              text: "A short set-up follows: what to paste, how fast to read, and the optional YouTube link. Every choice can be changed later in Settings.",
             }),
           ),
         ),
@@ -198,13 +200,6 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
             "scrapeReleaseDate",
             "Release date",
             "The month, day and year, chosen in the three Release Date dropdowns. Recommended.",
-          ),
-          option(
-            panel,
-            state,
-            "scrapeYoutube",
-            "YouTube link",
-            "The official video or audio. It appears once a YouTube look-up is set up in step 4; until then there is nothing to paste for it.",
           ),
         ),
       );
@@ -265,13 +260,13 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
       break;
     case 3:
       body.push(
-        parts.heading("Better covers and links (optional)"),
+        parts.heading("YouTube links (optional)"),
         el("p", {
           class: "help",
-          text: "These look things up on other websites, so Chrome asks your permission for each one. Skip them and everything else still works.",
+          text: "This finds the official video or audio for each song, to paste into Genius's YouTube field. It looks on YouTube, so Chrome asks your permission. Allowing it, or saving a key, turns the YouTube link on. Skip it and the link stays off; everything else still works.",
         }),
         el("p", {
-          text: "Recommended: tick the YouTube box to find a link for each track; a free key from Google makes that reliable, and the steps walk you through it.",
+          text: "Recommended: allow it to find a link for each track; a free key from Google makes that reliable, and the steps walk you through it.",
         }),
         parts.youtubeFieldset(),
       );

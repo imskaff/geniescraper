@@ -115,7 +115,7 @@ export function youtubeSettings(v: ViewContext, state: PanelState): HTMLElement 
       state,
       "youtube",
       "Find a YouTube link for each track (recommended)",
-      "Searches www.youtube.com's pages for the song, as the desktop app does. Off until you allow it, and it needs the YouTube link ticked above to be pasted. Chrome asks first; take the permission back here or in chrome://extensions.",
+      "Searches www.youtube.com's pages for the song, as the desktop app does. Off until you allow it. Chrome asks first; take the permission back here or in chrome://extensions. The link is pasted only while the YouTube link is ticked in Settings; the set-up ticks it when you allow this.",
     ),
     subgroup("Better YouTube links (optional)", ...youtubeKeyContent(v, state)),
   );

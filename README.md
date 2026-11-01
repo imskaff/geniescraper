@@ -166,7 +166,7 @@ When Genius has no exact match for a name or a role, the text stays typed and no
 > **On a Mac,** the `F7` and `F8` keys are usually media keys. Hold `Fn` while you press them, or turn on **Use F1, F2, etc. keys as standard function keys** in **System Settings → Keyboard → Keyboard Shortcuts… → Function Keys**. The **Next**, **Previous** and **Skip** buttons in the panel work without the keys.
 
 > [!TIP]
-> The first time the panel opens, a short set-up walks you through what to paste, the speed and keys, and the optional lookups. Everything in it can be changed later in **Settings**.
+> The first time the panel opens, a short set-up walks you through what to paste, the speed and keys, and the optional YouTube link (step 4, the one place it is decided: allowing it, or saving a key, turns the link on; skipping it leaves it off). Everything in it can be changed later in **Settings**.
 
 ### With the desktop app
 
@@ -236,7 +236,7 @@ Both apps have a **Settings** screen. In the desktop app it opens over any scree
 | **YouTube links**      | Find a YouTube link for each track (recommended), and an optional free YouTube key for more reliable links; the panel walks you through getting one. |
 | **Desktop app**        | Pair with the desktop app: pairing code, **Paste**, **Pair**, **Unpair**.                                                              |
 
-The YouTube lookup is off until you tick it; the browser then asks for permission to contact `www.youtube.com`, and you can take it back in Settings or in `chrome://extensions`.
+The YouTube lookup is off until you allow it (in the set-up's step 4 or in Settings); the browser then asks for permission to contact `www.youtube.com`, and you can take it back in Settings or in `chrome://extensions`.
 Deezer is always the cover fallback and has no setting.
 
 ### Desktop app
