@@ -44,7 +44,7 @@ function clean(text: string): string {
 
 function nameOf(provider: CreditsProvider, tab: OpenTab, kind: PageKind): string {
   let name: string;
-  if (provider.liveTitle !== true) {
+  if (provider.liveTitle?.(tab.url) !== true) {
     name = provider.tabName(clean(tab.title), tab.url, kind);
   } else if (tab.pageTitle) {
     // The page's own heading: "Artist - Title", from fields, never from a tab title.
@@ -69,20 +69,16 @@ export function musicTabEntries(
     const recognised = recogniseUrl(tab.url, providers);
     if (!recognised) continue;
     // The same page in two tabs, or with a track picked after the address, is one entry.
-    // An album address with a song picked is that song: it is listed, and read, as a song.
-    const songUrl = recognised.provider.songOfAlbumUrl?.(tab.url) ?? null;
-    const url = songUrl ?? tab.url;
-    const kind = songUrl ? "song" : recognised.url.kind;
-    const key = recognised.provider.pageKey(url);
+    const key = recognised.provider.pageKey(tab.url);
     const known = byPage.get(key);
     if (known) {
       if (tab.current) known.current = true;
       continue;
     }
     byPage.set(key, {
-      url,
-      name: nameOf(recognised.provider, tab, kind),
-      kind,
+      url: tab.url,
+      name: nameOf(recognised.provider, tab, recognised.url.kind),
+      kind: recognised.url.kind,
       source: recognised.provider.label,
       current: tab.current,
     });

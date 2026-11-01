@@ -6,7 +6,7 @@ import { PROVIDERS } from "../providers/registry";
 import { PanelView } from "./view";
 import { withPageTitles } from "./pageTitles";
 import { tabChangeNeedsRefresh } from "./tabEvents";
-import { readPageLabel, type PageLabel } from "../spotify/pageLabel";
+import type { PageLabel } from "../providers/types";
 import { PASTE_KEY, normalisePaste } from "../core/paste";
 import { chromeStores } from "../shared/storage";
 import { POPUP_CLASS, isPopupSurface, reportsClosing } from "./surface";
@@ -49,8 +49,8 @@ const sources: SourcePermissions = {
 };
 
 /** The page's own title and artists, read by a script run in the tab (only tabs of a host the extension may read). */
-async function readLabelFromTab(tabId: number): Promise<PageLabel | null> {
-  const [injection] = await chrome.scripting.executeScript({ target: { tabId }, func: readPageLabel });
+async function readLabelFromTab(tabId: number, reader: () => PageLabel): Promise<PageLabel | null> {
+  const [injection] = await chrome.scripting.executeScript({ target: { tabId }, func: reader });
   return injection?.result ?? null;
 }
 

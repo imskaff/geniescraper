@@ -1,6 +1,7 @@
 // Spotify as the second credits provider. The in-page reader lives in src/spotify/.
 import { normaliseSpotifyRole } from "../spotify/roles";
 import { canonicalSpotifyUrl, parseSpotifyUrl } from "../spotify/url";
+import { readPageLabel } from "../spotify/pageLabel";
 import { spotifyTitleParts } from "./tabTitles";
 import type { CreditsProvider, PageKind } from "./types";
 
@@ -15,7 +16,8 @@ export const SPOTIFY_PROVIDER: CreditsProvider = {
   // Page loads are spread out and few at once: three hidden tabs, starts at least 0.15 s apart. Measured live to
   // behave (no error in 32 reads at 2 and 3 at once); any failed or blocked read drops it to one (see the router).
   // The tab title follows the playing song, so the list reads each page's own title instead.
-  liveTitle: true,
+  liveTitle: () => true,
+  readPageLabel,
   // Only a title that ends with the site name and is in a wording seen live counts as the page's own.
   isOwnTitle: (title) => spotifyTitleParts(title) !== null,
   readGapMs: 150,

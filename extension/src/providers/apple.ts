@@ -1,4 +1,5 @@
 // Apple Music as the first credits provider. The reader itself stays in src/apple/.
+import { readApplePageLabel } from "../apple/pageLabel";
 import { parseAppleMusicUrl } from "../apple/url";
 import { normaliseRole } from "../core/roles";
 import { appleTitleParts } from "./tabTitles";
@@ -36,18 +37,16 @@ export const APPLE_PROVIDER: CreditsProvider = {
     const parsed = parseAppleMusicUrl(url);
     return parsed ? { kind: parsed.kind, region: parsed.storefront } : null;
   },
+  // An album address with a song picked ("?i=") is still the album, but Apple titles the tab after that song: such a
+  // page is named from its own header. Every other Apple page keeps its tab title, which is its own.
+  liveTitle: (url) => parseAppleMusicUrl(url)?.kind === "album" && new URL(url).searchParams.has("i"),
+  readPageLabel: readApplePageLabel,
   pageKey(url) {
     // The path names the page; a track picked after the address (?i=) does not make a second one.
     const { origin, pathname } = new URL(url);
     return origin + pathname;
   },
   openUrl: (url) => url,
-  songOfAlbumUrl(url) {
-    // An album address with a song picked ("?i=<song id>") is a song: its own address names it directly.
-    const parsed = parseAppleMusicUrl(url);
-    const song = parsed?.kind === "album" ? /^\d+$/.exec(new URL(url).searchParams.get("i") ?? "")?.[0] : undefined;
-    return parsed && song ? `https://music.apple.com/${parsed.storefront}/song/song/${song}` : null;
-  },
   tabName(title, url, kind) {
     const { title: name, artist } = appleTitleParts(title);
     if (!name) return nameFromAddress(url, kind);

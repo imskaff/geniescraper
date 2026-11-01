@@ -40,17 +40,76 @@ describe("the open Apple Music pages the panel offers", () => {
     expect(entries[0]?.url).toBe(ALBUM);
   });
 
-  it("lists an album address with a song picked as that song, once, with the song's own address", () => {
+  it("lists an album address with a song picked as the same Album page, once, at its own address", () => {
     const withSong = `${ALBUM}?i=1739659140`;
     const entries = musicTabEntries([
       tab(withSong, "A", false, 1),
       tab(ALBUM, "B", false, 2),
       tab(withSong, "C", false, 3),
     ]);
-    expect(entries.map((e) => [e.kind, e.url])).toEqual([
-      ["song", "https://music.apple.com/us/song/song/1739659140"],
-      ["album", ALBUM],
+    expect(entries.map((e) => [e.kind, e.url])).toEqual([["album", withSong]]);
+  });
+
+  it("keeps Song for a real song page, with or without an album view", () => {
+    const entries = musicTabEntries([
+      tab(SONG, "CHIHIRO - Song with Lyrics by Billie Eilish - Apple Music", false, 1),
+      tab(
+        "https://music.apple.com/us/song/lunch/1739659140",
+        "LUNCH - Song with Lyrics by Billie Eilish - Apple Music",
+        false,
+        2,
+      ),
     ]);
+    expect(entries.map((e) => e.kind)).toEqual(["song", "song"]);
+  });
+
+  describe("an album address with a song picked, whose tab is titled after that song", () => {
+    const ADDRESS = "https://music.apple.com/us/album/lonely-at-the-top/1835726721?i=1835726995";
+    const titled = (title: string, pageTitle?: string, pageArtist?: string): OpenTab => ({
+      tabId: 1,
+      url: ADDRESS,
+      title,
+      current: true,
+      ...(pageTitle === undefined ? {} : { pageTitle }),
+      ...(pageArtist === undefined ? {} : { pageArtist }),
+    });
+
+    it.each([
+      ["English", "‎LONELY AT THE TOP - Song with Lyrics by Joey Bada$$ - Apple Music"],
+      ["German", "‎LONELY AT THE TOP – Titel mit Gesang von Joey Bada$$ – Apple Music"],
+    ])("is named from the album's own header, never the song's tab title: %s", (_language, title) => {
+      const [entry] = musicTabEntries([titled(title, "Lonely At The Top", "Joey Bada$$")]);
+      expect(entry).toMatchObject({
+        name: "Joey Bada$$ - Lonely At The Top",
+        kind: "album",
+        source: "Apple Music",
+        current: true,
+      });
+    });
+
+    it.each([
+      ["English", "‎LONELY AT THE TOP - Song with Lyrics by Joey Bada$$ - Apple Music"],
+      ["German", "‎LONELY AT THE TOP – Titel mit Gesang von Joey Bada$$ – Apple Music"],
+    ])(
+      "falls back to the album's name from its address when the header is unknown, not the song: %s",
+      (_language, title) => {
+        const [entry] = musicTabEntries([titled(title)]);
+        expect(entry?.name).toBe("Lonely At The Top");
+        expect(entry?.kind).toBe("album");
+      },
+    );
+
+    it("names an Apple album address without a song picked from its tab title, as before", () => {
+      const [entry] = musicTabEntries([
+        {
+          tabId: 1,
+          url: "https://music.apple.com/us/album/lonely-at-the-top/1835726721",
+          title: "LONELY AT THE TOP - Album by Joey Bada$$ - Apple Music",
+          current: true,
+        },
+      ]);
+      expect(entry?.name).toBe("Joey Bada$$ - LONELY AT THE TOP");
+    });
   });
 
   it("keeps pages of different storefronts apart", () => {

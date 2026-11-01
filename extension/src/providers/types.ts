@@ -22,6 +22,14 @@ export interface ProviderMessages {
   slowResponse: string;
 }
 
+/** The title and artists a page shows for itself, read from the page. */
+export interface PageLabel {
+  /** Path of the page the heading belongs to, so a label read mid-navigation can be told from the address. */
+  path: string;
+  title: string;
+  artists: string[];
+}
+
 export interface CreditsProvider {
   readonly id: SourceId;
   /** Shown in the UI and in errors: "Apple Music". */
@@ -46,7 +54,9 @@ export interface CreditsProvider {
    * open-pages list then names such a tab only from `OpenTab.pageTitle`, which the panel reads from the page itself,
    * and never from the tab title.
    */
-  readonly liveTitle?: boolean;
+  liveTitle?(url: string): boolean;
+  /** For a `liveTitle` provider: the function run in the tab (self-contained) to read the page's own title and artists. */
+  readonly readPageLabel?: () => PageLabel;
   /**
    * For a `liveTitle` provider: whether a tab title is certainly the page's own and not a rewritten one. Used only when
    * the page's heading could not be read. Spotify's own titles end with "| Spotify"; a playing song's does not.
@@ -66,8 +76,6 @@ export interface CreditsProvider {
    * that has its invisible marks and extra spaces removed already; a generic name when nothing can be made of it.
    */
   tabName(title: string, url: string, kind: PageKind): string;
-  /** An album address that points at one song of it: the song's own address (Apple's `?i=`), else null. */
-  songOfAlbumUrl?(url: string): string | null;
   /** Genius role name for a raw role label as this site shows it. */
   normaliseRole(raw: string): string;
 }

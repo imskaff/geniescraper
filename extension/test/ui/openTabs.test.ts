@@ -225,16 +225,25 @@ describe("the Get credits button needs a link", () => {
 });
 
 describe("an Apple Music album address with a song picked", () => {
-  it("is listed as a Song under the song's own name, and is read as that song", async () => {
+  it("is listed as the Album, named by its header, and Get credits reads the whole album", async () => {
     const withSong = `${ALBUM.url}?i=1739659140`;
     const { root, env } = await mount({
-      openTabs: tabs([withSong, "LONELY AT THE TOP - Song with Lyrics by Joey Bada$$ - Apple Music", true]),
+      openTabs: [
+        {
+          tabId: 1,
+          url: withSong,
+          title: "LONELY AT THE TOP - Song with Lyrics by Joey Bada$$ - Apple Music",
+          pageTitle: "Lonely At The Top",
+          pageArtist: "Joey Bada$$",
+          current: true,
+        },
+      ],
     });
     const item = $(root, '[data-key="open-page-0"]');
-    expect(item.querySelector(".open-name")?.textContent).toBe("Joey Bada$$ - LONELY AT THE TOP");
-    expect(item.querySelector(".tag")?.textContent).toBe("Apple Music · Song · this page");
+    expect(item.querySelector(".open-name")?.textContent).toBe("Joey Bada$$ - Lonely At The Top");
+    expect(item.querySelector(".tag")?.textContent).toBe("Apple Music · Album · this page");
     item.click();
     await flush();
-    expect(env.api.calls[0]).toContain("music.apple.com/us/song/song/1739659140");
+    expect(env.api.calls[0]).toContain(withSong);
   });
 });
