@@ -5,6 +5,7 @@ import { OPTIONAL_LOOKUP_HOSTS, hostOrigin, type OptionalHost } from "../lookups
 import { PROVIDERS } from "../providers/registry";
 import { PanelView } from "./view";
 import { withPageTitles } from "./pageTitles";
+import { tabChangeNeedsRefresh } from "./tabEvents";
 import { readPageLabel, type PageLabel } from "../spotify/pageLabel";
 import { PASTE_KEY, normalisePaste } from "../core/paste";
 import { chromeStores } from "../shared/storage";
@@ -124,6 +125,6 @@ void PanelController.create(env).then((panel) => {
   chrome.tabs.onActivated.addListener(refresh);
   chrome.tabs.onRemoved.addListener(refresh);
   chrome.tabs.onUpdated.addListener((_tabId, change) => {
-    if (change.url !== undefined || change.status === "complete") refresh();
+    if (tabChangeNeedsRefresh(change)) refresh();
   });
 });

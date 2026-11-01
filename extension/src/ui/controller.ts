@@ -37,7 +37,7 @@ export * from "./panelState";
 
 /** How often, and how many times, a missing page name is read again. */
 const LABEL_RETRY_MS = 1000;
-const LABEL_RETRIES = 8;
+const LABEL_RETRIES = 30;
 
 /** The name of the site an address belongs to, for wording; Apple Music when no source claims it. */
 function sourceLabel(url: string): string {
