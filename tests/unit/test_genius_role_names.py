@@ -69,6 +69,17 @@ def test_unlisted_targets_are_not_a_respelling_of_a_listed_role():
         ("recorder", "Recorder (Woodwind)"),
         ("horn arranger", "Horns Arranger"),
         ("violoncello", "Cello"),
+        ("cornetto", "Cornett"),
+        ("steel drum", "Steelpan"),
+        ("vibes", "Vibraphone"),
+        ("moog", "Moog Synthesizer"),
+        ("chitarrone", "Theorbo"),
+        ("bukkehorn", "Goat Horn"),
+        ("choral conductor", "Choir Conductor"),
+        ("music supervisor", "Musical Supervision"),
+        ("cover art", "Artwork"),
+        ("tanpura", "Tambura"),
+        ("immersive audio engineer", "Immersive Engineer"),
     ],
 )
 def test_corrected_targets(apple, genius):
