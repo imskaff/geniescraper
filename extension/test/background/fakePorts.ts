@@ -107,6 +107,10 @@ export function fakeBrowser(behaviour: FakeBehaviour = {}): FakeBrowser {
       log.push("access");
       return Promise.resolve(!behaviour.noAccess);
     },
+    armReaderGuard(file) {
+      log.push(`guard:${file}`);
+      return Promise.resolve();
+    },
     injectContentScript(tabId) {
       log.push(`inject:${String(tabId)}`);
       return behaviour.injectFails

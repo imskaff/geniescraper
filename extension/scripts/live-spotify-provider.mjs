@@ -13,6 +13,7 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } f
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { watchPlayback } from "./lib/playback-watch.mjs";
 import { connect, findServiceWorker, launchChromium, sleep, waitUntilReady } from "./lib/cdp.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -43,8 +44,11 @@ const readAll = args.includes("--all");
 const before = args.includes("--before");
 // `--plain` patches the scratch build to open the plain address (no ?locale=en), to time and compare the old read.
 const plain = args.includes("--plain");
+// `--no-guard` patches the scratch build to open reader tabs without the playback guard, to time the read without it.
+const noGuard = args.includes("--no-guard");
 
 const failures = [];
+let watcher;
 const check = (name, ok, detail = "") => {
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? `  (${detail})` : ""}`);
   if (!ok) failures.push(name);
@@ -70,6 +74,13 @@ if (plain) {
   const code = readFileSync(workerPath, "utf-8");
   if (!code.includes("?locale=en")) throw new Error("--plain: the English query was not found in the build.");
   writeFileSync(workerPath, code.replaceAll("?locale=en", ""));
+}
+if (noGuard) {
+  const workerPath = join(scratch, "background", "worker.js");
+  const code = readFileSync(workerPath, "utf-8");
+  if (!code.includes('readerGuard: "spotify/guard.js"'))
+    throw new Error("--no-guard: the guard was not found in the build.");
+  writeFileSync(workerPath, code.replace('readerGuard: "spotify/guard.js"', "readerGuard: void 0"));
 }
 if (!ungranted) {
   manifest.optional_host_permissions = manifest.optional_host_permissions.filter(
@@ -101,6 +112,8 @@ try {
     mobile: false,
   });
 
+  // Reading credits must never start playback in any Spotify page: watch them all for the whole run.
+  watcher = watchPlayback(browser);
   const evalPanel = (expression) => panel.evaluate(expression);
   // Skip the first-run set-up, as a user who has finished it would.
   await evalPanel("chrome.storage.sync.set({ settings: { onboarded: true } })");
@@ -369,6 +382,14 @@ try {
     await fetch(`http://127.0.0.1:9341/json/close/${spotifyTab.id}`).catch(() => undefined);
   }
 
+  await watcher.stop();
+  const played = watcher.report();
+  console.log("playback watch: " + JSON.stringify(played));
+  check(
+    "no Spotify page ever played",
+    played.playing === 0 && played.sessionPlaying === 0 && played.playCalls === 0,
+    `${String(played.pages)} pages watched`,
+  );
   await sleep(1000);
   const leftover = (await browser.targets()).filter((t) => t.type === "page" && /open\.spotify\.com/.test(t.url));
   check("no Spotify tab is left open", leftover.length === 0, `${String(leftover.length)} left`);

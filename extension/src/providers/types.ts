@@ -62,6 +62,11 @@ export interface CreditsProvider {
    * the page's heading could not be read. Spotify's own titles end with "| Spotify"; a playing song's does not.
    */
   isOwnTitle?(title: string): boolean;
+  /**
+   * Script (relative to dist) that runs in the page's own world before its code, in the tabs the worker opens and
+   * nowhere else, to keep the page from playing anything. Set for a site whose page is a player.
+   */
+  readonly readerGuard?: string;
   /** Overrides of the shared waits, for a site that needs longer. */
   readonly timing?: Partial<ClientTiming>;
   readonly messages: ProviderMessages;

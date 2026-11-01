@@ -16,6 +16,8 @@ export interface BrowserPorts {
   removeTab(tabId: number): Promise<void>;
   /** Whether the user has allowed the extension to read these origins (an optional host that was never granted: no). */
   hasAccess(origins: readonly string[]): Promise<boolean>;
+  /** Register `file` to run in the page's own world at document_start on `origins` (idempotent). */
+  armReaderGuard(file: string, origins: readonly string[]): Promise<void>;
   /** Inject a provider's content script, Apple Music's by default (idempotent in the page). */
   injectContentScript(tabId: number, file?: string): Promise<void>;
   sendMessage(tabId: number, message: ContentRequest): Promise<unknown>;
@@ -71,6 +73,19 @@ export function chromePorts(): BrowserPorts {
       await chrome.tabs.remove(tabId);
     },
     hasAccess: (origins) => chrome.permissions.contains({ origins: [...origins] }),
+    async armReaderGuard(file, origins) {
+      const script = {
+        id: `guard:${file}`,
+        js: [file],
+        matches: [...origins],
+        world: "MAIN" as const,
+        runAt: "document_start" as const,
+        persistAcrossSessions: true,
+      };
+      const known = await chrome.scripting.getRegisteredContentScripts({ ids: [script.id] });
+      if (known.length === 0) await chrome.scripting.registerContentScripts([script]);
+      else await chrome.scripting.updateContentScripts([script]);
+    },
     async injectContentScript(tabId, file = CONTENT_SCRIPT_FILE) {
       await chrome.scripting.executeScript({ target: { tabId }, files: [file], injectImmediately: true });
     },

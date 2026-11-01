@@ -11,6 +11,8 @@ export const SPOTIFY_PROVIDER: CreditsProvider = {
   origins: ["https://open.spotify.com/*"],
   permission: "optional",
   contentScript: "spotify/content.js",
+  // The page is a web player: a signed-in one can start or take over playback, so reader tabs get it switched off.
+  readerGuard: "spotify/guard.js",
   // A hidden tab opens the credits dialog with a plain click (measured), so no visible tab is needed.
   worksHidden: true,
   // Page loads are spread out and few at once: three hidden tabs, starts at least 0.15 s apart. Measured live to

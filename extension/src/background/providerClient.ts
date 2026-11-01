@@ -122,6 +122,8 @@ async function inBackgroundTab<T>(
 ): Promise<Result<T>> {
   let tabId: number | undefined;
   try {
+    // Fail closed: a page that may play must not load before its guard is in place.
+    if (provider.readerGuard) await ports.armReaderGuard(provider.readerGuard, provider.origins);
     tabId = await ports.createTab(url, !provider.worksHidden);
     const loaded = await waitForLoad(ports, tabId, url, timing);
     if (loaded === "gone") return fail("tab-failed", "The tab was closed before the page loaded.");
