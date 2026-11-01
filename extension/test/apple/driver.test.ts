@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppleError } from "../../src/apple/errors";
 import { detectAlbum, scrapeTrack, waitForCredits, waitForPage, type Timing } from "../../src/apple/driver";
 import { handleRequest } from "../../src/apple/handler";
@@ -153,13 +153,46 @@ describe("waitForCredits", () => {
     doc.body.append(el);
   }
 
+  // The settle pause measures time with performance.now() on message events, not timers, so these tests drive a
+  // clock of their own: the page changes at exact moments of it, whatever the machine's load.
+  let now = 0;
+  beforeEach(() => {
+    now = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => now);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  /** Let the pending message-channel hops and promise continuations run. */
+  async function flush(): Promise<void> {
+    for (let i = 0; i < 5; i++) await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  function track(promise: Promise<void>): { finished: () => boolean } {
+    let done = false;
+    void promise.then(() => {
+      done = true;
+    });
+    return { finished: () => done };
+  }
+
   it("waits until the card count stops changing", async () => {
     const doc = html("<body></body>");
     card(doc, "A");
-    setTimeout(() => {
-      card(doc, "B");
-    }, 8);
-    await waitForCredits(doc, { ...FAST, settleMs: 20 });
+    const wait = waitForCredits(doc, { ...FAST, settleMs: 20 });
+    const run = track(wait);
+    await flush();
+
+    now = 8;
+    card(doc, "B");
+    now = 20;
+    await flush();
+    // The first check, at 20, saw a second card appear: it must look again rather than finish.
+    expect(run.finished()).toBe(false);
+
+    now = 40;
+    await wait;
     expect(doc.querySelectorAll(".artist-name")).toHaveLength(2);
   });
 
@@ -169,14 +202,24 @@ describe("waitForCredits", () => {
     const roles = doc.createElement("div");
     roles.className = "artist-roles";
     doc.body.append(roles);
+    const wait = waitForCredits(doc, { ...FAST, settleMs: 40 });
+    const run = track(wait);
+    await flush();
+
     // Two edits to the same card, the second after the first settle check: a count alone would already be done.
-    setTimeout(() => {
-      roles.textContent = "Songwriter";
-    }, 10);
-    setTimeout(() => {
-      roles.textContent = "Songwriter, Producer";
-    }, 55);
-    await waitForCredits(doc, { ...FAST, settleMs: 40 });
+    now = 10;
+    roles.textContent = "Songwriter";
+    now = 40;
+    await flush();
+    expect(run.finished()).toBe(false);
+    now = 55;
+    roles.textContent = "Songwriter, Producer";
+    now = 80;
+    await flush();
+    expect(run.finished()).toBe(false);
+
+    now = 120;
+    await wait;
     expect(roles.textContent).toBe("Songwriter, Producer");
   });
 
