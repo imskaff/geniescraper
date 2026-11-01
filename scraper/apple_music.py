@@ -88,28 +88,28 @@ def _is_noise(line: str) -> bool:
 
 
 _CREDITS_TIMEOUT_MS = 10_000
-_CREDITS_SETTLE_S = 0.15
+
+# True once the card count is the same on two consecutive animation frames: Apple Music renders
+# all cards in one batch, so an unchanged count means the list is complete, not half-rendered.
+_CARDS_SETTLED_JS = """() => {
+    const n = document.querySelectorAll('.artist-name').length;
+    const settled = n > 0 && window.__gsCardCount === n;
+    window.__gsCardCount = n;
+    return settled;
+}"""
 
 
 async def _wait_for_credits(page: Page) -> None:
     """Wait until the credit cards have rendered, bounded by _CREDITS_TIMEOUT_MS.
 
-    Apple Music renders all cards in one batch, so one short recheck that the card
-    count is unchanged guards against reading a half-rendered list.  Returns quietly
-    on timeout (a track without credits) so the text fallback can still run.
+    Returns quietly on timeout (a track without credits) so the text fallback can still run.
     """
-    cards = page.locator(".artist-name")
     try:
-        await cards.first.wait_for(state="attached", timeout=_CREDITS_TIMEOUT_MS)
+        await page.locator(".artist-name").first.wait_for(state="attached", timeout=_CREDITS_TIMEOUT_MS)
+        await page.evaluate("() => { window.__gsCardCount = undefined; }")
+        await page.wait_for_function(_CARDS_SETTLED_JS, polling="raf", timeout=_CREDITS_TIMEOUT_MS)
     except PWTimeout:
         return
-    count = await cards.count()
-    for _ in range(10):
-        await asyncio.sleep(_CREDITS_SETTLE_S)
-        new_count = await cards.count()
-        if new_count == count:
-            return
-        count = new_count
 
 
 async def _parse_credits_page(page: Page, *, strategy_0_only: bool = False) -> list[Credit]:
@@ -346,10 +346,10 @@ async def _click_view_credits(page: Page, nth_index: int = 1) -> bool:
             if attempt == 1:
                 # Hover the target song row (0-based) to reveal its MORE button.
                 # nth_index=0 means the song page's own button - no track row to hover.
+                # The visibility wait below covers the reveal.
                 try:
                     if nth_index > 0:
                         await page.locator(".songs-list-row, .track-list__item").nth(nth_index - 1).hover(timeout=3_000)
-                    await asyncio.sleep(0.4)
                 except PWTimeout:
                     pass
 
@@ -624,22 +624,92 @@ async def _extract_from_dom(page: Page) -> tuple[str, str]:
     return title, artist
 
 
+async def _extract_row_titles(page: Page) -> list[str]:
+    """Titles of the album tracklist rows, in order ([] if there is no tracklist)."""
+    best: list[str] = []
+    for selector in ('[data-testid="track-list-item"] [data-testid="track-title"]', ".songs-list-row__song-name"):
+        titles = [t.strip() for t in await page.locator(selector).all_text_contents()]
+        if len(titles) > len(best):
+            best = titles
+    return best
+
+
 async def _extract_track_title(page: Page, track_index: int) -> str:
     """Title of the 1-based track_index row in an album tracklist ('' if there is no such row).
 
     The page <title> names the album, so album tracks must take their title from the tracklist row.
     """
-    for selector in ('[data-testid="track-list-item"] [data-testid="track-title"]', ".songs-list-row__song-name"):
-        titles = await page.locator(selector).all_text_contents()
-        if len(titles) >= track_index:
-            return titles[track_index - 1].strip()
-    return ""
+    titles = await _extract_row_titles(page)
+    return titles[track_index - 1] if len(titles) >= track_index else ""
+
+
+def _pick_row_title(row_titles: tuple[str, ...], track_index: int) -> str:
+    return row_titles[track_index - 1] if 1 <= track_index <= len(row_titles) else ""
 
 
 def track_count_from_footer(raw: str) -> int:
     """Parse '12 songs, 45 minutes' style footers; defaults to 1."""
     m = re.search(r"(\d+)\s+songs?", raw)
     return int(m.group(1)) if m else 1
+
+
+# ---------------------------------------------------------------------------
+# Catalog page snapshot: read an album page once, reuse it for every track of that album
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class _CatalogPage:
+    """Everything the scrape needs from the album (or song) page itself, before any credits are read."""
+
+    title: str
+    artist: str
+    row_titles: tuple[str, ...]
+    song_links: tuple[str, ...]
+    cover_url: str
+    phonographic_copyright: str
+    copyright_notice: str
+    release_date: str
+
+
+# Albums seen by detect_album() or scrape(), newest last.  Their tracks then skip the album page
+# load and open the song page directly.  Bounded so a long session cannot grow it without limit.
+_ALBUM_CACHE: dict[str, _CatalogPage] = {}
+_ALBUM_CACHE_MAX = 8
+
+
+def _remember_album(url: str, page: _CatalogPage) -> None:
+    if not page.song_links:
+        return
+    _ALBUM_CACHE.pop(url, None)
+    _ALBUM_CACHE[url] = page
+    while len(_ALBUM_CACHE) > _ALBUM_CACHE_MAX:
+        del _ALBUM_CACHE[next(iter(_ALBUM_CACHE))]
+
+
+async def _read_catalog_page(page: Page, url: str) -> _CatalogPage:
+    """Read title, artist, row titles, song links, artwork, copyright and date off the open page."""
+    title, artist = "", ""
+    try:
+        title, artist = _extract_title_artist(await page.title())
+        if not title or not artist:
+            d_title, d_artist = await _extract_from_dom(page)
+            title = title or d_title
+            artist = artist or d_artist
+    except Exception:
+        pass
+    is_album = "/album/" in url
+    phonographic, notice = await _extract_copyright(page) if is_album else ("", "")
+    return _CatalogPage(
+        title=title,
+        artist=artist,
+        row_titles=tuple(await _extract_row_titles(page)) if is_album else (),
+        song_links=tuple(await _extract_song_links(page)) if is_album else (),
+        cover_url=await _extract_cover_url(page),
+        phonographic_copyright=phonographic,
+        copyright_notice=notice,
+        release_date=await _extract_release_date(page),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -691,6 +761,8 @@ async def detect_album(url: str) -> AlbumTrackInfo:
             track_titles = titles[:track_count]
 
         cover_art_url = await lookup_task or await _extract_cover_url(page)
+        if track_count > 1:
+            _remember_album(url, await _read_catalog_page(page, url))
     finally:
         lookup_task.cancel()
         await context.close()
@@ -721,55 +793,51 @@ async def scrape(
     track_title overrides the title extracted from page.title() when already known.
     direct selects the album-track path (see use_direct_song_pages): read the track's own song page
     instead of clicking MORE -> View Credits.  If the song page yields no credits the click path runs.
+    On the direct path an album already read by detect_album() or an earlier scrape is not loaded again.
     """
-    title, artist = "", ""
+    is_album = "/album/" in url
+    use_direct = is_album and use_direct_song_pages(direct)
+    cached = _ALBUM_CACHE.get(url) if use_direct else None
 
     lookup_task = asyncio.create_task(_lookup_cover_url(url))
     context, page = await _new_stealth_page()
     try:
-        await _open(page, url)
+        if cached is None:
+            await _open(page, url)
+            catalog = await _read_catalog_page(page, url)
+            if is_album:
+                _remember_album(url, catalog)
+        else:
+            catalog = cached
 
-        # Extract title/artist from page <title> or DOM before we navigate away.
-        try:
-            title, artist = _extract_title_artist(await page.title())
-            if not title or not artist:
-                d_title, d_artist = await _extract_from_dom(page)
-                title = title or d_title
-                artist = artist or d_artist
-        except Exception:
-            pass
-
-        # If caller already knows the track title (from album track list), use it.
-        # Otherwise album pages name the album in <title>, so read the track's row instead.
-        if track_title:
-            title = track_title
-        elif "/album/" in url:
-            title = await _extract_track_title(page, track_index) or title
-
-        # Header artwork + copyright both live on the album/song page - extract before navigating away.
-        page_cover_url = await _extract_cover_url(page)
-        phonographic_copyright, copyright_notice = "", ""
-        if "/album/" in url:
-            phonographic_copyright, copyright_notice = await _extract_copyright(page)
-
+        # A title the caller knows wins; otherwise album pages name the album in <title>,
+        # so read the track's own row instead.
+        title = track_title or (_pick_row_title(catalog.row_titles, track_index) if is_album else "") or catalog.title
         # An album page names only the album's date; a song page below replaces it with the song's own.
-        release_date = await _extract_release_date(page)
+        release_date = catalog.release_date
         song_date = ""
 
         credits: list[Credit] = []
-        if "/album/" in url:
+        if is_album:
             credits_ready = False
-            if use_direct_song_pages(direct):
+            if use_direct:
                 # Raises TrackUnavailableError for a row without a song page.
-                song_url = pick_song_link(await _extract_song_links(page), track_index)
-                await _open(page, song_url)
+                song_url = pick_song_link(list(catalog.song_links), track_index)
+                try:
+                    await _open(page, song_url)
+                except PageNotFoundError:
+                    if cached is None:
+                        raise
+                    # The remembered album is stale: forget it and read the album fresh.
+                    _ALBUM_CACHE.pop(url, None)
+                    return await scrape(url, track_index=track_index, track_title=track_title, debug=debug, direct=True)
                 credits = await _parse_credits_page(page, strategy_0_only=True)
                 credits_ready = bool(credits)
                 song_date = await _extract_release_date(page)
-                if not credits:
+            if not credits_ready:
+                if use_direct:
                     # Song page gave nothing: go back to the album and use the click path.
                     await _open(page, url)
-            if not credits_ready:
                 # Album pages need MORE -> View Credits navigation.
                 if not await _click_view_credits(page, nth_index=track_index):
                     print("[warn] Could not find/click 'View Credits'. Saving debug files.")
@@ -791,18 +859,18 @@ async def scrape(
                     "[debug] No credits found after 'View Credits' navigation.\n"
                     "        Saved debug/page.html and debug/page.png for inspection."
                 )
-        cover_art_url = await lookup_task or page_cover_url
+        cover_art_url = await lookup_task or catalog.cover_url
     finally:
         lookup_task.cancel()
         await context.close()
 
     return SongCredits(
         title=title,
-        artist=artist,
+        artist=catalog.artist,
         apple_music_url=url,
         credits=credits,
-        phonographic_copyright=phonographic_copyright,
-        copyright_notice=copyright_notice,
+        phonographic_copyright=catalog.phonographic_copyright,
+        copyright_notice=catalog.copyright_notice,
         cover_art_url=cover_art_url,
         release_date=release_date,
     )
