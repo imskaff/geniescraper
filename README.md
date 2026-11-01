@@ -7,7 +7,7 @@
 <p><b>Apple Music and Spotify metadata straight into Genius</b></p>
 
 <p>
-Géniescraper reads the credits of an Apple Music or Spotify page and fills them into the Genius song metadata form for you:<br>
+Géniescraper reads the credits of an Apple Music or Spotify page and fills them into the Genius metadata form for you:<br>
 songwriters, producers, every additional role, the ℗ and © lines, the exact cover art and the official YouTube video.<br>
 It never presses Save: you check the form and save it yourself.
 </p>
@@ -28,15 +28,12 @@ It never presses Save: you check the form and save it yourself.
 > **<ins>Start with the browser extension.</ins>** It does everything inside your browser, fills the form by itself (***Auto-paste***), skips names that are already filled in and only ever picks an exact artist match.
 > The desktop app works best with the extension connected; on its own it can only paste with hotkeys into whichever field you click.
 
-> [!IMPORTANT]
-> **Géniescraper is an independent, unofficial project. It is not affiliated with, endorsed by or sponsored by Genius.com (Genius Media Group Inc.) or Apple.** See the [Disclaimer](#disclaimer).
-
 ## Features
 
 ### Reading the credits
 
 - 🔍 **Finds what you have open** – The extension listens for Apple Music and Spotify albums and songs already open in your browser and offers each one in a single press, labelled with where it is from. The desktop app lists the Apple Music ones too once the two are paired.
-- 🟢 **Apple Music and Spotify** – Spotify tracks and albums are read from their credits box by the extension. The desktop app does not read Spotify.
+- 🎵 **Apple Music and 🟢 Spotify** – Spotify tracks and albums are read from their credits box by the extension. The desktop app does not read Spotify.
 - 🎼 **Complete credits** – Songwriters, producers, every additional role, the ℗ / © lines and the release date of an album or a song, with roles named the way Genius names them.
 - 🖼️ **Exact cover art** – The 1000×1000 PNG of the exact release you opened, found by its Apple Music catalog ID. For Spotify, which has no such ID, it is found by title and artist in Apple's catalog, and then on Deezer.
 - ▶️ **The right YouTube link** – No more manual search for the correct YouTube link.
@@ -45,7 +42,7 @@ It never presses Save: you check the form and save it yourself.
 ### Pasting into Genius
 
 - 🔗 **Open on Genius** – One press finds the song on Genius, opens it in a new tab and presses its Edit Metadata button for you. It only does so when exactly one Genius song matches the title and artist; with none or several, it stops and tells you instead of guessing. An existing Genius tab is never navigated away, so a form you are editing is safe.
-- 🤖 **Auto-paste** – The whole track is filled in field by field while you watch. It pauses the moment you click or type in the form, press `Esc` or close the panel, and carries on from the same step when you turn it back on.
+- 🤖 ***Auto-paste*** – The whole track is filled in field by field while you watch. It pauses the moment you click or type in the form, press `Esc` or close the panel, and carries on from the same step when you turn it back on.
 - 👣 **Step by step** – Prefer control? Use the customizable shortcuts for pasting, going back or skipping a field in the form.
 - 🎯 **Exact matches only** – A suggestion is chosen only when it matches the typed name exactly (ignoring case, accents and symbols). Otherwise the text stays typed and the choice is yours, so a near match never ends up on a song.
 - ♻️ **Knows what is already there** – Names already filled in are skipped, empty rows are reused and artists are added to roles Genius already lists, instead of creating duplicates.
@@ -60,18 +57,6 @@ It never presses Save: you check the form and save it yourself.
 | **Fills the Genius form** | Yes: Auto-paste or step by step, exact matches only | Through the extension once paired; otherwise manual hotkeys  |
 | **Finds open pages**      | Yes, Apple Music and Spotify                        | Yes, Apple Music pages, once paired                          |
 | **Install**               | Download, unzip, load                               | Clone, `uv sync`                                             |
-
-Use the extension alone, or pair it with the desktop app: the app reads and reviews the credits, and the extension fills Genius.
-
-### Private by design
-
-- No accounts, no analytics, no servers of ours. Everything stays in your browser and on your computer.
-- The link between the extension and the desktop app stays on your computer (`127.0.0.1`), needs a one-time pairing code and never shares your Genius sign-in: you stay signed in to Genius in your own browser.
-- **Open on Genius** sends the song title and artist to Genius's own search, only when you press it (or turn on opening each song before pasting). No cookies, no sign-in and nothing goes to anyone else.
-- YouTube lookups are optional and ask your permission first. An optional YouTube key stays in your browser and is sent only to Google.
-- Reading Spotify is optional too: Chrome asks for access to `open.spotify.com` the first time you press **Get credits** on a Spotify page, after the panel has explained why. Nothing read from Spotify is sent anywhere.
-- When Apple's catalog has no cover for a song (always the case for a Spotify link), the extension asks Deezer, sending only the song title and artist. That permission is part of the install and cannot be switched off.
-- Details: [extension/PRIVACY.md](extension/PRIVACY.md).
 
 ## Installation
 
@@ -267,6 +252,17 @@ Deezer is always the cover fallback and has no setting.
 
 Settings are saved per user in `%APPDATA%\Geniescraper\settings.env`, so every copy of the app shares them.
 A `.env` in the project root from older versions is still read until the first save.
+
+## Privacy
+
+**[Learn more here](extension/PRIVACY.md)**
+
+- No accounts, no analytics, no servers of ours. Everything stays in your browser and on your computer.
+- The link between the extension and the desktop app stays on your computer (`127.0.0.1`), needs a one-time pairing code and never shares your Genius sign-in: you stay signed in to Genius in your own browser.
+- **Open on Genius** sends the song title and artist to Genius's own search, only when you press it (or turn on opening each song before pasting). No cookies, no sign-in and nothing goes to anyone else.
+- YouTube lookups are optional and ask your permission first. An optional YouTube key stays in your browser and is sent only to Google.
+- Reading Spotify is optional too: Chrome asks for access to `open.spotify.com` the first time you press **Get credits** on a Spotify page, after the panel has explained why. Nothing read from Spotify is sent anywhere.
+- When Apple's catalog has no cover for a song (always the case for a Spotify link), the extension asks Deezer, sending only the song title and artist. That permission is part of the install and cannot be switched off.
 
 ## Disclaimer
 
