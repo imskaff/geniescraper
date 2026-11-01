@@ -81,6 +81,7 @@ function trackPage({ dialog = "credits-many-roles.html", credits = true, failFir
 
 beforeEach(() => {
   setBody("");
+  document.documentElement.lang = "";
 });
 
 describe("scrapeTrack on a saved track page", () => {
@@ -106,6 +107,32 @@ describe("scrapeTrack on a saved track page", () => {
     trackPage({ dialog: "credits-de.html" });
     const scrape = await scrapeTrack(document, { url: TRACK, trackTitle: "" }, FAST);
     expect(scrape.notes?.[0]).toMatch(/^Left out because Genius has no matching role: /);
+  });
+
+  it("says nothing about the language when Spotify answered in English as asked", async () => {
+    document.documentElement.lang = "en";
+    trackPage();
+    const scrape = await scrapeTrack(document, { url: TRACK, trackTitle: "" }, FAST);
+    expect(scrape.notes?.join(" ")).not.toMatch(/English|language/);
+  });
+
+  it("falls back to the role table of the page's language, and names that language, when English did not come back", async () => {
+    document.documentElement.lang = "de";
+    trackPage({ dialog: "credits-de.html" });
+    const scrape = await scrapeTrack(document, { url: TRACK, trackTitle: "" }, FAST);
+    const roles = scrape.credits.map((c) => c.role);
+    expect(roles).toEqual(expect.arrayContaining(["Songwriter", "Producer", "Guitar", "Drums"]));
+    expect(scrape.notes?.join(" ")).toMatch(/German and not in English/);
+  });
+
+  it("does not trust a page that says English but shows another language's dialog", async () => {
+    document.documentElement.lang = "en";
+    trackPage({ dialog: "credits-de.html" });
+    const scrape = await scrapeTrack(document, { url: TRACK, trackTitle: "" }, FAST);
+    expect(scrape.notes?.join(" ")).toMatch(/did not show this page in English as asked/);
+    // Only words that happen to be English are mapped then ("Recording Engineer", "Synthesizer").
+    expect(scrape.credits.map((c) => c.role)).toEqual(expect.arrayContaining(["Recording Engineer", "Synthesizer"]));
+    expect(scrape.credits.map((c) => c.role)).not.toContain("Producer");
   });
 
   it("is ok with no credits for a track with only artists, and warns", async () => {

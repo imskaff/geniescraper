@@ -5,7 +5,14 @@ import { describe, expect, it } from "vitest";
 import { OBSERVED } from "./observedRoles";
 import { ROLE_TABLES } from "../../src/spotify/roleTables";
 import { roleMap } from "../../src/core/roles";
-import { creditsFromDialog, languageNote, skippedNote, splitRoles, type DialogRow } from "../../src/spotify/dialog";
+import {
+  creditsFromDialog,
+  languageNote,
+  pageLanguage,
+  skippedNote,
+  splitRoles,
+  type DialogRow,
+} from "../../src/spotify/dialog";
 import { parseDialog } from "../../src/spotify/page";
 import { hasRoleTable, normaliseSpotifyRole, roleKey, spotifyRole, spotifyRoleTargets } from "../../src/spotify/roles";
 
@@ -251,7 +258,27 @@ describe("role words in each language Spotify was read in", () => {
   });
 
   it("names the language for a read in a language with a table, and for one without", () => {
-    expect(languageNote("de")).toMatch(/German.*only some role words/);
+    expect(languageNote("de")).toMatch(/German and not in English.*only some role words/);
     expect(languageNote("ar")).toMatch(/Arabic.*no role words/);
+  });
+});
+
+describe("pageLanguage", () => {
+  it("is English for an English page with the English heading, or with no dialog read", () => {
+    expect(pageLanguage("en", "Credits")).toBe("en");
+    expect(pageLanguage("en-US", " Credits ")).toBe("en");
+    expect(pageLanguage("en", "")).toBe("en");
+    expect(pageLanguage("", "")).toBe("en");
+  });
+
+  it("is the page's own language when it is not English, whatever the heading", () => {
+    expect(pageLanguage("de", "Songinfos")).toBe("de");
+    expect(pageLanguage("pl-PL", "Autorzy treści")).toBe("pl");
+    expect(pageLanguage("ja", "楽曲クレジット")).toBe("ja");
+  });
+
+  it("does not take an English page with another heading as English", () => {
+    expect(pageLanguage("en", "Songinfos")).toBe("und");
+    expect(languageNote("und")).toMatch(/did not show this page in English as asked/);
   });
 });

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { musicTabEntries } from "../../src/core/musicTabs";
 import { SPOTIFY_PROVIDER } from "../../src/providers/spotify";
 import { recogniseUrl } from "../../src/providers/registry";
-import { canonicalSpotifyUrl, parseSpotifyUrl } from "../../src/spotify/url";
+import { canonicalSpotifyUrl, parseSpotifyUrl, spotifyOpenUrl } from "../../src/spotify/url";
 
 const ID = "4cOdK2wGLETKBW3PvgPWqT";
 const ALBUM = "1uyf3l2d4XYwiEqAb7t7fX";
@@ -49,6 +49,43 @@ describe("canonicalSpotifyUrl", () => {
   });
 });
 
+describe("spotifyOpenUrl", () => {
+  const track = `https://open.spotify.com/track/${ID}?locale=en`;
+
+  it("asks for English on a plain track and album address", () => {
+    expect(spotifyOpenUrl(`https://open.spotify.com/track/${ID}`)).toBe(track);
+    expect(spotifyOpenUrl(`https://open.spotify.com/album/${ALBUM}`)).toBe(`https://open.spotify.com/album/${ALBUM}?locale=en`);
+  });
+
+  it("replaces a tracking query, a fragment, a trailing slash and an existing locale", () => {
+    for (const url of [
+      `https://open.spotify.com/track/${ID}?si=abc123`,
+      `https://open.spotify.com/track/${ID}/?si=abc&locale=de`,
+      `https://open.spotify.com/track/${ID}#x`,
+      `https://open.spotify.com/track/${ID}?locale=en`,
+    ]) {
+      expect(spotifyOpenUrl(url), url).toBe(track);
+    }
+  });
+
+  it("drops a locale prefix instead of keeping the browser language's address", () => {
+    expect(spotifyOpenUrl(`https://open.spotify.com/intl-de/track/${ID}?si=1`)).toBe(track);
+    expect(spotifyOpenUrl(`https://open.spotify.com/intl-es-419/album/${ALBUM}`)).toBe(
+      `https://open.spotify.com/album/${ALBUM}?locale=en`,
+    );
+  });
+
+  it("is null for anything that is not a track or album page, so no tab is opened for it", () => {
+    expect(spotifyOpenUrl(`https://open.spotify.com/artist/${ID}`)).toBeNull();
+    expect(spotifyOpenUrl(`https://evil.example/?u=https://open.spotify.com/track/${ID}`)).toBeNull();
+    expect(spotifyOpenUrl("")).toBeNull();
+  });
+
+  it("gives an address the parser reads as the same page", () => {
+    expect(parseSpotifyUrl(track)).toEqual({ kind: "song", id: ID });
+  });
+});
+
 describe("the Spotify provider", () => {
   it("is found by address and declares an optional host", () => {
     expect(recogniseUrl(`https://open.spotify.com/intl-fr/album/${ALBUM}`)?.provider).toBe(SPOTIFY_PROVIDER);
@@ -56,9 +93,9 @@ describe("the Spotify provider", () => {
     expect(SPOTIFY_PROVIDER.origins).toEqual(["https://open.spotify.com/*"]);
   });
 
-  it("opens the plain address and keys a page by it", () => {
+  it("opens the English address and keys a page by the plain one", () => {
     const url = `https://open.spotify.com/intl-de/track/${ID}?si=1`;
-    expect(SPOTIFY_PROVIDER.openUrl(url)).toBe(`https://open.spotify.com/track/${ID}`);
+    expect(SPOTIFY_PROVIDER.openUrl(url)).toBe(`https://open.spotify.com/track/${ID}?locale=en`);
     expect(SPOTIFY_PROVIDER.pageKey(url)).toBe(SPOTIFY_PROVIDER.pageKey(`https://open.spotify.com/track/${ID}`));
   });
 

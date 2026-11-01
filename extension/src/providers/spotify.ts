@@ -1,6 +1,6 @@
 // Spotify as the second credits provider. The in-page reader lives in src/spotify/.
 import { normaliseSpotifyRole } from "../spotify/roles";
-import { canonicalSpotifyUrl, parseSpotifyUrl } from "../spotify/url";
+import { canonicalSpotifyUrl, parseSpotifyUrl, spotifyOpenUrl } from "../spotify/url";
 import { readPageLabel } from "../spotify/pageLabel";
 import { spotifyTitleParts } from "./tabTitles";
 import type { CreditsProvider, PageKind } from "./types";
@@ -33,7 +33,8 @@ export const SPOTIFY_PROVIDER: CreditsProvider = {
     return parsed ? { kind: parsed.kind, region: "" } : null;
   },
   pageKey: (url) => canonicalSpotifyUrl(url) ?? url,
-  openUrl: (url) => canonicalSpotifyUrl(url) ?? url,
+  // Asks Spotify for English (see spotifyOpenUrl), so role names come back in the language the table knows best.
+  openUrl: (url) => spotifyOpenUrl(url) ?? url,
   tabName(title, _url, kind: PageKind) {
     const parts = spotifyTitleParts(title);
     if (parts) return parts.artist ? `${parts.artist} - ${parts.title}` : parts.title;
