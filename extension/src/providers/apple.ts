@@ -2,7 +2,7 @@
 import { readApplePageLabel } from "../apple/pageLabel";
 import { parseAppleMusicUrl } from "../apple/url";
 import { normaliseRole } from "../core/roles";
-import { appleTitleParts } from "./tabTitles";
+import { appleTitleIsSingle, appleTitleParts } from "./tabTitles";
 import type { CreditsProvider, PageKind } from "./types";
 
 /** "/us/album/hit-me-hard-and-soft/123" is "Hit Me Hard And Soft"; with no name in the address, just the kind. */
@@ -41,6 +41,7 @@ export const APPLE_PROVIDER: CreditsProvider = {
   // page is named from its own header. Every other Apple page keeps its tab title, which is its own.
   liveTitle: (url) => parseAppleMusicUrl(url)?.kind === "album" && new URL(url).searchParams.has("i"),
   readPageLabel: readApplePageLabel,
+  isSingleTitle: appleTitleIsSingle,
   pageKey(url) {
     // The path names the page; a track picked after the address (?i=) does not make a second one.
     const { origin, pathname } = new URL(url);

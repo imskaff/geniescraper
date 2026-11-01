@@ -20,16 +20,31 @@ const APPLE_ARTIST_PATTERNS: readonly RegExp[] = [
   /^(.+?)の(?:曲（歌詞付き）|アルバム|シングル|EP)$/,
 ];
 
+/** "Single" as a segment of its own: Apple names a single's page "TITLE - Single - Album by ARTIST" (en, de, fr, ja). */
+const SINGLE_SEGMENT = /^(?:Single|シングル)$/i;
+
+function appleSegments(raw: string, separator: string): string[] {
+  return raw
+    .replace(MARKS, "")
+    .replace(APPLE_SITE, "")
+    .split(separator)
+    .map((part) => part.trim());
+}
+
 /** An Apple Music title: "TITLE - Song with Lyrics by ARTIST - Apple Music" (the separator is " - " or " – "). */
 export function appleTitleParts(raw: string): TitleParts {
   const clean = raw.replace(MARKS, "").replace(APPLE_SITE, "").trim();
   for (const separator of [" – ", " — ", " - "]) {
-    const parts = clean.split(separator).map((part) => part.trim());
+    const parts = appleSegments(raw, separator);
     if (parts.length < 2) continue;
     const title = parts[0] ?? "";
-    for (const pattern of APPLE_ARTIST_PATTERNS) {
-      const artist = pattern.exec(parts.slice(1).join(separator))?.[1]?.trim();
-      if (artist) return { title, artist };
+    // The artist wording is the first tail that matches: a type segment ("Single", "EP") may sit before it.
+    for (let from = 1; from < parts.length; from++) {
+      const tail = parts.slice(from).join(separator);
+      for (const pattern of APPLE_ARTIST_PATTERNS) {
+        const artist = pattern.exec(tail)?.[1]?.trim();
+        if (artist) return { title, artist };
+      }
     }
     // A wording not known: the title is the part before the first separator, and the rest is not trusted.
     return { title, artist: "" };
@@ -38,6 +53,15 @@ export function appleTitleParts(raw: string): TitleParts {
   const by = clean.lastIndexOf(" by ");
   if (by > 0) return { title: clean.slice(0, by).trim(), artist: clean.slice(by + " by ".length).trim() };
   return { title: clean, artist: "" };
+}
+
+/** Whether an Apple Music tab title names a single ("TITLE - Single - Album by ARTIST"); an EP or album is not one. */
+export function appleTitleIsSingle(raw: string): boolean {
+  for (const separator of [" – ", " — ", " - "]) {
+    const parts = appleSegments(raw, separator);
+    if (parts.slice(1).some((part) => SINGLE_SEGMENT.test(part) || /^Single (?:by|von|par) /i.test(part))) return true;
+  }
+  return false;
 }
 
 const SPOTIFY_SITE = /\s*\|\s*Spotify\s*$/i;

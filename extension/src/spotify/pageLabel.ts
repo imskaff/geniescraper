@@ -6,9 +6,13 @@ import type { PageLabel } from "../providers/types";
 
 export function readPageLabel(): PageLabel {
   const text = (el: Element | null | undefined): string => (el?.textContent ?? "").replace(/\s+/g, " ").trim();
+  const titleEl = document.querySelector("[data-testid='entityTitle']");
+  // The header names the release type ("Album", "Single", "EP") in a span before the title.
+  const type = text(titleEl?.previousElementSibling);
   return {
     path: location.pathname,
-    title: text(document.querySelector("[data-testid='entityTitle']")),
+    single: /^(?:Single|シングル)$/i.test(type),
+    title: text(titleEl),
     artists: [...document.querySelectorAll("[data-testid='entity-header'] [data-testid='creator-link']")]
       .map((a) => text(a))
       .filter(Boolean),
