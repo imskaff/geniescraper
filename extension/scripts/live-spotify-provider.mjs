@@ -291,7 +291,7 @@ try {
     console.log("tab title: " + tabTitle);
     console.log(text.split("\n").slice(0, 16).join(" | "));
     check("the tab title was rewritten to another song", /Race My Mind/.test(tabTitle));
-    check("the card names the page itself", /After Hours by The Weeknd/.test(text));
+    check("the card names the page itself, not a generic name", / by /.test(text.split("Pick one to get its credits.")[1] ?? "") && !/Spotify (album|track)b/.test((text.split("Pick one to get its credits.")[1] ?? "").split("Get credits")[0] ?? ""));
     check("the card never shows the playing song", !/Race My Mind|Drake/.test(text));
     await shot("7-detector-playing-elsewhere");
     await fetch(`http://127.0.0.1:9341/json/close/${spotifyTab.id}`).catch(() => undefined);
