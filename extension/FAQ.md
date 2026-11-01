@@ -79,8 +79,8 @@ Until you have allowed it, your open Spotify tabs do not show up in the panel's 
 
 ## What is different about credits from Spotify?
 
-- Spotify's credits box does not show the release date or the ISRC, so the panel says so beside the credits, and those fields are not filled from Spotify.
-  A track's page shows only the year; an album page's date is used when it is in English.
+- Spotify's credits box does not show the ISRC, so the panel says so beside the credits and that field is not filled from Spotify.
+  The date comes from the track's Spotify embed page; when Spotify holds only a year for a release (stored as 1 January), the date is left empty.
 - Spotify writes role names in the language of its page, so the extension opens the English version of the page (it adds `?locale=en` to the address of its own hidden window; your own Spotify tabs and settings are not touched). Every role then comes back in English whatever language your browser uses. Spotify does not document that parameter, so it could stop working one day. The extension checks what came back: if the box is not in English, it falls back to its lists of role words for German, Spanish, French, Portuguese, Italian, Dutch, Polish, Swedish, Turkish, Japanese, Korean and Russian, taken from real reads. A role word it does not know (a rarer role, or another language) is then left out and listed under "About this read", which names the language Spotify showed only in this case, so you can add those on Genius yourself. Roles are typed under the exact names on Genius's standardized list; one Genius has removed (such as Studio Personnel) is left out and listed under "About this read".
 - Spotify is read three pages at a time, a fraction of a second apart; one failed or blocked read drops that to one at a time.
 - Roles that Genius has no name for are listed under "About this read" too, instead of being guessed.
