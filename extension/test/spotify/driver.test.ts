@@ -135,6 +135,15 @@ describe("scrapeTrack on a saved track page", () => {
     expect(scrape.credits.map((c) => c.role)).not.toContain("Producer");
   });
 
+  it("leaves a Studio Personnel row out of the credits and lists it under About this read", async () => {
+    document.documentElement.lang = "en";
+    trackPage({ dialog: "credits-self-released.html" });
+    const scrape = await scrapeTrack(document, { url: TRACK, trackTitle: "" }, FAST);
+    expect(scrape.credits.flatMap((c) => c.artists)).not.toContain("Sample Studio");
+    expect(scrape.credits.map((c) => c.role)).toContain("Recording Engineer");
+    expect(scrape.notes?.[0]).toBe("Left out because Genius has no matching role: Studio Personnel (Sample Studio).");
+  });
+
   it("is ok with no credits for a track with only artists, and warns", async () => {
     trackPage({ dialog: "credits-artist-only.html" });
     const scrape = await scrapeTrack(document, { url: TRACK, trackTitle: "" }, FAST);
