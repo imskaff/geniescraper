@@ -1,0 +1,6170 @@
+{
+ "source": "https://genius.com/Community-guides-standardized-additional-roles-annotated",
+ "readOn": "2026-11-01",
+ "note": "Genius's official list of standardized additional roles, as read from the page. aka lists the alternative names the page gives for a role. The Instruments and Additional Roles sections are headed as on the page. Major Roles Removed lists roles that are no longer valid additional roles.",
+ "sections": [
+  {
+   "section": "Base Interface Roles",
+   "roles": [
+    {
+     "name": "Artists"
+    },
+    {
+     "name": "Featuring"
+    },
+    {
+     "name": "Producer"
+    },
+    {
+     "name": "Recorded At"
+    },
+    {
+     "name": "Writer"
+    }
+   ]
+  },
+  {
+   "section": "Major Roles Removed",
+   "roles": [
+    {
+     "name": "Booking"
+    },
+    {
+     "name": "Licensing"
+    },
+    {
+     "name": "Manager/Management"
+    },
+    {
+     "name": "Performance Rights"
+    },
+    {
+     "name": "Performer/Associate Performer"
+    },
+    {
+     "name": "Studio Personnel"
+    },
+    {
+     "name": "DAW Roles"
+    }
+   ]
+  },
+  {
+   "section": "Writing Roles",
+   "roles": [
+    {
+     "name": "Adaptation"
+    },
+    {
+     "name": "Book Writer"
+    },
+    {
+     "name": "Composer"
+    },
+    {
+     "name": "Copyist"
+    },
+    {
+     "name": "Librettist"
+    },
+    {
+     "name": "Lyricist"
+    },
+    {
+     "name": "Lyrics Adaptation"
+    },
+    {
+     "name": "Melody Adaptation"
+    },
+    {
+     "name": "Musical Assistance"
+    },
+    {
+     "name": "Translator"
+    }
+   ]
+  },
+  {
+   "section": "Arranger Roles",
+   "roles": [
+    {
+     "name": "Arranger",
+     "aka": [
+      "Performance Arranger (Tidal)"
+     ]
+    },
+    {
+     "name": "Assistant Arranger"
+    },
+    {
+     "name": "Background Vocal Arranger"
+    },
+    {
+     "name": "Bass Arranger"
+    },
+    {
+     "name": "Brass Arranger"
+    },
+    {
+     "name": "Celesta Arranger"
+    },
+    {
+     "name": "Chant Arranger"
+    },
+    {
+     "name": "Choir Arranger"
+    },
+    {
+     "name": "Chorus Arranger"
+    },
+    {
+     "name": "Clarinet Arranger"
+    },
+    {
+     "name": "Drum Arranger"
+    },
+    {
+     "name": "Flute Arranger"
+    },
+    {
+     "name": "Flugelhorn Arranger"
+    },
+    {
+     "name": "Guitar Arranger"
+    },
+    {
+     "name": "Horns Arranger"
+    },
+    {
+     "name": "Instruments Arranger"
+    },
+    {
+     "name": "Keyboards Arranger"
+    },
+    {
+     "name": "Lute Arranger"
+    },
+    {
+     "name": "Mandolin Arranger"
+    },
+    {
+     "name": "Organ Arranger"
+    },
+    {
+     "name": "Orchestra Arranger"
+    },
+    {
+     "name": "Percussion Arranger"
+    },
+    {
+     "name": "Piano Arranger"
+    },
+    {
+     "name": "Recording Arranger"
+    },
+    {
+     "name": "Rhythm Arranger"
+    },
+    {
+     "name": "Sample Arranger"
+    },
+    {
+     "name": "Saxophone Arranger"
+    },
+    {
+     "name": "Shakuhachi Arranger"
+    },
+    {
+     "name": "Strings Arranger",
+     "aka": [
+      "String Arranger"
+     ]
+    },
+    {
+     "name": "Synthesizer Arranger"
+    },
+    {
+     "name": "Theorbo Arranger"
+    },
+    {
+     "name": "Trumpet Arranger"
+    },
+    {
+     "name": "Violin Arranger"
+    },
+    {
+     "name": "Vocal Arranger"
+    },
+    {
+     "name": "Wind Arranger"
+    },
+    {
+     "name": "Woodwind Arranger"
+    }
+   ]
+  },
+  {
+   "section": "Production Roles",
+   "roles": [
+    {
+     "name": "Assistant Executive Producer"
+    },
+    {
+     "name": "Assistant Post Producer"
+    },
+    {
+     "name": "Assistant Pre-Producer"
+    },
+    {
+     "name": "Assistant Producer"
+    },
+    {
+     "name": "Associate Producer"
+    },
+    {
+     "name": "Audio Production Coordinator"
+    },
+    {
+     "name": "Audio Supervisor"
+    },
+    {
+     "name": "Beatmaker"
+    },
+    {
+     "name": "Co-Producer"
+    },
+    {
+     "name": "Concert Producer"
+    },
+    {
+     "name": "Creative Consultant"
+    },
+    {
+     "name": "Creative Director",
+     "note": "If a video role, use Video Production Designer"
+    },
+    {
+     "name": "Executive Producer",
+     "albumLevel": true
+    },
+    {
+     "name": "Pre-Producer"
+    },
+    {
+     "name": "Producer",
+     "albumLevel": true
+    },
+    {
+     "name": "Production Coordinator (Management)"
+    },
+    {
+     "name": "Production Director (Management)"
+    },
+    {
+     "name": "Production Manager (Management)",
+     "note": "If a video role, use Video Production Supervisor"
+    },
+    {
+     "name": "Reissue Producer"
+    },
+    {
+     "name": "Remixer"
+    },
+    {
+     "name": "Sequencing"
+    },
+    {
+     "name": "Vocal Producer"
+    }
+   ]
+  },
+  {
+   "section": "Programmer Roles",
+   "roles": [
+    {
+     "name": "Assistant Programmer"
+    },
+    {
+     "name": "Bass Programmer"
+    },
+    {
+     "name": "Drum Machine Programmer"
+    },
+    {
+     "name": "Drum Programmer"
+    },
+    {
+     "name": "Fairlight CMI Programmer"
+    },
+    {
+     "name": "Guitar Programmer"
+    },
+    {
+     "name": "Keyboard Programmer"
+    },
+    {
+     "name": "MIDI Programmer"
+    },
+    {
+     "name": "Percussion Programmer"
+    },
+    {
+     "name": "Programmer"
+    },
+    {
+     "name": "Rhythm Programmer"
+    },
+    {
+     "name": "Sample Programmer"
+    },
+    {
+     "name": "Saxophone Programmer"
+    },
+    {
+     "name": "String Programmer"
+    },
+    {
+     "name": "Synthesizer Programmer"
+    },
+    {
+     "name": "Vocal Programmer"
+    }
+   ]
+  },
+  {
+   "section": "Studio Roles",
+   "roles": [
+    {
+     "name": "Amplifier Technician"
+    },
+    {
+     "name": "Assistant Audio Editor"
+    },
+    {
+     "name": "Assistant Digital Audio Editor"
+    },
+    {
+     "name": "Assistant Engineer",
+     "aka": [
+      "Second Engineer (Tidal)"
+     ]
+    },
+    {
+     "name": "Assistant Immersive Engineer"
+    },
+    {
+     "name": "Assistant Immersive Mixing Engineer"
+    },
+    {
+     "name": "Assistant Mastering Engineer"
+    },
+    {
+     "name": "Assistant Mixing Engineer"
+    },
+    {
+     "name": "Assistant Overdub Recording Engineer"
+    },
+    {
+     "name": "Assistant Recording Engineer"
+    },
+    {
+     "name": "Assistant Remastering Engineer"
+    },
+    {
+     "name": "Assistant Remixer"
+    },
+    {
+     "name": "Assistant Technician"
+    },
+    {
+     "name": "Assistant Vocal Engineer"
+    },
+    {
+     "name": "Audio Editor",
+     "aka": [
+      "Editor",
+      "Editing Engineer"
+     ]
+    },
+    {
+     "name": "Audio Restoration"
+    },
+    {
+     "name": "Bass Technician"
+    },
+    {
+     "name": "Cuts"
+    },
+    {
+     "name": "DAW Systems Engineer"
+    },
+    {
+     "name": "Digital Audio Editor"
+    },
+    {
+     "name": "Direct Metal Mastering Engineer"
+    },
+    {
+     "name": "Dolby Atmos Mastering"
+    },
+    {
+     "name": "Drum Editor"
+    },
+    {
+     "name": "Drum Samples"
+    },
+    {
+     "name": "Drum Sequencing"
+    },
+    {
+     "name": "Drum Technician"
+    },
+    {
+     "name": "Engineer"
+    },
+    {
+     "name": "Guitar Samples"
+    },
+    {
+     "name": "Guitar Sequencing"
+    },
+    {
+     "name": "Guitar Technician"
+    },
+    {
+     "name": "Immersive Engineer",
+     "aka": [
+      "5.1 Engineer",
+      "Atmos Engineer",
+      "Dolby Atmos Engineer",
+      "Surround Engineer"
+     ]
+    },
+    {
+     "name": "Immersive Mastering Engineer",
+     "aka": [
+      "5.1 Mastering Engineer",
+      "Atmos Mastering Engineer",
+      "Dolby Atmos Mastering Engineer",
+      "Surround Mastering Engineer"
+     ]
+    },
+    {
+     "name": "Immersive Mixing Engineer",
+     "aka": [
+      "5.1 Mix Engineer",
+      "Atmos Mixing Engineer",
+      "Dolby Atmos Mixing Engineer",
+      "Surround Mixing Engineer"
+     ]
+    },
+    {
+     "name": "Immersive Recording Engineer",
+     "aka": [
+      "5.1 Recording Engineer",
+      "Atmos Recording Engineer",
+      "Dolby Atmos Recording Engineer",
+      "Surround Recording Engineer"
+     ]
+    },
+    {
+     "name": "Keyboards Technician"
+    },
+    {
+     "name": "Lacquer Cut Engineer"
+    },
+    {
+     "name": "Loops"
+    },
+    {
+     "name": "Mastering Engineer",
+     "aka": [
+      "Masterer",
+      "Mastering"
+     ]
+    },
+    {
+     "name": "Mixing Engineer",
+     "aka": [
+      "Mixer",
+      "Mixing"
+     ],
+     "note": "Note: Use if you see Co-Mixer or Co-Mixing"
+    },
+    {
+     "name": "Overdub Editor"
+    },
+    {
+     "name": "Overdub Recording Engineer",
+     "aka": [
+      "Overdub Engineer"
+     ]
+    },
+    {
+     "name": "Plating Engineer"
+    },
+    {
+     "name": "Post Engineer"
+    },
+    {
+     "name": "Post Mixing Engineer"
+    },
+    {
+     "name": "Post Producer"
+    },
+    {
+     "name": "Pre-Mastering Engineer"
+    },
+    {
+     "name": "Pre-Mixing Engineer"
+    },
+    {
+     "name": "Premix Editor"
+    },
+    {
+     "name": "Preparer",
+     "aka": [
+      "Music Preparation",
+      "Score Editor"
+     ]
+    },
+    {
+     "name": "Recording Engineer",
+     "aka": [
+      "Vocal Recording Engineer"
+     ]
+    },
+    {
+     "name": "Recording Technician"
+    },
+    {
+     "name": "Remastering Engineer"
+    },
+    {
+     "name": "Sample Clearance"
+    },
+    {
+     "name": "Sampling"
+    },
+    {
+     "name": "Sound Designer"
+    },
+    {
+     "name": "Sound Processing Computer Specialist"
+    },
+    {
+     "name": "Spatial Mastering Engineer"
+    },
+    {
+     "name": "Spatial Mixing Engineer"
+    },
+    {
+     "name": "Tape Loops"
+    },
+    {
+     "name": "Tape Operator"
+    },
+    {
+     "name": "Technician"
+    },
+    {
+     "name": "Transfer Engineer"
+    },
+    {
+     "name": "Vinyl Mastering"
+    },
+    {
+     "name": "Vocal Director"
+    },
+    {
+     "name": "Vocal Editor"
+    },
+    {
+     "name": "Vocal Effects"
+    },
+    {
+     "name": "Vocal Engineer"
+    },
+    {
+     "name": "Vocal Mixing Engineer"
+    },
+    {
+     "name": "Vocal Tuner"
+    }
+   ]
+  },
+  {
+   "section": "Vocal Roles",
+   "roles": [
+    {
+     "name": "Ad-Libs"
+    },
+    {
+     "name": "Alto Vocals"
+    },
+    {
+     "name": "Background Chant"
+    },
+    {
+     "name": "Background Vocals",
+     "aka": [
+      "Backing Vocals"
+     ]
+    },
+    {
+     "name": "Baritone Vocals"
+    },
+    {
+     "name": "Bass Vocals"
+    },
+    {
+     "name": "Bass-Baritone Vocals"
+    },
+    {
+     "name": "Beatbox",
+     "aka": [
+      "Eefing",
+      "Vocal Percussion"
+     ]
+    },
+    {
+     "name": "Caller"
+    },
+    {
+     "name": "Chant"
+    },
+    {
+     "name": "Chorus Vocals",
+     "aka": [
+      "Chorus on Discogs/Melon"
+     ]
+    },
+    {
+     "name": "Clean Vocals"
+    },
+    {
+     "name": "Contralto Vocals"
+    },
+    {
+     "name": "Coro"
+    },
+    {
+     "name": "Countertenor Vocals"
+    },
+    {
+     "name": "Dialogue"
+    },
+    {
+     "name": "Grunts"
+    },
+    {
+     "name": "Harsh Vocals",
+     "aka": [
+      "Unclean Vocals"
+     ]
+    },
+    {
+     "name": "Harmony Vocals"
+    },
+    {
+     "name": "Humming"
+    },
+    {
+     "name": "Lead Vocals"
+    },
+    {
+     "name": "MC",
+     "aka": [
+      "Toasting"
+     ]
+    },
+    {
+     "name": "Mezzo-Soprano Vocals"
+    },
+    {
+     "name": "Overtone Voice"
+    },
+    {
+     "name": "Scat"
+    },
+    {
+     "name": "Soprano Vocals"
+    },
+    {
+     "name": "Speaking Voice"
+    },
+    {
+     "name": "Speech"
+    },
+    {
+     "name": "Spoken Word"
+    },
+    {
+     "name": "Tenor Vocals"
+    },
+    {
+     "name": "Throat Singing"
+    },
+    {
+     "name": "Vocal Coach"
+    },
+    {
+     "name": "Vocal Samples"
+    },
+    {
+     "name": "Vocalese"
+    },
+    {
+     "name": "Vocals",
+     "aka": [
+      "Rap",
+      "Rap Vocals"
+     ]
+    },
+    {
+     "name": "Voice Samples"
+    },
+    {
+     "name": "Voice-Over"
+    },
+    {
+     "name": "Voicemail"
+    },
+    {
+     "name": "Whistling"
+    },
+    {
+     "name": "Yodeling"
+    }
+   ]
+  },
+  {
+   "section": "Label/Publishing Roles",
+   "roles": [
+    {
+     "name": "Copyright ©",
+     "aka": [
+      "C Line",
+      "C-line"
+     ]
+    },
+    {
+     "name": "Distributor",
+     "aka": [
+      "Aggregator"
+     ]
+    },
+    {
+     "name": "Label"
+    },
+    {
+     "name": "Manufacturer"
+    },
+    {
+     "name": "Phonographic Copyright ℗",
+     "aka": [
+      "P Line",
+      "P-line"
+     ]
+    },
+    {
+     "name": "Publisher"
+    },
+    {
+     "name": "Reissue Label"
+    }
+   ]
+  },
+  {
+   "section": "Locations",
+   "roles": [
+    {
+     "name": "Audio Edited At"
+    },
+    {
+     "name": "Engineered At"
+    },
+    {
+     "name": "Glass Mastered At"
+    },
+    {
+     "name": "Lacquer Cut At"
+    },
+    {
+     "name": "Mastered At"
+    },
+    {
+     "name": "Mixed At"
+    },
+    {
+     "name": "Overdubbed At"
+    },
+    {
+     "name": "Presented At"
+    },
+    {
+     "name": "Produced At"
+    },
+    {
+     "name": "Remastered At"
+    },
+    {
+     "name": "Remixed At"
+    }
+   ]
+  },
+  {
+   "section": "Artwork Roles",
+   "roles": [
+    {
+     "name": "Art Concept",
+     "albumLevel": true,
+     "aka": [
+      "Cover [Concept]"
+     ]
+    },
+    {
+     "name": "Art Direction",
+     "albumLevel": true
+    },
+    {
+     "name": "Artwork",
+     "aka": [
+      "Cover"
+     ]
+    },
+    {
+     "name": "Artwork 3D Rendering",
+     "albumLevel": true,
+     "aka": [
+      "3D Rendering"
+     ]
+    },
+    {
+     "name": "Artwork Animation",
+     "albumLevel": true
+    },
+    {
+     "name": "Artwork Body Paint Artist",
+     "albumLevel": true,
+     "aka": [
+      "Body Paint Artist"
+     ]
+    },
+    {
+     "name": "Artwork Editor",
+     "albumLevel": true
+    },
+    {
+     "name": "Artwork Hair Stylist",
+     "albumLevel": true,
+     "aka": [
+      "Hair Stylist"
+     ]
+    },
+    {
+     "name": "Artwork Makeup Artist",
+     "albumLevel": true,
+     "aka": [
+      "Makeup Artist"
+     ]
+    },
+    {
+     "name": "Artwork Nail Technician",
+     "albumLevel": true,
+     "aka": [
+      "Nail Technician"
+     ]
+    },
+    {
+     "name": "Artwork Tattoo Artist",
+     "albumLevel": true,
+     "aka": [
+      "Tattoo Artist"
+     ]
+    },
+    {
+     "name": "Artwork Wardrobe Stylist",
+     "albumLevel": true,
+     "aka": [
+      "Wardrobe Stylist"
+     ]
+    },
+    {
+     "name": "Assistant Artwork Hair Stylist",
+     "albumLevel": true
+    },
+    {
+     "name": "Assistant Artwork Makeup Artist",
+     "albumLevel": true
+    },
+    {
+     "name": "Assistant Artwork Wardrobe Stylist",
+     "albumLevel": true
+    },
+    {
+     "name": "Booklet Designer",
+     "albumLevel": true
+    },
+    {
+     "name": "Booklet Illustration",
+     "albumLevel": true
+    },
+    {
+     "name": "Calligraphy",
+     "albumLevel": true
+    },
+    {
+     "name": "Engraving (Artwork)",
+     "albumLevel": true
+    },
+    {
+     "name": "Graphic Design",
+     "albumLevel": true,
+     "aka": [
+      "Design on Discogs",
+      "Cover Art Design"
+     ]
+    },
+    {
+     "name": "Illustration",
+     "albumLevel": true
+    },
+    {
+     "name": "Image Editor",
+     "albumLevel": true
+    },
+    {
+     "name": "Layout",
+     "albumLevel": true
+    },
+    {
+     "name": "Liner Notes",
+     "albumLevel": true,
+     "aka": [
+      "Sleeve Notes"
+     ]
+    },
+    {
+     "name": "Painting",
+     "albumLevel": true
+    },
+    {
+     "name": "Photography",
+     "albumLevel": true
+    },
+    {
+     "name": "Photography Concept",
+     "albumLevel": true
+    },
+    {
+     "name": "Photography Editor",
+     "albumLevel": true
+    },
+    {
+     "name": "Reissue Artwork",
+     "albumLevel": true
+    },
+    {
+     "name": "Reissue Graphic Design",
+     "albumLevel": true
+    },
+    {
+     "name": "Sculpture (Artwork)",
+     "albumLevel": true
+    },
+    {
+     "name": "Typography",
+     "albumLevel": true
+    }
+   ]
+  },
+  {
+   "section": "Video Roles",
+   "roles": [
+    {
+     "name": "Video 1st Assistant Director"
+    },
+    {
+     "name": "Video 2nd Assistant Director"
+    },
+    {
+     "name": "Video 3D Rendering"
+    },
+    {
+     "name": "Video 3D Team"
+    },
+    {
+     "name": "Video Animator"
+    },
+    {
+     "name": "Video Art Department"
+    },
+    {
+     "name": "Video Art Director"
+    },
+    {
+     "name": "Video Art Production Assistant"
+    },
+    {
+     "name": "Video Art Production Designer"
+    },
+    {
+     "name": "Video Assist Operator"
+    },
+    {
+     "name": "Video Assistant Director"
+    },
+    {
+     "name": "Video Assistant Editor"
+    },
+    {
+     "name": "Video Assistant Hair Stylist"
+    },
+    {
+     "name": "Video Assistant Makeup Artist"
+    },
+    {
+     "name": "Video Assistant Prop Master"
+    },
+    {
+     "name": "Video Assistant Wardrobe Stylist"
+    },
+    {
+     "name": "Video Associate Producer"
+    },
+    {
+     "name": "Video Best Boy"
+    },
+    {
+     "name": "Video Best Boy Electric"
+    },
+    {
+     "name": "Video Best Boy Grip"
+    },
+    {
+     "name": "Video Body Paint Artist"
+    },
+    {
+     "name": "Video Boom Operator"
+    },
+    {
+     "name": "Video Camera Crew"
+    },
+    {
+     "name": "Video Camera Operator"
+    },
+    {
+     "name": "Video Casting Director"
+    },
+    {
+     "name": "Video Casting Team"
+    },
+    {
+     "name": "Video CGI Artist"
+    },
+    {
+     "name": "Video Choreographer",
+     "aka": [
+      "Movement Director"
+     ]
+    },
+    {
+     "name": "Video Clapper Loader",
+     "aka": [
+      "2nd Assistant Camera",
+      "2AC / 2nd AC"
+     ]
+    },
+    {
+     "name": "Video Co-Director"
+    },
+    {
+     "name": "Video Co-Producer"
+    },
+    {
+     "name": "Video Colorist"
+    },
+    {
+     "name": "Video Commissioner"
+    },
+    {
+     "name": "Video Compositor",
+     "aka": [
+      "VFX Compositing"
+     ]
+    },
+    {
+     "name": "Video Concept Illustrator"
+    },
+    {
+     "name": "Video Construction Coordinator"
+    },
+    {
+     "name": "Video Costume Department"
+    },
+    {
+     "name": "Video Costume Designer"
+    },
+    {
+     "name": "Video Craft Service",
+     "aka": [
+      "Catering"
+     ]
+    },
+    {
+     "name": "Video Digital Imaging Technician"
+    },
+    {
+     "name": "Video Director"
+    },
+    {
+     "name": "Video Director Of Photography",
+     "aka": [
+      "Videographer"
+     ]
+    },
+    {
+     "name": "Video Dolly Grip"
+    },
+    {
+     "name": "Video Driver"
+    },
+    {
+     "name": "Video Drone Operator"
+    },
+    {
+     "name": "Video Editor"
+    },
+    {
+     "name": "Video Electrician"
+    },
+    {
+     "name": "Video Executive Producer"
+    },
+    {
+     "name": "Video Focus Puller",
+     "aka": [
+      "1st Assistant Camera",
+      "1AC / 1st AC"
+     ]
+    },
+    {
+     "name": "Video Foley Artist"
+    },
+    {
+     "name": "Video Gaffer"
+    },
+    {
+     "name": "Video Generator Operator"
+    },
+    {
+     "name": "Video Graphic Designer"
+    },
+    {
+     "name": "Video Grip"
+    },
+    {
+     "name": "Video Hair Stylist"
+    },
+    {
+     "name": "Video Key Grip"
+    },
+    {
+     "name": "Video Key Production Assistant"
+    },
+    {
+     "name": "Video Lightboard Operator",
+     "aka": [
+      "Console Operator"
+     ]
+    },
+    {
+     "name": "Video Lighting"
+    },
+    {
+     "name": "Video Lighting Technician"
+    },
+    {
+     "name": "Video Line Producer"
+    },
+    {
+     "name": "Video Location Manager"
+    },
+    {
+     "name": "Video Location Scout"
+    },
+    {
+     "name": "Video Makeup Artist"
+    },
+    {
+     "name": "Video Matte Painter"
+    },
+    {
+     "name": "Video Motion Graphics Artist"
+    },
+    {
+     "name": "Video Music Supervisor"
+    },
+    {
+     "name": "Video Nail Technician"
+    },
+    {
+     "name": "Video Office Production Assistant"
+    },
+    {
+     "name": "Video On-Set Editor"
+    },
+    {
+     "name": "Video Post-Production Coordinator"
+    },
+    {
+     "name": "Video Post-Production Department"
+    },
+    {
+     "name": "Video Post-Production Supervisor"
+    },
+    {
+     "name": "Video Producer"
+    },
+    {
+     "name": "Video Production Accountant"
+    },
+    {
+     "name": "Video Production Assistant"
+    },
+    {
+     "name": "Video Production Company"
+    },
+    {
+     "name": "Video Production Coordinator"
+    },
+    {
+     "name": "Video Production Designer",
+     "aka": [
+      "Creative Director"
+     ],
+     "note": "If not for video, use Creative Director"
+    },
+    {
+     "name": "Video Production Director"
+    },
+    {
+     "name": "Video Production Supervisor",
+     "aka": [
+      "Production Manager"
+     ],
+     "note": "If not for video, use Production Manager (Management)"
+    },
+    {
+     "name": "Video Production Team"
+    },
+    {
+     "name": "Video Prop Department"
+    },
+    {
+     "name": "Video Prop Master"
+    },
+    {
+     "name": "Video Re-Recording Mixer"
+    },
+    {
+     "name": "Video Roto/Paint Artist"
+    },
+    {
+     "name": "Video Screenwriter"
+    },
+    {
+     "name": "Video Script Supervisor"
+    },
+    {
+     "name": "Video Set Decorator"
+    },
+    {
+     "name": "Video Set Department"
+    },
+    {
+     "name": "Video Set Dresser"
+    },
+    {
+     "name": "Video Set Medic"
+    },
+    {
+     "name": "Video Set Photographer"
+    },
+    {
+     "name": "Video Set Production Assistant"
+    },
+    {
+     "name": "Video SFX Department",
+     "aka": [
+      "Video Special Effects Department"
+     ]
+    },
+    {
+     "name": "Video SFX Makeup Designer",
+     "aka": [
+      "Video Special Effects Makeup Designer"
+     ]
+    },
+    {
+     "name": "Video SFX Supervisor",
+     "aka": [
+      "Video Special Effects Supervisor"
+     ]
+    },
+    {
+     "name": "Video Shopper"
+    },
+    {
+     "name": "Video Sound Assistant"
+    },
+    {
+     "name": "Video Sound Designer"
+    },
+    {
+     "name": "Video Sound Editor"
+    },
+    {
+     "name": "Video Sound Engineer"
+    },
+    {
+     "name": "Video Sound Mixer"
+    },
+    {
+     "name": "Video Steadicam Operator"
+    },
+    {
+     "name": "Video Storyboard Artist"
+    },
+    {
+     "name": "Video Stunt Coordinator"
+    },
+    {
+     "name": "Video Supervising Editor"
+    },
+    {
+     "name": "Video Tailor"
+    },
+    {
+     "name": "Video Tattoo Artist"
+    },
+    {
+     "name": "Video Technician"
+    },
+    {
+     "name": "Video Transport Captain"
+    },
+    {
+     "name": "Video Transportation Coordinator"
+    },
+    {
+     "name": "Video Typography",
+     "aka": [
+      "Title / Titles"
+     ]
+    },
+    {
+     "name": "Video Unit Production Manager"
+    },
+    {
+     "name": "Video Unit Publicist"
+    },
+    {
+     "name": "Video VFX Artist"
+    },
+    {
+     "name": "Video VFX Department"
+    },
+    {
+     "name": "Video VFX Supervisor"
+    },
+    {
+     "name": "Video Visualizer"
+    },
+    {
+     "name": "Video Wardrobe Stylist"
+    },
+    {
+     "name": "Video Weapons Wrangler"
+    }
+   ]
+  },
+  {
+   "section": "Choir/Orchestra Roles",
+   "roles": [
+    {
+     "name": "Associate Conductor",
+     "aka": [
+      "Assistant Conductor"
+     ]
+    },
+    {
+     "name": "Brass Conductor"
+    },
+    {
+     "name": "Brass Orchestration",
+     "aka": [
+      "Brass Orchestrator"
+     ]
+    },
+    {
+     "name": "Choir"
+    },
+    {
+     "name": "Choir Conductor"
+    },
+    {
+     "name": "Choir Director"
+    },
+    {
+     "name": "Choir Leader"
+    },
+    {
+     "name": "Choir Orchestration",
+     "aka": [
+      "Choir Orchestrator"
+     ]
+    },
+    {
+     "name": "Choir Programmer"
+    },
+    {
+     "name": "Choirmaster"
+    },
+    {
+     "name": "Chorus Master"
+    },
+    {
+     "name": "Concertmaster"
+    },
+    {
+     "name": "Conductor"
+    },
+    {
+     "name": "Contractor",
+     "aka": [
+      "Orchestra Contractor"
+     ]
+    },
+    {
+     "name": "Ensemble"
+    },
+    {
+     "name": "Horns Conductor"
+    },
+    {
+     "name": "Horns Leader"
+    },
+    {
+     "name": "Horns Orchestration",
+     "aka": [
+      "Horns Orchestrator"
+     ]
+    },
+    {
+     "name": "Instrumentation"
+    },
+    {
+     "name": "Music Librarian",
+     "aka": [
+      "Librarian"
+     ]
+    },
+    {
+     "name": "Orchestra"
+    },
+    {
+     "name": "Orchestra Coordinator"
+    },
+    {
+     "name": "Orchestra Director"
+    },
+    {
+     "name": "Orchestra Manager"
+    },
+    {
+     "name": "Orchestration",
+     "aka": [
+      "Orchestrator (AM)"
+     ]
+    },
+    {
+     "name": "String Orchestra"
+    },
+    {
+     "name": "Strings Conductor"
+    },
+    {
+     "name": "Strings Coordinator"
+    },
+    {
+     "name": "Strings Director"
+    },
+    {
+     "name": "Strings Editor"
+    },
+    {
+     "name": "Strings Orchestration",
+     "aka": [
+      "Strings Orchestrator"
+     ]
+    },
+    {
+     "name": "Strings Supervisor"
+    },
+    {
+     "name": "Worship Leader"
+    }
+   ]
+  },
+  {
+   "section": "Other",
+   "roles": [
+    {
+     "name": "3D Rendering"
+    },
+    {
+     "name": "A&R",
+     "albumLevel": true
+    },
+    {
+     "name": "A&R Administrator",
+     "albumLevel": true
+    },
+    {
+     "name": "A&R Coordinator",
+     "albumLevel": true
+    },
+    {
+     "name": "A&R Director",
+     "albumLevel": true
+    },
+    {
+     "name": "A&R Manager",
+     "albumLevel": true
+    },
+    {
+     "name": "Accompaniment"
+    },
+    {
+     "name": "Agent",
+     "albumLevel": true
+    },
+    {
+     "name": "Agent Assistant",
+     "albumLevel": true
+    },
+    {
+     "name": "Assistant A&R",
+     "albumLevel": true
+    },
+    {
+     "name": "Backing Band"
+    },
+    {
+     "name": "Band Leader"
+    },
+    {
+     "name": "Commentator"
+    },
+    {
+     "name": "Compiler"
+    },
+    {
+     "name": "Coordinator"
+    },
+    {
+     "name": "Copywriter"
+    },
+    {
+     "name": "Curator"
+    },
+    {
+     "name": "DJ"
+    },
+    {
+     "name": "DJ Mix"
+    },
+    {
+     "name": "Field Recording"
+    },
+    {
+     "name": "Game Developer",
+     "albumLevel": true
+    },
+    {
+     "name": "Game Franchise"
+    },
+    {
+     "name": "Game Publisher",
+     "albumLevel": true
+    },
+    {
+     "name": "Group Members",
+     "aka": [
+      "Band Members"
+     ]
+    },
+    {
+     "name": "Host"
+    },
+    {
+     "name": "Instrumental Coordinator"
+    },
+    {
+     "name": "Interviewee"
+    },
+    {
+     "name": "Interviewer"
+    },
+    {
+     "name": "Legal",
+     "albumLevel": true
+    },
+    {
+     "name": "Literary Editor"
+    },
+    {
+     "name": "Marching Band"
+    },
+    {
+     "name": "Music Commissioner"
+    },
+    {
+     "name": "Music Consultant"
+    },
+    {
+     "name": "Music Director"
+    },
+    {
+     "name": "Music Production Coordinator"
+    },
+    {
+     "name": "Music Production Director"
+    },
+    {
+     "name": "Music Production Manager"
+    },
+    {
+     "name": "Musical Supervision"
+    },
+    {
+     "name": "Narrator"
+    },
+    {
+     "name": "Official Lyrics Explanation"
+    },
+    {
+     "name": "Parent Group"
+    },
+    {
+     "name": "Presenter"
+    },
+    {
+     "name": "Project Coordinator"
+    },
+    {
+     "name": "Project Manager"
+    },
+    {
+     "name": "Promoter",
+     "albumLevel": true
+    },
+    {
+     "name": "Proofreader"
+    },
+    {
+     "name": "Public Relations",
+     "albumLevel": true
+    },
+    {
+     "name": "Reader (Literary)"
+    },
+    {
+     "name": "Restoration"
+    },
+    {
+     "name": "Screen Director"
+    },
+    {
+     "name": "Stage Manager"
+    },
+    {
+     "name": "Tie-In"
+    },
+    {
+     "name": "Transcription (Notation)"
+    }
+   ]
+  },
+  {
+   "section": "Instrument Solos",
+   "roles": [
+    {
+     "name": "Acoustic Guitar Solo"
+    },
+    {
+     "name": "Alto Saxophone Solo"
+    },
+    {
+     "name": "Bass Guitar Solo"
+    },
+    {
+     "name": "Bass Solo"
+    },
+    {
+     "name": "Cavaquinho Solo"
+    },
+    {
+     "name": "Cello Solo"
+    },
+    {
+     "name": "Double Bass Solo"
+    },
+    {
+     "name": "Duduk Solo"
+    },
+    {
+     "name": "Electric Guitar Solo"
+    },
+    {
+     "name": "Flugelhorn Solo"
+    },
+    {
+     "name": "Flute Solo"
+    },
+    {
+     "name": "Grand Piano Solo"
+    },
+    {
+     "name": "Guitar Solo"
+    },
+    {
+     "name": "Gut String Guitar Solo"
+    },
+    {
+     "name": "Harmonica Solo"
+    },
+    {
+     "name": "Keyboard Solo"
+    },
+    {
+     "name": "Organ Solo"
+    },
+    {
+     "name": "Piano Solo"
+    },
+    {
+     "name": "Saxophone Solo"
+    },
+    {
+     "name": "Slide Guitar Solo"
+    },
+    {
+     "name": "Soloist"
+    },
+    {
+     "name": "Soprano Saxophone Solo"
+    },
+    {
+     "name": "Synthesizer Solo"
+    },
+    {
+     "name": "Tenor Saxophone Solo"
+    },
+    {
+     "name": "Tin Whistle Solo"
+    },
+    {
+     "name": "Trombone Solo"
+    },
+    {
+     "name": "Trumpet Solo"
+    },
+    {
+     "name": "Ukulele Solo"
+    },
+    {
+     "name": "Viola Solo"
+    },
+    {
+     "name": "Violin Solo"
+    },
+    {
+     "name": "Vocal Solo"
+    }
+   ]
+  },
+  {
+   "section": "Specific Instrument Roles",
+   "roles": [
+    {
+     "name": "Ace Tone Organ"
+    },
+    {
+     "name": "Akai EWI"
+    },
+    {
+     "name": "Akai MPC"
+    },
+    {
+     "name": "Akai MPC1000 Sequencer/Sampler"
+    },
+    {
+     "name": "Akai MPC2000 Sequencer/Sampler"
+    },
+    {
+     "name": "Akai MPC2000XL Sequencer/Sampler"
+    },
+    {
+     "name": "Akai MPC2500 Sequencer/Sampler"
+    },
+    {
+     "name": "Akai MPC60 Sequencer/Sampler"
+    },
+    {
+     "name": "Akai S900 Sampler"
+    },
+    {
+     "name": "Akai S3000 Sampler"
+    },
+    {
+     "name": "Arco Bass Guitar"
+    },
+    {
+     "name": "ARP 2600 Synthesizer"
+    },
+    {
+     "name": "ARP Avatar Synthesizer"
+    },
+    {
+     "name": "ARP Odyssey Synthesizer"
+    },
+    {
+     "name": "ARP Quartet Synthesizer"
+    },
+    {
+     "name": "ARP Solina String Ensemble Synthesizer"
+    },
+    {
+     "name": "ARP Synthesizer"
+    },
+    {
+     "name": "AudioFrame Sampler"
+    },
+    {
+     "name": "Baldwin Fun Machine Organ/Synthesizer"
+    },
+    {
+     "name": "Baldwin SD-10 Grand Piano"
+    },
+    {
+     "name": "BINA Indian Harmonium"
+    },
+    {
+     "name": "Bontempi Electric Organ"
+    },
+    {
+     "name": "Casio SK-1 Sampling Keyboard"
+    },
+    {
+     "name": "Casio VL-TONE Synthesizer"
+    },
+    {
+     "name": "Cavagnolo MIDY 20 MIDI Controller"
+    },
+    {
+     "name": "Chamberlain Synthesizer"
+    },
+    {
+     "name": "Critter and Guitari Bolsa Bass Synthesizer"
+    },
+    {
+     "name": "Crumar DP-50 Electric Piano"
+    },
+    {
+     "name": "Crumar Stringman Synthesizer"
+    },
+    {
+     "name": "Crumar Synthesizer"
+    },
+    {
+     "name": "Dynacord ADD-one Drum Machine"
+    },
+    {
+     "name": "E-mu Emulator II Synthesizer"
+    },
+    {
+     "name": "E-mu Emulator Synthesizer"
+    },
+    {
+     "name": "Electro-Harmonix Super Space Drum"
+    },
+    {
+     "name": "Electronic Tambura"
+    },
+    {
+     "name": "Elektron Octatrack Sampler"
+    },
+    {
+     "name": "Elka AMK 800 MIDI Controller"
+    },
+    {
+     "name": "Elka Rhapsody Synthesizer"
+    },
+    {
+     "name": "Elka Synthex Synthesizer"
+    },
+    {
+     "name": "EML Synthesizer"
+    },
+    {
+     "name": "EML ElectroComp 101 Synthesizer"
+    },
+    {
+     "name": "EML ElectroComp 200 Synthesizer"
+    },
+    {
+     "name": "EMS Synthi AKS Synthesizer"
+    },
+    {
+     "name": "EMS VCS 3 Synthesizer"
+    },
+    {
+     "name": "Ensoniq EPS Sampler"
+    },
+    {
+     "name": "Ensoniq ESQ-1 Synthesizer"
+    },
+    {
+     "name": "Eventide H910 Harmonizer Synthesizer"
+    },
+    {
+     "name": "Fairlight CMI"
+    },
+    {
+     "name": "Fairlight CMI Series II"
+    },
+    {
+     "name": "Fairlight CMI Series III"
+    },
+    {
+     "name": "Farfisa Matador Organ"
+    },
+    {
+     "name": "Farfisa Organ"
+    },
+    {
+     "name": "Fender Bass Guitar"
+    },
+    {
+     "name": "Fender Guitar"
+    },
+    {
+     "name": "Fender Mandocaster Electric Mandolin"
+    },
+    {
+     "name": "Fender Telecaster Guitar"
+    },
+    {
+     "name": "Fender VI Bass Guitar"
+    },
+    {
+     "name": "Hammond A100 Organ"
+    },
+    {
+     "name": "Hammond B-3 Organ"
+    },
+    {
+     "name": "Hammond C-3 Organ"
+    },
+    {
+     "name": "Hammond Electric Organ"
+    },
+    {
+     "name": "Hammond Organ"
+    },
+    {
+     "name": "Hammond Sk-1 Keyboard"
+    },
+    {
+     "name": "HAPI Drum"
+    },
+    {
+     "name": "Hofner Guitar"
+    },
+    {
+     "name": "Hohner Basset Synthesizer"
+    },
+    {
+     "name": "Hohner Cembalet I Electric Piano"
+    },
+    {
+     "name": "Hohner Clavinet I"
+    },
+    {
+     "name": "Hohner Electra Piano T Electric Piano"
+    },
+    {
+     "name": "Hohner Pianet L Electric Piano"
+    },
+    {
+     "name": "Hohner Symphonic 30N Electric Organ"
+    },
+    {
+     "name": "Kawai K5 Synthesizer"
+    },
+    {
+     "name": "Korg Kronos Synthesizer"
+    },
+    {
+     "name": "Korg M1 Synthesizer"
+    },
+    {
+     "name": "Korg microKORG Synthesizer"
+    },
+    {
+     "name": "Korg miniKORG Synthesizer"
+    },
+    {
+     "name": "Korg MS-20 Synthesizer"
+    },
+    {
+     "name": "Korg Pepe MIDI Wind Controller"
+    },
+    {
+     "name": "Korg Polysix Synthesizer"
+    },
+    {
+     "name": "Korg Synthesizer"
+    },
+    {
+     "name": "Korg Triton Synthesizer"
+    },
+    {
+     "name": "Korg Wavestation Synthesizer"
+    },
+    {
+     "name": "Kurzweil K2000 Synthesizer"
+    },
+    {
+     "name": "Lowrey Organ"
+    },
+    {
+     "name": "Moog Liberation Synthesizer"
+    },
+    {
+     "name": "Moog Minimoog Synthesizer"
+    },
+    {
+     "name": "Moog Minimoog Voyager Synthesizer"
+    },
+    {
+     "name": "Moog Polymoog Synthesizer"
+    },
+    {
+     "name": "Moog Prodigy Synthesizer"
+    },
+    {
+     "name": "Moog Rogue Synthesizer"
+    },
+    {
+     "name": "Moog Synthesizer"
+    },
+    {
+     "name": "Moog Synthesizer Programmer"
+    },
+    {
+     "name": "Moog Taurus Synthesizer"
+    },
+    {
+     "name": "Nord Electro Synthesizer"
+    },
+    {
+     "name": "Nord Lead Synthesizer"
+    },
+    {
+     "name": "Nord Piano Synthesizer"
+    },
+    {
+     "name": "Nord Wave Synthesizer"
+    },
+    {
+     "name": "Northumbrian Smallpipes"
+    },
+    {
+     "name": "Oberheim Sequencer"
+    },
+    {
+     "name": "Oberheim Synthesizer"
+    },
+    {
+     "name": "Optigan Organ"
+    },
+    {
+     "name": "OSC OSCar Synthesizer"
+    },
+    {
+     "name": "Prophet-5 Synthesizer"
+    },
+    {
+     "name": "Prophet-6 Synthesizer"
+    },
+    {
+     "name": "Rhodes Piano",
+     "aka": [
+      "Fender Rhodes",
+      "Fender Rhodes Electronic Keyboard",
+      "Fender Rhodes Electric Piano"
+     ]
+    },
+    {
+     "name": "RMI Electra-Piano"
+    },
+    {
+     "name": "Roland BOSS HC-2 Hand Clapper"
+    },
+    {
+     "name": "Roland D-50 Synthesizer"
+    },
+    {
+     "name": "Roland D-550 Synthesizer"
+    },
+    {
+     "name": "Roland Drum Machine"
+    },
+    {
+     "name": "Roland JD-990 Synthesizer"
+    },
+    {
+     "name": "Roland JUNO-106 Synthesizer"
+    },
+    {
+     "name": "Roland JUNO-6 Synthesizer"
+    },
+    {
+     "name": "Roland JUNO-60 Synthesizer"
+    },
+    {
+     "name": "Roland JUNO-Di Synthesizer"
+    },
+    {
+     "name": "Roland JUPITER-6 Synthesizer"
+    },
+    {
+     "name": "Roland JUPITER-8 Synthesizer"
+    },
+    {
+     "name": "Roland JX-3P Synthesizer"
+    },
+    {
+     "name": "Roland OCTAPAD Percussion Pad"
+    },
+    {
+     "name": "Roland R-70 Drum Machine"
+    },
+    {
+     "name": "Roland SH-101 Synthesizer"
+    },
+    {
+     "name": "Roland Space Echo"
+    },
+    {
+     "name": "Roland Synthesizer"
+    },
+    {
+     "name": "Roland System-100M Synthesizer"
+    },
+    {
+     "name": "Roland TR-606 Drum Machine"
+    },
+    {
+     "name": "Roland TR-808 Drum Machine"
+    },
+    {
+     "name": "Roland V-Drums"
+    },
+    {
+     "name": "Simmons SDX Electronic Drums"
+    },
+    {
+     "name": "Steinberger Guitar"
+    },
+    {
+     "name": "Suzuki MX-32C Alto Melodeon"
+    },
+    {
+     "name": "Synclavier Synthesizer"
+    },
+    {
+     "name": "Teenage Engineering OP-1 Synthesizer"
+    },
+    {
+     "name": "Vox Continental Organ"
+    },
+    {
+     "name": "Vox Jaguar Organ"
+    },
+    {
+     "name": "Vox Organ"
+    },
+    {
+     "name": "Wurlitzer Electric Piano"
+    },
+    {
+     "name": "Wurlitzer Organ"
+    },
+    {
+     "name": "Yamaha B3 Upright Piano"
+    },
+    {
+     "name": "Yamaha CS-10 Synthesizer"
+    },
+    {
+     "name": "Yamaha CS-15 Synthesizer"
+    },
+    {
+     "name": "Yamaha CS1x Synthesizer"
+    },
+    {
+     "name": "Yamaha CS-60 Synthesizer"
+    },
+    {
+     "name": "Yamaha CS-80 Synthesizer"
+    },
+    {
+     "name": "Yamaha DTXPLORER Electronic Drums"
+    },
+    {
+     "name": "Yamaha DX7 Synthesizer"
+    },
+    {
+     "name": "Yamaha GX-1 Synthesizer Organ"
+    },
+    {
+     "name": "Yamaha Organ"
+    },
+    {
+     "name": "Yamaha PSR-70 Electronic Keyboard"
+    },
+    {
+     "name": "Yamaha Synthesizer"
+    },
+    {
+     "name": "Yamaha VSS-200 Synthesizer"
+    }
+   ]
+  },
+  {
+   "section": "Instruments",
+   "roles": [
+    {
+     "name": "Maywa Denki Instruments"
+    },
+    {
+     "name": "4.5 Octave Marimba"
+    },
+    {
+     "name": "5.0 Octave Marimba"
+    },
+    {
+     "name": "3.5 Octave Vibraphone"
+    },
+    {
+     "name": "4.0 Octave Vibraphone"
+    },
+    {
+     "name": "Accordina",
+     "aka": [
+      "Chromatic Button Melodica",
+      "Chromatic Harmonicon",
+      "аккордина/Akkordina (Russian)"
+     ]
+    },
+    {
+     "name": "Accordion",
+     "aka": [
+      "Squeeze Box"
+     ]
+    },
+    {
+     "name": "Acoustic Baritone Guitar"
+    },
+    {
+     "name": "Acoustic Bass"
+    },
+    {
+     "name": "Acoustic Bass Guitar"
+    },
+    {
+     "name": "Acoustic Double Bass"
+    },
+    {
+     "name": "Acoustic Drums"
+    },
+    {
+     "name": "Acoustic Guitar"
+    },
+    {
+     "name": "Acoustic Lead Guitar"
+    },
+    {
+     "name": "Acoustic Rhythm Guitar"
+    },
+    {
+     "name": "Acoustic Slide Guitar"
+    },
+    {
+     "name": "Acoustic Steel Guitar"
+    },
+    {
+     "name": "Aerophone"
+    },
+    {
+     "name": "Afoxé"
+    },
+    {
+     "name": "Agogô"
+    },
+    {
+     "name": "Ajaeng"
+    },
+    {
+     "name": "Alfaia"
+    },
+    {
+     "name": "Alghoza",
+     "aka": [
+      "Alghoze",
+      "Algozey",
+      "Beenon",
+      "Donāl",
+      "Do Nālī",
+      "Girāw",
+      "Jōrhi",
+      "Nagōze",
+      "Pāwā Jōrhī",
+      "Satārā"
+     ]
+    },
+    {
+     "name": "Alphorn",
+     "aka": [
+      "Alpine Horn",
+      "Alpenhorn (German)",
+      "Cor Des Alpes (French)",
+      "Corno Alpino (Italian)"
+     ]
+    },
+    {
+     "name": "Alto Chalumeau"
+    },
+    {
+     "name": "Alto Clarinet"
+    },
+    {
+     "name": "Alto Cornamuse"
+    },
+    {
+     "name": "Alto Cornett"
+    },
+    {
+     "name": "Alto Crumhorn"
+    },
+    {
+     "name": "Alto Flute"
+    },
+    {
+     "name": "Alto Gemshorn"
+    },
+    {
+     "name": "Alto Horn",
+     "aka": [
+      "Tenor Horn"
+     ]
+    },
+    {
+     "name": "Alto Hurdy-Gurdy"
+    },
+    {
+     "name": "Alto Melodeon"
+    },
+    {
+     "name": "Alto Rauschpfeife"
+    },
+    {
+     "name": "Alto Recorder",
+     "aka": [
+      "Treble Recorder"
+     ]
+    },
+    {
+     "name": "Alto Sackbut"
+    },
+    {
+     "name": "Alto Saxophone"
+    },
+    {
+     "name": "Alto Shawm"
+    },
+    {
+     "name": "Alto Sopilka"
+    },
+    {
+     "name": "Alto Trombone"
+    },
+    {
+     "name": "Alto Viol"
+    },
+    {
+     "name": "Alto Viola"
+    },
+    {
+     "name": "Alto Violin",
+     "aka": [
+      "Vertical Viola"
+     ]
+    },
+    {
+     "name": "Amadinda"
+    },
+    {
+     "name": "Ambient Sounds"
+    },
+    {
+     "name": "Analog Synthesizer"
+    },
+    {
+     "name": "Analog Vocoder"
+    },
+    {
+     "name": "Angklung"
+    },
+    {
+     "name": "Anglo Concertina",
+     "aka": [
+      "Anglo-German Concertina"
+     ]
+    },
+    {
+     "name": "Antara"
+    },
+    {
+     "name": "Anvil"
+    },
+    {
+     "name": "Appalachian Dulcimer"
+    },
+    {
+     "name": "Arch Harp Guitar"
+    },
+    {
+     "name": "Archlute",
+     "aka": [
+      "Archilaúd",
+      "Arciliuto",
+      "Erzlaute"
+     ]
+    },
+    {
+     "name": "Arghul"
+    },
+    {
+     "name": "Arpa Legüera"
+    },
+    {
+     "name": "Arpeggiator"
+    },
+    {
+     "name": "Ashiko"
+    },
+    {
+     "name": "Atabaque"
+    },
+    {
+     "name": "Autoharp"
+    },
+    {
+     "name": "Baby Piano"
+    },
+    {
+     "name": "Bağlama"
+    },
+    {
+     "name": "Bagpipes"
+    },
+    {
+     "name": "Bahian Guitar"
+    },
+    {
+     "name": "Bajo Quinto"
+    },
+    {
+     "name": "Bajo Sexto"
+    },
+    {
+     "name": "Balaban"
+    },
+    {
+     "name": "Balafon"
+    },
+    {
+     "name": "Balalaika"
+    },
+    {
+     "name": "Bamboo Flute"
+    },
+    {
+     "name": "Bamboo Saxophone"
+    },
+    {
+     "name": "Bandola"
+    },
+    {
+     "name": "Bandora"
+    },
+    {
+     "name": "Bandolin"
+    },
+    {
+     "name": "Bandoneón"
+    },
+    {
+     "name": "Bandura"
+    },
+    {
+     "name": "Bandurria"
+    },
+    {
+     "name": "Banjo"
+    },
+    {
+     "name": "Banjo Guitar",
+     "aka": [
+      "Banjitar"
+     ]
+    },
+    {
+     "name": "Banjo Ukulele"
+    },
+    {
+     "name": "Banjola"
+    },
+    {
+     "name": "Bansuri"
+    },
+    {
+     "name": "Baritone Guitar"
+    },
+    {
+     "name": "Baritone Horn"
+    },
+    {
+     "name": "Baritone Sarrusophone"
+    },
+    {
+     "name": "Baritone Saxophone"
+    },
+    {
+     "name": "Baritone Ukelele"
+    },
+    {
+     "name": "Baroque Guitar"
+    },
+    {
+     "name": "Baroque Rackett"
+    },
+    {
+     "name": "Baroque Trumpet"
+    },
+    {
+     "name": "Barrel Organ"
+    },
+    {
+     "name": "Baryton"
+    },
+    {
+     "name": "Basolia"
+    },
+    {
+     "name": "Bass"
+    },
+    {
+     "name": "Bass Accordion"
+    },
+    {
+     "name": "Bass Balalaika"
+    },
+    {
+     "name": "Bass Chalumeau"
+    },
+    {
+     "name": "Bass Clarinet"
+    },
+    {
+     "name": "Bass Courtaut"
+    },
+    {
+     "name": "Bass Crumhorn"
+    },
+    {
+     "name": "Bass Curtal"
+    },
+    {
+     "name": "Bass Drum"
+    },
+    {
+     "name": "Bass Dulcian"
+    },
+    {
+     "name": "Bass Flute"
+    },
+    {
+     "name": "Bass Guitar"
+    },
+    {
+     "name": "Bass Harmonica",
+     "aka": [
+      "Bass Harp",
+      "Contrabass Harmonica"
+     ]
+    },
+    {
+     "name": "Bass Hurdy-Gurdy"
+    },
+    {
+     "name": "Bass Kortholt"
+    },
+    {
+     "name": "Bass Marimba"
+    },
+    {
+     "name": "Bass Melodeon"
+    },
+    {
+     "name": "Bass Oboe"
+    },
+    {
+     "name": "Bass Pedals",
+     "aka": [
+      "Pedal Bass"
+     ]
+    },
+    {
+     "name": "Bass Rackett"
+    },
+    {
+     "name": "Bass Rebec"
+    },
+    {
+     "name": "Bass Recorder (Woodwind)",
+     "aka": [
+      "Basset Recorder"
+     ]
+    },
+    {
+     "name": "Bass Sackbut"
+    },
+    {
+     "name": "Bass Sarrusophone"
+    },
+    {
+     "name": "Bass Saxophone"
+    },
+    {
+     "name": "Bass Shawm"
+    },
+    {
+     "name": "Bass Sordun"
+    },
+    {
+     "name": "Bass Synthesizer",
+     "aka": [
+      "Synth Bass"
+     ]
+    },
+    {
+     "name": "Bass Trombone"
+    },
+    {
+     "name": "Bass Trumpet"
+    },
+    {
+     "name": "Bass Tuba"
+    },
+    {
+     "name": "Bass Viol"
+    },
+    {
+     "name": "Bass Violin"
+    },
+    {
+     "name": "Basset Clarinet"
+    },
+    {
+     "name": "Basset Horn"
+    },
+    {
+     "name": "Bassoon"
+    },
+    {
+     "name": "Batá Drum"
+    },
+    {
+     "name": "Bawu"
+    },
+    {
+     "name": "Bayan"
+    },
+    {
+     "name": "Bazooka"
+    },
+    {
+     "name": "Beat Juggling",
+     "aka": [
+      "Juggling (Turntablism)"
+     ]
+    },
+    {
+     "name": "Beatwave"
+    },
+    {
+     "name": "Bell Tree"
+    },
+    {
+     "name": "Bells",
+     "aka": [
+      "Zang"
+     ]
+    },
+    {
+     "name": "Bendir"
+    },
+    {
+     "name": "Berimbau"
+    },
+    {
+     "name": "Bhapang"
+    },
+    {
+     "name": "Biniou",
+     "aka": [
+      "Biniou-Bihan",
+      "Biniou Bras",
+      "Biniou Braz",
+      "Biniou Kozh"
+     ]
+    },
+    {
+     "name": "Birbynė"
+    },
+    {
+     "name": "Birch Lur",
+     "aka": [
+      "Birch Trumpet",
+      "Daudytė (Lithuanian)",
+      "Karjapasun (Estonian)",
+      "Näverlur (Swedish)",
+      "Neverlur (Norwegian)",
+      "Ragas (Lithuanian)",
+      "Tās̆u Taure (Latvian)",
+      "Tuohitorvi (Finnish)"
+     ]
+    },
+    {
+     "name": "Bladder Pipe"
+    },
+    {
+     "name": "Boatswain's Pipe",
+     "aka": [
+      "Boatswain's Call",
+      "Bosun's Whistle"
+     ]
+    },
+    {
+     "name": "Bodhrán"
+    },
+    {
+     "name": "Body Percussion"
+    },
+    {
+     "name": "Bombard",
+     "aka": [
+      "Bombarde (French)",
+      "Talabard (Breton)"
+     ]
+    },
+    {
+     "name": "Bombo Legüero"
+    },
+    {
+     "name": "Bonang Barung"
+    },
+    {
+     "name": "Bones"
+    },
+    {
+     "name": "Bongos",
+     "aka": [
+      "Bongo Drums"
+     ]
+    },
+    {
+     "name": "Boobam"
+    },
+    {
+     "name": "Boomwhacker"
+    },
+    {
+     "name": "Bougarabou",
+     "aka": [
+      "Boucarabou"
+     ]
+    },
+    {
+     "name": "Bouzouki",
+     "aka": [
+      "Buzuki"
+     ]
+    },
+    {
+     "name": "Bowed Banjo"
+    },
+    {
+     "name": "Bowed Bass"
+    },
+    {
+     "name": "Bowed Cymbal"
+    },
+    {
+     "name": "Bowed Dulcimer"
+    },
+    {
+     "name": "Bowed Guitar"
+    },
+    {
+     "name": "Bowed Vibraphone"
+    },
+    {
+     "name": "Brass"
+    },
+    {
+     "name": "Brass Bass"
+    },
+    {
+     "name": "Brass Section"
+    },
+    {
+     "name": "Brass Synthesizer"
+    },
+    {
+     "name": "Bronze Lur"
+    },
+    {
+     "name": "Brushed Cymbal"
+    },
+    {
+     "name": "Brushed Snare Drum"
+    },
+    {
+     "name": "Brushes"
+    },
+    {
+     "name": "Bugle"
+    },
+    {
+     "name": "Buisine"
+    },
+    {
+     "name": "Buk"
+    },
+    {
+     "name": "Bulbul Tarang"
+    },
+    {
+     "name": "Bullroarer"
+    },
+    {
+     "name": "Button Accordion"
+    },
+    {
+     "name": "Buzuk"
+    },
+    {
+     "name": "C Melody Saxophone",
+     "aka": [
+      "C Tenor Saxophone"
+     ]
+    },
+    {
+     "name": "Cabasa"
+    },
+    {
+     "name": "Cabrette"
+    },
+    {
+     "name": "Çağlama"
+    },
+    {
+     "name": "Caixa"
+    },
+    {
+     "name": "Caja Vallenata"
+    },
+    {
+     "name": "Cajón",
+     "aka": [
+      "Box Drum"
+     ]
+    },
+    {
+     "name": "Calabash"
+    },
+    {
+     "name": "Calliope"
+    },
+    {
+     "name": "Cántaro"
+    },
+    {
+     "name": "Carillon"
+    },
+    {
+     "name": "Carnyx"
+    },
+    {
+     "name": "Castanets",
+     "aka": [
+      "Clackers",
+      "Palillos"
+     ]
+    },
+    {
+     "name": "Cavaquinho"
+    },
+    {
+     "name": "Caxixi"
+    },
+    {
+     "name": "Celesta",
+     "aka": [
+      "Celeste",
+      "Bell Piano"
+     ]
+    },
+    {
+     "name": "Cello",
+     "aka": [
+      "Violincello"
+     ]
+    },
+    {
+     "name": "Cello Da Spalla"
+    },
+    {
+     "name": "Celtic Harp"
+    },
+    {
+     "name": "Cembalet"
+    },
+    {
+     "name": "Ceterone"
+    },
+    {
+     "name": "Chácaras"
+    },
+    {
+     "name": "Chak'chas"
+    },
+    {
+     "name": "Chalumeau"
+    },
+    {
+     "name": "Chamber Organ"
+    },
+    {
+     "name": "Chamberlin"
+    },
+    {
+     "name": "Chapman Stick"
+    },
+    {
+     "name": "Charango"
+    },
+    {
+     "name": "Chimes"
+    },
+    {
+     "name": "Chin-Cello"
+    },
+    {
+     "name": "Ching-Dong"
+    },
+    {
+     "name": "Chirimía"
+    },
+    {
+     "name": "Chord Harmonica"
+    },
+    {
+     "name": "Chromatic Button Accordion"
+    },
+    {
+     "name": "Chromatic Harmonica"
+    },
+    {
+     "name": "Çifteli"
+    },
+    {
+     "name": "Cigar Box Guitar"
+    },
+    {
+     "name": "Cimbalom"
+    },
+    {
+     "name": "Cimbasso"
+    },
+    {
+     "name": "Cimpoi"
+    },
+    {
+     "name": "Cittern"
+    },
+    {
+     "name": "Clapsticks"
+    },
+    {
+     "name": "Clarinet"
+    },
+    {
+     "name": "Clarion"
+    },
+    {
+     "name": "Clàrsach",
+     "aka": [
+      "Celtic Harp",
+      "Cláirseach",
+      "Irish Harp",
+      "Telenn",
+      "Telyn"
+     ]
+    },
+    {
+     "name": "Clash Cymbals"
+    },
+    {
+     "name": "Classical Guitar"
+    },
+    {
+     "name": "Claves"
+    },
+    {
+     "name": "Clavichord"
+    },
+    {
+     "name": "Clavicytherium"
+    },
+    {
+     "name": "Clavinet"
+    },
+    {
+     "name": "Claviola"
+    },
+    {
+     "name": "Clavioline"
+    },
+    {
+     "name": "Claviorgan"
+    },
+    {
+     "name": "Cò Ke"
+    },
+    {
+     "name": "Comb"
+    },
+    {
+     "name": "Computer"
+    },
+    {
+     "name": "Concertina"
+    },
+    {
+     "name": "Conch"
+    },
+    {
+     "name": "Công"
+    },
+    {
+     "name": "Congas"
+    },
+    {
+     "name": "Contra-Alto Clarinet"
+    },
+    {
+     "name": "Contrabass Banjo"
+    },
+    {
+     "name": "Contrabass Clarinet",
+     "aka": [
+      "Double Bass Clarinet"
+     ]
+    },
+    {
+     "name": "Contrabass Flute"
+    },
+    {
+     "name": "Contrabass Recorder"
+    },
+    {
+     "name": "Contrabass Sarrusophone"
+    },
+    {
+     "name": "Contrabass Saxophone"
+    },
+    {
+     "name": "Contrabass Trombone"
+    },
+    {
+     "name": "Contrabassoon",
+     "aka": [
+      "Double Bassoon"
+     ]
+    },
+    {
+     "name": "Cornamuse"
+    },
+    {
+     "name": "Cornemuse du Centre",
+     "aka": [
+      "Musette du Centre"
+     ]
+    },
+    {
+     "name": "Cornet"
+    },
+    {
+     "name": "Cornett"
+    },
+    {
+     "name": "Cornettino",
+     "aka": [
+      "Cornettini",
+      "Diskant Zink (German)",
+      "Quart-Zink (German)"
+     ]
+    },
+    {
+     "name": "Cowbell"
+    },
+    {
+     "name": "Cowhorn"
+    },
+    {
+     "name": "Craviola"
+    },
+    {
+     "name": "Cretan Lyra"
+    },
+    {
+     "name": "Cristal Baschet"
+    },
+    {
+     "name": "Crotales"
+    },
+    {
+     "name": "Crumhorn"
+    },
+    {
+     "name": "Crwth"
+    },
+    {
+     "name": "Cuatro"
+    },
+    {
+     "name": "Cuatro Puertorriqueño"
+    },
+    {
+     "name": "Cuíca"
+    },
+    {
+     "name": "Cultrum"
+    },
+    {
+     "name": "Cümbüş"
+    },
+    {
+     "name": "Cura"
+    },
+    {
+     "name": "Cymbal",
+     "note": "Request New Role: Bell Cymbal, China Cymbal, Crash Cymbal, Crash/Ride Cymbal, Flat Ride Cymbal, Sizzle Cymbal, Splash Cymbal, Swish Cymbal, Suspended Cymbal"
+    },
+    {
+     "name": "D Trumpet"
+    },
+    {
+     "name": "Daegeum",
+     "aka": [
+      "대금",
+      "大笒",
+      "Taegŭm"
+     ]
+    },
+    {
+     "name": "Daf",
+     "aka": [
+      "Dâyere"
+     ]
+    },
+    {
+     "name": "Đàn Bầu"
+    },
+    {
+     "name": "Đàn Nhị",
+     "aka": [
+      "Đàn Cò"
+     ]
+    },
+    {
+     "name": "Đàn Nguyệt",
+     "aka": [
+      "Nguyệt cầm"
+     ]
+    },
+    {
+     "name": "Đàn Tam Thập Lục"
+    },
+    {
+     "name": "Đàn Tranh"
+    },
+    {
+     "name": "Đàn Tứ"
+    },
+    {
+     "name": "Đàn Tỳ Bà"
+    },
+    {
+     "name": "Danso",
+     "aka": [
+      "단소",
+      "短簫",
+      "Tanso"
+     ]
+    },
+    {
+     "name": "Darbuka"
+    },
+    {
+     "name": "Davul",
+     "aka": [
+      "Tapan",
+      "Atabal",
+      "Tabl"
+     ]
+    },
+    {
+     "name": "Delay Pedal"
+    },
+    {
+     "name": "Dhol"
+    },
+    {
+     "name": "Dholak"
+    },
+    {
+     "name": "Diatonic Harmonica",
+     "aka": [
+      "Blues Harp"
+     ]
+    },
+    {
+     "name": "Didgeridoo"
+    },
+    {
+     "name": "Dikanza"
+    },
+    {
+     "name": "Dilruba"
+    },
+    {
+     "name": "Đing Buốt"
+    },
+    {
+     "name": "Đing Năm"
+    },
+    {
+     "name": "Đing Tăc Ta",
+     "aka": [
+      "Đihn Tăc Ta"
+     ]
+    },
+    {
+     "name": "Distortion Pedal"
+    },
+    {
+     "name": "Dizi"
+    },
+    {
+     "name": "Djembe",
+     "aka": [
+      "Jembe"
+     ]
+    },
+    {
+     "name": "Dobro"
+    },
+    {
+     "name": "Dohulla",
+     "aka": [
+      "Doholla",
+      "Bass Darabuka"
+     ]
+    },
+    {
+     "name": "Doira"
+    },
+    {
+     "name": "Dojo"
+    },
+    {
+     "name": "Dombra"
+    },
+    {
+     "name": "Domra"
+    },
+    {
+     "name": "Double Bass",
+     "aka": [
+      "Upright Bass",
+      "String Bass",
+      "Contrabass"
+     ]
+    },
+    {
+     "name": "Dramyin"
+    },
+    {
+     "name": "Drone Pedal"
+    },
+    {
+     "name": "Drum"
+    },
+    {
+     "name": "Drum Fills"
+    },
+    {
+     "name": "Drum Line"
+    },
+    {
+     "name": "Drum Loops"
+    },
+    {
+     "name": "Drum Machine"
+    },
+    {
+     "name": "Drum Pad"
+    },
+    {
+     "name": "Drum Synthesizer"
+    },
+    {
+     "name": "Drums"
+    },
+    {
+     "name": "Drymba"
+    },
+    {
+     "name": "Duck Call"
+    },
+    {
+     "name": "Dūdmaišis"
+    },
+    {
+     "name": "Duduk"
+    },
+    {
+     "name": "Dudy"
+    },
+    {
+     "name": "Dudy Podhalańskie",
+     "aka": [
+      "Koza (Poland)",
+      "Podhale Bagpipe"
+     ],
+     "note": "Note: Don't confuse with Koza (Ukrainian Bagpipe)"
+    },
+    {
+     "name": "Dudy Wielkopolskie"
+    },
+    {
+     "name": "Dulcian"
+    },
+    {
+     "name": "Dulcimer"
+    },
+    {
+     "name": "Dulcitone"
+    },
+    {
+     "name": "Dulzaina"
+    },
+    {
+     "name": "Dunun"
+    },
+    {
+     "name": "Dvoyanka"
+    },
+    {
+     "name": "E-Bow"
+    },
+    {
+     "name": "Echo Pedal"
+    },
+    {
+     "name": "Effects Pedal"
+    },
+    {
+     "name": "Eight-String Bass"
+    },
+    {
+     "name": "Electric Autoharp"
+    },
+    {
+     "name": "Electric Baritone Guitar"
+    },
+    {
+     "name": "Electric Bass"
+    },
+    {
+     "name": "Electric Bass Clarinet"
+    },
+    {
+     "name": "Electric Bass Guitar"
+    },
+    {
+     "name": "Electric Bass Trombone"
+    },
+    {
+     "name": "Electric Cello"
+    },
+    {
+     "name": "Electric Guitar"
+    },
+    {
+     "name": "Electric Harmonium"
+    },
+    {
+     "name": "Electric Harp"
+    },
+    {
+     "name": "Electric Harpsichord"
+    },
+    {
+     "name": "Electric Hurdy-Gurdy"
+    },
+    {
+     "name": "Electric Lap Steel Guitar"
+    },
+    {
+     "name": "Electric Mandolin"
+    },
+    {
+     "name": "Electric Marimba"
+    },
+    {
+     "name": "Electric Organ"
+    },
+    {
+     "name": "Electric Piano"
+    },
+    {
+     "name": "Electric Rothphone"
+    },
+    {
+     "name": "Electric Saxophone"
+    },
+    {
+     "name": "Electric Saz"
+    },
+    {
+     "name": "Electric Sitar"
+    },
+    {
+     "name": "Electric Slide Guitar"
+    },
+    {
+     "name": "Electric Soprano Saxophone"
+    },
+    {
+     "name": "Electric Trumpet"
+    },
+    {
+     "name": "Electric Ukulele"
+    },
+    {
+     "name": "Electric Upright Bass"
+    },
+    {
+     "name": "Electric Viola"
+    },
+    {
+     "name": "Electric Violin"
+    },
+    {
+     "name": "Electronic Drums"
+    },
+    {
+     "name": "Electronic Percussion"
+    },
+    {
+     "name": "Electronics",
+     "aka": [
+      "Sound Manipulation"
+     ]
+    },
+    {
+     "name": "Engalabi"
+    },
+    {
+     "name": "English Concertina"
+    },
+    {
+     "name": "English Flagolet"
+    },
+    {
+     "name": "English Horn",
+     "aka": [
+      "Cor Anglais"
+     ]
+    },
+    {
+     "name": "Erhu"
+    },
+    {
+     "name": "Esraj",
+     "aka": [
+      "Israj"
+     ]
+    },
+    {
+     "name": "Euphonium"
+    },
+    {
+     "name": "EWI"
+    },
+    {
+     "name": "Farfisa Organ"
+    },
+    {
+     "name": "Feedback Pedal"
+    },
+    {
+     "name": "Fiddle"
+    },
+    {
+     "name": "Fife"
+    },
+    {
+     "name": "Finger Snaps"
+    },
+    {
+     "name": "First Violin"
+    },
+    {
+     "name": "Fiscorn"
+    },
+    {
+     "name": "Five-String Banjo"
+    },
+    {
+     "name": "Five-String Bass"
+    },
+    {
+     "name": "Five-String Violin"
+    },
+    {
+     "name": "Flabiol"
+    },
+    {
+     "name": "Flageolet"
+    },
+    {
+     "name": "Flamenco Guitar"
+    },
+    {
+     "name": "Flanger Pedal"
+    },
+    {
+     "name": "Flexatone",
+     "aka": [
+      "Fleximetal"
+     ]
+    },
+    {
+     "name": "Floor Tom"
+    },
+    {
+     "name": "Flugabone"
+    },
+    {
+     "name": "Flugelhorn"
+    },
+    {
+     "name": "Fluier"
+    },
+    {
+     "name": "Flumpet"
+    },
+    {
+     "name": "Flute",
+     "aka": [
+      "Concert Flute",
+      "Western Concert Flute"
+     ]
+    },
+    {
+     "name": "Flûte D'amour",
+     "aka": [
+      "Mezzo-Soprano Flute"
+     ]
+    },
+    {
+     "name": "Flutina"
+    },
+    {
+     "name": "Foot Stomping",
+     "aka": [
+      "Clogging",
+      "Foot Tapping",
+      "Foot Taps",
+      "Podorythmie",
+      "Stomps"
+     ]
+    },
+    {
+     "name": "Footbass"
+    },
+    {
+     "name": "Fortepiano"
+    },
+    {
+     "name": "Frame Drum",
+     "aka": [
+      "Rahmentrommel (German)"
+     ]
+    },
+    {
+     "name": "French Horn"
+    },
+    {
+     "name": "Fretless Bass Guitar"
+    },
+    {
+     "name": "Fretless Guitar"
+    },
+    {
+     "name": "Friction Drum"
+    },
+    {
+     "name": "Frottoir"
+    },
+    {
+     "name": "Frula"
+    },
+    {
+     "name": "Fujara"
+    },
+    {
+     "name": "Fuzz Pedal"
+    },
+    {
+     "name": "Gadulka"
+    },
+    {
+     "name": "Gaida"
+    },
+    {
+     "name": "Gaita Asturiana"
+    },
+    {
+     "name": "Gaita De Boto"
+    },
+    {
+     "name": "Gaita Gallega"
+    },
+    {
+     "name": "Gaita Sanabresa"
+    },
+    {
+     "name": "Gajdy"
+    },
+    {
+     "name": "Gambang"
+    },
+    {
+     "name": "Gamelan"
+    },
+    {
+     "name": "Ganzá"
+    },
+    {
+     "name": "Garklein Recorder"
+    },
+    {
+     "name": "Garmon"
+    },
+    {
+     "name": "Gayageum"
+    },
+    {
+     "name": "Gemshorn"
+    },
+    {
+     "name": "Gendèr"
+    },
+    {
+     "name": "Gendèr Barung"
+    },
+    {
+     "name": "Gendèr Panembung",
+     "aka": [
+      "Slenthem"
+     ]
+    },
+    {
+     "name": "Gendèr Panerus"
+    },
+    {
+     "name": "Gendèr Wayang"
+    },
+    {
+     "name": "Geomungo",
+     "aka": [
+      "거문고",
+      "현금",
+      "玄琴",
+      "Hyeongeum",
+      "Hyŏn'gŭm",
+      "Kŏmun'go"
+     ]
+    },
+    {
+     "name": "German Concertina"
+    },
+    {
+     "name": "Ghatam"
+    },
+    {
+     "name": "Ghaychak"
+    },
+    {
+     "name": "Ghungroo"
+    },
+    {
+     "name": "Gittern"
+    },
+    {
+     "name": "Gizmotron",
+     "aka": [
+      "Gizmo"
+     ]
+    },
+    {
+     "name": "Glass Harmonica",
+     "aka": [
+      "Glass Armonica",
+      "Glass Harmonium",
+      "Bowl Organ",
+      "Hydrocrytalophone",
+      "Armonica"
+     ]
+    },
+    {
+     "name": "Glass Harp"
+    },
+    {
+     "name": "Glockenspiel"
+    },
+    {
+     "name": "Goat Horn",
+     "aka": [
+      "Billy Goat Horn",
+      "Bockhorn (Swedish)",
+      "Bukkehorn (Norwegian)"
+     ]
+    },
+    {
+     "name": "Goblet Drum"
+    },
+    {
+     "name": "Gong"
+    },
+    {
+     "name": "Gong Chime"
+    },
+    {
+     "name": "Gralla"
+    },
+    {
+     "name": "Grand Piano"
+    },
+    {
+     "name": "Great-Bass Rackett"
+    },
+    {
+     "name": "Great-Bass Recorder"
+    },
+    {
+     "name": "Great Highland Bagpipe"
+    },
+    {
+     "name": "Guacharaca"
+    },
+    {
+     "name": "Güira"
+    },
+    {
+     "name": "Güiro"
+    },
+    {
+     "name": "Guitalele"
+    },
+    {
+     "name": "Guitar"
+    },
+    {
+     "name": "Guitar Fills"
+    },
+    {
+     "name": "Guitar Loops"
+    },
+    {
+     "name": "Guitar Synthesizer"
+    },
+    {
+     "name": "Guitar Zither"
+    },
+    {
+     "name": "Guitaret"
+    },
+    {
+     "name": "Guitarra de Canya"
+    },
+    {
+     "name": "Guitarra Morisca"
+    },
+    {
+     "name": "Guitarro"
+    },
+    {
+     "name": "Guitarrón"
+    },
+    {
+     "name": "GuitarViol"
+    },
+    {
+     "name": "Guitorgan"
+    },
+    {
+     "name": "Gürio"
+    },
+    {
+     "name": "Gusle"
+    },
+    {
+     "name": "Gusli"
+    },
+    {
+     "name": "Gut String Acoustic Guitar"
+    },
+    {
+     "name": "Gut String Guitar"
+    },
+    {
+     "name": "Gutbucket"
+    },
+    {
+     "name": "Guzheng"
+    },
+    {
+     "name": "Gyil"
+    },
+    {
+     "name": "Haegeum"
+    },
+    {
+     "name": "Halldorophone"
+    },
+    {
+     "name": "Hammered Dulcimer"
+    },
+    {
+     "name": "Hand Drums"
+    },
+    {
+     "name": "Hand-Repique"
+    },
+    {
+     "name": "Handbell"
+    },
+    {
+     "name": "Handclaps",
+     "aka": [
+      "Clapping"
+     ]
+    },
+    {
+     "name": "Handpan"
+    },
+    {
+     "name": "Hang"
+    },
+    {
+     "name": "Hardanger Fiddle",
+     "note": "Hardingfele (Norwegian)"
+    },
+    {
+     "name": "Härjedalspipa",
+     "note": "Härjedalen Flute"
+    },
+    {
+     "name": "Harmonica",
+     "note": "French Harp, Mouth Harp, Gob Iron, Harpoon, Louisiana Saxophone, Mississippi Saxophone, Mouth Harmonica, Tin Sandwich"
+    },
+    {
+     "name": "Harmonium"
+    },
+    {
+     "name": "Harp"
+    },
+    {
+     "name": "Harp Synthesizer"
+    },
+    {
+     "name": "Harpejji"
+    },
+    {
+     "name": "Harpsichord"
+    },
+    {
+     "name": "Hawaiian Guitar"
+    },
+    {
+     "name": "Heckelphone"
+    },
+    {
+     "name": "Helicon"
+    },
+    {
+     "name": "Hi-hat"
+    },
+    {
+     "name": "Hichiriki"
+    },
+    {
+     "name": "High Strung Acoustic Guitar"
+    },
+    {
+     "name": "High Strung Electric Guitar"
+    },
+    {
+     "name": "High Strung Guitar"
+    },
+    {
+     "name": "Hmông Flute"
+    },
+    {
+     "name": "Horns"
+    },
+    {
+     "name": "Hotchiku"
+    },
+    {
+     "name": "Hue Puruhau"
+    },
+    {
+     "name": "Hue Puruwai"
+    },
+    {
+     "name": "Hulusi"
+    },
+    {
+     "name": "Hümmelchen"
+    },
+    {
+     "name": "Hurdy-Gurdy",
+     "aka": [
+      "Draailier",
+      "Ghironda",
+      "Vielle à Roue",
+      "Wheel Fiddle",
+      "Wheel Vielle",
+      "Zanfona"
+     ]
+    },
+    {
+     "name": "Idiophone"
+    },
+    {
+     "name": "Indian Harmonium",
+     "aka": [
+      "Hand Harmonium",
+      "Samvadini",
+      "Peti",
+      "Vaja"
+     ]
+    },
+    {
+     "name": "Instruments"
+    },
+    {
+     "name": "Irish Bouzouki"
+    },
+    {
+     "name": "Irish Dance"
+    },
+    {
+     "name": "Irish Flute",
+     "aka": [
+      "Wooden Flute"
+     ]
+    },
+    {
+     "name": "Jaggo"
+    },
+    {
+     "name": "Janggu",
+     "aka": [
+      "장고",
+      "장구",
+      "杖鼓",
+      "Janggo",
+      "Changgo"
+     ]
+    },
+    {
+     "name": "Jarana"
+    },
+    {
+     "name": "Jawbone"
+    },
+    {
+     "name": "Jew's Harp",
+     "aka": [
+      "Jaw Harp",
+      "Mouth Harp",
+      "Ozark Harp",
+      "Juice Harp"
+     ],
+     "note": "Request new Role: Ağız Kopuzu (Turkey), Angkuoch (Cambodia), Binayo (Nepal), Brumle (Czechoslovakia), Changu (Sindh), Đàn Môi (Vietnam), Doromb (Hungary), Drumla (Poland), Gewgaw/Guimbard (France), Guimbarda (Catalan), Gogona (Assam), Karinding (Sudanese), Marranzanu (Sicily), Maultrommel (Austria), Mukkuri (Japan), Parmupill (Estonia), Temir Komuz (Kyrgyz), Trump (Scotland), Vargan (Russia)"
+    },
+    {
+     "name": "Joze",
+     "aka": [
+      "Djoza",
+      "Jawza",
+      "Joza"
+     ]
+    },
+    {
+     "name": "Jug"
+    },
+    {
+     "name": "K'lông Pút"
+    },
+    {
+     "name": "Kabosy"
+    },
+    {
+     "name": "Kagurabue"
+    },
+    {
+     "name": "Kalimba"
+    },
+    {
+     "name": "Kamancheh"
+    },
+    {
+     "name": "Kanjira",
+     "aka": [
+      "Khanjira",
+      "Khanjiri",
+      "Ganjira"
+     ]
+    },
+    {
+     "name": "Kantele"
+    },
+    {
+     "name": "Kanun",
+     "aka": [
+      "Qanun"
+     ]
+    },
+    {
+     "name": "Kaval"
+    },
+    {
+     "name": "Kawala",
+     "aka": [
+      "Salamiya"
+     ]
+    },
+    {
+     "name": "Kazoo"
+    },
+    {
+     "name": "Kemenche"
+    },
+    {
+     "name": "Kempul"
+    },
+    {
+     "name": "Kèn Bầu",
+     "aka": [
+      "Kèn Sona"
+     ]
+    },
+    {
+     "name": "Kèn Lá"
+    },
+    {
+     "name": "Kendang"
+    },
+    {
+     "name": "Keyboard Glockenspiel"
+    },
+    {
+     "name": "Keyboards",
+     "aka": [
+      "Electronic Keyboard"
+     ]
+    },
+    {
+     "name": "Keytar"
+    },
+    {
+     "name": "Khèn Mèo"
+    },
+    {
+     "name": "Khene",
+     "aka": [
+      "Kaen",
+      "Kehn",
+      "Khaen"
+     ]
+    },
+    {
+     "name": "Khishba",
+     "aka": [
+      "Khashaba"
+     ]
+    },
+    {
+     "name": "Khlui"
+    },
+    {
+     "name": "Ki Pah"
+    },
+    {
+     "name": "Kick Drum"
+    },
+    {
+     "name": "Kithara",
+     "aka": [
+      "Cithara"
+     ]
+    },
+    {
+     "name": "Kkwaenggwari",
+     "aka": [
+      "꽹과리"
+     ]
+    },
+    {
+     "name": "Klong Khaek"
+    },
+    {
+     "name": "Kōauau"
+    },
+    {
+     "name": "Kōauau Ponga Ihu"
+    },
+    {
+     "name": "Kobyz"
+    },
+    {
+     "name": "Kokle",
+     "aka": [
+      "Kūkļa",
+      "Kūkļas",
+      "Kūkļe",
+      "Kūkļes",
+      "Kūkļis"
+     ]
+    },
+    {
+     "name": "Kokyū"
+    },
+    {
+     "name": "Kolintang"
+    },
+    {
+     "name": "Komuz",
+     "aka": [
+      "Qumoz",
+      "Qomus",
+      "Gopuz",
+      "Huobusi 火不思",
+      "Hebisi 和必斯",
+      "Hunbusi 渾不似",
+      "Kopuz",
+      "Sugudu 苏古笃"
+     ]
+    },
+    {
+     "name": "Kora"
+    },
+    {
+     "name": "Kortholt"
+    },
+    {
+     "name": "Koto"
+    },
+    {
+     "name": "Koza (Ukrainian Bagpipe)",
+     "note": "Note: Don't confuse with Dudy Podhalańskie, a Polish bagpipe that is sometimes called Koza"
+    },
+    {
+     "name": "Kozioł"
+    },
+    {
+     "name": "Krakeb"
+    },
+    {
+     "name": "Kravik Lyre"
+    },
+    {
+     "name": "Kulintang"
+    },
+    {
+     "name": "Laouto"
+    },
+    {
+     "name": "Lap Steel Guitar"
+    },
+    {
+     "name": "Laúd"
+    },
+    {
+     "name": "Launeddas"
+    },
+    {
+     "name": "Lead Guitar"
+    },
+    {
+     "name": "Limbe"
+    },
+    {
+     "name": "Lion's Roar"
+    },
+    {
+     "name": "Loriman Pipe"
+    },
+    {
+     "name": "Low Whistle",
+     "aka": [
+      "Concert Whistle"
+     ]
+    },
+    {
+     "name": "Lumatone"
+    },
+    {
+     "name": "Lur"
+    },
+    {
+     "name": "Lute"
+    },
+    {
+     "name": "Luthéal"
+    },
+    {
+     "name": "Lyre"
+    },
+    {
+     "name": "Lyricon"
+    },
+    {
+     "name": "Madal"
+    },
+    {
+     "name": "Magyar Duda"
+    },
+    {
+     "name": "Mallets"
+    },
+    {
+     "name": "Mando Guitar"
+    },
+    {
+     "name": "Mandobass"
+    },
+    {
+     "name": "Mandocello"
+    },
+    {
+     "name": "Mandola"
+    },
+    {
+     "name": "Mandolin"
+    },
+    {
+     "name": "Mandora"
+    },
+    {
+     "name": "Maracas",
+     "aka": [
+      "Chac-Chac"
+     ]
+    },
+    {
+     "name": "Mariachi Guitar"
+    },
+    {
+     "name": "Mariachis"
+    },
+    {
+     "name": "Marimba"
+    },
+    {
+     "name": "Marímbula"
+    },
+    {
+     "name": "Mark Tree"
+    },
+    {
+     "name": "Marxophone"
+    },
+    {
+     "name": "Mashak",
+     "aka": [
+      "Bin Baji",
+      "Masak",
+      "Mashak Bin",
+      "Meshek",
+      "Mishek",
+      "Moshaq",
+      "Moshug",
+      "Moshuq",
+      "Mushak Baja"
+     ]
+    },
+    {
+     "name": "Mbira"
+    },
+    {
+     "name": "Megaphone"
+    },
+    {
+     "name": "Mellophone"
+    },
+    {
+     "name": "Mellotron"
+    },
+    {
+     "name": "Mellotron Flute"
+    },
+    {
+     "name": "Melodeon",
+     "aka": [
+      "Diatonic Button Accordion"
+     ]
+    },
+    {
+     "name": "Melodica",
+     "aka": [
+      "Pianica",
+      "Blow-Organ",
+      "Key-Flute"
+     ]
+    },
+    {
+     "name": "Melodion"
+    },
+    {
+     "name": "Melophone"
+    },
+    {
+     "name": "Metallophone"
+    },
+    {
+     "name": "Metronome"
+    },
+    {
+     "name": "Mey"
+    },
+    {
+     "name": "MIDI Controller"
+    },
+    {
+     "name": "Mijwiz"
+    },
+    {
+     "name": "Mizmar"
+    },
+    {
+     "name": "Mizwad",
+     "aka": [
+      "Mezoued",
+      "Mizwid",
+      "مِزْود",
+      "مَزاود",
+      "Mazāwid"
+     ]
+    },
+    {
+     "name": "Mô"
+    },
+    {
+     "name": "Moraharpa"
+    },
+    {
+     "name": "Morin Khuur"
+    },
+    {
+     "name": "Morsing"
+    },
+    {
+     "name": "Mouth Organ"
+    },
+    {
+     "name": "Mridangam"
+    },
+    {
+     "name": "Murchunga"
+    },
+    {
+     "name": "Musette"
+    },
+    {
+     "name": "Musette de Cour"
+    },
+    {
+     "name": "Music Box"
+    },
+    {
+     "name": "Musical Bow"
+    },
+    {
+     "name": "Musical Leaf",
+     "aka": [
+      "Gum Leaf",
+      "Leaflute",
+      "Leafophone",
+      "Leaf Whistle"
+     ]
+    },
+    {
+     "name": "Musical Saw"
+    },
+    {
+     "name": "Nakers"
+    },
+    {
+     "name": "Não Bạt"
+    },
+    {
+     "name": "Native American Flute"
+    },
+    {
+     "name": "Natural Horn"
+    },
+    {
+     "name": "Natural Trumpet"
+    },
+    {
+     "name": "Ney"
+    },
+    {
+     "name": "Ney-Anbān"
+    },
+    {
+     "name": "Ngoni"
+    },
+    {
+     "name": "Nguru"
+    },
+    {
+     "name": "Noises"
+    },
+    {
+     "name": "Nose Flute"
+    },
+    {
+     "name": "Nyckelharpa"
+    },
+    {
+     "name": "Nylon String Acoustic Bass Guitar"
+    },
+    {
+     "name": "Nylon String Acoustic Guitar"
+    },
+    {
+     "name": "Nylon String Guitar"
+    },
+    {
+     "name": "Oboe"
+    },
+    {
+     "name": "Ocarina"
+    },
+    {
+     "name": "Octave Electric Guitar"
+    },
+    {
+     "name": "Octave Harmonica"
+    },
+    {
+     "name": "Octave Mandolin"
+    },
+    {
+     "name": "Octave Viola"
+    },
+    {
+     "name": "Octoban"
+    },
+    {
+     "name": "Octophone"
+    },
+    {
+     "name": "Odaiko"
+    },
+    {
+     "name": "Olifant",
+     "aka": [
+      "Oliphant"
+     ]
+    },
+    {
+     "name": "Omnichord"
+    },
+    {
+     "name": "Ondes Martenot",
+     "aka": [
+      "Ondes Musicales"
+     ]
+    },
+    {
+     "name": "Ondioline"
+    },
+    {
+     "name": "Organ"
+    },
+    {
+     "name": "Orpharion"
+    },
+    {
+     "name": "Oscillator"
+    },
+    {
+     "name": "Oud"
+    },
+    {
+     "name": "Outi"
+    },
+    {
+     "name": "Pads"
+    },
+    {
+     "name": "Pakhavaj"
+    },
+    {
+     "name": "Pan Flute",
+     "aka": [
+      "Panpipes",
+      "Syrinx"
+     ]
+    },
+    {
+     "name": "Pandeiro"
+    },
+    {
+     "name": "Pandeirola"
+    },
+    {
+     "name": "Pang Gu Ly Hu Hmông"
+    },
+    {
+     "name": "Paraguayan Harp"
+    },
+    {
+     "name": "Paranku"
+    },
+    {
+     "name": "Parlor Piano"
+    },
+    {
+     "name": "Pedabro"
+    },
+    {
+     "name": "Pedal Harp",
+     "aka": [
+      "Concert Harp"
+     ]
+    },
+    {
+     "name": "Pedal Steel Guitar"
+    },
+    {
+     "name": "Pedalboard"
+    },
+    {
+     "name": "Pedals"
+    },
+    {
+     "name": "Percussion"
+    },
+    {
+     "name": "Phách"
+    },
+    {
+     "name": "Phaser Pedal"
+    },
+    {
+     "name": "Philicorda"
+    },
+    {
+     "name": "Phin"
+    },
+    {
+     "name": "Piano",
+     "aka": [
+      "Acoustic Piano"
+     ]
+    },
+    {
+     "name": "Piano Accordion"
+    },
+    {
+     "name": "Pibgorn"
+    },
+    {
+     "name": "Piccolo"
+    },
+    {
+     "name": "Piccolo Bass"
+    },
+    {
+     "name": "Piccolo Flute"
+    },
+    {
+     "name": "Piccolo Trumpet"
+    },
+    {
+     "name": "Pipa"
+    },
+    {
+     "name": "Pipe"
+    },
+    {
+     "name": "Pipe Organ"
+    },
+    {
+     "name": "Pixiephone"
+    },
+    {
+     "name": "Player Piano"
+    },
+    {
+     "name": "Pocket Piano"
+    },
+    {
+     "name": "Pocket Saxophone"
+    },
+    {
+     "name": "Pocket Trumpet"
+    },
+    {
+     "name": "Porotiti"
+    },
+    {
+     "name": "Portative Organ"
+    },
+    {
+     "name": "Portuguese Guitar"
+    },
+    {
+     "name": "Positive Organ",
+     "aka": [
+      "Chair Organ",
+      "Positif",
+      "Positif Organ",
+      "Positiv",
+      "Positiv Organ",
+      "Positive",
+      "Portable Organ"
+     ]
+    },
+    {
+     "name": "Prempensua"
+    },
+    {
+     "name": "Prepared Piano"
+    },
+    {
+     "name": "Psaltery",
+     "aka": [
+      "Psalterion"
+     ]
+    },
+    {
+     "name": "Pump Organ",
+     "aka": [
+      "Pedal Harmonium"
+     ]
+    },
+    {
+     "name": "Pūkaea"
+    },
+    {
+     "name": "Pūmotomoto"
+    },
+    {
+     "name": "Pūpakapaka"
+    },
+    {
+     "name": "Pūrerehua"
+    },
+    {
+     "name": "Pūtātara"
+    },
+    {
+     "name": "Putipù",
+     "aka": [
+      "Caccavella",
+      "Puti-Puti",
+      "Pignato",
+      "Cute-Cute",
+      "Bufù",
+      "Cupa-Cupa"
+     ]
+    },
+    {
+     "name": "Pūtōrino"
+    },
+    {
+     "name": "Qanun"
+    },
+    {
+     "name": "Qilaut",
+     "aka": [
+      "Inuit Drum",
+      "Qilaun",
+      "Qilauti",
+      "Qulaat (Greenland)"
+     ]
+    },
+    {
+     "name": "Quart-Bass Rackett"
+    },
+    {
+     "name": "Quart-Bass Recorder"
+    },
+    {
+     "name": "Quena",
+     "aka": [
+      "Quienacho",
+      "Kenacho"
+     ]
+    },
+    {
+     "name": "Quenacho"
+    },
+    {
+     "name": "Quinto"
+    },
+    {
+     "name": "Quray"
+    },
+    {
+     "name": "Rabeca"
+    },
+    {
+     "name": "Rackett",
+     "aka": [
+      "Cervelas",
+      "Raggett",
+      "Renaissance Rackett",
+      "Sausage Bassoon"
+     ]
+    },
+    {
+     "name": "Rainstick"
+    },
+    {
+     "name": "Ranat Ek"
+    },
+    {
+     "name": "Ratchet"
+    },
+    {
+     "name": "Rattle"
+    },
+    {
+     "name": "Rauschpfeiffe"
+    },
+    {
+     "name": "Ravanahatha",
+     "aka": [
+      "Ravanhatta",
+      "Rawanhattha",
+      "Ravanastron",
+      "Ravana Hasta Veena"
+     ]
+    },
+    {
+     "name": "Rebab"
+    },
+    {
+     "name": "Rebec"
+    },
+    {
+     "name": "Reco-reco"
+    },
+    {
+     "name": "Recorder (Woodwind)"
+    },
+    {
+     "name": "Reed Organ"
+    },
+    {
+     "name": "Reed Pipe"
+    },
+    {
+     "name": "Reeds"
+    },
+    {
+     "name": "Regal"
+    },
+    {
+     "name": "Repinique"
+    },
+    {
+     "name": "Requinto Guitar"
+    },
+    {
+     "name": "Resonator Guitar"
+    },
+    {
+     "name": "Reverb Pedal"
+    },
+    {
+     "name": "Rhythm Guitar"
+    },
+    {
+     "name": "Rhythm Section"
+    },
+    {
+     "name": "Ride Cymbal"
+    },
+    {
+     "name": "Riq"
+    },
+    {
+     "name": "Rondador"
+    },
+    {
+     "name": "Rōria"
+    },
+    {
+     "name": "Rothphone",
+     "aka": [
+      "Ròthfono (Italian)",
+      "Rothphon (German)",
+      "Rothaphone",
+      "Rothophone",
+      "Saxrusofono",
+      "Saxsarrusophone"
+     ]
+    },
+    {
+     "name": "Rototom"
+    },
+    {
+     "name": "Ruan"
+    },
+    {
+     "name": "Rubab"
+    },
+    {
+     "name": "Rubber Bridge Acoustic Guitar"
+    },
+    {
+     "name": "Rubber Bridge Baritone Guitar"
+    },
+    {
+     "name": "Rubber Bridge Guitar"
+    },
+    {
+     "name": "Sabar"
+    },
+    {
+     "name": "Sackbut"
+    },
+    {
+     "name": "Sampler"
+    },
+    {
+     "name": "Sanshin"
+    },
+    {
+     "name": "Sansula"
+    },
+    {
+     "name": "Santoor"
+    },
+    {
+     "name": "Santur"
+    },
+    {
+     "name": "Sanxian",
+     "aka": [
+      "三弦"
+     ]
+    },
+    {
+     "name": "Sáo Mèo",
+     "aka": [
+      "Hmong Flute"
+     ]
+    },
+    {
+     "name": "Sáo Ôi"
+    },
+    {
+     "name": "Sarangi"
+    },
+    {
+     "name": "Sarod"
+    },
+    {
+     "name": "Sarrusophone"
+    },
+    {
+     "name": "Sáo Trúc"
+    },
+    {
+     "name": "Saw U"
+    },
+    {
+     "name": "Saxello"
+    },
+    {
+     "name": "Saxhorn"
+    },
+    {
+     "name": "Saxophone"
+    },
+    {
+     "name": "Saz",
+     "aka": [
+      "Bağlama"
+     ]
+    },
+    {
+     "name": "Sazbüş"
+    },
+    {
+     "name": "Scratches"
+    },
+    {
+     "name": "Second Violin"
+    },
+    {
+     "name": "Sequencer"
+    },
+    {
+     "name": "Serpent"
+    },
+    {
+     "name": "Setar"
+    },
+    {
+     "name": "Seven-String Acoustic Guitar"
+    },
+    {
+     "name": "Shaker",
+     "aka": [
+      "Chocalho"
+     ]
+    },
+    {
+     "name": "Shakuhachi"
+    },
+    {
+     "name": "Shamisen"
+    },
+    {
+     "name": "Shawm"
+    },
+    {
+     "name": "Shehnai",
+     "aka": [
+      "Sharnai",
+      "Saanai",
+      "Sahnai",
+      "Sanai",
+      "Serunai",
+      "Shahnai",
+      "Shanai",
+      "Shenai",
+      "Shenoy",
+      "Sahnai",
+      "Babol Basi"
+     ]
+    },
+    {
+     "name": "Shekere"
+    },
+    {
+     "name": "Sheng"
+    },
+    {
+     "name": "Shinobue"
+    },
+    {
+     "name": "Shō"
+    },
+    {
+     "name": "Shofar"
+    },
+    {
+     "name": "Shruti Box"
+    },
+    {
+     "name": "Shudraga"
+    },
+    {
+     "name": "Shvi"
+    },
+    {
+     "name": "Siku"
+    },
+    {
+     "name": "Simsimiyya"
+    },
+    {
+     "name": "Singing Bowl"
+    },
+    {
+     "name": "Sinh Tiên",
+     "aka": [
+      "Phạc Tiên"
+     ]
+    },
+    {
+     "name": "Sintir"
+    },
+    {
+     "name": "Siren"
+    },
+    {
+     "name": "Sistrum"
+    },
+    {
+     "name": "Sitar"
+    },
+    {
+     "name": "Six-String Bass"
+    },
+    {
+     "name": "Six-String Bass Guitar"
+    },
+    {
+     "name": "Six-String Guitar"
+    },
+    {
+     "name": "Six-String Electric Guitar"
+    },
+    {
+     "name": "Slapstick"
+    },
+    {
+     "name": "Sleigh Bells"
+    },
+    {
+     "name": "Slentho"
+    },
+    {
+     "name": "Slide Guitar"
+    },
+    {
+     "name": "Slide Saxophone"
+    },
+    {
+     "name": "Slide Trumpet",
+     "aka": [
+      "Soprano Trombone",
+      "Slide Cornet"
+     ]
+    },
+    {
+     "name": "Slide Whistle"
+    },
+    {
+     "name": "Slit Drum",
+     "aka": [
+      "Slit Gong"
+     ]
+    },
+    {
+     "name": "Snare Drum"
+    },
+    {
+     "name": "Song Loan (Percussion)"
+    },
+    {
+     "name": "Sopilka"
+    },
+    {
+     "name": "Sopranino Clarinet",
+     "aka": [
+      "E-Flat Clarinet"
+     ]
+    },
+    {
+     "name": "Sopranino Rauschpfeife"
+    },
+    {
+     "name": "Sopranino Recorder"
+    },
+    {
+     "name": "Sopranino Saxophone"
+    },
+    {
+     "name": "Soprano Chalumaeu"
+    },
+    {
+     "name": "Soprano Clarinet"
+    },
+    {
+     "name": "Soprano Cornet"
+    },
+    {
+     "name": "Soprano Cornamuse"
+    },
+    {
+     "name": "Soprano Crumhorn"
+    },
+    {
+     "name": "Soprano Curtal"
+    },
+    {
+     "name": "Soprano Dulcian"
+    },
+    {
+     "name": "Soprano Gemshorn"
+    },
+    {
+     "name": "Soprano Hurdy-Gurdy"
+    },
+    {
+     "name": "Soprano Rauschpfeife"
+    },
+    {
+     "name": "Soprano Recorder",
+     "aka": [
+      "Descant Recorder"
+     ]
+    },
+    {
+     "name": "Soprano Sackbut"
+    },
+    {
+     "name": "Soprano Sarrusophone"
+    },
+    {
+     "name": "Soprano Saxophone"
+    },
+    {
+     "name": "Soprano Shawm"
+    },
+    {
+     "name": "Sound Effects",
+     "aka": [
+      "Effects on Discogs"
+     ]
+    },
+    {
+     "name": "Soundscape"
+    },
+    {
+     "name": "Sousaphone"
+    },
+    {
+     "name": "Spanish Guitar"
+    },
+    {
+     "name": "Spinet"
+    },
+    {
+     "name": "Spoons"
+    },
+    {
+     "name": "Spring Drum"
+    },
+    {
+     "name": "Steel Acoustic Guitar"
+    },
+    {
+     "name": "Steel Guitar"
+    },
+    {
+     "name": "Steelpan"
+    },
+    {
+     "name": "Stomp Box"
+    },
+    {
+     "name": "String Loops"
+    },
+    {
+     "name": "String Quartet"
+    },
+    {
+     "name": "String Quintet"
+    },
+    {
+     "name": "String Synthesizer",
+     "aka": [
+      "String Machine"
+     ]
+    },
+    {
+     "name": "Strings"
+    },
+    {
+     "name": "Stylophone"
+    },
+    {
+     "name": "Sub Bass"
+    },
+    {
+     "name": "Suka"
+    },
+    {
+     "name": "Suling"
+    },
+    {
+     "name": "Suona",
+     "aka": [
+      "Dida",
+      "Laba",
+      "Haidi"
+     ]
+    },
+    {
+     "name": "Surdo"
+    },
+    {
+     "name": "Swanee Whistle"
+    },
+    {
+     "name": "Swarmandal"
+    },
+    {
+     "name": "Symphonie"
+    },
+    {
+     "name": "Synth Pads"
+    },
+    {
+     "name": "Synthesizer"
+    },
+    {
+     "name": "T'rưng"
+    },
+    {
+     "name": "Tabla"
+    },
+    {
+     "name": "Tabor",
+     "aka": [
+      "Tabour",
+      "Tabret",
+      "Tabwrdd Welsh",
+      "Tambour de Provence",
+      "Provençal Tambourin",
+      "Catalan Tamborí"
+     ]
+    },
+    {
+     "name": "Tack Piano"
+    },
+    {
+     "name": "Taepyeongso"
+    },
+    {
+     "name": "Taiko",
+     "aka": [
+      "Wadaiko",
+      "Taiko Drum"
+     ]
+    },
+    {
+     "name": "Taishōgoto"
+    },
+    {
+     "name": "Talharpa",
+     "aka": [
+      "Tagelharpa",
+      "Hiiu Kannel",
+      "Stråkharpa"
+     ]
+    },
+    {
+     "name": "Talk Box"
+    },
+    {
+     "name": "Talking Drum"
+    },
+    {
+     "name": "Tam Ảm"
+    },
+    {
+     "name": "Tam-Tam"
+    },
+    {
+     "name": "Tambora"
+    },
+    {
+     "name": "TamborI"
+    },
+    {
+     "name": "Tamborim"
+    },
+    {
+     "name": "Tambourine"
+    },
+    {
+     "name": "Tambura"
+    },
+    {
+     "name": "Tamburica"
+    },
+    {
+     "name": "Tan-Tan"
+    },
+    {
+     "name": "Tangent Piano"
+    },
+    {
+     "name": "Tannerin"
+    },
+    {
+     "name": "Tap Dance"
+    },
+    {
+     "name": "Tar (Lute)"
+    },
+    {
+     "name": "Tar Drum"
+    },
+    {
+     "name": "Tárogató"
+    },
+    {
+     "name": "Te Kū"
+    },
+    {
+     "name": "Tea Chest Bass"
+    },
+    {
+     "name": "Telenka",
+     "aka": [
+      "Теленка (Ukrainian)",
+      "Telynka",
+      "Tylynka"
+     ]
+    },
+    {
+     "name": "Temple Blocks"
+    },
+    {
+     "name": "Tenor Banjo"
+    },
+    {
+     "name": "Tenor Cornett"
+    },
+    {
+     "name": "Tenor Crumhorn"
+    },
+    {
+     "name": "Tenor Curtal"
+    },
+    {
+     "name": "Tenor Dulcian"
+    },
+    {
+     "name": "Tenor Flute"
+    },
+    {
+     "name": "Tenor Gemshorn"
+    },
+    {
+     "name": "Tenor Guitar"
+    },
+    {
+     "name": "Tenor Hurdy-Gurdy"
+    },
+    {
+     "name": "Tenor Kortholt"
+    },
+    {
+     "name": "Tenor Rackett"
+    },
+    {
+     "name": "Tenor Recorder"
+    },
+    {
+     "name": "Tenor Rothphone"
+    },
+    {
+     "name": "Tenor Sackbut"
+    },
+    {
+     "name": "Tenor Sarrusophone"
+    },
+    {
+     "name": "Tenor Saxophone"
+    },
+    {
+     "name": "Tenor Shawm"
+    },
+    {
+     "name": "Tenor Trombone"
+    },
+    {
+     "name": "Tenor Viol"
+    },
+    {
+     "name": "Tenora"
+    },
+    {
+     "name": "Thavil"
+    },
+    {
+     "name": "Theorbo",
+     "aka": [
+      "Chitarrone"
+     ]
+    },
+    {
+     "name": "Theremin"
+    },
+    {
+     "name": "Three-Hole Pipe"
+    },
+    {
+     "name": "Timbales",
+     "aka": [
+      "Pailas"
+     ]
+    },
+    {
+     "name": "Timbau",
+     "aka": [
+      "Brazilian Timbau",
+      "Timba",
+      "Timbal"
+     ]
+    },
+    {
+     "name": "Timpani",
+     "aka": [
+      "Kettle Drums"
+     ]
+    },
+    {
+     "name": "Timple"
+    },
+    {
+     "name": "Tin Whistle",
+     "aka": [
+      "Penny Whistle"
+     ]
+    },
+    {
+     "name": "Tiple",
+     "aka": [
+      "Tipple"
+     ]
+    },
+    {
+     "name": "Tlapitzalli"
+    },
+    {
+     "name": "Tololoche"
+    },
+    {
+     "name": "Tom-Tom"
+    },
+    {
+     "name": "Tombak",
+     "aka": [
+      "Tonbak",
+      "Zarb",
+      "Dombak",
+      "Donbak"
+     ]
+    },
+    {
+     "name": "Torpedo"
+    },
+    {
+     "name": "Touch Guitar"
+    },
+    {
+     "name": "Tovshuur"
+    },
+    {
+     "name": "Toy Accordion"
+    },
+    {
+     "name": "Toy Drums"
+    },
+    {
+     "name": "Toy Guitar"
+    },
+    {
+     "name": "Toy Harp"
+    },
+    {
+     "name": "Toy Instruments"
+    },
+    {
+     "name": "Toy Organ"
+    },
+    {
+     "name": "Toy Piano"
+    },
+    {
+     "name": "Toy Saxophone"
+    },
+    {
+     "name": "Toy Tuba"
+    },
+    {
+     "name": "Tràm Plè"
+    },
+    {
+     "name": "Trắng Jâu"
+    },
+    {
+     "name": "Trắng Lu"
+    },
+    {
+     "name": "Transverse Flute"
+    },
+    {
+     "name": "Trautonium"
+    },
+    {
+     "name": "Treble Rebec"
+    },
+    {
+     "name": "Treble Viol"
+    },
+    {
+     "name": "Trembita"
+    },
+    {
+     "name": "Tres"
+    },
+    {
+     "name": "Triangle"
+    },
+    {
+     "name": "Tremolo Harmonica"
+    },
+    {
+     "name": "Tricórdio",
+     "aka": [
+      "Tricordia",
+      "Trichordia",
+      "Mandriola"
+     ]
+    },
+    {
+     "name": "Trikiti"
+    },
+    {
+     "name": "Tromba Marina"
+    },
+    {
+     "name": "Trombone"
+    },
+    {
+     "name": "Trompeta"
+    },
+    {
+     "name": "Trống Bông"
+    },
+    {
+     "name": "Trumpet"
+    },
+    {
+     "name": "Trutruca"
+    },
+    {
+     "name": "Tuba"
+    },
+    {
+     "name": "Tubular Bells"
+    },
+    {
+     "name": "Tulum"
+    },
+    {
+     "name": "Tumbi",
+     "aka": [
+      "Toombi",
+      "Tumba",
+      "Toomba"
+     ]
+    },
+    {
+     "name": "Tuner"
+    },
+    {
+     "name": "Tungehorn",
+     "aka": [
+      "Tongue Horn"
+     ]
+    },
+    {
+     "name": "Tungna"
+    },
+    {
+     "name": "Tungso",
+     "aka": [
+      "퉁소",
+      "洞簫",
+      "Tongso"
+     ]
+    },
+    {
+     "name": "Turntables"
+    },
+    {
+     "name": "Twelve-String Acoustic Baritone Guitar"
+    },
+    {
+     "name": "Twelve-String Acoustic Guitar"
+    },
+    {
+     "name": "Twelve-String Bass Guitar"
+    },
+    {
+     "name": "Twelve-String Electric Guitar"
+    },
+    {
+     "name": "Twelve-String Guitar"
+    },
+    {
+     "name": "Twelve-String Slide Guitar"
+    },
+    {
+     "name": "Txalaparta"
+    },
+    {
+     "name": "Udu",
+     "aka": [
+      "Udu Drum"
+     ]
+    },
+    {
+     "name": "Uilleann Pipes"
+    },
+    {
+     "name": "Ukulele"
+    },
+    {
+     "name": "Upright Piano"
+    },
+    {
+     "name": "Valiha"
+    },
+    {
+     "name": "Valve Trombone"
+    },
+    {
+     "name": "Vibrachime"
+    },
+    {
+     "name": "Vibrandoneon"
+    },
+    {
+     "name": "Vibraphone"
+    },
+    {
+     "name": "Vibraslap"
+    },
+    {
+     "name": "Vielle"
+    },
+    {
+     "name": "Vietnamese Guitar"
+    },
+    {
+     "name": "Vihuela"
+    },
+    {
+     "name": "Viol",
+     "aka": [
+      "Viola da gamba",
+      "Gamba"
+     ]
+    },
+    {
+     "name": "Viola"
+    },
+    {
+     "name": "Viola Braguesa"
+    },
+    {
+     "name": "Viola Caipira"
+    },
+    {
+     "name": "Violin"
+    },
+    {
+     "name": "Violone"
+    },
+    {
+     "name": "Virginals"
+    },
+    {
+     "name": "Vocoder"
+    },
+    {
+     "name": "Wadaiko"
+    },
+    {
+     "name": "Wah-Wah Pedal"
+    },
+    {
+     "name": "Washboard"
+    },
+    {
+     "name": "Washtub Bass"
+    },
+    {
+     "name": "Waterphone"
+    },
+    {
+     "name": "Wheelharp"
+    },
+    {
+     "name": "Whip"
+    },
+    {
+     "name": "Whirly Tube"
+    },
+    {
+     "name": "Whistle"
+    },
+    {
+     "name": "White Noise Generator"
+    },
+    {
+     "name": "Willow Flute",
+     "aka": [
+      "Kārkla Stabule (Latvian)",
+      "Pajupilli (Finnish)",
+      "Pitkähuilu (Finnish)",
+      "Sälgflöjt (Swedish)",
+      "Sälgpipa (Swedish)",
+      "Sallow Flute",
+      "Seljefløyte (Norwegian)",
+      "Švilpynė Lithuanian"
+     ]
+    },
+    {
+     "name": "Wind Chime"
+    },
+    {
+     "name": "Wind Harp"
+    },
+    {
+     "name": "Wind Instrument"
+    },
+    {
+     "name": "Wind Machine"
+    },
+    {
+     "name": "Wood Block"
+    },
+    {
+     "name": "Woodwind"
+    },
+    {
+     "name": "Xalam",
+     "aka": [
+      "Khalam"
+     ]
+    },
+    {
+     "name": "Xiao"
+    },
+    {
+     "name": "Xylophone",
+     "aka": [
+      "Claquebois (French)"
+     ]
+    },
+    {
+     "name": "Xylorimba"
+    },
+    {
+     "name": "Yangqin"
+    },
+    {
+     "name": "Yatga"
+    },
+    {
+     "name": "Yoochin"
+    },
+    {
+     "name": "Zabumba"
+    },
+    {
+     "name": "Zhaleika",
+     "aka": [
+      "Bryolka",
+      "Duda",
+      "Fletnya",
+      "Pishchelka",
+      "Rizhok",
+      "Sopel’",
+      "Zgaleyka",
+      "Zhalijka",
+      "Zhalomeika"
+     ]
+    },
+    {
+     "name": "Zills",
+     "aka": [
+      "Zils",
+      "Sāgāt",
+      "Finger Cymbal/s"
+     ]
+    },
+    {
+     "name": "Zither"
+    },
+    {
+     "name": "Złóbcoki"
+    },
+    {
+     "name": "Zurna"
+    }
+   ]
+  },
+  {
+   "section": "Additional Roles",
+   "roles": [
+    {
+     "name": "Additional Arranger"
+    },
+    {
+     "name": "Additional Horn Arranger"
+    },
+    {
+     "name": "Additional Keyboards Arranger"
+    },
+    {
+     "name": "Additional String Arranger"
+    },
+    {
+     "name": "Additional Vocal Arranger"
+    },
+    {
+     "name": "Additional Production",
+     "aka": [
+      "Additional Producer"
+     ]
+    },
+    {
+     "name": "Additional Vocal Production"
+    },
+    {
+     "name": "Additional Bass Programming"
+    },
+    {
+     "name": "Additional Drum Programming"
+    },
+    {
+     "name": "Additional Keyboard Programming"
+    },
+    {
+     "name": "Additional Piano Programming"
+    },
+    {
+     "name": "Additional Programming"
+    },
+    {
+     "name": "Additional Rhythm Programming"
+    },
+    {
+     "name": "Additional Synthesizer Programming"
+    },
+    {
+     "name": "Additional Audio Editing"
+    },
+    {
+     "name": "Additional Drum Engineering"
+    },
+    {
+     "name": "Additional Drum Sequencing"
+    },
+    {
+     "name": "Additional Engineering"
+    },
+    {
+     "name": "Additional Guitar Engineering"
+    },
+    {
+     "name": "Additional Mastering"
+    },
+    {
+     "name": "Additional Mixing"
+    },
+    {
+     "name": "Additional Overdubs"
+    },
+    {
+     "name": "Additional Recording"
+    },
+    {
+     "name": "Additional Samples"
+    },
+    {
+     "name": "Additional Sequencer"
+    },
+    {
+     "name": "Additional Sequencing"
+    },
+    {
+     "name": "Additional Sound Design"
+    },
+    {
+     "name": "Additional Strings Recording"
+    },
+    {
+     "name": "Additional Studio Personnel"
+    },
+    {
+     "name": "Additional Synthesizer Sequencing"
+    },
+    {
+     "name": "Additional Vocal Editing"
+    },
+    {
+     "name": "Additional Vocal Engineering"
+    },
+    {
+     "name": "Additional Ad-Libs"
+    },
+    {
+     "name": "Additional Background Vocals"
+    },
+    {
+     "name": "Additional Chorus Vocals"
+    },
+    {
+     "name": "Additional Speaking Voice"
+    },
+    {
+     "name": "Additional Harsh Vocals",
+     "aka": [
+      "Additional Unclean Vocals"
+     ]
+    },
+    {
+     "name": "Additional Vocal Samples"
+    },
+    {
+     "name": "Additional Vocals",
+     "aka": [
+      "Gang Vocals"
+     ]
+    },
+    {
+     "name": "Additional Art Direction"
+    },
+    {
+     "name": "Additional Artwork"
+    },
+    {
+     "name": "Additional Graphic Design"
+    },
+    {
+     "name": "Additional Layout"
+    },
+    {
+     "name": "Additional Photography"
+    },
+    {
+     "name": "Additional Orchestration"
+    },
+    {
+     "name": "Additional Acoustic Guitar"
+    },
+    {
+     "name": "Additional Banjo"
+    },
+    {
+     "name": "Additional Baritone Saxophone"
+    },
+    {
+     "name": "Additional Bass"
+    },
+    {
+     "name": "Additional Bass Guitar"
+    },
+    {
+     "name": "Additional Bass Synthesizer"
+    },
+    {
+     "name": "Additional Bells"
+    },
+    {
+     "name": "Additional Brass"
+    },
+    {
+     "name": "Additional Bouzouki"
+    },
+    {
+     "name": "Additional Cabrette"
+    },
+    {
+     "name": "Additional Cello"
+    },
+    {
+     "name": "Additional Cymbal"
+    },
+    {
+     "name": "Additional Drums"
+    },
+    {
+     "name": "Additional Electric Guitar"
+    },
+    {
+     "name": "Additional Electric Piano"
+    },
+    {
+     "name": "Additional Flute"
+    },
+    {
+     "name": "Additional Glockenspiel"
+    },
+    {
+     "name": "Additional Guitar"
+    },
+    {
+     "name": "Additional Handclaps"
+    },
+    {
+     "name": "Additional Harmonica"
+    },
+    {
+     "name": "Additional Horns"
+    },
+    {
+     "name": "Additional Hurdy-Gurdy"
+    },
+    {
+     "name": "Additional Instrumentation"
+    },
+    {
+     "name": "Additional Keyboards"
+    },
+    {
+     "name": "Additional Loops"
+    },
+    {
+     "name": "Additional Mandolin"
+    },
+    {
+     "name": "Additional Organ"
+    },
+    {
+     "name": "Additional Percussion"
+    },
+    {
+     "name": "Additional Piano"
+    },
+    {
+     "name": "Additional Rhythm Guitar"
+    },
+    {
+     "name": "Additional Saxophone"
+    },
+    {
+     "name": "Additional Scratches"
+    },
+    {
+     "name": "Additional Sound Effects",
+     "aka": [
+      "Additional Effects"
+     ]
+    },
+    {
+     "name": "Additional Steel Guitar"
+    },
+    {
+     "name": "Additional Strings"
+    },
+    {
+     "name": "Additional Synthesizer"
+    },
+    {
+     "name": "Additional Tenor Saxophone"
+    },
+    {
+     "name": "Additional Timbales"
+    },
+    {
+     "name": "Additional Tom-Tom"
+    },
+    {
+     "name": "Additional Tràm Plè"
+    },
+    {
+     "name": "Additional Trombone"
+    },
+    {
+     "name": "Additional Trumpet"
+    },
+    {
+     "name": "Additional Tuba"
+    },
+    {
+     "name": "Additional Vibraphone"
+    },
+    {
+     "name": "Additional Viola"
+    },
+    {
+     "name": "Additional Violin"
+    },
+    {
+     "name": "Additional Whistles"
+    }
+   ]
+  }
+ ]
+}
