@@ -19,7 +19,7 @@ It never presses Save: you check the form and save it yourself.
 <a href="#configuration">Configuration</a> ·
 <a href="extension/FAQ.md">FAQ</a> ·
 <a href="extension/PRIVACY.md">Privacy</a> ·
-<a href="#support">Support</a> ·
+<a href="#contact">Contact</a> ·
 <a href="#disclaimer">Disclaimer</a>
 </p>
 
@@ -272,10 +272,13 @@ A `.env` in the project root from older versions is still read until the first s
 - Reading Spotify is optional too: Chrome asks for access to `open.spotify.com` the first time you press **Get credits** on a Spotify page, after the panel has explained why. Nothing read from Spotify is sent anywhere.
 - When Apple's catalog has no cover for a song (always the case for a Spotify link), the extension asks Deezer, sending only the song title and artist. That permission is part of the install and cannot be switched off.
 
-## Support
+## Contact
 
-Géniescraper is free and made by [imskaff](https://github.com/imskaff).
-If it saves you time, you can [buy me a coffee](https://buymeacoffee.com/imskaff).
+Contact me on [Genius](https://genius.com/5kf) or by [opening an Issue here](https://github.com/imskaff/geniescraper/issues/new/choose).
+
+## Donate
+
+Géniescraper is free, [you can support my work by clicking here](https://buymeacoffee.com/imskaff). Thank you!
 
 ## Disclaimer
 
