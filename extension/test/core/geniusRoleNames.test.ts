@@ -51,6 +51,12 @@ describe("role names against Genius's standardized list", () => {
     expect([...new Set(unknown)]).toEqual([]);
   });
 
+  it("types the Arranger family only as roles Genius lists", () => {
+    const arrangers = [...spotifyRoleTargets(), ...tableTargets].filter((t) => /arranger/i.test(t));
+    expect([...new Set(arrangers)].sort()).toEqual(["Arranger", "Recording Arranger"]);
+    for (const target of arrangers) expect(LISTED.has(target), target).toBe(true);
+  });
+
   it("never offers a role Genius removed, as the Spotify tables map it", () => {
     for (const target of [...spotifyRoleTargets(), ...tableTargets]) expect(REMOVED.has(target), target).toBe(false);
   });

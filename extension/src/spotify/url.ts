@@ -28,5 +28,18 @@ export function canonicalSpotifyUrl(url: string): string | null {
   return parsed ? `${HOST}/${parsed.kind === "song" ? "track" : "album"}/${parsed.id}` : null;
 }
 
+/**
+ * The address the worker opens in its own tab: the plain page plus `?locale=en`, which makes Spotify serve that one
+ * request in English (measured: the credits dialog, its headings and its role names, in German, Polish, Japanese,
+ * Arabic and Thai browsers) without writing a cookie, so the user's own Spotify tabs keep their language. The locale
+ * prefix, the tracking query and the fragment are dropped, since the page is told by the id alone. `null` when `url`
+ * is not a Spotify track or album page. The parameter is not documented by Spotify; the reader checks the dialog it
+ * gets back and falls back to its role tables when it is not English.
+ */
+export function spotifyOpenUrl(url: string): string | null {
+  const plain = canonicalSpotifyUrl(url);
+  return plain ? `${plain}?locale=en` : null;
+}
+
 /** Address of a track by id, for reading a track of an album through its own page. */
 export const spotifyTrackUrl = (id: string): string => `${HOST}/track/${id}`;

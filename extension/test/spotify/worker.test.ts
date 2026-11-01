@@ -55,7 +55,7 @@ function fakeClock(): Clock & { slept: number[]; at: number } {
 const NO_COVERS: CoverService = { exact: () => Promise.resolve(""), search: () => Promise.resolve("") };
 
 describe("reading Spotify through the worker", () => {
-  it("opens the plain address in a hidden window, asks Spotify's own script, and always closes the tab", async () => {
+  it("opens the English address in a hidden window, asks Spotify's own script, and always closes the tab", async () => {
     const browser = fakeBrowser({
       answer: (request) => Promise.resolve({ ok: true, data: request.type === "spotify/detect" ? INFO : SCRAPE }),
     });
@@ -78,8 +78,8 @@ describe("reading Spotify through the worker", () => {
     expect(detected.ok).toBe(true);
 
     expect(browser.log.filter((entry) => entry.startsWith("create:"))).toEqual([
-      `create:${TRACK}:active=false`,
-      `create:${ALBUM}:active=false`,
+      `create:${TRACK}?locale=en:active=false`,
+      `create:${ALBUM}?locale=en:active=false`,
     ]);
     expect(messages).toEqual(["spotify/scrape", "spotify/detect"]);
     expect(injected).toEqual(["spotify/content.js", "spotify/content.js"]);
@@ -208,7 +208,7 @@ describe("the router and Spotify", () => {
     const route = routerFor(browser, clock);
     const urls = [TRACK, TRACK_B, ALBUM_TRACK_3, ALBUM_TRACK_4];
     await Promise.all(urls.map((url) => route({ type: "scrape-track", url, trackTitle: "Song" })));
-    expect(opened).toEqual(urls);
+    expect(opened).toEqual(urls.map((url) => `${url}?locale=en`));
   });
 
   it("falls back to one at a time after a read fails for a reason that is not the track's own", async () => {

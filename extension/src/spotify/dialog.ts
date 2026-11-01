@@ -87,16 +87,38 @@ function languageName(tag: string): string {
   }
 }
 
+/** The dialog heading in English; Spotify's other languages write it differently ("Songinfos", "Autorzy treści"). */
+const ENGLISH_HEADING = "Credits";
+
+/** Marks a page that says it is English but whose dialog is not (see `pageLanguage`). */
+export const UNKNOWN_LANGUAGE = "und";
+
 /**
- * What to tell the user about the language Spotify showed the page in: nothing for English, which the table covers.
- * Otherwise the language is named and the user is told that roles may be missing, because the role words come from
- * a list that is limited to what was seen in real reads.
+ * The language to read role words in. The worker asks Spotify for English (`?locale=en`), which is an undocumented
+ * parameter, so what came back is checked rather than trusted: the page declares its language, and an English page
+ * must also show the English dialog heading. A page in another language, or one that claims English but shows a
+ * different heading, is a fallback to the role tables ("und" has none: only English words are mapped then).
+ * `heading` is empty when no dialog was read; the declared language decides alone then.
+ */
+export function pageLanguage(htmlLang: string, heading: string): string {
+  const base = baseLanguage(htmlLang) || "en";
+  if (base === "en" && heading.trim() !== "" && heading.trim() !== ENGLISH_HEADING) return UNKNOWN_LANGUAGE;
+  return base;
+}
+
+/**
+ * What to tell the user about the language Spotify showed the page in: nothing for English, which is what the worker
+ * asks for. Only when the fallback was used the language is named, and the user is told that roles may be missing,
+ * because the role words come from a list that is limited to what was seen in real reads.
  */
 export function languageNote(language: string): string {
   const base = baseLanguage(language);
   if (base === "" || base === "en") return "";
+  if (base === UNKNOWN_LANGUAGE) {
+    return "Spotify did not show this page in English as asked, and the extension could not tell which language it used, so roles are left out unless Spotify wrote them in English.";
+  }
   const name = languageName(base);
   return hasRoleTable(base)
-    ? `Spotify showed this page in ${name}. The extension knows only some role words in ${name}, so a role it does not know is left out and listed above.`
-    : `Spotify showed this page in ${name}, and the extension has no role words for ${name}, so roles are left out unless Spotify wrote them in English. Setting Spotify to English shows all of them.`;
+    ? `Spotify showed this page in ${name} and not in English. The extension knows only some role words in ${name}, so a role it does not know is left out and listed above.`
+    : `Spotify showed this page in ${name} and not in English, and the extension has no role words for ${name}, so roles are left out unless Spotify wrote them in English.`;
 }

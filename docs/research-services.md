@@ -91,7 +91,7 @@ So Spotify covers exactly the small-artist gap: Apple has nothing for these trac
 1. **Language.**
    The dialog is localized to the browser or account language: the test browser showed Polish ("Kompozytor", "Autor Tekstu", "Realizator", "Wokale Wspierające").
    The extension's `ROLE_MAP` is English.
-   Forcing English by URL did not work (`/intl-en/...` was redirected to the unprefixed URL and stayed Polish).
+   Forcing English by URL did not work (`/intl-en/...` was redirected to the unprefixed URL and stayed Polish). A later check (docs/spotify-provider-notes.md, "Other ways to English roles") found that the query `?locale=en` does work, and the extension uses it.
    Options: (a) a translated role table per supported UI language, built from the dialogs of a few reference tracks; (b) switch the player's language through its own language picker (`data-testid="language-option-en"`), which probably sets a cookie, not tested; (c) read the role from the stable section structure only (Composition and lyrics = Songwriter, Production and engineering = Producer) and keep unknown instrument roles as written.
    Recommendation: (c) as the baseline (section headings are also localized, but there are only about five of them and the order is fixed), plus (a) for the user's own language.
 2. **Opening the dialog needs a click.**

@@ -5,9 +5,16 @@ import { describe, expect, it } from "vitest";
 import { OBSERVED } from "./observedRoles";
 import { ROLE_TABLES } from "../../src/spotify/roleTables";
 import { roleMap } from "../../src/core/roles";
-import { creditsFromDialog, languageNote, skippedNote, splitRoles, type DialogRow } from "../../src/spotify/dialog";
+import {
+  creditsFromDialog,
+  languageNote,
+  pageLanguage,
+  skippedNote,
+  splitRoles,
+  type DialogRow,
+} from "../../src/spotify/dialog";
 import { parseDialog } from "../../src/spotify/page";
-import { hasRoleTable, normaliseSpotifyRole, roleKey, spotifyRole, spotifyRoleTargets } from "../../src/spotify/roles";
+import { hasRoleTable, normaliseSpotifyRole, roleKey, spotifyRole } from "../../src/spotify/roles";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name: string): Element => {
@@ -34,17 +41,54 @@ describe("spotifyRole", () => {
     expect(spotifyRole("Vocalist")).toBe("Vocals");
     expect(spotifyRole("Background Vocalist")).toBe("Background Vocals");
     expect(spotifyRole("Drum Kit")).toBe("Drums");
-    expect(spotifyRole("Recording Arranger")).toBe("Arranger");
+    expect(spotifyRole("Arranger")).toBe("Arranger");
+    expect(spotifyRole("Recording Arranger")).toBe("Recording Arranger");
   });
 
-  it("types the second engineer as Assistant Engineer, the name Genius's list gives it", () => {
-    expect(spotifyRole("Recording Second Engineer")).toBe("Assistant Engineer");
+  it("types the second engineer as Assistant Recording Engineer, in English and in every language that has it", () => {
+    expect(spotifyRole("Recording Second Engineer")).toBe("Assistant Recording Engineer");
+    expect(spotifyRole("Segundo/a ingeniero/a de grabación", "es")).toBe("Assistant Recording Engineer");
+    expect(spotifyRole("Drugi realizator nagrań", "pl")).toBe("Assistant Recording Engineer");
+    expect(spotifyRole("レコーディングセカンドエンジニア", "ja")).toBe("Assistant Recording Engineer");
+    const tables = Object.values(ROLE_TABLES).flatMap((table) => Object.values(table));
+    expect(tables).not.toContain("Assistant Engineer");
   });
 
   it("types the bass voice as Bass Vocals and leaves out Studio Personnel, which Genius removed", () => {
     expect(spotifyRole("Bass Vocalist")).toBe("Bass Vocals");
     expect(spotifyRole("Studio Personnel")).toBeNull();
     expect(spotifyRole("studio personnel", "de")).toBeNull();
+  });
+
+  it("never types a role Genius removed, whichever table would have produced it", () => {
+    const removed = [
+      "Studio Personnel",
+      "Performer",
+      "Associate Performer",
+      "Manager",
+      "Management",
+      "Manager/Management",
+      "Booking",
+      "Licensing",
+      "Performance Rights",
+    ];
+    for (const label of removed) {
+      expect(spotifyRole(label), label).toBeNull();
+      expect(spotifyRole(label.toUpperCase(), "de"), label).toBeNull();
+    }
+    // Apple's table has "performers" -> "Performer": the fallback to Apple's names must not let it through.
+    expect(spotifyRole("Performers")).toBeNull();
+  });
+
+  it("lists a removed role under 'Left out' in About this read", () => {
+    const row = (name: string, roles: string[]): DialogRow => ({ section: "x", sectionIndex: 2, name, roles, artistId: null });
+    const mapped = creditsFromDialog({
+      rows: [row("Sample Studio", ["Studio Personnel"]), row("Person 1", ["Producer", "Performer"])],
+    });
+    expect(mapped.credits.map((c) => c.role)).toEqual(["Producer"]);
+    expect(skippedNote(mapped.skipped)).toBe(
+      "Left out because Genius has no matching role: Studio Personnel (Sample Studio); Performer (Person 1).",
+    );
   });
 
   it("ignores case, spacing and a trailing colon", () => {
@@ -66,11 +110,6 @@ describe("spotifyRole", () => {
   it("gives an unknown label back as written through the interface form", () => {
     expect(normaliseSpotifyRole(" Director: ")).toBe("Director");
     expect(normaliseSpotifyRole("Composer")).toBe("Songwriter");
-  });
-
-  it("only produces role names Genius lists", () => {
-    const genius = new Set(Object.values(roleMap()));
-    for (const target of spotifyRoleTargets()) expect(genius.has(target), target).toBe(true);
   });
 });
 
@@ -251,7 +290,27 @@ describe("role words in each language Spotify was read in", () => {
   });
 
   it("names the language for a read in a language with a table, and for one without", () => {
-    expect(languageNote("de")).toMatch(/German.*only some role words/);
+    expect(languageNote("de")).toMatch(/German and not in English.*only some role words/);
     expect(languageNote("ar")).toMatch(/Arabic.*no role words/);
+  });
+});
+
+describe("pageLanguage", () => {
+  it("is English for an English page with the English heading, or with no dialog read", () => {
+    expect(pageLanguage("en", "Credits")).toBe("en");
+    expect(pageLanguage("en-US", " Credits ")).toBe("en");
+    expect(pageLanguage("en", "")).toBe("en");
+    expect(pageLanguage("", "")).toBe("en");
+  });
+
+  it("is the page's own language when it is not English, whatever the heading", () => {
+    expect(pageLanguage("de", "Songinfos")).toBe("de");
+    expect(pageLanguage("pl-PL", "Autorzy treści")).toBe("pl");
+    expect(pageLanguage("ja", "楽曲クレジット")).toBe("ja");
+  });
+
+  it("does not take an English page with another heading as English", () => {
+    expect(pageLanguage("en", "Songinfos")).toBe("und");
+    expect(languageNote("und")).toMatch(/did not show this page in English as asked/);
   });
 });

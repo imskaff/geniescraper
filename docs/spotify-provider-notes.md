@@ -34,7 +34,7 @@ Manifest of the throwaway test extension that produced the numbers above:
 - `scripting` plus the host permission is enough to inject the reader (`chrome.scripting.executeScript({ files })`) into the tab the extension opened.
 - No `tabs` permission was needed: `chrome.tabs.create`, `get`, `update`, `sendMessage` and `chrome.windows.create`/`get`/`remove` all worked with only the host permission.
 - No `debugger`, `webRequest`, `activeTab`, `storage` or content script declaration.
-- To force English (recommended, see Languages) add `"declarativeNetRequest"`; the rule is a session rule limited to the probe's tab, and it also needs the host permission already listed.
+- English needs no extra permission: the reader opens `?locale=en` (see "Other ways to English roles"). The tab-scoped `declarativeNetRequest` rule below was the earlier recipe and is kept as the option on paper if Spotify ever removes the parameter.
 - If the project keeps host permissions optional, `open.spotify.com` has to be granted before the first read.
 
 ## Read procedure, step by step
@@ -65,8 +65,10 @@ Synthetic keyboard events do nothing (0 of 10, earlier run), so do not bother wi
 
 ### Forcing English
 
+**Built (2026-11-01):** the worker opens the track or album address as `https://open.spotify.com/<kind>/<id>?locale=en` (locale prefix, tracking query and fragment dropped) and keeps the role tables as the fallback; the recipe below is the earlier header-based way and is not used. Live with the real build (German browser): tracks read in 2903 and 2880 ms with the query against 3158 and 2884 ms plain, and with the plain address in an Arabic browser the roles were not mapped at all (13 role words listed as left out) where the query gives all of them; the German album page found its 14 tracks and the English release date ("March 20, 2020"). The per-language list of role words in the notes below describes what Spotify writes when English is not obtained.
+
 Spotify localizes on the server from the `Accept-Language` request header of the page load.
-These did **not** work: the `/intl-en/` URL prefix (the page redirects and stays in the browser language), and overriding `navigator.language` in the page.
+These did **not** work: the `/intl-en/` URL prefix (the page redirects and stays in the browser language, measured again 2026-11-01 in German, Polish and Japanese: see below), and overriding `navigator.language` in the page.
 This worked (2 of 2, Chrome set to German, page came back with `lang="en"`, heading "Credits", English sections and roles):
 
 ```js
@@ -83,6 +85,218 @@ await chrome.declarativeNetRequest.updateSessionRules({
 
 Two traps: `main_frame` must be listed explicitly (it is excluded by default for `modifyHeaders`), and the rule must be limited to the probe's `tabIds` so the user's own Spotify tabs keep their language.
 Remove the rule when the job ends.
+
+### English by address: measured again on 2026-11-01, does not work
+
+Re-measured before building anything, in a throwaway Chrome profile per run (`--lang` and `--accept-lang` set), signed out, 11 page loads in all, one at a time, no captcha or 429.
+
+| Run | Address asked for | Address after load | `lang` | Dialog heading | Read time |
+|---|---|---|---|---|---|
+| de-DE | `/track/<id>` | `/intl-de/track/<id>` | de | Songinfos | 2845 ms |
+| de-DE | `/intl-en/track/<id>` | `/intl-de/track/<id>` | de | Songinfos | 2717 ms |
+| pl-PL | `/intl-en/track/<id>` | `/track/<id>` | pl | Autorzy treści | 2410 ms |
+| ja-JP | `/intl-en/track/<id>` | `/intl-ja/track/<id>` | ja | 楽曲クレジット | 2702 ms |
+| de-DE | `/intl-en/album/<album id>` and the plain album address | `/intl-de/album/<id>` | de | not read (the album id used had no track rows, so only the redirect is a result) | 16.7 s both (waiting for rows that never came) |
+
+- The `/intl-en/` prefix is dropped by a redirect to the address of the browser language in every case (4 of 4), so the page, its dialog and its role names stay in that language.
+  The click path was untouched, and the read was not slower, but it also did not help.
+- `/intl-en/` is not a spelling the web player writes.
+  What the player does when its language picker is used (button `[data-testid="language-selection-button"]`, then `[data-testid="language-option-en"]`, a button and not a link) was watched in a throwaway profile: it sets the cookie **`sp_locale=en`** and reloads the page on the **unprefixed** address.
+  There is no `sp_locale` cookie before that, and no other cookie or address changes; English has no prefix, other languages get `/intl-xx/`.
+- Setting `document.cookie = "sp_locale=en; path=/"` from the page (no permission needed, the cookie is not `HttpOnly`) and loading the plain address gave `lang="en"` (1 of 1).
+  This is not usable as the reader's way: the cookie belongs to the whole `open.spotify.com` origin, so the user's own Spotify tabs would switch language on their next load, and an `sp_locale` the user already chose would have to be saved and restored (even a crash between set and restore leaves their player in English).
+  It would also be the extension writing to the user's browsing state, which the project avoids.
+
+Nothing was built from this: the English address is not an option. The later section "Other ways to English roles" found `?locale=en`, which does work and supersedes the recommendation below.
+
+#### Option on paper: tab-scoped `Accept-Language` rule (the recipe above)
+
+- Needs `declarativeNetRequestWithHostAccess` (a `modifyHeaders` rule on a site needs the host permission, which the extension already has for `open.spotify.com`).
+  Plain `declarativeNetRequest` also works but is the wider permission (its install prompt line is, to the best of my knowledge, "Block content on any page"); the `WithHostAccess` variant is, to the best of my knowledge, listed without any line of its own in Chrome's prompt, so it adds nothing a reader would see.
+  Both statements come from memory of Chrome's documentation and were **not** verified in this session.
+- It can probably be an optional permission (`optional_permissions`) and be requested from a click when a read is about to happen in a language without an alias table; not verified.
+  A request from a click shows Chrome's own small "allow" dialog naming the permission.
+- The rule is a session rule limited to the reader's `tabId`, removed when the job ends: the user's own tabs are not affected, no cookie is written.
+  Cost: the tab has to be created on `about:blank`, the rule added, then navigated (one extra call, a few ms); the 2 of 2 earlier forced-English reads had normal timings.
+- Safari: the API exists in Safari's web extensions, but support for `modifyHeaders` with `tabIds` there was not checked.
+
+Recommendation: keep the alias tables for the 12 languages they cover and add the tab-scoped rule as an optional permission, asked for only on the first read in a language the tables do not cover (or when the fallback was used), so no user sees a new permission unless they would otherwise lose roles.
+The cookie route is the only permission-free way to English and is rejected for the reasons above.
+
+## Other ways to English roles: research of 2026-11-01
+
+Everything below was measured on 2026-11-01 against `open.spotify.com`, signed out, no credentials, one page at a time with 4 to 5 second pauses, a throwaway Chrome profile per run (never the user's own), no captcha, block or 429.
+Volume: about 38 page loads for this section (plus 4 plain GETs and 27 iTunes searches), inside the budget of 45.
+The probe `extension/scripts/live-spotify-probe.mjs` gained `--query "?locale=en"` for this.
+
+### Result in short
+
+**The query string `?locale=en` gives the whole page, the credits dialog and all role names in English, for one request only, with no permission and no cookie.**
+It worked in 12 of 12 track reads and 2 of 2 album reads (German, Polish, Japanese, Arabic and Thai browsers).
+The earlier conclusion that only a header rule can force English was wrong because `?locale=` had not been tried; `/intl-en/` (above) is still a dead end.
+
+### 3. Query-string switches (the winner)
+
+Chrome with `--lang` and `--accept-lang` de-DE, same track (`/track/<id>` plus the query), final address and `lang` after the page settled:
+
+| Query | Final address | `lang` | Result |
+|---|---|---|---|
+| `?locale=en` | `/track/<id>?locale=en` | en | **English** ("Your Library"), no redirect to `/intl-de/` |
+| `?go=1&locale=en` | `/track/<id>?go=1&locale=en&nd=1&dlsi=...` | en | English (the page added its own parameters) |
+| `?l=en` | `/intl-de/track/<id>?l=en` | de | no effect |
+| `?language=en` | `/intl-de/track/<id>?language=en` | de | no effect |
+
+Credits dialog with `?locale=en`, track "Blinding Lights", read by the real reader in a hidden tab:
+
+| Browser language | Final address | `lang` | Heading | Sections | Roles | Read time |
+|---|---|---|---|---|---|---|
+| de-DE | `/track/<id>` | en | Credits | Artist, Composition & Lyrics, Production & Engineering, Performers | all 14 English (Main Artist, Composer, Lyricist, Producer, Mixing Engineer, Mastering Engineer, Recording Second Engineer, Engineer, Bass Vocalist, Programmer, Drum Kit, Guitar, Keyboard, Background Vocalist) | 2304 ms |
+| pl-PL | same | en | Credits | same | same 14 | 2703 ms |
+| ja-JP | same | en | Credits | same | same 14 | 2760 ms |
+| ar-SA | same | en | Credits | same | same 14 | 2724 ms |
+| th-TH | same | en | Credits | same | same 14 | 2711 ms |
+
+More reads with the query, Japanese browser, three other tracks: all `ok`, English heading and sections, 13, 13 and 16 rows, 1986 to 2578 ms.
+`/intl-de/track/<id>?locale=en` (an address that already carries a locale prefix) also came back English at `/track/<id>` (1 of 1).
+Albums with the query (German browser, one visible-window run and one hidden-tab run): `lang` en, 14 rows found, the first three tracks opened their English dialogs in about 1.0 s each, and the album page printed its date in English ("March 20, 2020"), which would also make a full release date parseable.
+Speed: the plain German read took 2845 ms against 2304 to 2760 ms with the query, so no slowdown.
+
+- **No cookie is written.**
+  After the `?locale=en` load the profile had no `sp_locale` cookie, and a plain load in the same profile came back German (`/intl-de/...`).
+  The language applies to that one request, so the user's own Spotify tabs and settings are never touched.
+  This also answers the "isolated context" question: none is needed.
+- The page stays on the unprefixed address and does not bounce to `/intl-xx/`.
+- **Not tested:** a signed-in profile (the hidden tab shares the browser's cookies, so a logged-in user's account language might win; the detection rule below catches that), a Safari run, and whether Spotify keeps the parameter.
+  It is an undocumented parameter that the web player evidently supports (the language picker uses the `sp_locale` cookie, the parameter looks like its one-shot form), so treat it as something that can disappear.
+
+How the reader should use it:
+
+1. Open the track or album address with `?locale=en` appended (the read has no use for other parameters, so replacing the query with this one is simplest).
+2. Check that the dialog really is English: heading "Credits" or every role found in the English alias table.
+   Keep the per-language alias tables as the fallback for any dialog that comes back localised, and name a language in "About this read" only then.
+3. No new permission, no change to the manifest.
+
+### 2. `navigator.language` override at `document_start`
+
+Overriding `navigator.language` and `navigator.languages` to `en-US` before any page script ran (done with `Page.addScriptToEvaluateOnNewDocument`, which is what a `registerContentScripts` main-world script at `document_start` does): the page still redirected to `/intl-de/track/<id>`, `lang="de"`, `h1` "Bibliothek" (1 of 1, German).
+The server decides the language from the request headers and address before any page script runs, so this cannot work.
+
+### 1. Language-independent structure of the dialog
+
+Read live in English, German, Polish, Japanese, Arabic and Thai ("Blinding Lights"), then 3 German and 8 Japanese reads of other tracks, including small and self-released artists:
+
+- The structure is identical in every language: the same `dialog[open]`, rows, artist ids and Sources row.
+  The dialog has **no data attribute, id, aria value or icon that names a section**: a section is a bare `div` whose first child is a heading `span`, and a role is a bare `span` inside `p[id^="listrow-subtitle"]`.
+  The only language-free signals are the section's position and the Artist rows' `spotify:artist:` ids.
+- Section order is fixed: Artist, Composition & Lyrics, Production & Engineering, Performers, Other Roles (the fifth appeared in 1 of 8 Japanese reads).
+  Position is only trustworthy when no section is skipped: in all 19 non-empty reads (6 languages, 14 different tracks) the first four sections were present, so position 1 was always Composition & Lyrics and 2 always Production & Engineering.
+  A skipped section would shift every later index, and nothing in the markup would reveal it.
+  One of the 8 Japanese reads (`no-credits`) returned a dialog with no rows at all, not even an Artist row.
+- Coverage by position alone, on "Blinding Lights" (23 rows): section 1 is Composer and Lyricist, 5 of 5 rows, which is all of Genius's "Written By".
+  Section 2 mixes Producer (3 rows) with Mixing, Mastering, Second Engineer and Engineer (7 rows), so **"Produced By" cannot be told from the engineers by position**.
+  Section 3 holds the instruments and vocals.
+- So structure alone could fill Written By in every language but not Produced By or any finer role.
+  With `?locale=en` working it is not needed; it remains a possible defence for the fallback only.
+
+### 4. Direct `fetch` from the worker
+
+- A plain GET of the track page with a Chrome user agent and `Accept-Language: en-US` (and `?locale=en`) returned the 167 KB app shell, `lang="en"`, with no credits word in it (0 of 1).
+  The credits are not in the server markup or embedded state, as the earlier fetch test already found.
+- The page gets its data from `api-partner.spotify.com/pathfinder/v2/query` (a GraphQL endpoint) with a token from `open.spotify.com/api/token` and a client token from `clienttoken.spotify.com`; the other fetch and XHR requests were telemetry, consent and remote-config calls.
+  I did not call it and did not capture the credits query itself (the menu click in that run opened nothing, so the credits request is inferred, not seen).
+  It is token-gated and undocumented: do not use it.
+
+### 5. Other public surfaces
+
+| Surface | Result |
+|---|---|
+| `/embed/track/<id>` (GET, 10.5 KB) | JSON in `__NEXT_DATA__`: title, artists (names and ids), `releaseDate.isoString` (`2020-03-20T00:00:00Z`), duration, cover and preview data. **No credits, no roles.** It does give the **full release date** that the hydrated track page lacks (see Metadata), independent of language. |
+| `/oembed?url=...` | Only an iframe snippet, title and thumbnail. No credits. |
+| Album per-track menus | The same dialog as the track page and the same language, so `?locale=en` on the album address gives English there too (above). |
+
+The embed's release date is worth a separate look (one extra plain GET per track, no cookie, same host).
+
+### 6. Cross-match to Apple Music
+
+Sample: the 27 rows of the signed-out playlist page "Indie's Top 50" (small and mid-sized artists, new releases, a few self-released), searched on the iTunes Search API (`entity=song`, US store, top 10, 1.5 s between requests); a match is the same title (normalised, brackets and "- suffix" removed) and an artist name containing or contained in a Spotify artist.
+
+- **23 of 27 found (85 percent).**
+  The 4 misses: two had 0 results ("Champagne" by Remi Wolf and "the cops are coming" by Junior Mesa, which is suspicious for known artists and may be a search quirk), one had 4 results without a match ("Power", Sophia Stel) and one had 2 ("STORM II", GENER8ION and Yung Lean).
+- Not measured: whether the matches are the same recording or edition, and whether Apple's credits for them are as complete as Spotify's.
+  Reading Apple credits for the sample would load Apple Music pages beyond this task's approval.
+- Judgement: Apple's English credits would be a good second source where the song exists, but the extra search, the mismatch risk (remixes, deluxe editions) and the conflict rules make it a larger feature for little gain once `?locale=en` works.
+
+### 7. Other findings
+
+- A German album page loaded without the query produced `rowCount` 0 in two hidden-tab runs (`/intl-de/album/...`, header and date present, 14 expected, no `tracklist-row` found), while the same album with `?locale=en` found 14 rows both times.
+  The cause is unknown (cold-profile timing or different row markup in the German page); worth a look when the provider reads albums in non-English browsers.
+- The Japanese `no-credits` read (a dialog without any row) is a case the earlier notes did not have; it showed once in 8.
+
+### Audit of Genius role names against Genius's list
+
+Reference: "Standardized Additional Roles" (`genius.com/Community-guides-standardized-additional-roles-annotated`), read once on 2026-11-01 in a browser pane, signed out.
+Its sections: Base Interface Roles (Artists, Featuring, Producer, Recorded At, Writer), Major Roles Removed (Booking, Licensing, Manager/Management, Performance Rights, Performer/Associate Performer, Studio Personnel, DAW Roles), then Writing, Arranger, Production, Programmer, Studio, Vocal, Label/Publishing, Locations, Artwork, Video, Choir/Orchestra, Other, Instrument Solos, Specific Instrument Roles, Instruments and Additional Roles.
+It lists "AKA" spellings for some roles (for example Mixing Engineer AKA Mixer, Background Vocals AKA Backing Vocals); the name before "AKA" is the one to type.
+
+Every Genius name that `ALIASES` in `extension/src/spotify/roles.ts` and the 14 language tables in `roleTables.ts` can produce, checked against that page:
+
+| Our target | Produced from | On the page | Verdict |
+|---|---|---|---|
+| Songwriter | composer, lyricist, songwriter, author, writer, co-writer and the Composer/Lyricist words of every language | **no** (page: base role "Writer", plus Composer and Lyricist as Writing Roles) | Internal label only. `WRITTEN_BY_ROLES` in `core/models.ts` routes it to the Written By field ("Writer" in the form), and `additionalCredits()` filters it out, so the string "Songwriter" is never pasted as a role. Correct as is; rename it to "Writer" only if the owner wants the internal label to match the page. |
+| Arranger | arranger | yes | ok |
+| Arranger | recording arranger | the page lists **Recording Arranger** separately (Arranger Roles) | **Fix:** map "recording arranger" to "Recording Arranger". |
+| Producer, Co-Producer, Executive Producer | producer, co-producer, executive producer | yes (Production Roles) | ok |
+| Engineer | engineer | yes (Studio Roles) | ok |
+| Recording Engineer | recording engineer | yes | ok |
+| Mixing Engineer | mixing engineer, mixer | yes (AKA Mixer, Mixing) | ok |
+| Mastering Engineer | mastering engineer, masterer | yes (AKA Masterer, Mastering) | ok |
+| Programmer | programmer | yes | ok |
+| **Studio Personnel** | studio personnel | **no: under "Major Roles Removed"** | **Fix:** remove the `"studio personnel"` alias so the role is left out and listed under "Left out because Genius has no matching role". The only place the English fallback can still produce it is `GENIUS_NAMES` (see below). |
+| Vocals | vocalist, vocals | yes (AKA Rap, Rap Vocals) | ok |
+| Lead Vocals | lead vocals | yes | ok |
+| Background Vocals | background vocalist, background vocals, backing vocals | yes (AKA Backing Vocals) | ok |
+| **Bass (Vocal)** | bass vocalist and the bass-vocal word of de, es, fr, it, ja, ko, nl, pl, pt (every table that has one) | **no: the page lists "Bass Vocals"** (Vocal Roles, next to Baritone Vocals and Tenor Vocals) | **Fix:** every `"Bass (Vocal)"` in `roles.ts` and `roleTables.ts` becomes `"Bass Vocals"`. "Bass (Vocal)" is Apple's spelling carried over from `scraper/roles.py` line 145 (a key of the Apple map), not a Genius name. The pasted role must match the picker exactly, so it would not have been found. I could not open the live role picker (needs a signed-in edit form), so the exact picker text is unverified, but the page is the community reference for it and has no parenthesised form anywhere. |
+| Drums | drum kit, drums | yes (Instruments) | ok |
+| Keyboards | keyboard, keyboards | yes (AKA Electronic Keyboard) | ok |
+| Guitar, Synthesizer | guitar, synthesizer | yes (Instruments) | ok |
+
+Questions from the review, answered:
+
+- **"Bass (Vocal)":** our name is wrong; it is Apple's spelling, not how Genius lists it. Use "Bass Vocals".
+- **"Studio Personnel":** Spotify uses it for a studio or company credited without a role (in the self-released fixture, a row "Sample Studio - Studio Personnel" next to a Recording Engineer row). Genius removed the role, so such rows should be left out and shown in the left-out list.
+  The role is also a value of the Apple map, so the rule that every Spotify target must be a value of Apple's map does not catch it (see below).
+- **"Recording Second Engineer":** it is not in the Spotify tables (left out on purpose today). The page offers "Assistant Engineer" (AKA Second Engineer (Tidal)) and "Assistant Recording Engineer". The Tidal AKA covers a bare "Second Engineer"; Spotify's word names the stage ("Recording"), exactly as "Recording Engineer" does, so **"Assistant Recording Engineer"** is the closer target. It is in the Apple map already. Suggest adding `"recording second engineer": "Assistant Recording Engineer"` (and, if ever seen, "mixing second engineer" to "Assistant Mixing Engineer"); it was on "Blinding Lights" in every language and is dropped today, so this recovers a role.
+- **"Songwriter":** confirmed internal, see the table.
+
+Other fixes and observations:
+
+1. **The target check pins the wrong list.** The test that "every target is a Genius name" compares against the values of the Apple map (`data/roles.json`), which contains names the page removed ("Studio Personnel", "Performer") and Apple spellings ("Bass (Vocal)"). Pin the Spotify targets to the page's list instead: store the relevant names (Writing, Arranger, Production, Programmer, Studio, Vocal, Choir/Orchestra, Instruments) in a small fixture and compare, or at least add "Studio Personnel" and "Bass (Vocal)" to a deny list. That check would have caught both fixes above.
+2. **`GENIUS_NAMES` fallback** lets any English label equal to a value of the Apple map through unchanged. For the names Spotify showed in English (Choir, Strings, Violin, Viola, Cello, Trumpet, Trombone, Tuba, Piano, Percussion, Electric Guitar, Bass Guitar) that is right: each is on the page. It also lets "Studio Personnel", "Performer" and "Bass (Vocal)" through, so removing the alias alone is not enough: exclude the page's removed roles in `spotifyRole` (a small deny set: studio personnel, performer, associate performer, manager, management, booking, licensing, performance rights).
+3. **Spotify words with a better or any Genius target:**
+   - Director (Spotify's Other Roles): the page has only qualified names (Video Director, Music Director, Choir Director, Orchestra Director, Screen Director); leave out, as now.
+   - Distributor, Label, Publisher (Label/Publishing Roles, AKA Aggregator): Spotify shows these only in the Sources row, never as a role row (0 of about 60 dialogs), and the Source value is already used for the label line. No mapping needed; if a role row ever says Distributor, map it to "Distributor".
+   - Main Artist / Featured Artist: artist section, not roles; unchanged.
+   - Author: "Writer" family, already goes to Written By.
+4. The Apple-side map (not touched here) also produces names the page does not list as roles ("Performer", "Studio Personnel"); that is the desktop app's table and a separate task.
+
+### Options
+
+| Option | Fixes | Permission | Reliability (measured) | Effort | Risk |
+|---|---|---|---|---|---|
+| `?locale=en` on the address | all roles, all languages, tracks and albums | none | 14 of 14 reads English | small: address builder, English check, tests, docs | undocumented parameter may change; signed-in accounts untested; the English check plus the tables as fallback cover both |
+| Tab-scoped `Accept-Language` rule (declarativeNetRequest) | all roles | optional `declarativeNetRequestWithHostAccess` | 2 of 2 earlier | medium | extra permission and prompt |
+| `/intl-en/` prefix | nothing | none | 0 of 4 | none | dead end |
+| `navigator.language` override | nothing | `scripting` (have) | 0 of 1 | none | dead end |
+| `sp_locale` cookie | all roles | none (page cookie) | 1 of 1 | small | shared with the user's own tabs: rejected |
+| Section position | Written By only | none | 19 of 19 reads had all four sections | small | a skipped section shifts the index; Produced By not separable |
+| Direct fetch | nothing | host (have) | 0 of 1 | none | credits are not in the page |
+| Pathfinder API | roles | tokens | not tried | large | token-gated and undocumented: do not use |
+| Embed page | full release date only | host (have) | 1 of 1 | small | a separate feature |
+| Apple cross-match | roles where Apple has the song | none new | 23 of 27 found | large | match errors, conflicting credits |
+
+**Recommendation:** build `?locale=en` into the Spotify reader (open the English-query address of the same track or album in the hidden tab), keep the alias tables as the fallback when the dialog does not come back in English (detected by the heading or a known English role set), and name a language in "About this read" only when the fallback was used.
+Do not add the declarativeNetRequest permission unless a later check shows that signed-in accounts ignore the parameter or Spotify removes it; keep that option written down.
+Consider the embed page as a separate step for the full release date.
 
 ## Selectors
 

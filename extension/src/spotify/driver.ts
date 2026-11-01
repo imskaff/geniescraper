@@ -1,7 +1,7 @@
 // The two things the worker asks of a Spotify page: a summary (one track, or an album's track list) and the credits
 // of one track. Failures are thrown as SpotifyError and returned as data by the handler.
 import type { AlbumInfo, AppError, ErrorCode, PageScrape } from "../shared/messages";
-import { creditsFromDialog, languageNote, skippedNote } from "./dialog";
+import { creditsFromDialog, languageNote, pageLanguage, skippedNote } from "./dialog";
 import {
   isBlocked,
   readAlbumReleaseDate,
@@ -130,8 +130,8 @@ export async function scrapeTrack(
     case "no-credits":
       break;
   }
-  // Spotify writes role words in the page's language, which the page declares.
-  const language = doc.documentElement.lang || "en";
+  // The tab was opened with ?locale=en, so this is English unless Spotify ignored that; then the role tables take over.
+  const language = pageLanguage(doc.documentElement.lang, read.dialog?.heading ?? "");
   const mapped = read.dialog ? creditsFromDialog(read.dialog, language) : { artists: [], credits: [], skipped: [] };
   const notes = [skippedNote(mapped.skipped), languageNote(language), NOT_PROVIDED_NOTE].filter(Boolean);
   return {

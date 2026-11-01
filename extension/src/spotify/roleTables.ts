@@ -2,7 +2,7 @@
 // roles.ts produces. Data only. Every entry was observed in a real signed-out read of that language on 2026-10-31
 // (three tracks, each read once in English and once in the language, rows paired by position and checked for equal
 // section and role counts); none is a guess. A word that was not seen is not here, and a role Genius has no name for
-// (Main Artist) is left out on purpose. Recording Second Engineer is typed as Assistant Engineer, the name Genius's own list gives for "Second Engineer". Keys are in the normalised form `roleKey` makes
+// (Main Artist) is left out on purpose. Recording Second Engineer is typed as Assistant Recording Engineer, the stage-named role on Genius's list (its "Assistant Engineer" is the one for a bare "Second Engineer"). Keys are in the normalised form `roleKey` makes
 // (lowercase, no accents, no gender markers). The language is the base of the page's `<html lang>`.
 export const ROLE_TABLES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   de: {
@@ -20,7 +20,7 @@ export const ROLE_TABLES: Readonly<Record<string, Readonly<Record<string, string
     produzent: "Producer",
     programmierer: "Programmer",
     "recording engineer": "Recording Engineer",
-    "recording second engineer": "Assistant Engineer",
+    "recording second engineer": "Assistant Recording Engineer",
     sanger: "Vocals",
     synthesizer: "Synthesizer",
     tasteninstrument: "Keyboards",
@@ -41,7 +41,7 @@ export const ROLE_TABLES: Readonly<Record<string, Readonly<Record<string, string
     "mezclador/a": "Mixing Engineer",
     productor: "Producer",
     programador: "Programmer",
-    "segundo/a ingeniero/a de grabacion": "Assistant Engineer",
+    "segundo/a ingeniero/a de grabacion": "Assistant Recording Engineer",
     sintetizador: "Synthesizer",
     tecla: "Keyboards",
     teclados: "Keyboards",
@@ -58,7 +58,7 @@ export const ROLE_TABLES: Readonly<Record<string, Readonly<Record<string, string
     claviers: "Keyboards",
     composition: "Songwriter",
     guitare: "Guitar",
-    "ingenierie adjoint d'enregistrement": "Assistant Engineer",
+    "ingenierie adjoint d'enregistrement": "Assistant Recording Engineer",
     "ingenierie d'enregistrement": "Recording Engineer",
     "ingenierie de mixage": "Mixing Engineer",
     "ingenierie du mastering": "Mastering Engineer",
@@ -87,7 +87,7 @@ export const ROLE_TABLES: Readonly<Record<string, Readonly<Record<string, string
     "parti vocali": "Vocals",
     produttore: "Producer",
     programmatore: "Programmer",
-    "secondo ingegnere di registrazione": "Assistant Engineer",
+    "secondo ingegnere di registrazione": "Assistant Recording Engineer",
     sintetizzatore: "Synthesizer",
     tastiera: "Keyboards",
     tastiere: "Keyboards",
@@ -109,7 +109,7 @@ export const ROLE_TABLES: Readonly<Record<string, Readonly<Record<string, string
     ミキサー: "Mixing Engineer",
     ミキシングエンジニア: "Mixing Engineer",
     レコーディングエンジニア: "Recording Engineer",
-    レコーディングセカンドエンジニア: "Assistant Engineer",
+    レコーディングセカンドエンジニア: "Assistant Recording Engineer",
     作曲家: "Songwriter",
     作詞家: "Songwriter",
   },
@@ -117,7 +117,7 @@ export const ROLE_TABLES: Readonly<Record<string, Readonly<Record<string, string
     "건반 음악": "Keyboards",
     기타: "Guitar",
     "드럼 키트": "Drums",
-    "레코딩 보조 엔지니어": "Assistant Engineer",
+    "레코딩 보조 엔지니어": "Assistant Recording Engineer",
     "레코딩 엔지니어": "Recording Engineer",
     "마스터링 엔지니어": "Mastering Engineer",
     믹서: "Mixing Engineer",
@@ -153,13 +153,13 @@ export const ROLE_TABLES: Readonly<Record<string, Readonly<Record<string, string
     technicus: "Engineer",
     tekstschrijver: "Songwriter",
     toetsinstrumenten: "Keyboards",
-    "tweede opnametechnicus": "Assistant Engineer",
+    "tweede opnametechnicus": "Assistant Recording Engineer",
     vocalen: "Vocals",
     vocalist: "Vocals",
   },
   pl: {
     "autor tekstu": "Songwriter",
-    "drugi realizator nagran": "Assistant Engineer",
+    "drugi realizator nagran": "Assistant Recording Engineer",
     gitara: "Guitar",
     "głos basowy": "Bass Vocals",
     "inzynier masteringu": "Mastering Engineer",
@@ -180,7 +180,7 @@ export const ROLE_TABLES: Readonly<Record<string, Readonly<Record<string, string
     "zestaw perkusyjny": "Drums",
   },
   pt: {
-    "assistente de engenharia de gravacao": "Assistant Engineer",
+    "assistente de engenharia de gravacao": "Assistant Recording Engineer",
     autores: "Songwriter",
     engenharia: "Engineer",
     "engenharia de gravacao": "Recording Engineer",
@@ -208,7 +208,7 @@ export const ROLE_TABLES: Readonly<Record<string, Readonly<Record<string, string
     "бэк-вокалист": "Background Vocals",
     вокал: "Vocals",
     вокалист: "Vocals",
-    "второи инженер звукозаписи": "Assistant Engineer",
+    "второи инженер звукозаписи": "Assistant Recording Engineer",
     гитара: "Guitar",
     звукоинженер: "Engineer",
     "звукорежиссер сведения": "Mixing Engineer",
@@ -223,7 +223,7 @@ export const ROLE_TABLES: Readonly<Record<string, Readonly<Record<string, string
     "ударная установка": "Drums",
   },
   sv: {
-    "andra inspelningstekniker": "Assistant Engineer",
+    "andra inspelningstekniker": "Assistant Recording Engineer",
     "bakgrundskor (live)": "Background Vocals",
     bakgrundskorsangare: "Background Vocals",
     bassangare: "Bass Vocals",
@@ -250,7 +250,7 @@ export const ROLE_TABLES: Readonly<Record<string, Readonly<Record<string, string
     besteci: "Songwriter",
     "geri vokal": "Background Vocals",
     gitar: "Guitar",
-    "kayit ikinci muhendisi": "Assistant Engineer",
+    "kayit ikinci muhendisi": "Assistant Recording Engineer",
     "kayit muhendisi": "Recording Engineer",
     klavye: "Keyboards",
     klavyeler: "Keyboards",
