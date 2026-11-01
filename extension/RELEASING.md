@@ -72,7 +72,7 @@ CI also runs the repository's live Apple Music tests weekly, apart from pushes, 
 
 ## 4. Publish a GitHub release (installable without the store)
 
-Pushing a tag named `extension-v<version>` runs `.github/workflows/extension-release.yml`: it checks the tag matches the version, runs `npm run check` and `npm run package`, and publishes a release with the zip and `SHA256SUMS.txt` attached, with generated notes.
+Pushing a tag named `extension-v<version>` runs `.github/workflows/extension-release.yml`: it checks the tag matches the version, runs `npm run check` and `npm run package`, and publishes a release with the zip and `SHA256SUMS.txt` attached, with GitHub's generated notes since the previous extension release, listing each change as its title and pull request number, without author names.
 The workflow stops with a message if the tag and the version differ.
 
 ```bash
