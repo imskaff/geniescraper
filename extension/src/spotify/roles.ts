@@ -32,7 +32,8 @@ const ALIASES: Readonly<Record<string, string>> = {
   writer: "Songwriter",
   "co-writer": "Songwriter",
   arranger: "Arranger",
-  "recording arranger": "Arranger",
+  // Genius lists Recording Arranger as a role of its own next to Arranger.
+  "recording arranger": "Recording Arranger",
   // Production & Engineering
   producer: "Producer",
   "co-producer": "Co-Producer",

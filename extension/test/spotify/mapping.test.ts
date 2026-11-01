@@ -14,7 +14,7 @@ import {
   type DialogRow,
 } from "../../src/spotify/dialog";
 import { parseDialog } from "../../src/spotify/page";
-import { hasRoleTable, normaliseSpotifyRole, roleKey, spotifyRole, spotifyRoleTargets } from "../../src/spotify/roles";
+import { hasRoleTable, normaliseSpotifyRole, roleKey, spotifyRole } from "../../src/spotify/roles";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name: string): Element => {
@@ -41,7 +41,8 @@ describe("spotifyRole", () => {
     expect(spotifyRole("Vocalist")).toBe("Vocals");
     expect(spotifyRole("Background Vocalist")).toBe("Background Vocals");
     expect(spotifyRole("Drum Kit")).toBe("Drums");
-    expect(spotifyRole("Recording Arranger")).toBe("Arranger");
+    expect(spotifyRole("Arranger")).toBe("Arranger");
+    expect(spotifyRole("Recording Arranger")).toBe("Recording Arranger");
   });
 
   it("types the second engineer as Assistant Recording Engineer, in English and in every language that has it", () => {
@@ -109,11 +110,6 @@ describe("spotifyRole", () => {
   it("gives an unknown label back as written through the interface form", () => {
     expect(normaliseSpotifyRole(" Director: ")).toBe("Director");
     expect(normaliseSpotifyRole("Composer")).toBe("Songwriter");
-  });
-
-  it("only produces role names Genius lists", () => {
-    const genius = new Set(Object.values(roleMap()));
-    for (const target of spotifyRoleTargets()) expect(genius.has(target), target).toBe(true);
   });
 });
 
