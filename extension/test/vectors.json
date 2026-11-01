@@ -130,6 +130,31 @@
    "youtube_kind": null,
    "release_date": ""
   },
+  "atlantic": {
+   "title": "T",
+   "artist": "A",
+   "apple_music_url": "u",
+   "credits": [
+    {
+     "role": "Songwriter",
+     "artists": [
+      "W1"
+     ]
+    },
+    {
+     "role": "Distributor",
+     "artists": [
+      "Already Credited"
+     ]
+    }
+   ],
+   "phonographic_copyright": "℗ 2026 Atlantic Recording Corporation",
+   "copyright_notice": "© 2026 Atlantic Recording Corporation",
+   "cover_art_url": "",
+   "youtube_url": "",
+   "youtube_kind": null,
+   "release_date": ""
+  },
   "phono_only": {
    "title": "T",
    "artist": "A",
@@ -2183,6 +2208,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -2292,6 +2333,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -2389,6 +2446,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -2494,6 +2567,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -2587,6 +2676,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -2692,6 +2797,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -2783,6 +2904,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -2884,6 +3021,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -3583,6 +3736,22 @@
      "P3"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -3668,6 +3837,22 @@
      "P3"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -3741,6 +3926,22 @@
      "P3"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -3822,6 +4023,22 @@
      "P3"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -3891,6 +4108,22 @@
      "P3"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -3972,6 +4205,22 @@
      "P3"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -4041,6 +4290,22 @@
      "P3"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -4118,6 +4383,22 @@
      "P3"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -4615,6 +4896,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -4692,6 +4989,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -4757,6 +5070,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -4830,6 +5159,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -4891,6 +5236,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -4964,6 +5325,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -5023,6 +5400,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -5092,6 +5485,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -5503,6 +5912,22 @@
    },
    "queue": [
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -5556,6 +5981,22 @@
    },
    "queue": [
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -5597,6 +6038,22 @@
    },
    "queue": [
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -5646,6 +6103,22 @@
    },
    "queue": [
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -5683,6 +6156,22 @@
    },
    "queue": [
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -5732,6 +6221,22 @@
    },
    "queue": [
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -5768,6 +6273,22 @@
     "include_release_date": true
    },
    "queue": [
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
     [
      "copyright_role",
      "Phonographic Copyright"
@@ -5813,6 +6334,22 @@
     "include_release_date": false
    },
    "queue": [
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
     [
      "copyright_role",
      "Phonographic Copyright"
@@ -7336,6 +7873,1982 @@
   },
   {
    "song": "padded_roles",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false,
+    "include_release_date": false
+   },
+   "queue": []
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": true,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": true,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Already Credited"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": true,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": true,
+    "include_cover_art": false,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": true,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false,
+    "include_release_date": true
+   },
+   "queue": [
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": true,
+    "include_youtube": false,
+    "include_cover_art": false,
+    "include_release_date": false
+   },
+   "queue": [
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "Atlantic Records"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Atlantic Recording Corporation"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Atlantic Recording Corporation"
+    ]
+   ]
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true,
+    "include_release_date": true
+   },
+   "queue": []
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": true,
+    "include_release_date": false
+   },
+   "queue": []
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false,
+    "include_release_date": true
+   },
+   "queue": []
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": true,
+    "include_cover_art": false,
+    "include_release_date": false
+   },
+   "queue": []
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true,
+    "include_release_date": true
+   },
+   "queue": []
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": true,
+    "include_release_date": false
+   },
+   "queue": []
+  },
+  {
+   "song": "atlantic",
+   "flags": {
+    "include_core": false,
+    "include_additional": false,
+    "include_copyright": false,
+    "include_youtube": false,
+    "include_cover_art": false,
+    "include_release_date": true
+   },
+   "queue": []
+  },
+  {
+   "song": "atlantic",
    "flags": {
     "include_core": false,
     "include_additional": false,
@@ -9919,6 +12432,233 @@
    ]
   }
  ],
+ "label_info": [
+  {
+   "input": "℗ 2026 Atlantic Recording Corporation",
+   "output": {
+    "label": "Atlantic Records",
+    "distributor": "Warner Music Group",
+    "label_source": "matched “Atlantic Recording Corporation” in the ℗ line",
+    "distributor_source": "owning group of “Atlantic Recording Corporation” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2022 Top Dawg Entertainment, under exclusive license to RCA Records",
+   "output": {
+    "label": "RCA Records",
+    "distributor": "Sony Music Entertainment",
+    "label_source": "matched “RCA Records” in the ℗ line",
+    "distributor_source": "owning group of “RCA Records” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2024 Darkroom/Interscope Records",
+   "output": {
+    "label": "Interscope Records",
+    "distributor": "Universal Music Group",
+    "label_source": "matched “Darkroom/Interscope Records” in the ℗ line",
+    "distributor_source": "owning group of “Darkroom/Interscope Records” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2023 Island Records, a division of UMG Recordings, Inc.",
+   "output": {
+    "label": "Island Records",
+    "distributor": "Universal Music Group",
+    "label_source": "matched “Island Records” in the ℗ line",
+    "distributor_source": "owning group of “Island Records” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2021 Chance the Rapper LLC, distributed by Ditto Music",
+   "output": {
+    "label": "",
+    "distributor": "Ditto Music",
+    "label_source": "",
+    "distributor_source": "named after “distributed by” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2021 Some Label, distributed by Universal Music Group",
+   "output": {
+    "label": "",
+    "distributor": "Universal Music Group",
+    "label_source": "",
+    "distributor_source": "named after “distributed by” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2021 Some Label, distributed by Ditto Music under exclusive license to Foo Records",
+   "output": {
+    "label": "",
+    "distributor": "Ditto Music",
+    "label_source": "",
+    "distributor_source": "named after “distributed by” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2020 Warner Records Inc., marketed by Republic Records",
+   "output": {
+    "label": "",
+    "distributor": "",
+    "label_source": "",
+    "distributor_source": ""
+   }
+  },
+  {
+   "input": "℗ 2017 Asylum Records UK, a division of Atlantic Records UK, a Warner Music Group company.",
+   "output": {
+    "label": "Asylum Records",
+    "distributor": "Warner Music Group",
+    "label_source": "matched “Asylum Records UK” in the ℗ line",
+    "distributor_source": "owning group of “Asylum Records UK” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 1971 Atlantic Recording Corporation, a Warner Music Group Company. Marketed by Rhino Entertainment Company, a Warner Music Group Company.",
+   "output": {
+    "label": "Atlantic Records",
+    "distributor": "Warner Music Group",
+    "label_source": "matched “Atlantic Recording Corporation, a Warner Music Group Company.” in the ℗ line",
+    "distributor_source": "owning group of “Atlantic Recording Corporation, a Warner Music Group Company.” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2017 Aftermath/Interscope (Top Dawg Entertainment)",
+   "output": {
+    "label": "Interscope Records",
+    "distributor": "Universal Music Group",
+    "label_source": "matched “Aftermath/Interscope (Top Dawg Entertainment)” in the ℗ line",
+    "distributor_source": "owning group of “Aftermath/Interscope (Top Dawg Entertainment)” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2023 Mercury Records/Republic Records, a division of UMG Recordings, Inc.",
+   "output": {
+    "label": "",
+    "distributor": "Universal Music Group",
+    "label_source": "",
+    "distributor_source": "owning group of “Mercury Records/Republic Records” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2020 The Weeknd XO, Inc., marketed by Republic Records, a division of UMG Recordings, Inc.",
+   "output": {
+    "label": "Republic Records",
+    "distributor": "Universal Music Group",
+    "label_source": "matched “Republic Records” in the ℗ line",
+    "distributor_source": "owning group of “Republic Records” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2011 The Island Def Jam Music Group",
+   "output": {
+    "label": "",
+    "distributor": "Universal Music Group",
+    "label_source": "",
+    "distributor_source": "owning group of “The Island Def Jam Music Group” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2008 SONY BMG MUSIC ENTERTAINMENT",
+   "output": {
+    "label": "",
+    "distributor": "Sony Music Entertainment",
+    "label_source": "",
+    "distributor_source": "owning group of “SONY BMG MUSIC ENTERTAINMENT” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2013 Domino Recording Co Ltd",
+   "output": {
+    "label": "Domino Recording Company",
+    "distributor": "",
+    "label_source": "matched “Domino Recording Co Ltd” in the ℗ line",
+    "distributor_source": ""
+   }
+  },
+  {
+   "input": "℗ 1995 Rancid, under exclusive license to Epitaph",
+   "output": {
+    "label": "Epitaph Records",
+    "distributor": "",
+    "label_source": "matched “Epitaph” in the ℗ line",
+    "distributor_source": ""
+   }
+  },
+  {
+   "input": "℗ 2021 Chess Club Under Exclusive License to AWAL Recordings",
+   "output": {
+    "label": "",
+    "distributor": "AWAL",
+    "label_source": "",
+    "distributor_source": "distributor “AWAL Recordings” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2019 Foo Records, under exclusive license to The Orchard",
+   "output": {
+    "label": "",
+    "distributor": "The Orchard",
+    "label_source": "",
+    "distributor_source": "distributor “The Orchard” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2018 Night Time Stories Ltd under exclusive license to Dead Oceans",
+   "output": {
+    "label": "Dead Oceans",
+    "distributor": "",
+    "label_source": "matched “Dead Oceans” in the ℗ line",
+    "distributor_source": ""
+   }
+  },
+  {
+   "input": "℗ 2007 Deutsche Grammophon GmbH, Berlin",
+   "output": {
+    "label": "Deutsche Grammophon",
+    "distributor": "Universal Music Group",
+    "label_source": "matched “Deutsche Grammophon GmbH, Berlin” in the ℗ line",
+    "distributor_source": "owning group of “Deutsche Grammophon GmbH, Berlin” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2022 YG Entertainment, distributed through Interscope Records",
+   "output": {
+    "label": "",
+    "distributor": "Universal Music Group",
+    "label_source": "",
+    "distributor_source": "named after “distributed by” in the ℗ line"
+   }
+  },
+  {
+   "input": "℗ 2024 Taylor Swift",
+   "output": {
+    "label": "",
+    "distributor": "",
+    "label_source": "",
+    "distributor_source": ""
+   }
+  },
+  {
+   "input": "℗ 2024",
+   "output": {
+    "label": "",
+    "distributor": "",
+    "label_source": "",
+    "distributor_source": ""
+   }
+  },
+  {
+   "input": "",
+   "output": {
+    "label": "",
+    "distributor": "",
+    "label_source": "",
+    "distributor_source": ""
+   }
+  }
+ ],
  "split_copyright": [
   {
    "input": "℗ 2024 A Label\n© 2024 B Label\n12 songs, 45 minutes",
@@ -10983,6 +13723,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -11084,6 +13840,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -11189,6 +13961,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -11292,6 +14080,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -11393,6 +14197,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -11498,6 +14318,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -11599,6 +14435,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -11704,6 +14556,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -11805,6 +14673,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -11910,6 +14794,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -12013,6 +14913,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -12116,6 +15032,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -12217,6 +15149,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -12322,6 +15270,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -12423,6 +15387,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -12528,6 +15508,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -12631,6 +15627,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -12734,6 +15746,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -12835,6 +15863,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -12940,6 +15984,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -13041,6 +16101,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -13146,6 +16222,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -13247,6 +16339,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -13352,6 +16460,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -13453,6 +16577,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -13558,6 +16698,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -13659,6 +16815,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -13764,6 +16936,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -13865,6 +17053,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -13970,6 +17174,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -14071,6 +17291,22 @@
     [
      "artist",
      "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
     ],
     [
      "copyright_role",
@@ -14114,6 +17350,958 @@
     ]
    ],
    "pos": 15,
+   "hotkey": "f8",
+   "text": "Tab to Artists in this role, then press F8"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ],
+    [
+     "release_month",
+     "May"
+    ],
+    [
+     "release_day",
+     "17"
+    ],
+    [
+     "release_year",
+     "2024"
+    ]
+   ],
+   "pos": 15,
+   "hotkey": "F9",
+   "text": "Tab to Artists in this role, then press F9"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ],
+    [
+     "release_month",
+     "May"
+    ],
+    [
+     "release_day",
+     "17"
+    ],
+    [
+     "release_year",
+     "2024"
+    ]
+   ],
+   "pos": 16,
+   "hotkey": "f8",
+   "text": "1. Click Add additional credits\n2. Click inside the Additional role field\n3. Press F8"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ],
+    [
+     "release_month",
+     "May"
+    ],
+    [
+     "release_day",
+     "17"
+    ],
+    [
+     "release_year",
+     "2024"
+    ]
+   ],
+   "pos": 16,
+   "hotkey": "F9",
+   "text": "1. Click Add additional credits\n2. Click inside the Additional role field\n3. Press F9"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ],
+    [
+     "release_month",
+     "May"
+    ],
+    [
+     "release_day",
+     "17"
+    ],
+    [
+     "release_year",
+     "2024"
+    ]
+   ],
+   "pos": 17,
+   "hotkey": "f8",
+   "text": "Tab to Artists in this role, then press F8"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ],
+    [
+     "release_month",
+     "May"
+    ],
+    [
+     "release_day",
+     "17"
+    ],
+    [
+     "release_year",
+     "2024"
+    ]
+   ],
+   "pos": 17,
+   "hotkey": "F9",
+   "text": "Tab to Artists in this role, then press F9"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ],
+    [
+     "release_month",
+     "May"
+    ],
+    [
+     "release_day",
+     "17"
+    ],
+    [
+     "release_year",
+     "2024"
+    ]
+   ],
+   "pos": 18,
+   "hotkey": "f8",
+   "text": "1. Click Add additional credits\n2. Click inside the Additional role field\n3. Press F8"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ],
+    [
+     "release_month",
+     "May"
+    ],
+    [
+     "release_day",
+     "17"
+    ],
+    [
+     "release_year",
+     "2024"
+    ]
+   ],
+   "pos": 18,
+   "hotkey": "F9",
+   "text": "1. Click Add additional credits\n2. Click inside the Additional role field\n3. Press F9"
+  },
+  {
+   "queue": [
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W3"
+    ],
+    [
+     "written_by",
+     "W1"
+    ],
+    [
+     "written_by",
+     "W2"
+    ],
+    [
+     "produced_by",
+     "P1"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P2"
+    ],
+    [
+     "produced_by",
+     "P3"
+    ],
+    [
+     "role",
+     "Mixing Engineer"
+    ],
+    [
+     "artist",
+     "M1"
+    ],
+    [
+     "artist",
+     "M2"
+    ],
+    [
+     "role",
+     "Background Vocals"
+    ],
+    [
+     "artist",
+     "V1"
+    ],
+    [
+     "artist",
+     "V2"
+    ],
+    [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
+     "copyright_role",
+     "Phonographic Copyright"
+    ],
+    [
+     "phonographic_copyright",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "phonographic_copyright",
+     "RCA Records"
+    ],
+    [
+     "copyright_role",
+     "Copyright"
+    ],
+    [
+     "copyright_notice",
+     "Top Dawg Entertainment"
+    ],
+    [
+     "youtube_url",
+     "https://www.youtube.com/watch?v=abc"
+    ],
+    [
+     "cover_art",
+     "https://example.com/cover.png"
+    ],
+    [
+     "release_month",
+     "May"
+    ],
+    [
+     "release_day",
+     "17"
+    ],
+    [
+     "release_year",
+     "2024"
+    ]
+   ],
+   "pos": 19,
    "hotkey": "f8",
    "text": "Field is ready. Press F8 to add the label"
   },
@@ -14176,6 +18364,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -14216,7 +18420,7 @@
      "2024"
     ]
    ],
-   "pos": 15,
+   "pos": 19,
    "hotkey": "F9",
    "text": "Field is ready. Press F9 to add the label"
   },
@@ -14279,6 +18483,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -14319,7 +18539,7 @@
      "2024"
     ]
    ],
-   "pos": 16,
+   "pos": 20,
    "hotkey": "f8",
    "text": "Field is ready. Press F8 to add the next label"
   },
@@ -14382,6 +18602,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -14422,7 +18658,7 @@
      "2024"
     ]
    ],
-   "pos": 16,
+   "pos": 20,
    "hotkey": "F9",
    "text": "Field is ready. Press F9 to add the next label"
   },
@@ -14485,6 +18721,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -14525,7 +18777,7 @@
      "2024"
     ]
    ],
-   "pos": 17,
+   "pos": 21,
    "hotkey": "f8",
    "text": "1. Click Add additional credits\n2. Click inside the Additional role field\n3. Press F8"
   },
@@ -14588,6 +18840,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -14628,7 +18896,7 @@
      "2024"
     ]
    ],
-   "pos": 17,
+   "pos": 21,
    "hotkey": "F9",
    "text": "1. Click Add additional credits\n2. Click inside the Additional role field\n3. Press F9"
   },
@@ -14691,6 +18959,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -14731,7 +19015,7 @@
      "2024"
     ]
    ],
-   "pos": 18,
+   "pos": 22,
    "hotkey": "f8",
    "text": "Field is ready. Press F8 to add the label"
   },
@@ -14794,6 +19078,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -14834,7 +19134,7 @@
      "2024"
     ]
    ],
-   "pos": 18,
+   "pos": 22,
    "hotkey": "F9",
    "text": "Field is ready. Press F9 to add the label"
   },
@@ -14897,6 +19197,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -14937,7 +19253,7 @@
      "2024"
     ]
    ],
-   "pos": 19,
+   "pos": 23,
    "hotkey": "f8",
    "text": "Press F8 to copy the YouTube video URL to clipboard"
   },
@@ -15000,6 +19316,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -15040,7 +19372,7 @@
      "2024"
     ]
    ],
-   "pos": 19,
+   "pos": 23,
    "hotkey": "F9",
    "text": "Press F9 to copy the YouTube video URL to clipboard"
   },
@@ -15103,6 +19435,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -15143,7 +19491,7 @@
      "2024"
     ]
    ],
-   "pos": 20,
+   "pos": 24,
    "hotkey": "f8",
    "text": "Press F8 to copy the 1000×1000 PNG cover art URL to clipboard"
   },
@@ -15206,6 +19554,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -15246,7 +19610,7 @@
      "2024"
     ]
    ],
-   "pos": 20,
+   "pos": 24,
    "hotkey": "F9",
    "text": "Press F9 to copy the 1000×1000 PNG cover art URL to clipboard"
   },
@@ -15309,6 +19673,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -15349,7 +19729,7 @@
      "2024"
     ]
    ],
-   "pos": 21,
+   "pos": 25,
    "hotkey": "f8",
    "text": "Open the Tags and Albums section if it is closed. Click the Release Date Month dropdown, then press F8 to enter the month"
   },
@@ -15412,6 +19792,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -15452,7 +19848,7 @@
      "2024"
     ]
    ],
-   "pos": 21,
+   "pos": 25,
    "hotkey": "F9",
    "text": "Open the Tags and Albums section if it is closed. Click the Release Date Month dropdown, then press F9 to enter the month"
   },
@@ -15515,6 +19911,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -15555,7 +19967,7 @@
      "2024"
     ]
    ],
-   "pos": 22,
+   "pos": 26,
    "hotkey": "f8",
    "text": "Click the Release Date Day dropdown, then press F8 to enter the day"
   },
@@ -15618,6 +20030,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -15658,7 +20086,7 @@
      "2024"
     ]
    ],
-   "pos": 22,
+   "pos": 26,
    "hotkey": "F9",
    "text": "Click the Release Date Day dropdown, then press F9 to enter the day"
   },
@@ -15721,6 +20149,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -15761,7 +20205,7 @@
      "2024"
     ]
    ],
-   "pos": 23,
+   "pos": 27,
    "hotkey": "f8",
    "text": "Click the Release Date Year dropdown, then press F8 to enter the year"
   },
@@ -15824,6 +20268,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -15864,7 +20324,7 @@
      "2024"
     ]
    ],
-   "pos": 23,
+   "pos": 27,
    "hotkey": "F9",
    "text": "Click the Release Date Year dropdown, then press F9 to enter the year"
   },
@@ -15927,6 +20387,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -15967,7 +20443,7 @@
      "2024"
     ]
    ],
-   "pos": 24,
+   "pos": 28,
    "hotkey": "f8",
    "text": "All done. Save the page on Genius."
   },
@@ -16030,6 +20506,22 @@
      "V2"
     ],
     [
+     "role",
+     "Label"
+    ],
+    [
+     "artist",
+     "RCA Records"
+    ],
+    [
+     "role",
+     "Distributor"
+    ],
+    [
+     "artist",
+     "Sony Music Entertainment"
+    ],
+    [
      "copyright_role",
      "Phonographic Copyright"
     ],
@@ -16070,7 +20562,7 @@
      "2024"
     ]
    ],
-   "pos": 24,
+   "pos": 28,
    "hotkey": "F9",
    "text": "All done. Save the page on Genius."
   }
@@ -18198,6 +22690,268 @@
   {
    "status": "done",
    "song": "padded_roles",
+   "wants": [
+    false,
+    false,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "atlantic",
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art, YouTube link",
+    "missing": [
+     "cover art",
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "atlantic",
+   "wants": [
+    true,
+    true,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "atlantic",
+   "wants": [
+    true,
+    true,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "atlantic",
+   "wants": [
+    true,
+    true,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "atlantic",
+   "wants": [
+    true,
+    false,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: YouTube link",
+    "missing": [
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "atlantic",
+   "wants": [
+    true,
+    false,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "working",
+    "label": "Finding YouTube link",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "atlantic",
+   "wants": [
+    true,
+    false,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "atlantic",
+   "wants": [
+    true,
+    false,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "atlantic",
+   "wants": [
+    false,
+    true,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art, YouTube link",
+    "missing": [
+     "cover art",
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "atlantic",
+   "wants": [
+    false,
+    true,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "atlantic",
+   "wants": [
+    false,
+    true,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "atlantic",
+   "wants": [
+    false,
+    true,
+    false
+   ],
+   "searching": true,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: cover art",
+    "missing": [
+     "cover art"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "atlantic",
+   "wants": [
+    false,
+    false,
+    true
+   ],
+   "searching": false,
+   "output": {
+    "level": "attention",
+    "label": "Needs a look: YouTube link",
+    "missing": [
+     "YouTube link"
+    ]
+   }
+  },
+  {
+   "status": "done",
+   "song": "atlantic",
+   "wants": [
+    false,
+    false,
+    true
+   ],
+   "searching": true,
+   "output": {
+    "level": "working",
+    "label": "Finding YouTube link",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "atlantic",
+   "wants": [
+    false,
+    false,
+    false
+   ],
+   "searching": false,
+   "output": {
+    "level": "ok",
+    "label": "All found",
+    "missing": []
+   }
+  },
+  {
+   "status": "done",
+   "song": "atlantic",
    "wants": [
     false,
     false,

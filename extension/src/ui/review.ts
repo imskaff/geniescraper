@@ -1,5 +1,5 @@
 // The review screen: the track list with health marks, each track's credits and its YouTube link.
-import { releaseDateText, type SongCredits, type VideoKind } from "../core/models";
+import { labelInfo, releaseDateText, type SongCredits, type VideoKind } from "../core/models";
 import { shownTrack, type TrackResult } from "../shared/session";
 import { trackHealth, type Health, type HealthLevel } from "../core/trackHealth";
 import { youtubeSearchUrl } from "../core/youtubeLink";
@@ -199,6 +199,20 @@ export function trackDetail(v: ViewContext, state: PanelState, result: TrackResu
   const notFound = (label: string, words = "Not found"): void => {
     groups.append(el("dt", { class: "attn", text: label }), el("dd", { class: "attn", text: words }));
   };
+  // Derived from the ℗ line, so each value says where it came from; the paste screen lets the user skip a step.
+  const info = labelInfo(song);
+  const from = song.appleMusicUrl.includes("spotify.com") ? "Spotify's" : "Apple Music's";
+  for (const [name, value, source] of [
+    ["Label", info.label, info.labelSource],
+    ["Distributor", info.distributor, info.distributorSource],
+  ] as const) {
+    if (value) {
+      groups.append(
+        el("dt", { text: name }),
+        el("dd", {}, value, el("span", { class: "help", text: ` (${from} ${source})` })),
+      );
+    }
+  }
   if (song.phonographicCopyright)
     groups.append(el("dt", { text: "Phonographic copyright" }), el("dd", { text: song.phonographicCopyright }));
   if (song.copyrightNotice) groups.append(el("dt", { text: "Copyright" }), el("dd", { text: song.copyrightNotice }));

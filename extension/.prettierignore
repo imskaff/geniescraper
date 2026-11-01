@@ -5,3 +5,4 @@ data/roles.json
 test/vectors.json
 dist-safari/
 test/spotify/
+data/labels.json

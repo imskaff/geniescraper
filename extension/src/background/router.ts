@@ -42,6 +42,19 @@ async function withCover(album: AlbumInfo, exact: string, covers: CoverService):
   return { ...album, coverArtUrl: cover };
 }
 
+/** A /song/ page has no footer, so its album's ℗ and © lines come from the iTunes lookup (best effort). */
+async function withSongCopyright(album: AlbumInfo, url: string, covers: CoverService): Promise<AlbumInfo> {
+  if (
+    !url.includes("music.apple.com") ||
+    !url.includes("/song/") ||
+    album.phonographicCopyright ||
+    album.copyrightNotice
+  )
+    return album;
+  const [phonographicCopyright, copyrightNotice] = (await covers.copyright?.(url).catch(() => undefined)) ?? ["", ""];
+  return { ...album, phonographicCopyright, copyrightNotice };
+}
+
 export function createRouter(
   ports: BrowserPorts,
   timing: ClientTiming,
@@ -133,7 +146,8 @@ export function createRouter(
       const result = await detectAlbum(ports, raw.url, raw.tabId, timing);
       // A failed read must not wait on the lookup: it would hold the queue for as long as iTunes takes.
       if (!result.ok) return result;
-      return { ok: true, data: await withCover(result.data, await exact, covers) };
+      const album = await withCover(result.data, await exact, covers);
+      return { ok: true, data: await withSongCopyright(album, raw.url, covers) };
     }
     if (raw.type === "youtube-lookup") {
       const link = await youtube.find(raw.title, raw.artist).catch(() => NO_LINK);

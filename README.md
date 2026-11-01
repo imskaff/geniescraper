@@ -208,11 +208,18 @@ Fields are pasted in the order Genius expects them:
 | 1   | Written By                 | One artist per press                     |
 | 2   | Produced By                | One artist per press                     |
 | 3   | Additional Credits         | Role name, then each artist in that role |
-| 4   | Phonographic Copyright (℗) | Role name typed, then each label         |
-| 5   | Copyright (©)              | Role name typed, then each label         |
-| 6   | YouTube URL                | Pasted, or copied to the clipboard       |
-| 7   | Cover Art URL              | 1000×1000 PNG, pasted or copied          |
-| 8   | Release Date               | Month, day and year dropdowns            |
+| 4   | Label, Distributor         | Only when the ℗ line makes them clear    |
+| 5   | Phonographic Copyright (℗) | Role name typed, then each label         |
+| 6   | Copyright (©)              | Role name typed, then each label         |
+| 7   | YouTube URL                | Pasted, or copied to the clipboard       |
+| 8   | Cover Art URL              | 1000×1000 PNG, pasted or copied          |
+| 9   | Release Date               | Month, day and year dropdowns            |
+
+Label and Distributor are derived from the ℗ line with a reviewed table (`scraper/labels.py`): "℗ 2026 Atlantic Recording Corporation" gives Label "Atlantic Records" and Distributor "Warner Music Group".
+A "distributed by" in the line is used as written.
+An Apple Music `/song/` link has no copyright footer, so its ℗ and © lines come from the iTunes lookup of the album the song belongs to (best effort, empty on failure).
+When the line names no known label, or names labels of different groups, the field is left empty - never guessed.
+They follow the copyright toggle; the pairs are the same `role`/`artist` queue items as any other additional credit.
 
 ## Configuration
 

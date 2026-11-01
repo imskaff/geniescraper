@@ -321,8 +321,29 @@ describe("a whole song", () => {
     };
     const queue = typedQueue(song);
     const { fake, run } = setup({
-      artists: ["W1", "W2", "W3", "P1", "P2", "P3", "M1", "M2", "V1", "V2", "Top Dawg Entertainment", "RCA Records"],
-      roles: ["Mixing Engineer", "Background Vocals", "Phonographic Copyright ℗", "Copyright ©"],
+      artists: [
+        "W1",
+        "W2",
+        "W3",
+        "P1",
+        "P2",
+        "P3",
+        "M1",
+        "M2",
+        "V1",
+        "V2",
+        "Top Dawg Entertainment",
+        "RCA Records",
+        "Sony Music Entertainment",
+      ],
+      roles: [
+        "Mixing Engineer",
+        "Background Vocals",
+        "Label",
+        "Distributor",
+        "Phonographic Copyright ℗",
+        "Copyright ©",
+      ],
     });
 
     const outcomes: string[] = [];
@@ -334,6 +355,8 @@ describe("a whole song", () => {
     expect(rowChips(fake.form).map((r) => [r.role[0], [...r.artists].sort()])).toEqual([
       ["Mixing Engineer", ["M1", "M2"]],
       ["Background Vocals", ["V1", "V2"]],
+      ["Label", ["RCA Records"]],
+      ["Distributor", ["Sony Music Entertainment"]],
       ["Phonographic Copyright ℗", ["RCA Records", "Top Dawg Entertainment"]],
       ["Copyright ©", ["Top Dawg Entertainment"]],
     ]);

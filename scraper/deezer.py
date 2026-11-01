@@ -1,7 +1,9 @@
 import re
+from typing import Any
 
 import httpx
 
+from scraper.apple_music import split_copyright
 from scraper.text import core_title_words, words
 
 _CATALOG_URL = re.compile(r"music\.apple\.com/([a-z]{2})/(?:album|song)/(?:[^/?#]+/)?(\d+)")
@@ -61,6 +63,34 @@ async def fetch_itunes_lookup_cover_url(apple_music_url: str) -> str:
         if artwork:
             return _itunes_png(artwork)
     return ""
+
+
+async def fetch_itunes_copyright(apple_music_url: str) -> tuple[str, str]:
+    """The (phonographic, copyright) lines of the album an Apple Music /song/ page belongs to, or ('', '').
+
+    A song page has no footer, and iTunes puts the copyright on the album record only, so the song's lookup names
+    the album and a second lookup reads it.
+    """
+    ref = catalog_ref(apple_music_url)
+    if not ref:
+        return "", ""
+    country, song_id = ref
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+
+            async def first(catalog_id: str) -> dict[str, Any]:
+                r = await client.get("https://itunes.apple.com/lookup", params={"id": catalog_id, "country": country})
+                r.raise_for_status()
+                found = r.json().get("results", [])
+                return found[0] if found and isinstance(found[0], dict) else {}
+
+            album_id = (await first(song_id)).get("collectionId")
+            if not isinstance(album_id, int):
+                return "", ""
+            line = (await first(str(album_id))).get("copyright")
+    except Exception:
+        return "", ""
+    return split_copyright(line) if isinstance(line, str) else ("", "")
 
 
 async def fetch_cover_url(title: str, artist: str) -> str:

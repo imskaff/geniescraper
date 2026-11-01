@@ -134,17 +134,17 @@ The store text is in [store/listing.md](store/listing.md).
 
 ## Layout
 
-| Folder            | Contents                                                                     |
-| ----------------- | ---------------------------------------------------------------------------- |
-| `src/apple/`      | Reading Apple Music pages (credits, titles, cover art).                      |
-| `src/spotify/`    | Reading Spotify pages (credits dialog, album tracks) and its role tables.    |
-| `src/providers/`  | The provider interface and one module per source.                            |
-| `src/background/` | The service worker: hidden tabs, the paste session, covers, YouTube, Genius. |
-| `src/genius/`     | The content script that fills the Genius form.                               |
-| `src/lookups/`    | YouTube, Deezer and iTunes lookups.                                          |
-| `src/core/`       | Pure logic shared by the rest: the paste queue, roles, track health.         |
-| `src/ui/`         | The side panel: controller, view and stylesheet.                             |
-| `src/shared/`     | Messages, settings and session formats used on both sides.                   |
-| `scripts/`        | Build, packaging and the live checks.                                        |
-| `test/`           | Tests.                                                                       |
-| `data/`           | `roles.json`, the table that maps Apple Music roles to Genius role names.    |
+| Folder            | Contents                                                                       |
+| ----------------- | ------------------------------------------------------------------------------ |
+| `src/apple/`      | Reading Apple Music pages (credits, titles, cover art).                        |
+| `src/spotify/`    | Reading Spotify pages (credits dialog, album tracks) and its role tables.      |
+| `src/providers/`  | The provider interface and one module per source.                              |
+| `src/background/` | The service worker: hidden tabs, the paste session, covers, YouTube, Genius.   |
+| `src/genius/`     | The content script that fills the Genius form.                                 |
+| `src/lookups/`    | YouTube, Deezer and iTunes lookups.                                            |
+| `src/core/`       | Pure logic shared by the rest: the paste queue, roles, track health.           |
+| `src/ui/`         | The side panel: controller, view and stylesheet.                               |
+| `src/shared/`     | Messages, settings and session formats used on both sides.                     |
+| `scripts/`        | Build, packaging and the live checks.                                          |
+| `test/`           | Tests.                                                                         |
+| `data/`           | `roles.json` (Apple roles to Genius names) and `labels.json` (label to group). |

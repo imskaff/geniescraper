@@ -3,6 +3,7 @@ from typing import Any, Literal, get_args
 
 from pydantic import BaseModel, field_validator, model_validator
 
+from scraper.labels import LabelInfo, derive_label_info
 from scraper.release_date import MONTHS, format_release_date, split_release_date
 
 _COPYRIGHT_CONNECTORS = re.compile(
@@ -149,6 +150,17 @@ class SongCredits(BaseModel):
                 result.extend(credit.artists)
         return result
 
+    def label_info(self) -> LabelInfo:
+        """Label and Distributor derived from the ℗ line; a role the credits already carry is never repeated."""
+        info = derive_label_info(self.phonographic_copyright, _extract_labels(self.phonographic_copyright))
+        have = {c.role.lower().strip() for c in self.credits}
+        return LabelInfo(
+            "" if "label" in have else info.label,
+            "" if "distributor" in have else info.distributor,
+            info.label_source,
+            info.distributor_source,
+        )
+
     def typed_queue(
         self,
         *,
@@ -199,6 +211,11 @@ class SongCredits(BaseModel):
                 for artist in credit.artists:
                     queue.append(("artist", artist))
         if include_copyright:
+            info = self.label_info()
+            for role, name in (("Label", info.label), ("Distributor", info.distributor)):
+                if name:
+                    queue.append(("role", role))
+                    queue.append(("artist", name))
             ph_labels = _extract_labels(self.phonographic_copyright) if self.phonographic_copyright else []
             co_labels = _extract_labels(self.copyright_notice) if self.copyright_notice else ph_labels
             if ph_labels:

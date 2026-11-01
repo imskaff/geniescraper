@@ -27,7 +27,7 @@ How it works:
    Open on Genius finds the song and opens that form for you (exact title and artist only; with no match or several, it stops and tells you).
    Prefer to stay in control? Step by step fills one field per key press (F8), F7 goes back, and the panel can skip a step.
 
-What it fills: writers, producers, other roles and their artists, the phonographic and copyright lines, a YouTube link, and the cover art link.
+What it fills: writers, producers, other roles and their artists, the phonographic and copyright lines, the label and distributor when the phonographic line makes them clear, a YouTube link, and the cover art link.
 Roles are entered under the names Genius uses.
 
 You stay in control:
