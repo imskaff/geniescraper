@@ -44,6 +44,7 @@ It never presses Save: you check the form and save it yourself.
 
 ### Pasting into Genius
 
+- 🔗 **Open on Genius** – One press finds the song on Genius, opens it in a new tab and presses its Edit Metadata button for you. It only does so when exactly one Genius song matches the title and artist; with none or several, it stops and tells you instead of guessing. An existing Genius tab is never navigated away, so a form you are editing is safe.
 - 🤖 **Auto-paste** – The whole track is filled in field by field while you watch. It pauses the moment you click or type in the form, press `Esc` or close the panel, and carries on from the same step when you turn it back on.
 - 👣 **Step by step** – Prefer control? Use the customizable shortcuts for pasting, going back or skipping a field in the form.
 - 🎯 **Exact matches only** – A suggestion is chosen only when it matches the typed name exactly (ignoring case, accents and symbols). Otherwise the text stays typed and the choice is yours, so a near match never ends up on a song.
@@ -66,6 +67,7 @@ Use the extension alone, or pair it with the desktop app: the app reads and revi
 
 - No accounts, no analytics, no servers of ours. Everything stays in your browser and on your computer.
 - The link between the extension and the desktop app stays on your computer (`127.0.0.1`), needs a one-time pairing code and never shares your Genius sign-in: you stay signed in to Genius in your own browser.
+- **Open on Genius** sends the song title and artist to Genius's own search, only when you press it (or turn on opening each song before pasting). No cookies, no sign-in and nothing goes to anyone else.
 - YouTube lookups are optional and ask your permission first. An optional YouTube key stays in your browser and is sent only to Google.
 - Reading Spotify is optional too: Chrome asks for access to `open.spotify.com` the first time you press **Get credits** on a Spotify page, after the panel has explained why. Nothing read from Spotify is sent anywhere.
 - When Apple's catalog has no cover for a song (always the case for a Spotify link), the extension asks Deezer, sending only the song title and artist. That permission is part of the install and cannot be switched off.
@@ -150,7 +152,7 @@ Pair them once; the pairing is remembered. This is optional but recommended: it 
 1. **Open an album or a song on Apple Music or Spotify** and click the Géniescraper icon. The panel offers the page you are on, and any other Apple Music or Spotify pages you have open appear under **Listening for Apple Music or Spotify pages…**. Pick one, or paste a link and press **Get credits**.
 2. **Choose the tracks** of an album with **Select all** or by ticking them (none are ticked for you). Their credits are read in the background.
 3. **Review** each track: the credits, the ℗ / © lines, the cover and the YouTube link that will be pasted. A track that says **Needs a look** is missing something; open it to see what.
-4. **Open the song's Edit Metadata form on Genius** (signed in, in the same browser) and press **Start pasting**.
+4. **Open the song's Edit Metadata form on Genius** (signed in, in the same browser) and press **Start pasting**. To let the extension do the opening, press **Open on Genius** in the panel (beside **Start pasting**, and next to the track's name while pasting): it finds the exact song, opens the page in a new tab and presses **Edit Metadata**. With none or several matches it says so and opens nothing; signed out, it tells you to sign in.
 5. **Paste.** The panel shows the current step and these controls:
 
    | Control                | What it does                                                                                      |
@@ -235,7 +237,7 @@ Both apps have a **Settings** screen. In the desktop app it opens over any scree
 | Card                   | What you can set                                                                                                                      |
 |------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
 | **What to paste**      | Songwriters and producers, additional credits, copyright lines, YouTube link, PNG cover art link, release date.                                |
-| **Pasting on Genius**  | Auto-paste on or off, the pause between fields (0.6 s by default), the keys (`F8` and `F7`), how long to wait for suggestions, what happens after a track. |
+| **Pasting on Genius**  | Auto-paste on or off, the pause between fields (0.6 s by default), the keys (`F8` and `F7`), how long to wait for suggestions, what happens after a track, and **Open each song on Genius before pasting it**. |
 | **Reading credits**    | How many tracks are read at the same time (3 by default).                                                                              |
 | **YouTube links**      | Find a YouTube link for each track (recommended), and an optional free YouTube key for more reliable links; the panel walks you through getting one. |
 | **Desktop app**        | Pair with the desktop app: pairing code, **Paste**, **Pair**, **Unpair**.                                                              |
