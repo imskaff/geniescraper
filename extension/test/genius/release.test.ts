@@ -47,7 +47,7 @@ describe("the song page's own Release Date widget", () => {
     expect(await run(MONTH)).toEqual({ status: "filled", message: "Set the release month to May." });
     expect(fake.chosen).toEqual(["Release Month: May"]);
     const decoy = fake.doc.querySelectorAll<HTMLInputElement>("#song-info-release-date input");
-    expect([...decoy].map((el) => el.value)).toEqual(["", "", ""]);
+    expect([...decoy].map((el) => el.value)).toEqual(["", "", "", "", ""]);
     expect(shown(fake, "Release Month")).toBe("May");
   });
 
