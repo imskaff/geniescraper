@@ -28,6 +28,7 @@ Recommendation in short:
 - Spotify: one hidden tab on `/search/<query>/tracks?locale=en`.
   There is no cheaper credential-free route on `open.spotify.com`.
 - Both: show "not found" when the matcher accepts nothing, and never fall back to the top result.
+- Prerequisite for both: the Genius page must give primary and featured artists as separate names (section 5); that is not verified yet.
 
 No new host is needed (section 7).
 
@@ -59,7 +60,8 @@ The hidden-tab reads used a throwaway extension with `scripting` and the host pe
 
 - `media=music&entity=song&country=us&limit=25&term=<title> <primary artist>` with the featured part removed from the title.
 - Returns `trackName`, `artistName`, `collectionName`, `trackViewUrl` (an album URL with `?i=<track id>`), which is exactly the form the extension opens.
-- `artistName` holds the primary artists joined with `&`; featured artists are in the title ("Fortnight (feat. Post Malone)").
+- `artistName` holds the primary artists joined with `&`.
+- Featured artists are in the title ("Fortnight (feat. Post Malone)").
 - Title-only (`term=<title>`, `limit=50`) found one song fewer ("Wake Me Up (Radio Edit)" fell outside the 50) and never found one more.
   Raising the limit to 200, `attribute=songTerm`, folding diacritics in the term, and `country=gb` did not recover the four misses.
 - The four misses are gaps of the index, not of the matcher: "DÁKITI", "Tití Me Preguntó", "EARFQUAKE" and "The Less I Know the Better" all exist on Apple Music (the search page finds three of them), but the API returns other songs of the artist and covers instead.
@@ -73,7 +75,7 @@ The hidden-tab reads used a throwaway extension with `scripting` and the host pe
   The first four rows are the "Top Results" duplicates of the "Songs" section; 13 rows per page in all, so duplicates must be dropped by link.
 - The row shows no album name, but the link slug names it ("swag-live-from-coachella-weekend-i"), which is enough for the release check in section 4.
 - Rows appear about 1.6 to 2.2 s after the script starts; an invented title shows an empty page (0 rows) and the reader must stop on a bounded wait.
-  One such wait took 66 s in my probe because the tab load itself stalled: the extension needs a hard cap on both the load and the row wait.
+  One such lookup (the invented title) took 66 s in my probe; I did not isolate whether the tab load or the row wait stalled, so the extension needs a hard cap on both.
 
 ### 3.3 Spotify
 
@@ -97,7 +99,8 @@ The hidden-tab reads used a throwaway extension with `scripting` and the host pe
 3. Delete apostrophes and quote marks (`’ ‘ ' ` ´`), so "Don't" and "Dont" agree and "Taylor’s" equals "Taylor's".
 4. Replace `&` with the word `and`.
 5. Replace every run of characters that are not a letter or number (`\p{L}`, `\p{N}`) with one space; trim.
-   Non-Latin letters stay, so "夜に駆ける" compares as it is. A `+` or `$` becomes a space ("A$AP" gives "a ap" on both sides, which is consistent).
+   Non-Latin letters stay, so "夜に駆ける" compares as it is.
+   A `+` or `$` becomes a space ("A$AP" gives "a ap" on both sides, which is consistent).
 
 `normTitle(title, artistNames)`, applied to both the Genius title and the result title:
 
@@ -106,7 +109,8 @@ The hidden-tab reads used a throwaway extension with `scripting` and the host pe
    "Stay (With Me)" keeps its bracket because "Me" is not an artist.
 3. Delete edition words that do not change the recording: `(Remastered)`, `(Remastered 2011)`, `- 2013 Remaster`, `- Remastered 2009`, `(Digital Remaster)`, `Radio Edit`, `Single Version`, `Album Version`, `(Deluxe)`, `(Deluxe Edition)`, `(Explicit)`.
    Anything else stays part of the title: `Remix`, `Live`, `Acoustic`, `Instrumental`, `Sped Up`, `Version` words not listed, `Taylor's Version`.
-   Spotify writes `Despacito - Remix` and Apple `Despacito (feat. Justin Bieber) [Remix]`: after steps 1 to 3 and `fold`, all three give `despacito remix`.
+   Spotify writes `Despacito - Remix` and Apple `Despacito (feat. Justin Bieber) [Remix]`.
+   After steps 1 to 3 and `fold`, all three give `despacito remix`.
 4. Delete a bracket that holds only non-Latin letters and no ASCII letter or digit: "Gangnam Style (강남스타일)" gives "Gangnam Style".
    A bracket with digits or Latin letters ("(4:44)", "(Blue)") is kept.
 5. `fold` the rest.
@@ -123,7 +127,9 @@ A result is accepted when all of these hold:
 
 1. `normTitle(result.title)` equals `normTitle(genius.title)` (whole-string equality, never "contains").
 2. The artist rule of its service holds (equality of sets, never "a subset" or "the first artist").
-3. The release is not a different edition by name: the album name (Spotify, iTunes) or the album slug of the link (Apple) does not match `live|acoustic|remix(es)|instrumental|karaoke|sped up|slowed|reverb|tribute|cover|lullaby|8 bit|piano version|mixed` unless the same word is in the Genius title.
+3. The release is not a different edition by name: every flag word in the album name (Spotify, iTunes) or in the album slug of the link (Apple) must also be a word of the Genius title.
+   The flag words are `live`, `acoustic`, `remix(es)`, `instrumental`, `karaoke`, `sped up`, `slowed`, `reverb`, `tribute`, `cover`, `lullaby`, `8 bit`, `piano version`, `mixed`.
+   So Genius "Cold Heart (PNAU Remix)" accepts a remix release but still refuses a live one.
 4. Among accepted results, take the first in the service's own order.
    If there is none, the answer is "not found".
 
@@ -147,8 +153,9 @@ const REM = String.raw`(?:\d{4}\s+)?(?:digital\s+)?remaster(?:ed)?(?:\s+\d{4})?`
 const EDITION = new RegExp(
   String.raw`[(\[]\s*(?:${REM}|radio edit|single version|album version|deluxe(?: edition)?|explicit)\s*[)\]]` +
     String.raw`|\s[-–]\s*(?:${REM}|radio edit|single version|album version)\s*$`, "gi");
-const FLAGGED_RELEASE =
-  /\b(live|acoustic|remix(?:es)?|instrumental|karaoke|sped up|slowed|reverb|tribute|cover|lullaby|8 bit|piano version|mixed)\b/i;
+const FLAG_WORDS =
+  /\b(live|acoustic|remix(?:es)?|instrumental|karaoke|sped up|slowed|reverb|tribute|cover|lullaby|8 bit|piano version|mixed)\b/gi;
+const flagWords = (text: string) => new Set((text.match(FLAG_WORDS) ?? []).map((w) => w.toLowerCase()));
 
 function normTitle(title: string, artists: string[]): string {
   let t = title.replace(FEAT, " ");
@@ -188,21 +195,36 @@ export function accepts(service: "spotify" | "apple", g: GeniusSong, h: Hit): bo
       ? sameSet(h.artists, all)
       : sameArtistsJoined(h.artists.join(" and "), g.primary) && sameSet(featuredInTitle(h.title), g.featured);
   if (!artistsOk) return false;
-  return !FLAGGED_RELEASE.test(releaseOf(h)) || FLAGGED_RELEASE.test(g.title);
+  const allowed = flagWords(g.title);
+  return [...flagWords(releaseOf(h))].every((w) => allowed.has(w));
 }
 
 export const pick = (service: "spotify" | "apple", g: GeniusSong, hits: Hit[]) =>
   hits.find((h) => accepts(service, g, h)) ?? null;
 ```
 
-Unit-test it with the fixture, plus these hand cases: `normTitle("Stay (With Me)", ["Rihanna"])` is `stay with me`; `normTitle("STAY (with Justin Bieber)", ["The Kid LAROI", "Justin Bieber"])` is `stay`; `normTitle("Hotel California - 2013 Remaster", [])` is `hotel california`; `normTitle("Gangnam Style (강남스타일)", [])` is `gangnam style`; "Home (Live)" by the same artist is rejected against Genius "Home".
+Unit-test the port with the `cases` array of the fixture (31 rows from the live runs and by hand, each with the expected `accept`), including these: `normTitle("Stay (With Me)", ["Rihanna"])` is `stay with me`; `normTitle("STAY (with Justin Bieber)", ["The Kid LAROI", "Justin Bieber"])` is `stay`; `normTitle("Hotel California - 2013 Remaster", [])` is `hotel california`; `normTitle("Gangnam Style (강남스타일)", [])` is `gangnam style`; "Home (Live)" by the same artist is rejected against Genius "Home".
 
-## 5. What the matcher needs from the Genius page
+## 5. What the matcher needs from the Genius page (a prerequisite, not yet checked)
 
-- Primary and featured artists as separate names (the header's artist links and its "Featuring" credit), not only the `og:title` string "Artist - Title Lyrics".
-  With one joined string the comma and `&` cases ("Tyler, The Creator", "Earth, Wind & Fire") cannot be split safely.
-- The title as shown, without the `(Ft. ...)` part removed (the matcher removes it from both sides).
-- Spotify cannot tell primary from featured, so an artist who is primary on Genius but featured on Spotify (or the reverse) still matches; that is harmless because it is the same recording.
+The rule compares sets of artist names, so it needs the song's primary artists and featured artists as separate names, plus the title as shown.
+This study did not read a live Genius song page (no Genius traffic was sent), and the sample was typed to that assumption.
+
+What the repository offers today:
+
+- `extension/src/genius/*` only drives the edit form; nothing reads the song page's own title or artists.
+- `extension/src/core/geniusMatch.ts` reads `genius.com/api/search/song` results, which carry `primary_artists[].name` and `featured_artists[].name` as separate lists.
+  So that shape exists on a host already allowed (it is used in the reverse direction, Apple to Genius).
+- No saved Genius song page is in `tests/fixtures/` (only the edit form and release-date pages), so the page's own markup could not be checked offline.
+- The sibling study on Genius pages should say whether the song page exposes the same two lists (for example in its embedded page data or its header links).
+
+If only a joined string such as the `og:title` "Artist - Title Lyrics" is available, the comma and `&` cases ("Tyler, The Creator", "Earth, Wind & Fire") cannot be split safely.
+Then the Spotify set test is unreliable.
+The safe choices are to read the two lists from the search API for the same song (one extra Genius request) or to show "not found".
+Until that is settled, treat the figures here as measured with correct inputs.
+
+Spotify cannot tell primary from featured, so an artist who is primary on Genius but featured on Spotify (or the reverse) still matches.
+That is harmless because it is the same recording.
 
 ## 6. Findings
 

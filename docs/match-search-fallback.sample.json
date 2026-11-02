@@ -800,5 +800,436 @@
     "spotifySearch": "spotify:track:40riOy7x9W7GXjyGp4pjAv"
    }
   }
- ]
+ ],
+ "cases": [
+  {
+   "song": "snooze",
+   "service": "spotify",
+   "hit": {
+    "title": "Snooze",
+    "artists": [
+     "SZA"
+    ],
+    "album": "SOS"
+   },
+   "accept": true,
+   "why": "exact"
+  },
+  {
+   "song": "snooze",
+   "service": "spotify",
+   "hit": {
+    "title": "SNOOZE",
+    "artists": [
+     "Justin Bieber",
+     "SZA"
+    ],
+    "album": "SWAG LIVE FROM COACHELLA (Weekend II)"
+   },
+   "accept": false,
+   "why": "extra artist: another recording"
+  },
+  {
+   "song": "hotline",
+   "service": "spotify",
+   "hit": {
+    "title": "Hotline Bling",
+    "artists": [
+     "Drake",
+     "Trap Capoo"
+    ],
+    "album": "ZERO REGRETS"
+   },
+   "accept": false,
+   "why": "extra artist"
+  },
+  {
+   "song": "nuvole",
+   "service": "spotify",
+   "hit": {
+    "title": "Nuvole Bianche",
+    "artists": [
+     "Ludovico Einaudi",
+     "Alessia Tondo"
+    ],
+    "album": "Taranta Project"
+   },
+   "accept": false,
+   "why": "extra artist"
+  },
+  {
+   "song": "ca-plane",
+   "service": "spotify",
+   "hit": {
+    "title": "Ça plane pour moi",
+    "artists": [
+     "The Lost Fingers",
+     "Plastic Bertrand"
+    ],
+    "album": "Rendez-vous rose"
+   },
+   "accept": false,
+   "why": "cover with the original artist added"
+  },
+  {
+   "song": "ca-plane",
+   "service": "spotify",
+   "hit": {
+    "title": "Ça plane pour moi",
+    "artists": [
+     "Plastic Bertrand"
+    ],
+    "album": "127 Hours"
+   },
+   "accept": true,
+   "why": "diacritic and case folded"
+  },
+  {
+   "song": "swift-fortnight",
+   "service": "spotify",
+   "hit": {
+    "title": "Fortnight (feat. Post Malone)",
+    "artists": [
+     "Taylor Swift",
+     "Post Malone"
+    ],
+    "album": "Fortnight (Acoustic Version)"
+   },
+   "accept": false,
+   "why": "same track title on an acoustic release"
+  },
+  {
+   "song": "swift-fortnight",
+   "service": "spotify",
+   "hit": {
+    "title": "Fortnight (feat. Post Malone) - BLOND:ISH Remix",
+    "artists": [
+     "Taylor Swift",
+     "Post Malone",
+     "BLOND:ISH"
+    ],
+    "album": "Fortnight (feat. Post Malone) [BLOND:ISH Remix]"
+   },
+   "accept": false,
+   "why": "same track title on a remix release"
+  },
+  {
+   "song": "swift-fortnight",
+   "service": "spotify",
+   "hit": {
+    "title": "Fortnight (feat. Post Malone)",
+    "artists": [
+     "Taylor Swift",
+     "Post Malone"
+    ],
+    "album": "THE TORTURED POETS DEPARTMENT"
+   },
+   "accept": true,
+   "why": "exact, featured artist in the artist list"
+  },
+  {
+   "song": "stay-laroi",
+   "service": "spotify",
+   "hit": {
+    "title": "STAY",
+    "artists": [
+     "Justin Bieber",
+     "The Kid LAROI"
+    ],
+    "album": "SWAG LIVE FROM COACHELLA (Weekend I)"
+   },
+   "accept": false,
+   "why": "same track title on a live release"
+  },
+  {
+   "song": "stay-laroi",
+   "service": "spotify",
+   "hit": {
+    "title": "STAY (with Justin Bieber)",
+    "artists": [
+     "The Kid LAROI",
+     "Justin Bieber"
+    ],
+    "album": "STAY (with Justin Bieber)"
+   },
+   "accept": true,
+   "why": "with-bracket names a known artist"
+  },
+  {
+   "song": "im-good",
+   "service": "spotify",
+   "hit": {
+    "title": "I'm Good (Blue) - Djs From Mars Remix",
+    "artists": [
+     "David Guetta",
+     "Bebe Rexha",
+     "DJs From Mars"
+    ],
+    "album": "I'm Good (Blue) [Remixes]"
+   },
+   "accept": false,
+   "why": "same track title on a remix release"
+  },
+  {
+   "song": "dakiti",
+   "service": "spotify",
+   "hit": {
+    "title": "DÁKITI",
+    "artists": [
+     "Bad Bunny",
+     "JHAYCO"
+    ],
+    "album": "DÁKITI"
+   },
+   "accept": false,
+   "why": "artist is JHAYCO on the store, Jhay Cortez on Genius: not found by policy"
+  },
+  {
+   "song": "cold-heart",
+   "service": "spotify",
+   "hit": {
+    "title": "Cold Heart - PNAU Remix",
+    "artists": [
+     "Elton John",
+     "Dua Lipa",
+     "PNAU"
+    ],
+    "album": "Cold Heart (PNAU Remix)"
+   },
+   "accept": false,
+   "why": "third artist the Genius credit does not list"
+  },
+  {
+   "song": "gangnam",
+   "service": "spotify",
+   "hit": {
+    "title": "Gangnam Style (강남스타일)",
+    "artists": [
+     "PSY"
+    ],
+    "album": "Gangnam Style (강남스타일)"
+   },
+   "accept": true,
+   "why": "non-Latin bracket ignored"
+  },
+  {
+   "song": "yesterday",
+   "service": "spotify",
+   "hit": {
+    "title": "Yesterday - Remastered 2009",
+    "artists": [
+     "The Beatles"
+    ],
+    "album": "Help! (Remastered 2009)"
+   },
+   "accept": true,
+   "why": "edition suffix ignored"
+  },
+  {
+   "song": "despacito-remix",
+   "service": "spotify",
+   "hit": {
+    "title": "Despacito - Remix",
+    "artists": [
+     "Luis Fonsi",
+     "Daddy Yankee",
+     "Justin Bieber"
+    ],
+    "album": "Despacito Feat. Justin Bieber (Remix)"
+   },
+   "accept": true,
+   "why": "remix kept in the title on both sides"
+  },
+  {
+   "song": "stay-rihanna",
+   "service": "spotify",
+   "hit": {
+    "title": "Stay",
+    "artists": [
+     "Rihanna",
+     "Mikky Ekko"
+    ],
+    "album": "Unapologetic (Deluxe)"
+   },
+   "accept": true,
+   "why": "featured artist from the Genius credit"
+  },
+  {
+   "song": "levitating",
+   "service": "apple",
+   "hit": {
+    "title": "Levitating (feat. DaBaby)",
+    "artists": [
+     "Dua Lipa"
+    ],
+    "href": "https://music.apple.com/us/album/levitating-feat-dababy/1532788351?i=1532788352"
+   },
+   "accept": true,
+   "why": "featured name in the title equals the Genius credit"
+  },
+  {
+   "song": "anti-hero",
+   "service": "apple",
+   "hit": {
+    "title": "Anti-Hero (feat. Bleachers)",
+    "artists": [
+     "Taylor Swift"
+    ],
+    "album": "Anti-Hero (feat. Bleachers) - Single",
+    "href": "https://music.apple.com/us/album/anti-hero-feat-bleachers/1653490033?i=1653490666"
+   },
+   "accept": false,
+   "why": "featured name that Genius does not list"
+  },
+  {
+   "song": "levitating",
+   "service": "apple",
+   "hit": {
+    "title": "Levitating",
+    "artists": [
+     "Dua Lipa"
+    ],
+    "album": "Future Nostalgia",
+    "href": "https://music.apple.com/us/album/levitating/1538003494?i=1538003843"
+   },
+   "accept": false,
+   "why": "Genius credits DaBaby; this is the version without him"
+  },
+  {
+   "song": "stay-laroi",
+   "service": "apple",
+   "hit": {
+    "title": "STAY",
+    "artists": [
+     "Justin Bieber & The Kid LAROI"
+    ],
+    "album": "SWAG LIVE FROM COACHELLA (Weekend I)",
+    "href": "https://music.apple.com/us/album/stay/6783430401?i=6783430834"
+   },
+   "accept": false,
+   "why": "live release (album name)"
+  },
+  {
+   "song": "sunflower",
+   "service": "apple",
+   "hit": {
+    "title": "Sunflower (Spider-Man: Into the Spider-Verse)",
+    "artists": [
+     "Post Malone & Swae Lee"
+    ],
+    "album": "Spider-Man: Into the Spider-Verse (Soundtrack From & Inspired by the Motion Picture)",
+    "href": "https://music.apple.com/us/album/sunflower-spider-man-into-the-spider-verse/1445949265?i=1445949267"
+   },
+   "accept": true,
+   "why": "subtitle in brackets kept on both sides"
+  },
+  {
+   "song": "rich-flex",
+   "service": "apple",
+   "hit": {
+    "title": "Rich Flex",
+    "artists": [
+     "Drake & 21 Savage"
+    ],
+    "album": "Her Loss",
+    "href": "https://music.apple.com/us/album/rich-flex/1653012564?i=1653012565"
+   },
+   "accept": true,
+   "why": "joined artists with & and a number"
+  },
+  {
+   "song": "stay-laroi",
+   "service": "apple",
+   "hit": {
+    "title": "STAY",
+    "artists": [
+     "The Kid LAROI",
+     "Justin Bieber"
+    ],
+    "href": "https://music.apple.com/us/album/stay/1574968878?i=1574968888"
+   },
+   "accept": true,
+   "why": "case folded"
+  },
+  {
+   "song": "dakiti",
+   "service": "apple",
+   "hit": {
+    "title": "Un Verano Sin Ti",
+    "artists": [
+     "Bad Bunny"
+    ],
+    "album": "Un Verano Sin Ti",
+    "href": "https://music.apple.com/us/album/un-verano-sin-ti/1622045624?i=1622046238"
+   },
+   "accept": false,
+   "why": "no result is the song (index gap)"
+  },
+  {
+   "song": "home-phillips",
+   "service": "spotify",
+   "hit": {
+    "title": "Home (Live)",
+    "artists": [
+     "Phillip Phillips"
+    ],
+    "album": "Home"
+   },
+   "accept": false,
+   "why": "hand case: Live in the title only on the result"
+  },
+  {
+   "song": "home-phillips",
+   "service": "spotify",
+   "hit": {
+    "title": "Home",
+    "artists": [
+     "Phillip Phillips"
+    ],
+    "album": "Home"
+   },
+   "accept": true,
+   "why": "hand case: plain"
+  },
+  {
+   "song": "home-phillips",
+   "service": "spotify",
+   "hit": {
+    "title": "Home - Acoustic",
+    "artists": [
+     "Phillip Phillips"
+    ],
+    "album": "Home (Acoustic)"
+   },
+   "accept": false,
+   "why": "hand case: acoustic"
+  },
+  {
+   "song": "hotline",
+   "service": "apple",
+   "hit": {
+    "title": "Hotline Bling",
+    "artists": [
+     "Drake"
+    ],
+    "href": "https://music.apple.com/us/album/hotline-bling-live/1?i=2"
+   },
+   "accept": false,
+   "why": "hand case: live album slug"
+  },
+  {
+   "song": "hotline",
+   "service": "apple",
+   "hit": {
+    "title": "Hotline Bling",
+    "artists": [
+     "Drake"
+    ],
+    "href": "https://music.apple.com/us/album/views/1?i=2"
+   },
+   "accept": true,
+   "why": "hand case: plain album slug"
+  }
+ ],
+ "casesAbout": "Candidate rows taken from the live runs (hit.artists is a list; Apple rows may carry the joined string in a one-item list). accept is the expected outcome of the full rule in section 4 (title, artists, release check); a unit test runs the port over each case."
 }
