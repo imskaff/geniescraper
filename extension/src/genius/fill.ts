@@ -84,12 +84,8 @@ async function fillCombobox(
   const options = await suggestionsFor(input, value, ctx.timing);
 
   if (!ctx.autoConfirm) {
-    return {
-      status: "needs-choice",
-      message: ctx.auto
-        ? `Typed ${value}. Choose it from the suggestions and automatic pasting carries on.`
-        : `Typed ${value}. Choose it from the suggestions, then press Next.`,
-    };
+    // Choosing by hand is what the setting asks for, so there is nothing to report; the step's instruction says it.
+    return { status: "needs-choice", message: "" };
   }
   const exact = options.find((option) => sameName(option.textContent, value));
   if (!exact) {
@@ -276,10 +272,7 @@ async function fillRelease(kind: ReleaseKind, value: string, ctx: FillContext): 
     const options = await suggestionsFor(input, text, ctx.timing);
     tried.push({ text, options });
     if (!ctx.autoConfirm) {
-      return {
-        status: "needs-choice",
-        message: `${prefix}Typed ${text}. Choose the ${noun} from the list${ctx.auto ? " and automatic pasting carries on" : ", then press Next"}.`,
-      };
+      return { status: "needs-choice", message: "" };
     }
     // Only an option that is exactly this value is ever chosen, and only when it is the only one.
     const matching = options.filter((option) => releaseOptionMatches(kind, value, option.textContent));
