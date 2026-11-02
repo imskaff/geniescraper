@@ -62,14 +62,14 @@ export function normTitle(title: string, artists: string[]): string {
   return fold(text.replace(EDITION, " ").replace(NON_LATIN_BRACKET, " "));
 }
 
-const sameSet = (a: string[], b: string[]): boolean => {
+export const sameSet = (a: string[], b: string[]): boolean => {
   const x = new Set(a.map(fold));
   const y = new Set(b.map(fold));
   return x.size === y.size && [...x].every((name) => y.has(name));
 };
 
 /** Whether Apple's one joined artist string is exactly these names, with nothing but "and", "x" or "with" between. */
-function sameArtistsJoined(joined: string, names: string[]): boolean {
+export function sameArtistsJoined(joined: string, names: string[]): boolean {
   let rest = ` ${fold(joined)} `;
   for (const name of [...names].sort((a, b) => b.length - a.length)) {
     const folded = ` ${fold(name)} `;

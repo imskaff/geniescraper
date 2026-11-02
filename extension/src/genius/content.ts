@@ -5,6 +5,7 @@ import { normaliseSettings, SETTINGS_KEY } from "../shared/settings";
 import { REAL_COMBOBOX_TIMING } from "./fill";
 import { REAL_OPEN_EDIT_TIMING, openEditForm } from "./openEdit";
 import { GeniusPage } from "./page";
+import { readAlbumInfo } from "./albumState";
 import { readSongInfo } from "./songState";
 
 declare global {
@@ -71,6 +72,11 @@ if (!window.__geniescraperGenius) {
     if (message.type === "genius/song-info") {
       // A read of the page as it is, for the panel's list of the song's other pages; null when this is no song page.
       sendResponse({ ok: true, data: readSongInfo(document, window.location.pathname) });
+      return false;
+    }
+    if (message.type === "genius/album-info") {
+      // Likewise for an album page: its title, artists, year and tracklist size; null when this is no album page.
+      sendResponse({ ok: true, data: readAlbumInfo(document, window.location.pathname) });
       return false;
     }
     if (message.type === "genius/paste-active") page.setActive(message.active);

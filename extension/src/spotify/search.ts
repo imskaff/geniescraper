@@ -41,9 +41,40 @@ export function searchRows(doc: Document): SearchRow[] {
   return rows;
 }
 
-/** Wait for the list, give it a moment to fill, and read it. Throws when the page is blocked or shows no list. */
-export async function readSearch(doc: Document, timing: Timing): Promise<SearchRow[]> {
-  const first = await until(doc, () => (searchRows(doc).length > 0 ? true : null), timing.rowsMs, timing.stepMs);
+const ALBUM_ID = /\/album\/([A-Za-z0-9]{22})(?:[/?#]|$)/;
+
+/** The album cards of the albums tab: title, album artists, release year and the album's link. A card without a link or title is skipped. */
+export function albumRows(doc: Document): SearchRow[] {
+  const rows: SearchRow[] = [];
+  for (const card of doc.querySelectorAll("[data-testid^='search-category-card-']")) {
+    const link = card.querySelector("a[href*='/album/']");
+    const id = ALBUM_ID.exec(link?.getAttribute("href") ?? "")?.[1];
+    const title = norm(link?.textContent);
+    if (!id || !title) continue;
+    const artists = [
+      ...new Set([...card.querySelectorAll("a[href*='/artist/']")].map((a) => norm(a.textContent))),
+    ].filter(Boolean);
+    rows.push({
+      title,
+      artists,
+      album: "",
+      year: /^\d{4}/.exec(card.querySelector("time")?.getAttribute("datetime") ?? "")?.[0] ?? "",
+      href: `https://open.spotify.com/album/${id}`,
+    });
+  }
+  return rows;
+}
+
+/**
+ * Wait for the list, give it a moment to fill, and read it. Throws when the page is blocked or shows no list.
+ * `read` picks what is read: the song rows (the default) or the album cards.
+ */
+export async function readSearch(
+  doc: Document,
+  timing: Timing,
+  read: (doc: Document) => SearchRow[] = searchRows,
+): Promise<SearchRow[]> {
+  const first = await until(doc, () => (read(doc).length > 0 ? true : null), timing.rowsMs, timing.stepMs);
   if (!first && isWall(doc)) throw new SpotifyError("blocked", BLOCKED_MESSAGE);
   if (!first) {
     throw new SpotifyError(
@@ -53,5 +84,5 @@ export async function readSearch(doc: Document, timing: Timing): Promise<SearchR
   }
   // The rows come in together; a short pause lets a list that is still being drawn finish.
   await new Promise<void>((resolve) => setTimeout(resolve, Math.min(400, timing.settleMs)));
-  return searchRows(doc);
+  return read(doc);
 }

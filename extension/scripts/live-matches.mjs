@@ -5,6 +5,11 @@
 //
 //   npm run build
 //   node scripts/live-matches.mjs --chrome <chrome.exe> [--screenshots <folder>] [--only <case>] [--get-credits] [--headless]
+//   node scripts/live-matches.mjs --chrome <chrome.exe> --albums [--screenshots <folder>] [--only <case>]
+//
+// --albums runs the same check on real Genius album pages instead (one iTunes search and one hidden Spotify albums
+// search tab per album) and tells, for every service, whether the page found is the expected album: found / correct /
+// none / wrong. A wrong match fails the run; "none" never does, because a missed album is better than a wrong one.
 //
 // --get-credits also presses Get credits on the Apple Music row of the Fortnight case and checks that the review
 // opens; it leaves the panel on the review screen, so use it with --only apple-id-only.
@@ -35,6 +40,71 @@ const CASES = [
   { name: "no-spotify-match", url: "https://genius.com/Garth-brooks-friends-in-low-places-lyrics", expect: "ready" },
   { name: "not-a-song", url: "https://genius.com/artists/Taylor-swift", expect: "none" },
 ];
+
+// Real Genius album pages. `names` lists how the album may be named in the panel ("Artist - Title", as either service
+// spells it): a page found under any other name is counted as WRONG until looked at by hand. `none` marks a service that
+// is expected to have no exact match (the check then only fails when something wrong is found).
+const ALBUM_CASES = [
+  { name: "album-sour", url: "https://genius.com/albums/Olivia-rodrigo/Sour", names: ["Olivia Rodrigo - SOUR"] },
+  { name: "album-gnx", url: "https://genius.com/albums/Kendrick-lamar/Gnx", names: ["Kendrick Lamar - GNX"] },
+  {
+    name: "album-ep",
+    url: "https://genius.com/albums/Billie-eilish/Dont-smile-at-me",
+    names: ["Billie Eilish - dont smile at me", "Billie Eilish - dont smile at me - EP"],
+  },
+  {
+    name: "album-single",
+    url: "https://genius.com/albums/Sabrina-carpenter/Espresso",
+    names: ["Sabrina Carpenter - Espresso", "Sabrina Carpenter - Espresso - Single"],
+  },
+  {
+    name: "album-compilation",
+    url: "https://genius.com/albums/Michael-jackson/The-essential-michael-jackson",
+    names: ["Michael Jackson - The Essential Michael Jackson"],
+  },
+  {
+    name: "album-various-artists",
+    url: "https://genius.com/albums/Various-artists/Guardians-of-the-galaxy-awesome-mix-vol-1-original-motion-picture-soundtrack",
+    names: ["Various Artists - Guardians of the Galaxy: Awesome Mix, Vol. 1 (Original Motion Picture Soundtrack)"],
+  },
+  {
+    name: "album-diacritics",
+    url: "https://genius.com/albums/Bad-bunny/Nadie-sabe-lo-que-va-a-pasar-manana",
+    names: ["Bad Bunny - nadie sabe lo que va a pasar mañana"],
+  },
+  {
+    name: "album-deluxe",
+    url: "https://genius.com/albums/Ed-sheeran/Divide-deluxe-edition",
+    names: ["Ed Sheeran - ÷ (Divide) [Deluxe Edition]", "Ed Sheeran - ÷ (Deluxe Edition)", "Ed Sheeran - ÷ (Deluxe)"],
+  },
+  { name: "album-japanese", url: "https://genius.com/albums/Yoasobi/The-book", names: ["YOASOBI - THE BOOK"] },
+  { name: "album-accented-artist", url: "https://genius.com/albums/Rosalia/Motomami", names: ["ROSALÍA - MOTOMAMI"] },
+  {
+    name: "album-edition",
+    url: "https://genius.com/albums/Taylor-swift/The-tortured-poets-department-the-anthology",
+    names: ["Taylor Swift - THE TORTURED POETS DEPARTMENT: THE ANTHOLOGY"],
+  },
+  {
+    name: "album-comma-in-artist",
+    url: "https://genius.com/albums/Tyler-the-creator/Flower-boy",
+    names: ["Tyler, The Creator - Flower Boy"],
+  },
+  {
+    name: "album-versioned",
+    url: "https://genius.com/albums/Taylor-swift/1989-taylors-version-deluxe",
+    names: ["Taylor Swift - 1989 (Taylor’s Version) [Deluxe]", "Taylor Swift - 1989 (Taylor's Version) [Deluxe]"],
+  },
+  {
+    name: "album-translation",
+    url: "https://genius.com/albums/Genius-traducciones-al-espanol/Olivia-rodrigo-sour-traduccion-al-espanol",
+    expect: "none",
+  },
+];
+const albums = args.includes("--albums");
+const tally = {
+  apple: { found: 0, correct: 0, none: 0, wrong: 0, failed: 0 },
+  spotify: { found: 0, correct: 0, none: 0, wrong: 0, failed: 0 },
+};
 
 const failures = [];
 const check = (name, ok, detail = "") => {
@@ -99,7 +169,7 @@ try {
 
   let first = true;
   const only = option("--only", "");
-  for (const c of CASES.filter((c) => !only || c.name === only)) {
+  for (const c of (albums ? ALBUM_CASES : CASES).filter((c) => !only || c.name === only)) {
     if (!first) await sleep(GAP_MS);
     first = false;
     await browser.openTab(c.url);
@@ -112,7 +182,7 @@ try {
     if (tabId === null) continue;
     await worker.evaluate(`chrome.tabs.update(${String(tabId)}, { active: true }).then(() => true)`);
 
-    if (c.expect === "ready") {
+    if (c.expect === "ready" || c.names) {
       if (manual) {
         // Nothing may be looked up before the button: the card shows only the button, then it is pressed.
         const idle = await until("!!document.querySelector('[data-key=\"song-matches-find\"]')", 20_000);
@@ -128,10 +198,37 @@ try {
       check(`${c.name}: the card settled`, settled);
       await sleep(500);
       console.log(`      ${String(await text('[data-key="song-matches"]')).replace(/\s+/g, " ")}`);
-      check(`${c.name}: the Apple Music row shows`, await exists('[data-key="match-apple"]'));
-      check(`${c.name}: the Spotify row shows`, await exists('[data-key="match-spotify"]'));
+      check(`${c.name}: the Apple Music row shows`, await exists('[data-key^="match-apple"]'));
+      check(`${c.name}: the Spotify row shows`, await exists('[data-key^="match-spotify"]'));
+      if (c.names) {
+        for (const service of ["apple", "spotify"]) {
+          // Each found album is a button of its own ("several" gives more than one); a note row means none or failed.
+          const found = JSON.parse(
+            await panel.evaluate(
+              `JSON.stringify([...document.querySelectorAll('button[data-key^="match-${service}"] .open-name')].map((n) => n.textContent.trim()))`,
+            ),
+          );
+          const note = await text(`li.match-note[data-key^="match-${service}"]`);
+          if (found.length === 0) {
+            tally[service][String(note).includes("Could not") ? "failed" : "none"]++;
+            console.log(`      ${service}: ${String(note).replace(/\s+/g, " ")}`);
+          }
+          for (const name of found) {
+            tally[service].found++;
+            const right = c.names.some((n) => n.toLowerCase() === name.toLowerCase());
+            tally[service][right ? "correct" : "wrong"]++;
+            console.log(`      ${service}: ${name}${right ? "" : "   <-- NOT the expected name: check by hand"}`);
+            check(`${c.name}: ${service} found the expected album`, right, name);
+          }
+        }
+      }
     } else {
-      // Give the panel time to ask, then it must show nothing.
+      // Give the panel time to ask, then it must show nothing (an artist page, a translation of an album).
+      if (manual && c.name === "album-translation") {
+        // Button-first mode asks nothing until Find is pressed; the page then says it is no album.
+        await until("!!document.querySelector('[data-key=\"song-matches-find\"]')", 20_000);
+        await panel.evaluate("document.querySelector('[data-key=\"song-matches-find\"]')?.click()");
+      }
       await sleep(8000);
       check(`${c.name}: no card`, !(await exists('[data-key="song-matches"]')));
     }
@@ -157,5 +254,6 @@ try {
   await browser.stop();
 }
 
+if (albums) console.log("\nAlbum look-ups:", JSON.stringify(tally));
 console.log(failures.length === 0 ? "\nAll checks passed." : `\n${String(failures.length)} check(s) failed.`);
 process.exit(failures.length === 0 ? 0 : 1);

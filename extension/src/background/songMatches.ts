@@ -14,22 +14,26 @@ import {
 } from "../lookups/songLinks";
 import type { GetJson } from "../lookups/itunes";
 import {
+  isGeniusAlbumInfo,
   isGeniusSongInfo,
   isResult,
+  type GeniusAlbumInfo,
   type GeniusSongInfo,
   type Result,
   type SearchRow,
   type ServiceMatch,
   type SongMatchesAnswer,
 } from "../shared/messages";
+import { lookUpAlbum, type AlbumMatchTools } from "./albumMatches";
 import type { GeniusNavTiming } from "./geniusNav";
+import { failedWith } from "./matchFailure";
 import type { BrowserPorts } from "./ports";
 
 const GENIUS_ORIGIN = "https://genius.com";
 const GENIUS_CONTENT_SCRIPT = "genius/content.js";
 
 /** What the router lends the resolver: the Spotify search page, read politely (one tab at a time, captcha pause). */
-export interface SongMatchTools {
+export interface SongMatchTools extends AlbumMatchTools {
   spotifySearch(query: string): Promise<Result<SearchRow[]>>;
   /** Apple Music's search page, a last resort after iTunes's search API found nothing. */
   appleSearch(query: string): Promise<Result<SearchRow[]>>;
@@ -51,13 +55,6 @@ const songRef = (info: GeniusSongInfo): SongRef => ({
 });
 
 const searchText = (info: GeniusSongInfo): string => `${info.title} ${info.primary.join(" ")}`;
-
-/** A failed half, with the reason in its words and in the worker's console (chrome://extensions, service worker). */
-function failedWith(service: string, reason: unknown): ServiceMatch {
-  const text = reason instanceof Error ? reason.message : typeof reason === "string" ? reason : "unknown reason";
-  console.warn(`[Géniescraper] ${service} look-up failed: ${text}`);
-  return { status: "failed", message: `${service}: ${text}` };
-}
 
 function appleFound(song: AppleSong, source: "genius" | "search"): ServiceMatch {
   return {
@@ -172,13 +169,17 @@ export function createSongMatches(ports: BrowserPorts, getJson: GetJson, timing:
     return false;
   }
 
-  /** What the song page says. `undefined` when the page never answered; null when it is not a song page. */
-  async function readPage(tabId: number): Promise<GeniusSongInfo | null | undefined> {
+  /** What the page says about its song or album. `undefined` when the page never answered; null when it is neither. */
+  async function readPage<T>(
+    tabId: number,
+    notice: "genius/song-info" | "genius/album-info",
+    isInfo: (value: unknown) => value is T,
+  ): Promise<T | null | undefined> {
     const deadline = Date.now() + timing.askMs;
     let injected = false;
     for (;;) {
-      const reply = await ports.askGenius(tabId, { type: "genius/song-info" });
-      if (isResult(reply) && reply.ok) return isGeniusSongInfo(reply.data) ? reply.data : null;
+      const reply = await ports.askGenius(tabId, { type: notice });
+      if (isResult(reply) && reply.ok) return isInfo(reply.data) ? reply.data : null;
       // A tab that was open before the extension was installed or reloaded has no content script yet.
       if (!injected) {
         injected = true;
@@ -198,12 +199,40 @@ export function createSongMatches(ports: BrowserPorts, getJson: GetJson, timing:
     ]);
     return {
       status: "ready",
+      kind: "song",
       path: info.path,
       title: info.title,
       artists: [...info.primary, ...info.featured],
       apple,
       spotify,
     };
+  }
+
+  async function lookUpAlbumPage(info: GeniusAlbumInfo, tools: SongMatchTools): Promise<SongMatchesAnswer> {
+    return {
+      status: "ready",
+      kind: "album",
+      path: info.path,
+      title: info.title,
+      artists: info.primary,
+      ...(await lookUpAlbum(getJson, tools, info)),
+    };
+  }
+
+  /** The look-up of one page, once: a page already being looked up shares that job, and a complete answer is kept. */
+  async function once(path: string, start: () => Promise<SongMatchesAnswer>): Promise<SongMatchesAnswer> {
+    const known = done.get(path);
+    if (known) return known;
+    let job = running.get(path);
+    if (!job) {
+      job = start().finally(() => running.delete(path));
+      running.set(path, job);
+    }
+    const answer = await job;
+    if (answer.status === "ready" && answer.apple.status !== "failed" && answer.spotify.status !== "failed") {
+      done.set(path, answer);
+    }
+    return answer;
   }
 
   return {
@@ -215,24 +244,20 @@ export function createSongMatches(ports: BrowserPorts, getJson: GetJson, timing:
       if (!(await waitLoaded(tabId))) {
         return { ok: false, error: { code: "timeout", message: "The Genius page did not finish loading." } };
       }
-      const info = await readPage(tabId);
-      if (info === undefined) {
+      // An album page and a song page are asked different questions and looked up differently.
+      let job: { path: string; start: () => Promise<SongMatchesAnswer> } | null | undefined;
+      if (new URL(tab.url).pathname.startsWith("/albums/")) {
+        const album = await readPage(tabId, "genius/album-info", isGeniusAlbumInfo);
+        job = album && { path: album.path, start: () => lookUpAlbumPage(album, tools) };
+      } else {
+        const song = await readPage(tabId, "genius/song-info", isGeniusSongInfo);
+        job = song && { path: song.path, start: () => lookUp(song, tools) };
+      }
+      if (job === undefined) {
         return { ok: false, error: { code: "tab-failed", message: "The Genius page did not answer." } };
       }
-      if (info === null) return { ok: true, data: { status: "not-song" } };
-
-      const known = done.get(info.path);
-      if (known) return { ok: true, data: known };
-      let job = running.get(info.path);
-      if (!job) {
-        job = lookUp(info, tools).finally(() => running.delete(info.path));
-        running.set(info.path, job);
-      }
-      const answer = await job;
-      if (answer.status === "ready" && answer.apple.status !== "failed" && answer.spotify.status !== "failed") {
-        done.set(info.path, answer);
-      }
-      return { ok: true, data: answer };
+      if (job === null) return { ok: true, data: { status: "not-song" } };
+      return { ok: true, data: await once(job.path, job.start) };
     },
   };
 }

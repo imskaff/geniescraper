@@ -78,11 +78,11 @@ If Genius shows no such song, it may not be on Genius yet, and nothing is opened
 If it says the page has no Edit Metadata button, you are not signed in to Genius in this browser.
 It never saves, and it never reuses a Genius tab that shows something else, because that tab may hold a form you have not saved.
 
-## Why does the panel list Apple Music and Spotify pages on a Genius song page?
+## Why does the panel list Apple Music and Spotify pages on a Genius song or album page?
 
-When you open the panel on a Genius song page, it shows "This song on Apple Music and Spotify" with a "Find" button.
+When you open the panel on a Genius song page, it shows "This song on Apple Music and Spotify" with a "Find" button; on a Genius album page the card says "This album on Apple Music and Spotify" and works the same way.
 Press it and the panel lists a page for each service, each with a Get credits button, so you do not have to find the song yourself.
-Nothing is looked up, and no window opens, until you press the button; to have it done as soon as the panel is open on a Genius song page, tick "Find Apple Music and Spotify pages automatically on Genius song pages" in Settings (off by default).
+Nothing is looked up, and no window opens, until you press the button; to have it done as soon as the panel is open on a Genius song or album page, tick "Find Apple Music and Spotify pages automatically on Genius song and album pages" in Settings (off by default).
 The card sits below the list of music pages you already have open.
 Nothing is read from those pages until you press Get credits.
 The note under each page says where it came from:
@@ -95,7 +95,10 @@ The note under each page says where it came from:
 
 "No exact match found" means nothing matched exactly (the song may not be on that service, or be credited to a different artist name there): paste its link instead.
 "Could not look this up" means the service did not answer; Try again asks once more.
-The card appears only on Genius song pages, not on album or artist pages.
+Genius lists no Apple Music or Spotify page for an album, so an album is always found by search, and the same strict rule applies: the album's title (with its edition words, such as Deluxe), its artists and its release year must all agree, so a deluxe edition, a single or another artist's album of the same name is never taken for it.
+When a service has more than one album that is exactly this one, they are all listed (up to three) for you to pick from.
+The card appears only on Genius song and album pages, not on artist pages or on a translation of an album.
+On an album page, Get credits reads the whole album as usual; each track is then opened on Genius by a search, since the album page has no edit form.
 If Get credits was pressed from this card, Open on Genius opens the edit form on this same Genius page instead of searching for the song.
 
 ## Why does Chrome ask to read open.spotify.com?

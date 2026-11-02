@@ -78,8 +78,10 @@ export interface GeniusOpenState {
 
 export const NO_GENIUS: GeniusOpenState = { index: null, phase: "idle", title: "", song: null, songs: [] };
 
-/** The card for the Genius song page the user is on: its pages on Apple Music and Spotify, as far as they are found. */
+/** The card for the Genius song or album page the user is on: its pages on Apple Music and Spotify, as far as they are found. */
 export interface GeniusSongState {
+  /** Whether the page is a song or an album: the card's words, and what pasting does after Get credits. */
+  kind: "song" | "album";
   /** The song page's address (no query): what the card is about. */
   key: string;
   /** The tab it was read from, which a read started from here keeps pasting into. */

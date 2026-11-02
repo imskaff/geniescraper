@@ -1,6 +1,6 @@
-// The panel's list of a Genius song's pages on Apple Music and Spotify. When the user is on a Genius song page, the
-// worker is asked (once per song page) which pages those are; the answer is kept for the session, so coming back to
-// the page, or a flurry of tab events, asks nothing more. A failed look-up is not retried by itself: the card offers
+// The panel's list of a Genius song's (or album's) pages on Apple Music and Spotify. When the user is on a Genius song
+// or album page, the worker is asked (once per page) which pages those are; the answer is kept for the session, so
+// coming back to the page, or a flurry of tab events, asks nothing more. A failed look-up is not retried by itself: the card offers
 // "Try again". Nothing is read from the pages listed: the user presses Get credits for that.
 import { GENIUS_ORIGIN, geniusSongUrl } from "../core/geniusMatch";
 import type { ActiveTab } from "./panelState";
@@ -12,9 +12,27 @@ export function geniusSongPage(url: string): string | null {
   if (!URL.canParse(url)) return null;
   const { origin, pathname } = new URL(url);
   // Every song page is "/Artist-title-lyrics"; the page itself is what decides, but this keeps the worker from being
-  // asked about the home page, an artist page or an album on every tab change.
+  // asked about the home page or an artist page on every tab change.
   if (origin !== GENIUS_ORIGIN || !pathname.endsWith("-lyrics") || geniusSongUrl(pathname) === null) return null;
   return `${origin}${pathname}`;
+}
+
+/** An album page is "/albums/<artist>/<album>"; Genius has no deeper album pages. */
+const ALBUM_PATH = /^\/albums\/[^/]+\/[^/]+$/;
+
+/** The album page a tab shows (without query or fragment), or null when it cannot be one. */
+export function geniusAlbumPage(url: string): string | null {
+  if (!URL.canParse(url)) return null;
+  const { origin, pathname } = new URL(url);
+  return origin === GENIUS_ORIGIN && ALBUM_PATH.test(pathname) ? `${origin}${pathname}` : null;
+}
+
+/** The Genius page a tab shows and whether it can be a song or an album, or null for any other page. */
+export function geniusPage(url: string): { key: string; kind: "song" | "album" } | null {
+  const song = geniusSongPage(url);
+  if (song !== null) return { key: song, kind: "song" };
+  const album = geniusAlbumPage(url);
+  return album === null ? null : { key: album, kind: "album" };
 }
 
 export class GeniusSongMatches {
@@ -34,21 +52,22 @@ export class GeniusSongMatches {
 
   /** Look at the page the user is on: a Genius song page gets its card, any other page none. */
   async refresh(tab: ActiveTab | null): Promise<void> {
-    const key = tab ? geniusSongPage(tab.url) : null;
-    if (key !== this.notSong) this.notSong = null;
-    if (!tab || key === null) {
+    const page = tab ? geniusPage(tab.url) : null;
+    if ((page?.key ?? null) !== this.notSong) this.notSong = null;
+    if (!tab || page === null) {
       if (this.host.state.geniusSong !== null) {
         this.attempt++;
         this.host.update({ geniusSong: null });
       }
       return;
     }
+    const key = page.key;
     // A page that said "not a song" is left alone until the user goes to another address; a tab event (a Spotify tab
     // changing its title) must not make the card flash and vanish again and again.
     if (key === this.notSong) return;
     const shown = this.host.state.geniusSong;
     if (shown?.key === key && shown.phase === "idle" && this.automatic) {
-      await this.ask(key, tab.tabId);
+      await this.ask(key, tab.tabId, page.kind);
       return;
     }
     if (shown?.key === key && shown.phase !== "failed") {
@@ -63,13 +82,14 @@ export class GeniusSongMatches {
       return;
     }
     if (this.automatic) {
-      await this.ask(key, tab.tabId);
+      await this.ask(key, tab.tabId, page.kind);
       return;
     }
     // Not automatic: the card offers a button, and nothing is looked up (no request, no tab) until it is pressed.
     this.attempt++;
     this.host.update({
       geniusSong: {
+        kind: page.kind,
         key,
         tabId: tab.tabId,
         phase: "idle",
@@ -87,19 +107,30 @@ export class GeniusSongMatches {
     const shown = this.host.state.geniusSong;
     if (!shown || shown.phase === "loading" || shown.phase === "ready") return;
     this.known.delete(shown.key);
-    await this.ask(shown.key, shown.tabId);
+    await this.ask(shown.key, shown.tabId, shown.kind);
   }
 
-  private async ask(key: string, tabId: number): Promise<void> {
+  private async ask(key: string, tabId: number, kind: "song" | "album"): Promise<void> {
     const mine = ++this.attempt;
     this.host.update({
-      geniusSong: { key, tabId, phase: "loading", title: "", artists: [], apple: null, spotify: null, message: "" },
+      geniusSong: {
+        kind,
+        key,
+        tabId,
+        phase: "loading",
+        title: "",
+        artists: [],
+        apple: null,
+        spotify: null,
+        message: "",
+      },
     });
     const answer = await this.host.env.api.songMatches(tabId);
     if (mine !== this.attempt) return; // the user moved to another page meanwhile
     if (!answer.ok) {
       this.host.update({
         geniusSong: {
+          kind,
           key,
           tabId,
           phase: "failed",
@@ -119,7 +150,17 @@ export class GeniusSongMatches {
       return;
     }
     const { title, artists, apple, spotify } = answer.data;
-    const ready: GeniusSongState = { key, tabId, phase: "ready", title, artists, apple, spotify, message: "" };
+    const ready: GeniusSongState = {
+      kind: answer.data.kind,
+      key,
+      tabId,
+      phase: "ready",
+      title,
+      artists,
+      apple,
+      spotify,
+      message: "",
+    };
     // A half that failed is asked again by "Try again", so only a complete answer is kept.
     if (apple.status !== "failed" && spotify.status !== "failed") this.known.set(key, ready);
     this.host.update({ geniusSong: ready });

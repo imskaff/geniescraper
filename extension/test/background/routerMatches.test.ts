@@ -3,7 +3,14 @@ import { PasteService } from "../../src/background/paste";
 import { createRouter } from "../../src/background/router";
 import type { SongMatches, SongMatchTools } from "../../src/background/songMatches";
 import type { SearchRow, SongMatchesAnswer } from "../../src/shared/messages";
-import { isContentRequest, isGeniusNotice, isSongMatchesAnswer, isWorkerRequest } from "../../src/shared/messages";
+import {
+  isContentRequest,
+  isGeniusAlbumInfo,
+  isGeniusNotice,
+  isSearchRows,
+  isSongMatchesAnswer,
+  isWorkerRequest,
+} from "../../src/shared/messages";
 import { memoryStore } from "../ui/fakes";
 import { FAST_CLIENT, fakeBrowser } from "./fakePorts";
 
@@ -26,6 +33,7 @@ function build(browser: ReturnType<typeof fakeBrowser>, matches: SongMatches) {
 
 const READY: SongMatchesAnswer = {
   status: "ready",
+  kind: "song",
   path: "/x-lyrics",
   title: "X",
   artists: ["A"],
@@ -104,6 +112,49 @@ describe("the song-matches request", () => {
     expect(browser.openTabs.size).toBe(0);
   });
 
+  it("reads the albums tab of Spotify's search in one hidden tab, marked as a reader tab, and closes it", async () => {
+    const card: SearchRow = {
+      title: "SOUR",
+      artists: ["Olivia Rodrigo"],
+      album: "",
+      year: "2021",
+      href: "https://open.spotify.com/album/6s84u2TUpR3wdUv4NgKA2j",
+    };
+    const browser = fakeBrowser({ answer: () => Promise.resolve({ ok: true, data: [card] }) });
+    const { route, grab } = withTools(browser);
+    const tools = await toolsOf(route, grab);
+    expect(await tools.spotifyAlbumSearch("SOUR Olivia Rodrigo")).toEqual({ ok: true, data: [card] });
+    expect(browser.log).toEqual([
+      "guard:spotify/guard.js",
+      "create:https://open.spotify.com/search/SOUR%20Olivia%20Rodrigo/albums?locale=en&geniescraper=read:active=false",
+      "inject:1000",
+      "send:1000:spotify/search",
+      "remove:1000",
+    ]);
+    expect(browser.openTabs.size).toBe(0);
+  });
+
+  it("opens one Spotify search tab at a time, songs and albums together", async () => {
+    const browser = fakeBrowser({ answer: () => Promise.resolve({ ok: true, data: [ROW] }), loadingPolls: 3 });
+    const { route, grab } = withTools(browser);
+    const tools = await toolsOf(route, grab);
+    await Promise.all([tools.spotifySearch("a"), tools.spotifyAlbumSearch("b"), tools.spotifyAlbumSearch("c")]);
+    expect(browser.maxOpenTabs()).toBe(1);
+  });
+
+  it("pauses the albums search too after Spotify asks for a captcha on the songs search", async () => {
+    const browser = fakeBrowser({
+      answer: () =>
+        Promise.resolve({ ok: false, error: { code: "blocked", message: "Spotify is asking for a captcha." } }),
+    });
+    const { route, grab } = withTools(browser);
+    const tools = await toolsOf(route, grab);
+    expect(await tools.spotifySearch("a")).toMatchObject({ ok: false, error: { code: "blocked" } });
+    const opened = browser.log.filter((line) => line.startsWith("create:")).length;
+    expect(await tools.spotifyAlbumSearch("b")).toMatchObject({ ok: false, error: { code: "blocked" } });
+    expect(browser.log.filter((line) => line.startsWith("create:"))).toHaveLength(opened);
+  });
+
   it("closes the tab and answers with the failure when the page does not answer", async () => {
     const browser = fakeBrowser({ answer: () => new Promise(() => undefined) });
     const { route, grab } = withTools(browser);
@@ -144,7 +195,33 @@ describe("the messages of the feature", () => {
     ).toBe(true);
     expect(isWorkerRequest({ type: "genius-open", title: "A", artist: "B", tabId: 5, pageUrl: 7 })).toBe(false);
     expect(isGeniusNotice({ type: "genius/song-info" })).toBe(true);
+    expect(isGeniusNotice({ type: "genius/album-info" })).toBe(true);
+    expect(isGeniusNotice({ type: "genius/album-infos" })).toBe(false);
     expect(isContentRequest({ type: "spotify/search", url: "https://open.spotify.com/search/x/tracks" })).toBe(true);
+    expect(isContentRequest({ type: "spotify/search", url: "https://open.spotify.com/search/x/albums" })).toBe(true);
+  });
+
+  it("checks the shape of an album answer, of several albums and of an album's page info", () => {
+    const found = { status: "found", url: "u", name: "n", release: "2021", source: "search" };
+    const album = { ...READY, kind: "album" };
+    expect(isSongMatchesAnswer(album)).toBe(true);
+    expect(isSongMatchesAnswer({ ...album, kind: "playlist" })).toBe(false);
+    expect(isSongMatchesAnswer({ ...READY, kind: undefined })).toBe(false);
+    expect(isSongMatchesAnswer({ ...album, spotify: { status: "several", matches: [found, found] } })).toBe(true);
+    // "several" means at least two, each a complete found.
+    expect(isSongMatchesAnswer({ ...album, spotify: { status: "several", matches: [found] } })).toBe(false);
+    expect(
+      isSongMatchesAnswer({ ...album, spotify: { status: "several", matches: [found, { status: "none" }] } }),
+    ).toBe(false);
+    expect(isSongMatchesAnswer({ ...album, spotify: { status: "several" } })).toBe(false);
+    const info = { path: "/albums/A/B", title: "B", primary: ["A"], year: "2021", tracks: 3, type: "album" };
+    expect(isGeniusAlbumInfo(info)).toBe(true);
+    expect(isGeniusAlbumInfo({ ...info, tracks: "3" })).toBe(false);
+    expect(isGeniusAlbumInfo({ ...info, primary: "A" })).toBe(false);
+    expect(isGeniusAlbumInfo({ ...info, type: undefined })).toBe(false);
+    expect(isGeniusAlbumInfo(null)).toBe(false);
+    expect(isSearchRows([{ title: "t", artists: [], album: "", href: "h", year: "2021" }])).toBe(true);
+    expect(isSearchRows([{ title: "t", artists: [], album: "", href: "h", year: 2021 }])).toBe(false);
   });
 
   it("checks the shape of an answer", () => {

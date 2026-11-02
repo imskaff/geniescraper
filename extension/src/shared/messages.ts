@@ -158,21 +158,40 @@ export interface GeniusSongInfo {
   spotifyId: string;
 }
 
+/** What a Genius album page says about its album (see genius/albumState.ts). It carries no Apple Music or Spotify id. */
+export interface GeniusAlbumInfo {
+  /** The album page's path, "/albums/<artist>/<album>". */
+  path: string;
+  title: string;
+  /** The album's artists, one name each ("Various Artists" is one name). */
+  primary: string[];
+  /** The release year, "" when the page has none. */
+  year: string;
+  /** How many tracks the page's tracklist lists, 0 when it lists none. */
+  tracks: number;
+  /** Genius's own type of release ("album", "single", "compilation", "soundtrack"...), "" when the page gives none. */
+  type: string;
+}
+
 /** Where a listed page came from: the Genius page's own ids, or an exact-match search. */
 export type MatchSource = "genius" | "search";
 
 /** How one service's page for the Genius song turned out. */
+export type FoundMatch = {
+  status: "found";
+  /** An address the worker built itself from an id or a result, never one taken from a page's text. */
+  url: string;
+  /** "Artist - Title", as the open-pages list names a page. */
+  name: string;
+  /** The release the page is on ("Fortnight - Single", "SOUR"), or for an album its year and size; "" when not known. */
+  release: string;
+  source: MatchSource;
+};
+
 export type ServiceMatch =
-  | {
-      status: "found";
-      /** An address the worker built itself from an id or a result, never one taken from a page's text. */
-      url: string;
-      /** "Artist - Title", as the open-pages list names a page. */
-      name: string;
-      /** The release the page is on ("Fortnight - Single", "SOUR"); "" when it is not known. */
-      release: string;
-      source: MatchSource;
-    }
+  | FoundMatch
+  /** Several albums are exactly the Genius album as far as the service says (a reissue, a twin): all are listed. */
+  | { status: "several"; matches: FoundMatch[] }
   /** The service has no page for this song that is exactly it: never a guess. */
   | { status: "none" }
   /** The look-up could not be done (the service did not answer, or asked for a captcha). */
@@ -180,10 +199,12 @@ export type ServiceMatch =
 
 /** The worker's answer to `song-matches`. */
 export type SongMatchesAnswer =
-  /** The tab is not a Genius song page the extension can read. */
+  /** The tab is not a Genius song or album page the extension can read. */
   | { status: "not-song" }
   | {
       status: "ready";
+      /** What the page is: a song (its ids and a search) or an album (a search only). */
+      kind: "song" | "album";
       /** The song page's path: what the answer belongs to. */
       path: string;
       title: string;
@@ -197,8 +218,10 @@ export interface SearchRow {
   title: string;
   artists: string[];
   album: string;
-  /** The track's address on Spotify, "https://open.spotify.com/track/<id>". */
+  /** The address on Spotify, "https://open.spotify.com/track/<id>" (or "/album/<id>" on the albums tab). */
   href: string;
+  /** Albums tab only: the release year, "" when the card shows none. */
+  year?: string;
 }
 
 /** What the Genius page says after being asked to open the edit form. */
@@ -261,6 +284,8 @@ export type GeniusNotice =
   | { type: "genius/open-edit" }
   /** What the song page says about its song; the page answers with a `GeniusSongInfo`, or null when it is not one. */
   | { type: "genius/song-info" }
+  /** What the album page says about its album; the page answers with a `GeniusAlbumInfo`, or null when it is not one. */
+  | { type: "genius/album-info" }
   /** The paste session started or ended, so the page knows whether the hotkeys are live. */
   | { type: "genius/paste-active"; active: boolean }
   /** An automatic run started, paused, resumed or ended, so the page loop knows whether to go on. */
@@ -397,7 +422,8 @@ export function isGeniusNotice(value: unknown): value is GeniusNotice {
   if (
     value["type"] === "genius/fill-now" ||
     value["type"] === "genius/open-edit" ||
-    value["type"] === "genius/song-info"
+    value["type"] === "genius/song-info" ||
+    value["type"] === "genius/album-info"
   ) {
     return true;
   }
@@ -514,11 +540,31 @@ export function isGeniusSongInfo(value: unknown): value is GeniusSongInfo {
   );
 }
 
+export function isGeniusAlbumInfo(value: unknown): value is GeniusAlbumInfo {
+  return (
+    isRecord(value) &&
+    typeof value["path"] === "string" &&
+    typeof value["title"] === "string" &&
+    isStringArray(value["primary"]) &&
+    typeof value["year"] === "string" &&
+    typeof value["tracks"] === "number" &&
+    typeof value["type"] === "string"
+  );
+}
+
 function isServiceMatch(value: unknown): value is ServiceMatch {
   if (!isRecord(value)) return false;
   if (value["status"] === "none") return true;
   if (value["status"] === "failed") return typeof value["message"] === "string";
+  if (value["status"] === "several") {
+    return Array.isArray(value["matches"]) && value["matches"].length > 1 && value["matches"].every(isFoundMatch);
+  }
+  return isFoundMatch(value);
+}
+
+function isFoundMatch(value: unknown): value is FoundMatch {
   return (
+    isRecord(value) &&
     value["status"] === "found" &&
     typeof value["url"] === "string" &&
     typeof value["name"] === "string" &&
@@ -532,6 +578,7 @@ export function isSongMatchesAnswer(value: unknown): value is SongMatchesAnswer 
   if (value["status"] === "not-song") return true;
   return (
     value["status"] === "ready" &&
+    (value["kind"] === "song" || value["kind"] === "album") &&
     typeof value["path"] === "string" &&
     typeof value["title"] === "string" &&
     isStringArray(value["artists"]) &&
@@ -549,7 +596,8 @@ export function isSearchRows(value: unknown): value is SearchRow[] {
         typeof row["title"] === "string" &&
         isStringArray(row["artists"]) &&
         typeof row["album"] === "string" &&
-        typeof row["href"] === "string",
+        typeof row["href"] === "string" &&
+        (row["year"] === undefined || typeof row["year"] === "string"),
     )
   );
 }

@@ -114,6 +114,8 @@ export function createRouter(
           spotifySearch: (query) =>
             searches.run(() => politely(SPOTIFY_PROVIDER, () => searchSpotify(ports, query, timing))),
           appleSearch: (query) => searches.run(() => keepingAlive(() => searchApple(ports, query, timing))),
+          spotifyAlbumSearch: (query) =>
+            searches.run(() => politely(SPOTIFY_PROVIDER, () => searchSpotify(ports, query, timing, "albums"))),
         })
         .finally(stopKeepAlive);
     }

@@ -220,12 +220,17 @@ function searchPage(
 }
 
 /**
- * The songs Spotify's search lists for `query`, read from a search page in a background tab (one page load, closed
+ * The songs (or, for `tab` "albums", the albums) Spotify's search lists for `query`, read from a search page in a background tab (one page load, closed
  * afterwards like every read). Only a title and artist ever go into the query; the caller decides which row, if any,
  * is the wanted song.
  */
-export function searchSpotify(ports: BrowserPorts, query: string, timing: ClientTiming): Promise<Result<SearchRow[]>> {
-  const url = spotifySearchUrl(query);
+export function searchSpotify(
+  ports: BrowserPorts,
+  query: string,
+  timing: ClientTiming,
+  tab: "tracks" | "albums" = "tracks",
+): Promise<Result<SearchRow[]>> {
+  const url = spotifySearchUrl(query, tab);
   return searchPage(ports, SPOTIFY_PROVIDER, url, { type: "spotify/search", url }, timing);
 }
 
