@@ -244,6 +244,22 @@ function existingDate(form: HTMLFormElement, kind: ReleaseKind): string {
   return [[month, day].filter(Boolean).join(" "), year].filter(Boolean).join(", ");
 }
 
+/**
+ * Which element a release date step targets, logged so a wrong target can be seen from the page console: its tag, id
+ * and label, whether it is inside the form, and how many elements in the whole page carry the same label.
+ */
+function logReleaseTarget(form: HTMLFormElement, kind: ReleaseKind, input: HTMLInputElement | null): void {
+  const label = RELEASE_LABELS[kind];
+  const onPage = form.ownerDocument.querySelectorAll(`[aria-label="${label}"]`).length;
+  console.warn(
+    `Geniescraper: ${kind} targets`,
+    input
+      ? `<${input.localName}> id="${input.id}" aria-label="${input.getAttribute("aria-label") ?? ""}" inForm=${String(form.contains(input))}`
+      : "nothing",
+    `(${String(onPage)} on the page with this label)`,
+  );
+}
+
 async function fillRelease(
   form: HTMLFormElement,
   kind: ReleaseKind,
@@ -254,6 +270,7 @@ async function fillRelease(
   const noun = RELEASE_NOUN[kind];
   const opened = await openTags(form, ctx, label);
   const input = releaseInput(form, label);
+  logReleaseTarget(form, kind, input);
   if (!input || tagsCollapsed(ctx.doc)) return { status: "unavailable", message: OPEN_TAGS };
   const box = dropdownBox(input);
   const prefix = opened ? "Opened the Tags and Albums section. " : "";

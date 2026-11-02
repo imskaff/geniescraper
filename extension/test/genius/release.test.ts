@@ -1,7 +1,7 @@
 // The three Release Date dropdowns (Month, Day, Year) of Genius's edit form, filled from a fake built on the captured
 // fixture tests/fixtures/genius-release-date.html. The real option texts are not known yet, so the fake spells them in
 // every plausible style and the fill must cope with each, and never choose a wrong option silently.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { QueueItem } from "../../src/core/models";
 import {
   clearTyped,
@@ -49,6 +49,16 @@ describe("the song page's own Release Date widget", () => {
     const decoy = fake.doc.querySelectorAll<HTMLInputElement>("#song-info-release-date input");
     expect([...decoy].map((el) => el.value)).toEqual(["", "", "", "", ""]);
     expect(shown(fake, "Release Month")).toBe("May");
+  });
+
+  it("logs which element the date step targeted, and that it is in the form", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { run } = setup({ release: { pageWidget: true } });
+    await run(MONTH);
+    const line = warn.mock.calls.map((c) => c.join(" ")).find((l) => l.startsWith("Geniescraper: release_month"));
+    warn.mockRestore();
+    expect(line).toContain('aria-label="Release Month" inForm=true');
+    expect(line).toContain("(2 on the page with this label)");
   });
 
   it("leaves the page's producers and writers alone too", async () => {
