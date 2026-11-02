@@ -9,6 +9,7 @@ import { linkScreen, tracksScreen } from "./link";
 import { reviewScreen } from "./review";
 import { doneScreen, pasteScreen } from "./paste";
 import { settings, youtubeSettings } from "./settings";
+import { setBrandText } from "./brand";
 import { geniusMessage } from "./geniusText";
 
 export class PanelView implements ViewContext {
@@ -120,8 +121,8 @@ export class PanelView implements ViewContext {
     // Rebuilding replaces the heading, so a heading that held focus has to be given it again.
     const headingHadFocus = document.activeElement?.tagName === "H2";
 
-    this.region("alert").textContent = state.error;
-    this.region("status").textContent = state.status;
+    setBrandText(this.region("alert"), state.error);
+    setBrandText(this.region("status"), state.status);
     // The Open on Genius notice shows its own words, so the live regions above must not show them twice.
     const genius = geniusMessage(state.genius)?.text;
     this.region("alert").classList.toggle(

@@ -1,3 +1,5 @@
+import { brandNodes, setBrandText } from "./brand";
+
 // Tiny element builder. Text only ever reaches the page as textContent or an attribute value, never as markup:
 // the strings shown here come from Apple Music pages and are untrusted.
 
@@ -18,7 +20,7 @@ export function el<K extends keyof HTMLElementTagNameMap>(
 ): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
   if (props.class) node.className = props.class;
-  if (props.text !== undefined) node.textContent = props.text;
+  if (props.text !== undefined) setBrandText(node, props.text);
   for (const [name, value] of Object.entries(props.attrs ?? {})) {
     if (value !== undefined) node.setAttribute(name, value);
   }
@@ -27,7 +29,8 @@ export function el<K extends keyof HTMLElementTagNameMap>(
   }
   for (const child of children) {
     if (child === null || child === false || child === undefined) continue;
-    node.append(child);
+    if (typeof child === "string") node.append(...brandNodes(child));
+    else node.append(child);
   }
   return node;
 }

@@ -18,6 +18,9 @@
   --danger-ink: #1a0a08;
   --ok: #5ddc8a;
   --warn: #ffa94d;
+  /* The provider names in the panel text (ui/brand.ts); same in both schemes, as the owner chose them. */
+  --brand-apple: #fa5068;
+  --brand-spotify: #1dda63;
   /* The flowing gradient of the automatic button: yellow, orange, pink, violet. Dark ink stays readable on each. */
   --magic-1: #f3c003;
   --magic-2: #ff9a3d;
@@ -1569,4 +1572,12 @@ main > .help {
 
 .credit a {
   color: inherit;
+}
+
+.brand-apple {
+  color: var(--brand-apple);
+}
+
+.brand-spotify {
+  color: var(--brand-spotify);
 }
