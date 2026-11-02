@@ -162,8 +162,13 @@ function idleCard(v: ViewContext, state: PanelState): Node[] {
           "aria-label": "This song on Apple Music and Spotify",
         },
       },
-      el("span", { class: "match-label", text: "This song on Apple Music and Spotify" }),
       button,
+      // The sentence is read from the button's label, once; the words beside it are for the eye.
+      el("span", {
+        class: "match-label",
+        text: "this song on Apple Music and Spotify",
+        attrs: { "aria-hidden": "true" },
+      }),
     ),
   ];
 }

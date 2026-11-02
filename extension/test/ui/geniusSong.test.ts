@@ -262,10 +262,15 @@ describe("with the automatic look-up off (the default)", () => {
     });
     expect(asks(env.api.calls)).toEqual([]);
     const card = $(root, '[data-key="song-matches"]');
-    expect(card.textContent).toContain("This song on Apple Music and Spotify");
+    expect(card.textContent).toContain("this song on Apple Music and Spotify");
     // One slim row: the note is a tooltip, not a paragraph.
     expect(card.querySelectorAll("p")).toHaveLength(0);
-    expect($(root, '[data-key="song-matches-find"]').getAttribute("title")).toContain("Nothing is looked up");
+    const find = $(root, '[data-key="song-matches-find"]');
+    expect(find.getAttribute("title")).toContain("Nothing is looked up");
+    // One sentence for a screen reader, from the button; the button comes first, the muted words after it.
+    expect(find.getAttribute("aria-label")).toMatch(/^Find this song on Apple Music and Spotify\./);
+    expect(find.nextElementSibling?.getAttribute("aria-hidden")).toBe("true");
+    expect(card.textContent).toBe("Findthis song on Apple Music and Spotify");
     expect(has(root, 'button[data-key="match-apple"]')).toBe(false);
     $(root, '[data-key="song-matches-find"]').click();
     await flush();

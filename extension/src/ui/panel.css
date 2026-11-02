@@ -741,7 +741,6 @@ select.field {
 .match-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-3);
   margin: var(--space-3) 0;
   padding: var(--space-2) var(--space-3);
@@ -761,7 +760,7 @@ select.field {
 
 .match-label {
   min-width: 0;
-  font-weight: 600;
+  color: var(--muted);
 }
 
 .match-bar .button {
