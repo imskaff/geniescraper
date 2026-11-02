@@ -301,6 +301,15 @@ export function loadFakeGenius(options: FakeOptions = {}): FakeGenius {
       input.setAttribute("aria-label", label);
       widget.append(input);
     }
+    for (const text of ["Producer", "Writer"]) {
+      const label = doc.createElement("label");
+      const span = doc.createElement("span");
+      span.textContent = text;
+      const input = doc.createElement("input");
+      input.setAttribute("role", "combobox");
+      label.append(span, input);
+      widget.append(label);
+    }
     form.before(widget);
   }
 

@@ -51,6 +51,15 @@ describe("the song page's own Release Date widget", () => {
     expect(shown(fake, "Release Month")).toBe("May");
   });
 
+  it("leaves the page's producers and writers alone too", async () => {
+    const { fake, run } = setup({ release: { pageWidget: true } });
+    await run(["written_by", "Billie Eilish"]);
+    await run(["produced_by", "FINNEAS"]);
+    const decoy = fake.doc.querySelectorAll<HTMLInputElement>("#song-info-release-date input");
+    expect([...decoy].map((el) => el.value)).toEqual(["", "", "", "", ""]);
+    expect(fake.chosen.length).toBeGreaterThan(0);
+  });
+
   it("reports the form as missing instead of filling the page widget when the form is not open", async () => {
     const { fake, run } = setup({ release: { pageWidget: true } });
     fake.form.remove();
