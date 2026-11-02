@@ -1,0 +1,1235 @@
+{
+ "about": "Sample for the exact-match fallback study (docs/match-search-fallback.md). title/primary/featured are what a Genius song page shows; expect.* is the reviewed result of the recommended matcher on live results (US storefront, 2026-11-02): either a pick or null (not found). Picks are the first accepted result, not the only valid one.",
+ "matcher": "docs/match-search-fallback.md section 4",
+ "songs": [
+  {
+   "id": "sza-sos",
+   "title": "SOS",
+   "primary": [
+    "SZA"
+   ],
+   "featured": [],
+   "note": "golden",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/sos/1658650093?i=1658650487",
+    "appleMusicSearch": "https://music.apple.com/us/album/sos/1657869377?i=1657869385",
+    "spotifySearch": "spotify:track:5xMw6qCcpd2gBXPGTegC4W"
+   }
+  },
+  {
+   "id": "rodrigo-jj",
+   "title": "jealousy, jealousy",
+   "primary": [
+    "Olivia Rodrigo"
+   ],
+   "featured": [],
+   "note": "golden",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/jealousy-jealousy/1560734944?i=1560735861",
+    "appleMusicSearch": "https://music.apple.com/us/album/jealousy-jealousy/1575612190?i=1575612201",
+    "spotifySearch": "spotify:track:0MMyJUC3WNnFS1lit5pTjk"
+   }
+  },
+  {
+   "id": "eilish-chihiro",
+   "title": "CHIHIRO",
+   "primary": [
+    "Billie Eilish"
+   ],
+   "featured": [],
+   "note": "golden",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/chihiro/1739659134?i=1739659141",
+    "appleMusicSearch": "https://music.apple.com/us/album/chihiro/1739659134?i=1739659141",
+    "spotifySearch": "spotify:track:7BRD7x5pt8Lqa1eGYC4dzj"
+   }
+  },
+  {
+   "id": "swift-fortnight",
+   "title": "Fortnight (Ft. Post Malone)",
+   "primary": [
+    "Taylor Swift"
+   ],
+   "featured": [
+    "Post Malone"
+   ],
+   "note": "golden, featured in title",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/fortnight-feat-post-malone/1736268215?i=1736268216",
+    "appleMusicSearch": "https://music.apple.com/us/album/fortnight-feat-post-malone/1736268215?i=1736268216",
+    "spotifySearch": "spotify:track:2OzhQlSqBEmt7hmkYxfT6m"
+   }
+  },
+  {
+   "id": "kendrick-nlu",
+   "title": "Not Like Us",
+   "primary": [
+    "Kendrick Lamar"
+   ],
+   "featured": [],
+   "note": "golden",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/not-like-us/1781353928?i=1781353929",
+    "appleMusicSearch": "https://music.apple.com/us/album/not-like-us/1744776162?i=1744776167",
+    "spotifySearch": "spotify:track:6AI3ezQ4o3HUoP6Dhudph3"
+   }
+  },
+  {
+   "id": "rosalia-altura",
+   "title": "Con Altura",
+   "primary": [
+    "ROSALÍA",
+    "J Balvin"
+   ],
+   "featured": [
+    "El Guincho"
+   ],
+   "note": "golden, diacritics, multiple artists (Genius omits El Guincho)",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/con-altura-feat-el-guincho/1457085973?i=1457085979",
+    "appleMusicSearch": "https://music.apple.com/us/album/con-altura-feat-el-guincho/1457085973?i=1457085979",
+    "spotifySearch": "spotify:track:2qG5sZ7Si6sdK74qLxedYM"
+   }
+  },
+  {
+   "id": "home-phillips",
+   "title": "Home",
+   "primary": [
+    "Phillip Phillips"
+   ],
+   "featured": [],
+   "note": "short common title",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/home/1440862271?i=1440862440",
+    "appleMusicSearch": "https://music.apple.com/us/album/home/1440862271?i=1440862440",
+    "spotifySearch": "spotify:track:1EAgPzRbK9YmdOESSMUm6P"
+   }
+  },
+  {
+   "id": "stay-rihanna",
+   "title": "Stay",
+   "primary": [
+    "Rihanna"
+   ],
+   "featured": [
+    "Mikky Ekko"
+   ],
+   "note": "short common title (Genius artist without Mikky Ekko)",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/stay-feat-mikky-ekko/1417177082?i=1417177313",
+    "appleMusicSearch": "https://music.apple.com/us/album/stay-feat-mikky-ekko/1417177082?i=1417177313",
+    "spotifySearch": "spotify:track:0GNI8K3VATWBABQFAzBAYe"
+   }
+  },
+  {
+   "id": "stay-laroi",
+   "title": "Stay",
+   "primary": [
+    "The Kid LAROI",
+    "Justin Bieber"
+   ],
+   "featured": [],
+   "note": "short common title, two artists",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/stay/1574968878?i=1574968888",
+    "appleMusicSearch": "https://music.apple.com/us/album/stay/1574968878?i=1574968888",
+    "spotifySearch": "spotify:track:5HCyWlXZPP0y6Gqq8TgA20"
+   }
+  },
+  {
+   "id": "blinding",
+   "title": "Blinding Lights",
+   "primary": [
+    "The Weeknd"
+   ],
+   "featured": [],
+   "note": "plain",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/blinding-lights/1499378108?i=1499378607",
+    "appleMusicSearch": "https://music.apple.com/us/album/blinding-lights/1488408555?i=1488408568",
+    "spotifySearch": "spotify:track:0VjIjW4GlUZAMYd2vXMi3b"
+   }
+  },
+  {
+   "id": "bohemian",
+   "title": "Bohemian Rhapsody",
+   "primary": [
+    "Queen"
+   ],
+   "featured": [],
+   "note": "store title has (Remastered 2011)",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/bohemian-rhapsody/6781024026?i=6781024437",
+    "appleMusicSearch": "https://music.apple.com/us/album/bohemian-rhapsody/6781024026?i=6781024437",
+    "spotifySearch": "spotify:track:2JiDi0qAXsPwhPqA2qaKGt"
+   }
+  },
+  {
+   "id": "dakiti",
+   "title": "Dákiti",
+   "primary": [
+    "Bad Bunny",
+    "Jhay Cortez"
+   ],
+   "featured": [],
+   "note": "diacritics, ampersand",
+   "expect": {
+    "itunesSearch": null,
+    "appleMusicSearch": null,
+    "spotifySearch": null
+   }
+  },
+  {
+   "id": "gangnam",
+   "title": "Gangnam Style (강남스타일)",
+   "primary": [
+    "PSY"
+   ],
+   "featured": [],
+   "note": "Hangul in title",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/gangnam-style/1445144506?i=1445144527",
+    "appleMusicSearch": "https://music.apple.com/us/album/gangnam-style/1445144506?i=1445144527",
+    "spotifySearch": "spotify:track:03UrZgTINDqvnUMbbIMhql"
+   }
+  },
+  {
+   "id": "despacito-remix",
+   "title": "Despacito (Remix)",
+   "primary": [
+    "Luis Fonsi",
+    "Daddy Yankee"
+   ],
+   "featured": [
+    "Justin Bieber"
+   ],
+   "note": "remix, feat in artist",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/despacito-feat-justin-bieber-remix/1447401519?i=1447401626",
+    "appleMusicSearch": "https://music.apple.com/us/album/despacito-feat-justin-bieber-remix/1440652096?i=1440652098",
+    "spotifySearch": "spotify:track:6rPO02ozF3bM7NnOV4h6s2"
+   }
+  },
+  {
+   "id": "lose-yourself",
+   "title": "Lose Yourself",
+   "primary": [
+    "Eminem"
+   ],
+   "featured": [],
+   "note": "plain",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/lose-yourself/1440903339?i=1440903439",
+    "appleMusicSearch": "https://music.apple.com/us/album/lose-yourself/1440903339?i=1440903439",
+    "spotifySearch": "spotify:track:5Z01UMMf7V1o0MzF86s6WJ"
+   }
+  },
+  {
+   "id": "teen-spirit",
+   "title": "Smells Like Teen Spirit",
+   "primary": [
+    "Nirvana"
+   ],
+   "featured": [],
+   "note": "plain old catalogue",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/smells-like-teen-spirit/1440783617?i=1440783625",
+    "appleMusicSearch": "https://music.apple.com/us/album/smells-like-teen-spirit/1440783617?i=1440783625",
+    "spotifySearch": "spotify:track:4CeeEOM32jQcH3eN9Q2dGj"
+   }
+  },
+  {
+   "id": "cuff-it",
+   "title": "CUFF IT",
+   "primary": [
+    "Beyoncé"
+   ],
+   "featured": [],
+   "note": "caps, diacritics",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/cuff-it/1636789969?i=1636790292",
+    "appleMusicSearch": "https://music.apple.com/us/album/cuff-it/1630005298?i=1630005850",
+    "spotifySearch": "spotify:track:1xzi1Jcr7mEi9K2RfzLOqS"
+   }
+  },
+  {
+   "id": "mask-off",
+   "title": "Mask Off",
+   "primary": [
+    "Future"
+   ],
+   "featured": [],
+   "note": "plain",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/mask-off/1205690332?i=1205690479",
+    "appleMusicSearch": "https://music.apple.com/us/album/mask-off/1253125650?i=1253125872",
+    "spotifySearch": "spotify:track:0VgkVdmE4gld66l8iyGjgx"
+   }
+  },
+  {
+   "id": "sicko",
+   "title": "SICKO MODE",
+   "primary": [
+    "Travis Scott"
+   ],
+   "featured": [],
+   "note": "caps",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/sicko-mode/1421658111?i=1421658123",
+    "appleMusicSearch": "https://music.apple.com/us/album/sicko-mode/1421241217?i=1421242781",
+    "spotifySearch": "spotify:track:2xLMifQCjDGFmkHkpNLD9h"
+   }
+  },
+  {
+   "id": "dont-start",
+   "title": "Don’t Start Now",
+   "primary": [
+    "Dua Lipa"
+   ],
+   "featured": [],
+   "note": "curly apostrophe",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/dont-start-now/1484636581?i=1484636829",
+    "appleMusicSearch": "https://music.apple.com/us/album/dont-start-now/1484636581?i=1484636829",
+    "spotifySearch": "spotify:track:3PfIrDoz19wz7qK7tYeu62"
+   }
+  },
+  {
+   "id": "levitating",
+   "title": "Levitating (Ft. DaBaby)",
+   "primary": [
+    "Dua Lipa"
+   ],
+   "featured": [
+    "DaBaby"
+   ],
+   "note": "featured in title",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/levitating-feat-dababy/1532788351?i=1532788352",
+    "appleMusicSearch": "https://music.apple.com/us/album/levitating-feat-dababy/1532788351?i=1532788352",
+    "spotifySearch": "spotify:track:5nujrmhLynf4yMoMtj8AQF"
+   }
+  },
+  {
+   "id": "444",
+   "title": "4:44",
+   "primary": [
+    "JAY-Z"
+   ],
+   "featured": [],
+   "note": "punctuation, hyphen artist",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/4-44/1440935729?i=1440935736",
+    "appleMusicSearch": "https://music.apple.com/us/album/4-44/1440935729?i=1440935736",
+    "spotifySearch": "spotify:track:1gT5TGwbkkkUliNzHRIGi1"
+   }
+  },
+  {
+   "id": "sunflower",
+   "title": "Sunflower (Spider-Man: Into the Spider-Verse)",
+   "primary": [
+    "Post Malone",
+    "Swae Lee"
+   ],
+   "featured": [],
+   "note": "long parenthetical subtitle",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/sunflower-spider-man-into-the-spider-verse/1445949265?i=1445949267",
+    "appleMusicSearch": "https://music.apple.com/us/album/sunflower-spider-man-into-the-spider-verse/1445949265?i=1445949267",
+    "spotifySearch": "spotify:track:3KkXRkHbMCARz0aVfEt68P"
+   }
+  },
+  {
+   "id": "brightside",
+   "title": "Mr. Brightside",
+   "primary": [
+    "The Killers"
+   ],
+   "featured": [],
+   "note": "abbreviation dot",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/mr-brightside/1440891166?i=1440891171",
+    "appleMusicSearch": "https://music.apple.com/us/album/mr-brightside/1440891166?i=1440891171",
+    "spotifySearch": "spotify:track:003vvx7Niy0yvhvHt4a68B"
+   }
+  },
+  {
+   "id": "titi",
+   "title": "Tití Me Preguntó",
+   "primary": [
+    "Bad Bunny"
+   ],
+   "featured": [],
+   "note": "diacritics",
+   "expect": {
+    "itunesSearch": null,
+    "appleMusicSearch": "https://music.apple.com/us/album/tit%C3%AD-me-pregunt%C3%B3/1622045624?i=1622045635",
+    "spotifySearch": "spotify:track:1IHWl5LamUGEuP4ozKQSXZ"
+   }
+  },
+  {
+   "id": "yesterday",
+   "title": "Yesterday",
+   "primary": [
+    "The Beatles"
+   ],
+   "featured": [],
+   "note": "common title, remasters",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/yesterday/1441164524?i=1441164805",
+    "appleMusicSearch": "https://music.apple.com/us/album/yesterday/1441164524?i=1441164805",
+    "spotifySearch": "spotify:track:3BQHpFgAp4l80e1XslIjNI"
+   }
+  },
+  {
+   "id": "no-role-modelz",
+   "title": "No Role Modelz",
+   "primary": [
+    "J. Cole"
+   ],
+   "featured": [],
+   "note": "dotted artist",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/no-role-modelz/1600772499?i=1600773036",
+    "appleMusicSearch": "https://music.apple.com/us/album/no-role-modelz/1600772499?i=1600773036",
+    "spotifySearch": "spotify:track:68Dni7IE4VyPkTOH9mRWHr"
+   }
+  },
+  {
+   "id": "yoru",
+   "title": "夜に駆ける",
+   "primary": [
+    "YOASOBI"
+   ],
+   "featured": [],
+   "note": "Japanese title",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/%E5%A4%9C%E3%81%AB%E9%A7%86%E3%81%91%E3%82%8B/1490256978?i=1490256995",
+    "appleMusicSearch": "https://music.apple.com/us/album/%E5%A4%9C%E3%81%AB%E9%A7%86%E3%81%91%E3%82%8B/1490256978?i=1490256995",
+    "spotifySearch": "spotify:track:3dPtXHP0oXQ4HCWHsOA9js"
+   }
+  },
+  {
+   "id": "ca-plane",
+   "title": "Ça plane pour moi",
+   "primary": [
+    "Plastic Bertrand"
+   ],
+   "featured": [],
+   "note": "French, diacritics",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/c-a-plane-pour-moi/80084715?i=80084665",
+    "appleMusicSearch": "https://music.apple.com/us/album/c-a-plane-pour-moi/80084715?i=80084665",
+    "spotifySearch": "spotify:track:4sf4Lq52b2iCoAgpge7a9g"
+   }
+  },
+  {
+   "id": "ich-will",
+   "title": "Ich will",
+   "primary": [
+    "Rammstein"
+   ],
+   "featured": [],
+   "note": "German",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/ich-will/1440770702?i=1440771494",
+    "appleMusicSearch": "https://music.apple.com/us/album/ich-will/1440770702?i=1440771494",
+    "spotifySearch": "spotify:track:3X0K6fII7VIwL1URPrp8Ko"
+   }
+  },
+  {
+   "id": "shape",
+   "title": "Shape of You",
+   "primary": [
+    "Ed Sheeran"
+   ],
+   "featured": [],
+   "note": "plain",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/shape-of-you/1193701079?i=1193701392",
+    "appleMusicSearch": "https://music.apple.com/us/album/shape-of-you/1193701079?i=1193701392",
+    "spotifySearch": "spotify:track:7qiZfU4dY1lWllzX7mPBI3"
+   }
+  },
+  {
+   "id": "wake-me-up",
+   "title": "Wake Me Up (Radio Edit)",
+   "primary": [
+    "Avicii"
+   ],
+   "featured": [],
+   "note": "Radio Edit suffix",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/wake-me-up/1440872730?i=1440872929",
+    "appleMusicSearch": "https://music.apple.com/us/album/wake-me-up/1440872730?i=1440872929",
+    "spotifySearch": "spotify:track:0nrRP2bk19rLc0orkWPQk2"
+   }
+  },
+  {
+   "id": "rich-flex",
+   "title": "Rich Flex",
+   "primary": [
+    "Drake",
+    "21 Savage"
+   ],
+   "featured": [],
+   "note": "ampersand, number in artist",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/rich-flex/1653012564?i=1653012565",
+    "appleMusicSearch": "https://music.apple.com/us/album/rich-flex/1652998965?i=1652999417",
+    "spotifySearch": "spotify:track:1bDbXMyjaUIooNwFE9wn0N"
+   }
+  },
+  {
+   "id": "love-story-tv",
+   "title": "Love Story (Taylor’s Version)",
+   "primary": [
+    "Taylor Swift"
+   ],
+   "featured": [],
+   "note": "Taylors Version",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/love-story-taylors-version/1552791073?i=1552791427",
+    "appleMusicSearch": "https://music.apple.com/us/album/love-story-taylors-version/1568160264?i=1568160337",
+    "spotifySearch": "spotify:track:3CeCwYWvdfXbZLXFhBrbnf"
+   }
+  },
+  {
+   "id": "pink-white",
+   "title": "Pink + White",
+   "primary": [
+    "Frank Ocean"
+   ],
+   "featured": [],
+   "note": "plus sign",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/pink-white/1146195596?i=1146195714",
+    "appleMusicSearch": "https://music.apple.com/us/album/pink-white/1146195596?i=1146195714",
+    "spotifySearch": "spotify:track:3xKsf9qdS1CyvXSMEid6g8"
+   }
+  },
+  {
+   "id": "mockingbird",
+   "title": "Mockingbird",
+   "primary": [
+    "Eminem"
+   ],
+   "featured": [],
+   "note": "plain",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/mockingbird/1425129724?i=1425131554",
+    "appleMusicSearch": "https://music.apple.com/us/album/mockingbird/1452852431?i=1452852850",
+    "spotifySearch": "spotify:track:561jH07mF1jHuk7KlaeF0s"
+   }
+  },
+  {
+   "id": "take-me",
+   "title": "Take Me to Church",
+   "primary": [
+    "Hozier"
+   ],
+   "featured": [],
+   "note": "plain",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/take-me-to-church/900672435?i=900672609",
+    "appleMusicSearch": "https://music.apple.com/us/album/take-me-to-church/900672435?i=900672609",
+    "spotifySearch": "spotify:track:3dYD57lRAUcMHufyqn9GcI"
+   }
+  },
+  {
+   "id": "snooze",
+   "title": "Snooze",
+   "primary": [
+    "SZA"
+   ],
+   "featured": [],
+   "note": "plain",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/snooze/1658650093?i=1658650499",
+    "appleMusicSearch": "https://music.apple.com/us/album/snooze/1657869377?i=1657869492",
+    "spotifySearch": "spotify:track:4iZ4pt7kvcaH6Yo8UoZ4s2"
+   }
+  },
+  {
+   "id": "hey-ya",
+   "title": "Hey Ya!",
+   "primary": [
+    "OutKast"
+   ],
+   "featured": [],
+   "note": "store has Hey Ya! / mixed case artist",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/hey-ya/1774798661?i=1774799818",
+    "appleMusicSearch": "https://music.apple.com/us/album/hey-ya/1032178894?i=1032178989",
+    "spotifySearch": "spotify:track:2PpruBYCo4H7WOBJ7Q2EwM"
+   }
+  },
+  {
+   "id": "rockstar",
+   "title": "Rockstar (Ft. Roddy Ricch)",
+   "primary": [
+    "DaBaby"
+   ],
+   "featured": [
+    "Roddy Ricch"
+   ],
+   "note": "featured in title",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/rockstar-feat-roddy-ricch/1508028565?i=1508028869",
+    "appleMusicSearch": "https://music.apple.com/us/album/rockstar-feat-roddy-ricch/1508028565?i=1508028869",
+    "spotifySearch": "spotify:track:7ytR5pFWmSjzHJIeQkgog4"
+   }
+  },
+  {
+   "id": "cold-heart",
+   "title": "Cold Heart (PNAU Remix)",
+   "primary": [
+    "Elton John",
+    "Dua Lipa"
+   ],
+   "featured": [],
+   "note": "remix",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/cold-heart-pnau-remix/1583227776?i=1583227785",
+    "appleMusicSearch": "https://music.apple.com/us/album/cold-heart-pnau-remix/1578986656?i=1578986673",
+    "spotifySearch": null
+   }
+  },
+  {
+   "id": "mamma-mia",
+   "title": "Mamma Mia",
+   "primary": [
+    "ABBA"
+   ],
+   "featured": [],
+   "note": "common title, many versions",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/mamma-mia/1440861160?i=1440861294",
+    "appleMusicSearch": "https://music.apple.com/us/album/mamma-mia/1440861160?i=1440861294",
+    "spotifySearch": "spotify:track:2TxCwUlqaOH3TIyJqGgR91"
+   }
+  },
+  {
+   "id": "anti-hero",
+   "title": "Anti-Hero",
+   "primary": [
+    "Taylor Swift"
+   ],
+   "featured": [],
+   "note": "hyphen",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/anti-hero/1649434004?i=1649434293",
+    "appleMusicSearch": "https://music.apple.com/us/album/anti-hero/1649434004?i=1649434293",
+    "spotifySearch": "spotify:track:0V3wPSX9ygBnCm8psDIegu"
+   }
+  },
+  {
+   "id": "nuvole",
+   "title": "Nuvole Bianche",
+   "primary": [
+    "Ludovico Einaudi"
+   ],
+   "featured": [],
+   "note": "Italian instrumental",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/nuvole-bianche/1750814305?i=1750814487",
+    "appleMusicSearch": "https://music.apple.com/us/album/nuvole-bianche/1750814305?i=1750814487",
+    "spotifySearch": "spotify:track:3weNRklVDqb4Rr5MhKBR3D"
+   }
+  },
+  {
+   "id": "lovely",
+   "title": "lovely",
+   "primary": [
+    "Billie Eilish",
+    "Khalid"
+   ],
+   "featured": [],
+   "note": "lowercase, two artists",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/lovely/1369379667?i=1369380479",
+    "appleMusicSearch": "https://music.apple.com/us/album/lovely/1369379667?i=1369380479",
+    "spotifySearch": "spotify:track:7b4eqsDeLUzSrGth8uB2D1"
+   }
+  },
+  {
+   "id": "peaches",
+   "title": "Peaches (Ft. Daniel Caesar & Giveon)",
+   "primary": [
+    "Justin Bieber"
+   ],
+   "featured": [
+    "Daniel Caesar",
+    "Giveon"
+   ],
+   "note": "featured in title",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/peaches-feat-daniel-caesar-giv%C4%93on/1556169567?i=1556170101",
+    "appleMusicSearch": "https://music.apple.com/us/album/peaches-feat-daniel-caesar-giv%C4%93on/1556175419?i=1556175857",
+    "spotifySearch": "spotify:track:4iJyoBOLtHqaGxP12qzhQI"
+   }
+  },
+  {
+   "id": "hotline",
+   "title": "Hotline Bling",
+   "primary": [
+    "Drake"
+   ],
+   "featured": [],
+   "note": "plain",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/hotline-bling/1440841363?i=1440841730",
+    "appleMusicSearch": "https://music.apple.com/us/album/hotline-bling/1440841363?i=1440841730",
+    "spotifySearch": "spotify:track:0wwPcA6wtMf6HUMpIRdeP7"
+   }
+  },
+  {
+   "id": "im-good",
+   "title": "I’m Good (Blue)",
+   "primary": [
+    "David Guetta",
+    "Bebe Rexha"
+   ],
+   "featured": [],
+   "note": "curly apostrophe, parenthetical",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/im-good-blue/1642788726?i=1642788728",
+    "appleMusicSearch": "https://music.apple.com/us/album/im-good-blue/1642788726?i=1642788728",
+    "spotifySearch": "spotify:track:4uUG5RXrOk84mYEfFvj3cK"
+   }
+  },
+  {
+   "id": "wap",
+   "title": "WAP (Ft. Megan Thee Stallion)",
+   "primary": [
+    "Cardi B"
+   ],
+   "featured": [
+    "Megan Thee Stallion"
+   ],
+   "note": "acronym, featured",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/wap-feat-megan-thee-stallion/1526746983?i=1526747167",
+    "appleMusicSearch": "https://music.apple.com/us/album/wap-feat-megan-thee-stallion/1821526317?i=1821526567",
+    "spotifySearch": "spotify:track:4Oun2ylbjFKMPTiaSbbCih"
+   }
+  },
+  {
+   "id": "beggin",
+   "title": "Beggin’",
+   "primary": [
+    "Måneskin"
+   ],
+   "featured": [],
+   "note": "diacritic artist",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/beggin/1320780883?i=1320781379",
+    "appleMusicSearch": "https://music.apple.com/us/album/beggin/1320780883?i=1320781379",
+    "spotifySearch": "spotify:track:3Wrjm47oTz2sjIgck11l5e"
+   }
+  },
+  {
+   "id": "praise",
+   "title": "Praise the Lord (Da Shine)",
+   "primary": [
+    "A$AP Rocky"
+   ],
+   "featured": [
+    "Skepta"
+   ],
+   "note": "dollar sign artist",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/praise-the-lord-da-shine-feat-skepta/1388565682?i=1388566993",
+    "appleMusicSearch": "https://music.apple.com/us/album/praise-the-lord-da-shine-feat-skepta/1387635013?i=1387635035",
+    "spotifySearch": "spotify:track:7ycWLEP1GsNjVvcjawXz3z"
+   }
+  },
+  {
+   "id": "earfquake",
+   "title": "EARFQUAKE",
+   "primary": [
+    "Tyler, The Creator"
+   ],
+   "featured": [],
+   "note": "comma artist",
+   "expect": {
+    "itunesSearch": null,
+    "appleMusicSearch": "https://music.apple.com/us/album/earfquake/1463409338?i=1463409350",
+    "spotifySearch": "spotify:track:5hVghJ4KaYES3BFUATCYn0"
+   }
+  },
+  {
+   "id": "less-i-know",
+   "title": "The Less I Know the Better",
+   "primary": [
+    "Tame Impala"
+   ],
+   "featured": [],
+   "note": "plain",
+   "expect": {
+    "itunesSearch": null,
+    "appleMusicSearch": "https://music.apple.com/us/album/the-less-i-know-the-better/1440838039?i=1440838488",
+    "spotifySearch": "spotify:track:6K4t31amVTZDgR3sKmwUJJ"
+   }
+  },
+  {
+   "id": "seven-eleven",
+   "title": "7/11",
+   "primary": [
+    "Beyoncé"
+   ],
+   "featured": [],
+   "note": "slash in title",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/7-11/939779719?i=939779732",
+    "appleMusicSearch": "https://music.apple.com/us/album/7-11/1308530355?i=1308531963",
+    "spotifySearch": "spotify:track:02M6vucOvmRfMxTXDUwRXu"
+   }
+  },
+  {
+   "id": "home-deluxe",
+   "title": "Hotel California (Remastered)",
+   "primary": [
+    "Eagles"
+   ],
+   "featured": [],
+   "note": "remaster suffix",
+   "expect": {
+    "itunesSearch": "https://music.apple.com/us/album/hotel-california-remastered/1293903288?i=1293903289",
+    "appleMusicSearch": "https://music.apple.com/us/album/hotel-california/635770200?i=635770202",
+    "spotifySearch": "spotify:track:40riOy7x9W7GXjyGp4pjAv"
+   }
+  }
+ ],
+ "cases": [
+  {
+   "song": "snooze",
+   "service": "spotify",
+   "hit": {
+    "title": "Snooze",
+    "artists": [
+     "SZA"
+    ],
+    "album": "SOS"
+   },
+   "accept": true,
+   "why": "exact"
+  },
+  {
+   "song": "snooze",
+   "service": "spotify",
+   "hit": {
+    "title": "SNOOZE",
+    "artists": [
+     "Justin Bieber",
+     "SZA"
+    ],
+    "album": "SWAG LIVE FROM COACHELLA (Weekend II)"
+   },
+   "accept": false,
+   "why": "extra artist: another recording"
+  },
+  {
+   "song": "hotline",
+   "service": "spotify",
+   "hit": {
+    "title": "Hotline Bling",
+    "artists": [
+     "Drake",
+     "Trap Capoo"
+    ],
+    "album": "ZERO REGRETS"
+   },
+   "accept": false,
+   "why": "extra artist"
+  },
+  {
+   "song": "nuvole",
+   "service": "spotify",
+   "hit": {
+    "title": "Nuvole Bianche",
+    "artists": [
+     "Ludovico Einaudi",
+     "Alessia Tondo"
+    ],
+    "album": "Taranta Project"
+   },
+   "accept": false,
+   "why": "extra artist"
+  },
+  {
+   "song": "ca-plane",
+   "service": "spotify",
+   "hit": {
+    "title": "Ça plane pour moi",
+    "artists": [
+     "The Lost Fingers",
+     "Plastic Bertrand"
+    ],
+    "album": "Rendez-vous rose"
+   },
+   "accept": false,
+   "why": "cover with the original artist added"
+  },
+  {
+   "song": "ca-plane",
+   "service": "spotify",
+   "hit": {
+    "title": "Ça plane pour moi",
+    "artists": [
+     "Plastic Bertrand"
+    ],
+    "album": "127 Hours"
+   },
+   "accept": true,
+   "why": "diacritic and case folded"
+  },
+  {
+   "song": "swift-fortnight",
+   "service": "spotify",
+   "hit": {
+    "title": "Fortnight (feat. Post Malone)",
+    "artists": [
+     "Taylor Swift",
+     "Post Malone"
+    ],
+    "album": "Fortnight (Acoustic Version)"
+   },
+   "accept": false,
+   "why": "same track title on an acoustic release"
+  },
+  {
+   "song": "swift-fortnight",
+   "service": "spotify",
+   "hit": {
+    "title": "Fortnight (feat. Post Malone) - BLOND:ISH Remix",
+    "artists": [
+     "Taylor Swift",
+     "Post Malone",
+     "BLOND:ISH"
+    ],
+    "album": "Fortnight (feat. Post Malone) [BLOND:ISH Remix]"
+   },
+   "accept": false,
+   "why": "same track title on a remix release"
+  },
+  {
+   "song": "swift-fortnight",
+   "service": "spotify",
+   "hit": {
+    "title": "Fortnight (feat. Post Malone)",
+    "artists": [
+     "Taylor Swift",
+     "Post Malone"
+    ],
+    "album": "THE TORTURED POETS DEPARTMENT"
+   },
+   "accept": true,
+   "why": "exact, featured artist in the artist list"
+  },
+  {
+   "song": "stay-laroi",
+   "service": "spotify",
+   "hit": {
+    "title": "STAY",
+    "artists": [
+     "Justin Bieber",
+     "The Kid LAROI"
+    ],
+    "album": "SWAG LIVE FROM COACHELLA (Weekend I)"
+   },
+   "accept": false,
+   "why": "same track title on a live release"
+  },
+  {
+   "song": "stay-laroi",
+   "service": "spotify",
+   "hit": {
+    "title": "STAY (with Justin Bieber)",
+    "artists": [
+     "The Kid LAROI",
+     "Justin Bieber"
+    ],
+    "album": "STAY (with Justin Bieber)"
+   },
+   "accept": true,
+   "why": "with-bracket names a known artist"
+  },
+  {
+   "song": "im-good",
+   "service": "spotify",
+   "hit": {
+    "title": "I'm Good (Blue) - Djs From Mars Remix",
+    "artists": [
+     "David Guetta",
+     "Bebe Rexha",
+     "DJs From Mars"
+    ],
+    "album": "I'm Good (Blue) [Remixes]"
+   },
+   "accept": false,
+   "why": "same track title on a remix release"
+  },
+  {
+   "song": "dakiti",
+   "service": "spotify",
+   "hit": {
+    "title": "DÁKITI",
+    "artists": [
+     "Bad Bunny",
+     "JHAYCO"
+    ],
+    "album": "DÁKITI"
+   },
+   "accept": false,
+   "why": "artist is JHAYCO on the store, Jhay Cortez on Genius: not found by policy"
+  },
+  {
+   "song": "cold-heart",
+   "service": "spotify",
+   "hit": {
+    "title": "Cold Heart - PNAU Remix",
+    "artists": [
+     "Elton John",
+     "Dua Lipa",
+     "PNAU"
+    ],
+    "album": "Cold Heart (PNAU Remix)"
+   },
+   "accept": false,
+   "why": "third artist the Genius credit does not list"
+  },
+  {
+   "song": "gangnam",
+   "service": "spotify",
+   "hit": {
+    "title": "Gangnam Style (강남스타일)",
+    "artists": [
+     "PSY"
+    ],
+    "album": "Gangnam Style (강남스타일)"
+   },
+   "accept": true,
+   "why": "non-Latin bracket ignored"
+  },
+  {
+   "song": "yesterday",
+   "service": "spotify",
+   "hit": {
+    "title": "Yesterday - Remastered 2009",
+    "artists": [
+     "The Beatles"
+    ],
+    "album": "Help! (Remastered 2009)"
+   },
+   "accept": true,
+   "why": "edition suffix ignored"
+  },
+  {
+   "song": "despacito-remix",
+   "service": "spotify",
+   "hit": {
+    "title": "Despacito - Remix",
+    "artists": [
+     "Luis Fonsi",
+     "Daddy Yankee",
+     "Justin Bieber"
+    ],
+    "album": "Despacito Feat. Justin Bieber (Remix)"
+   },
+   "accept": true,
+   "why": "remix kept in the title on both sides"
+  },
+  {
+   "song": "stay-rihanna",
+   "service": "spotify",
+   "hit": {
+    "title": "Stay",
+    "artists": [
+     "Rihanna",
+     "Mikky Ekko"
+    ],
+    "album": "Unapologetic (Deluxe)"
+   },
+   "accept": true,
+   "why": "featured artist from the Genius credit"
+  },
+  {
+   "song": "levitating",
+   "service": "apple",
+   "hit": {
+    "title": "Levitating (feat. DaBaby)",
+    "artists": [
+     "Dua Lipa"
+    ],
+    "href": "https://music.apple.com/us/album/levitating-feat-dababy/1532788351?i=1532788352"
+   },
+   "accept": true,
+   "why": "featured name in the title equals the Genius credit"
+  },
+  {
+   "song": "anti-hero",
+   "service": "apple",
+   "hit": {
+    "title": "Anti-Hero (feat. Bleachers)",
+    "artists": [
+     "Taylor Swift"
+    ],
+    "album": "Anti-Hero (feat. Bleachers) - Single",
+    "href": "https://music.apple.com/us/album/anti-hero-feat-bleachers/1653490033?i=1653490666"
+   },
+   "accept": false,
+   "why": "featured name that Genius does not list"
+  },
+  {
+   "song": "levitating",
+   "service": "apple",
+   "hit": {
+    "title": "Levitating",
+    "artists": [
+     "Dua Lipa"
+    ],
+    "album": "Future Nostalgia",
+    "href": "https://music.apple.com/us/album/levitating/1538003494?i=1538003843"
+   },
+   "accept": false,
+   "why": "Genius credits DaBaby; this is the version without him"
+  },
+  {
+   "song": "stay-laroi",
+   "service": "apple",
+   "hit": {
+    "title": "STAY",
+    "artists": [
+     "Justin Bieber & The Kid LAROI"
+    ],
+    "album": "SWAG LIVE FROM COACHELLA (Weekend I)",
+    "href": "https://music.apple.com/us/album/stay/6783430401?i=6783430834"
+   },
+   "accept": false,
+   "why": "live release (album name)"
+  },
+  {
+   "song": "sunflower",
+   "service": "apple",
+   "hit": {
+    "title": "Sunflower (Spider-Man: Into the Spider-Verse)",
+    "artists": [
+     "Post Malone & Swae Lee"
+    ],
+    "album": "Spider-Man: Into the Spider-Verse (Soundtrack From & Inspired by the Motion Picture)",
+    "href": "https://music.apple.com/us/album/sunflower-spider-man-into-the-spider-verse/1445949265?i=1445949267"
+   },
+   "accept": true,
+   "why": "subtitle in brackets kept on both sides"
+  },
+  {
+   "song": "rich-flex",
+   "service": "apple",
+   "hit": {
+    "title": "Rich Flex",
+    "artists": [
+     "Drake & 21 Savage"
+    ],
+    "album": "Her Loss",
+    "href": "https://music.apple.com/us/album/rich-flex/1653012564?i=1653012565"
+   },
+   "accept": true,
+   "why": "joined artists with & and a number"
+  },
+  {
+   "song": "stay-laroi",
+   "service": "apple",
+   "hit": {
+    "title": "STAY",
+    "artists": [
+     "The Kid LAROI",
+     "Justin Bieber"
+    ],
+    "href": "https://music.apple.com/us/album/stay/1574968878?i=1574968888"
+   },
+   "accept": true,
+   "why": "case folded"
+  },
+  {
+   "song": "dakiti",
+   "service": "apple",
+   "hit": {
+    "title": "Un Verano Sin Ti",
+    "artists": [
+     "Bad Bunny"
+    ],
+    "album": "Un Verano Sin Ti",
+    "href": "https://music.apple.com/us/album/un-verano-sin-ti/1622045624?i=1622046238"
+   },
+   "accept": false,
+   "why": "no result is the song (index gap)"
+  },
+  {
+   "song": "home-phillips",
+   "service": "spotify",
+   "hit": {
+    "title": "Home (Live)",
+    "artists": [
+     "Phillip Phillips"
+    ],
+    "album": "Home"
+   },
+   "accept": false,
+   "why": "hand case: Live in the title only on the result"
+  },
+  {
+   "song": "home-phillips",
+   "service": "spotify",
+   "hit": {
+    "title": "Home",
+    "artists": [
+     "Phillip Phillips"
+    ],
+    "album": "Home"
+   },
+   "accept": true,
+   "why": "hand case: plain"
+  },
+  {
+   "song": "home-phillips",
+   "service": "spotify",
+   "hit": {
+    "title": "Home - Acoustic",
+    "artists": [
+     "Phillip Phillips"
+    ],
+    "album": "Home (Acoustic)"
+   },
+   "accept": false,
+   "why": "hand case: acoustic"
+  },
+  {
+   "song": "hotline",
+   "service": "apple",
+   "hit": {
+    "title": "Hotline Bling",
+    "artists": [
+     "Drake"
+    ],
+    "href": "https://music.apple.com/us/album/hotline-bling-live/1?i=2"
+   },
+   "accept": false,
+   "why": "hand case: live album slug"
+  },
+  {
+   "song": "hotline",
+   "service": "apple",
+   "hit": {
+    "title": "Hotline Bling",
+    "artists": [
+     "Drake"
+    ],
+    "href": "https://music.apple.com/us/album/views/1?i=2"
+   },
+   "accept": true,
+   "why": "hand case: plain album slug"
+  }
+ ],
+ "casesAbout": "Candidate rows taken from the live runs (hit.artists is a list; Apple rows may carry the joined string in a one-item list). accept is the expected outcome of the full rule in section 4 (title, artists, release check); a unit test runs the port over each case."
+}
