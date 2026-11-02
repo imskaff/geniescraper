@@ -15,7 +15,7 @@ The short version: it collects nothing, has no accounts, no analytics and no ser
   When the panel is open on a Genius song page, the extension reads that page's own data: the song's title, its artists as separate names, and the Apple Music and Spotify ids Genius lists for it.
   It does this with its content script on `genius.com`, the access it already has to fill the edit form, and reads nothing else from the page.
   The data is read as text and never run as code.
-  The result is shown in the panel and kept in the memory of the extension's background part for the song's page until the browser closes or the extension restarts; it is not written to disk.
+  The result is shown in the panel and kept in the memory of the extension's background part, per song page, until that background part stops (the browser stops it when it is idle); it is not written to disk.
 - **Your settings.**
   Which credits to include, hotkeys, and similar choices are stored with `chrome.storage.sync`, so Chrome may sync them across your own browsers through your Google account.
   They contain no personal data.
@@ -50,7 +50,8 @@ Apple Music's page is found from the id Genius lists, with one look-up at `itune
 If that id does not resolve, the extension asks iTunes's search for exactly this title and artist, and only if that finds nothing, opens Apple Music's search page in a minimized window of your own browser, reads its song rows and closes it.
 Spotify's page is found from the track id Genius lists, checked with Spotify's public oEmbed address for that track (`open.spotify.com/oembed`, which answers with the track's title and nothing about you).
 When Genius lists no Spotify id, or the title does not agree, the extension opens Spotify's songs search for this title and artist in a minimized window of your own browser, reads its rows, and closes it.
-Only a result with exactly this title and exactly these artists is listed, otherwise the panel says that nothing matched; a close match is never taken for you.
+A result found by search is listed only when it has exactly this title and exactly these artists, otherwise the panel says that nothing matched; a close match is never taken for you.
+A page that Genius itself lists by id is shown as Genius gives it, with its release's name and the artist, so you can see what it is.
 Only the song's title, its artists and the ids go out, only to the hosts in the table, and the search windows open one at a time, with the same pause after a captcha as for reading credits.
 The credits of a Spotify page are read from `open.spotify.com`, which is a required permission like `music.apple.com`: Chrome shows it when you install the extension and asks nothing more when you pick a Spotify page.
 Then the extension opens that Spotify page in a minimized window of your own browser, with `?locale=en` added to its address so that Spotify answers in English (this changes nothing in your Spotify account or cookies and does not affect your own Spotify tabs; Spotify does not document the parameter, and if it stops working the extension reads the page in your language with its own lists of role words), presses the page's own "View credits" button for you, reads the names and roles in the box that opens, and closes the window.

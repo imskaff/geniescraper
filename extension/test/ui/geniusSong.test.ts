@@ -152,6 +152,22 @@ describe("the card on a Genius song page", () => {
     expect(asks(env.api.calls)).toHaveLength(1);
   });
 
+  it("does not ask again about a Genius page that said it is not a song, until the user goes elsewhere", async () => {
+    const { env, panel } = await open({
+      api: { songMatches: () => Promise.resolve({ ok: true, data: { status: "not-song" } }) },
+    });
+    await panel.refreshPage();
+    await panel.refreshPage();
+    await flush();
+    expect(asks(env.api.calls)).toHaveLength(1);
+    env.setTab({ tabId: 6, url: "https://example.com/" });
+    await panel.refreshPage();
+    env.setTab(GENIUS_TAB);
+    await panel.refreshPage();
+    await flush();
+    expect(asks(env.api.calls)).toHaveLength(2);
+  });
+
   it("asks again for another song page", async () => {
     const { env, panel } = await open({ api: { songMatches: () => Promise.resolve(ready()) } });
     env.setTab({ tabId: 5, url: "https://genius.com/Olivia-rodrigo-good-4-u-lyrics" });
@@ -180,15 +196,23 @@ describe("Get credits from the card", () => {
     await flush();
     expect(env.api.calls).toContain(`detect:${APPLE_URL}:undefined`);
     expect(panel.state.session.screen).toBe("review");
-    expect(panel.state.geniusSource).toEqual({ tabId: 5 });
+    expect(panel.state.geniusSource).toEqual({ tabId: 5, url: GENIUS_TAB.url });
   });
 
   it("keeps the paste on that Genius page: Open on Genius opens its form in place, with no search", async () => {
+    const sent: ({ tabId: number; url: string } | undefined)[] = [];
     const { root, env, panel } = await open({
-      api: { songMatches: () => Promise.resolve(ready()), detect: () => Promise.resolve({ ok: true, data: ALBUM }) },
+      api: {
+        songMatches: () => Promise.resolve(ready()),
+        detect: () => Promise.resolve({ ok: true, data: ALBUM }),
+        openOnGenius: (_title, _artist, page) => {
+          sent.push(page);
+          return Promise.resolve({ ok: true, data: { status: "opened" } });
+        },
+      },
       settings: { onboarded: true, openOnGenius: true },
     });
-    await panel.detect(SPOTIFY_URL, { tabId: 5 });
+    await panel.getCreditsFromGenius(SPOTIFY_URL);
     await panel.setAllSelected(true);
     await panel.getCredits();
     await panel.showTrack(0);
@@ -198,6 +222,7 @@ describe("Get credits from the card", () => {
     button?.click();
     await flush();
     expect(env.api.calls).toContain("genius-open:Demo Artist|One@5");
+    expect(sent).toEqual([{ tabId: 5, url: GENIUS_TAB.url }]);
   });
 
   it("goes back to searching Genius for a read that did not start on a Genius page", async () => {

@@ -139,6 +139,10 @@ describe("the messages of the feature", () => {
     expect(isWorkerRequest({ type: "song-matches", tabId: 5 })).toBe(true);
     expect(isWorkerRequest({ type: "genius-open", title: "A", artist: "B", tabId: 5 })).toBe(true);
     expect(isWorkerRequest({ type: "genius-open", title: "A", artist: "B", tabId: "5" })).toBe(false);
+    expect(
+      isWorkerRequest({ type: "genius-open", title: "A", artist: "B", tabId: 5, pageUrl: "https://genius.com/x" }),
+    ).toBe(true);
+    expect(isWorkerRequest({ type: "genius-open", title: "A", artist: "B", tabId: 5, pageUrl: 7 })).toBe(false);
     expect(isGeniusNotice({ type: "genius/song-info" })).toBe(true);
     expect(isContentRequest({ type: "spotify/search", url: "https://open.spotify.com/search/x/tracks" })).toBe(true);
   });
@@ -155,16 +159,16 @@ describe("the messages of the feature", () => {
 describe("opening the form on the Genius page the read started from", () => {
   it("is asked of the navigator with the tab", async () => {
     const browser = fakeBrowser();
-    const asked: (number | undefined)[] = [];
+    const asked: string[] = [];
     const paste = new PasteService(browser.ports, { settings: memoryStore(), session: memoryStore() });
     const route = createRouter(browser.ports, FAST_CLIENT, paste, NO_COVERS, undefined, undefined, {
-      open: (_title, _artist, tabId) => {
-        asked.push(tabId);
+      open: (_title, _artist, tabId, pageUrl) => {
+        asked.push(`${String(tabId)}|${String(pageUrl)}`);
         return Promise.resolve({ status: "opened" as const });
       },
     });
-    await route({ type: "genius-open", title: "A", artist: "B", tabId: 9 });
+    await route({ type: "genius-open", title: "A", artist: "B", tabId: 9, pageUrl: "https://genius.com/x-lyrics" });
     await route({ type: "genius-open", title: "A", artist: "B" });
-    expect(asked).toEqual([9, undefined]);
+    expect(asked).toEqual(["9|https://genius.com/x-lyrics", "undefined|undefined"]);
   });
 });

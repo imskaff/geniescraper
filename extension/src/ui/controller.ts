@@ -78,7 +78,7 @@ export class PanelController {
     this.genius = new GeniusOpener(
       this.host,
       (index) => this.geniusTrack(index),
-      () => this.current.geniusSource?.tabId,
+      () => this.current.geniusSource ?? undefined,
     );
     this.songMatches = new GeniusSongMatches(this.host);
     this.countdown = new Countdown(this.host, {
@@ -307,7 +307,7 @@ export class PanelController {
   /** Get credits for a page listed on the Genius song page: the normal read, but pasting stays with that page. */
   getCreditsFromGenius(url: string): Promise<void> {
     const song = this.current.geniusSong;
-    return this.detect(url, song ? { tabId: song.tabId } : null);
+    return this.detect(url, song ? { tabId: song.tabId, url: song.key } : null);
   }
 
   /** Read the album or song behind `rawUrl` and move to the track list. `source` is the Genius page it came from. */

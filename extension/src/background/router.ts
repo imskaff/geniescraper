@@ -101,7 +101,7 @@ export function createRouter(
     if (raw.type === "genius-open") {
       const stopKeepAlive = ports.keepAlive();
       return genius
-        .open(raw.title, raw.artist, raw.tabId)
+        .open(raw.title, raw.artist, raw.tabId, raw.pageUrl)
         .then((data): Result<unknown> => ({ ok: true, data }))
         .finally(stopKeepAlive);
     }

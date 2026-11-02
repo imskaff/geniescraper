@@ -23,10 +23,11 @@ export type GeniusSearch = (title: string, artist: string) => Promise<GeniusHit[
 
 export interface GeniusNavigator {
   /**
-   * Open the song's edit form. With `tabId`, a Genius song page the user is already on (the read started there) is
-   * used as it is: no search, no new tab. A tab that is gone or is no song page falls back to the search.
+   * Open the song's edit form. With `tabId` and `pageUrl`, the Genius song page the user is on (the read started
+   * there) is used as it is: no search, no new tab. It counts only while that tab still shows that very song page;
+   * a tab that is gone, or has moved to another page, falls back to the search.
    */
-  open(title: string, artist: string, tabId?: number): Promise<GeniusOpenAnswer>;
+  open(title: string, artist: string, tabId?: number, pageUrl?: string): Promise<GeniusOpenAnswer>;
 }
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
@@ -75,16 +76,16 @@ export function createGeniusNavigator(
   }
 
   return {
-    async open(title, artist, pageTabId) {
+    async open(title, artist, pageTabId, pageUrl) {
       const paste = normalisePaste(await stores.session.get(PASTE_KEY).catch(() => undefined));
       // A new Genius page loading under a running automatic paste would pause it from the page; the panel pauses the
       // run first, and a run still going is left alone. A step-by-step paste or a finished one may open a page.
       if (paste.active && paste.auto === "running") return { status: "busy" };
 
-      if (pageTabId !== undefined) {
+      if (pageTabId !== undefined && pageUrl !== undefined) {
         const tab = (await ports.geniusTabs().catch(() => [])).find((candidate) => candidate.id === pageTabId);
         const page = tab ? pageOf(tab.url) : null;
-        if (tab && page) {
+        if (tab && page && page === pageOf(pageUrl)) {
           return { status: await askToOpen(tab.id), song: { title, artists: artist ? [artist] : [], url: page } };
         }
       }

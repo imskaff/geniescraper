@@ -85,7 +85,11 @@ export interface ApiScript {
   checkYoutubeKey?: (key: string) => Promise<Result<KeyCheck>>;
   paste?: (command: PasteCommand) => Promise<Result<PasteState>>;
   bridge?: (request: BridgeRequest) => Promise<Result<BridgeLinkState>>;
-  openOnGenius?: (title: string, artist: string, tabId?: number) => Promise<Result<GeniusOpenAnswer>>;
+  openOnGenius?: (
+    title: string,
+    artist: string,
+    page?: { tabId: number; url: string },
+  ) => Promise<Result<GeniusOpenAnswer>>;
   songMatches?: (tabId: number) => Promise<Result<SongMatchesAnswer>>;
 }
 
@@ -95,9 +99,9 @@ export function fakeApi(script: ApiScript = {}): FakeApi {
     calls,
     pasteState: { ...IDLE_PASTE },
     link: { paired: false, connected: false },
-    openOnGenius(title, artist, tabId) {
-      calls.push(`genius-open:${artist}|${title}${tabId === undefined ? "" : `@${String(tabId)}`}`);
-      if (script.openOnGenius) return script.openOnGenius(title, artist, tabId);
+    openOnGenius(title, artist, page) {
+      calls.push(`genius-open:${artist}|${title}${page === undefined ? "" : `@${String(page.tabId)}`}`);
+      if (script.openOnGenius) return script.openOnGenius(title, artist, page);
       return Promise.resolve({ ok: true, data: { status: "opened" } });
     },
     songMatches(tabId) {

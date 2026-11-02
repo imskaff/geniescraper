@@ -96,6 +96,8 @@ export interface GeniusSongState {
 /** Where a read started from a Genius page came from; "Open on Genius" then uses that page, not a search. */
 export interface GeniusSource {
   tabId: number;
+  /** The song page's address: the form is opened there only while the tab still shows this very page. */
+  url: string;
 }
 
 export interface PanelState {

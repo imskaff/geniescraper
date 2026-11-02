@@ -106,7 +106,7 @@ export type WorkerRequest =
   /** Try a YouTube key the user typed, with one cheap call. The key is checked, not stored, by the worker. */
   | { type: "youtube-key-check"; key: string }
   /** Find this track's song on Genius and open its Edit Metadata form; nothing is typed or saved. */
-  | { type: "genius-open"; title: string; artist: string; tabId?: number }
+  | { type: "genius-open"; title: string; artist: string; tabId?: number; pageUrl?: string }
   /** The Apple Music and Spotify pages of the song on the Genius page in this tab (a read of that page, no credits). */
   | { type: "song-matches"; tabId: number }
   | PasteCommand;
@@ -330,7 +330,8 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
       typeof value["artist"] === "string" &&
       value["title"].length <= MAX_TEXT &&
       value["artist"].length <= MAX_TEXT &&
-      (value["tabId"] === undefined || Number.isInteger(value["tabId"]))
+      (value["tabId"] === undefined || Number.isInteger(value["tabId"])) &&
+      (value["pageUrl"] === undefined || (typeof value["pageUrl"] === "string" && value["pageUrl"].length <= 300))
     );
   }
   if (value["type"] === "song-matches") return Number.isInteger(value["tabId"]);

@@ -86,6 +86,7 @@ The note under each page says where it came from:
 
 - **from Genius**: the page is the one Genius itself lists for the song (Genius has an Apple Music id on every song page, and a Spotify id on few, mostly older songs).
   Genius may list another release of the song than the one you have open (a single or an album), which is why the release's name is shown.
+  Now and then Genius's id points to another artist's recording of the same song (a tribute or cover album), so check the artist and the release before you press Get credits.
 - **found by search**: Genius lists no page for that service, so the extension searched for exactly this title and artist and took a result only when both match exactly.
   A look-alike (a live version, a remix, a cover, another artist's song with the same title) is never taken.
 

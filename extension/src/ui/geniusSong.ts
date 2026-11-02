@@ -20,6 +20,8 @@ export function geniusSongPage(url: string): string | null {
 export class GeniusSongMatches {
   /** Answers kept for the session, by song page: a song is looked up once. */
   private readonly known = new Map<string, GeniusSongState>();
+  /** The song page last answered "not a song": not asked about again while the user stays on it. */
+  private notSong: string | null = null;
   /** Bumped by every new question, so an answer for a page the user has left is not drawn. */
   private attempt = 0;
 
@@ -28,6 +30,7 @@ export class GeniusSongMatches {
   /** Look at the page the user is on: a Genius song page gets its card, any other page none. */
   async refresh(tab: ActiveTab | null): Promise<void> {
     const key = tab ? geniusSongPage(tab.url) : null;
+    if (key !== this.notSong) this.notSong = null;
     if (!tab || key === null) {
       if (this.host.state.geniusSong !== null) {
         this.attempt++;
@@ -35,6 +38,9 @@ export class GeniusSongMatches {
       }
       return;
     }
+    // A page that said "not a song" is left alone until the user goes to another address; a tab event (a Spotify tab
+    // changing its title) must not make the card flash and vanish again and again.
+    if (key === this.notSong) return;
     const shown = this.host.state.geniusSong;
     if (shown?.key === key && shown.phase !== "failed") {
       // The same page (another tab event, or the page in another tab): keep the answer, follow the tab.
@@ -81,7 +87,8 @@ export class GeniusSongMatches {
       return;
     }
     if (answer.data.status === "not-song") {
-      // Not kept: a page that was not ready, or was navigated inside Genius, may be a song page on the next look.
+      // Remembered only while the user stays on this address: another visit (or a reload) looks again.
+      this.notSong = key;
       this.host.update({ geniusSong: null });
       return;
     }

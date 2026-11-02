@@ -29,7 +29,7 @@ export interface WorkerApi {
   /** Try a YouTube key with one cheap call to Google; the key is checked, not stored, by the worker. */
   checkYoutubeKey(key: string): Promise<Result<KeyCheck>>;
   /** Find this track's song on Genius and open its Edit Metadata form; the answer says how far it got. */
-  openOnGenius(title: string, artist: string, tabId?: number): Promise<Result<GeniusOpenAnswer>>;
+  openOnGenius(title: string, artist: string, page?: { tabId: number; url: string }): Promise<Result<GeniusOpenAnswer>>;
   /** The Apple Music and Spotify pages of the song on the Genius page in this tab; nothing is read from them. */
   songMatches(tabId: number): Promise<Result<SongMatchesAnswer>>;
   /** Change the paste session. The worker is its only writer; the answer is the state afterwards. */
@@ -72,10 +72,12 @@ export function createWorkerApi(send: Send): WorkerApi {
     checkYoutubeKey: (key) => ask(send, { type: "youtube-key-check", key }, isKeyCheck),
     lookupYoutube: (title, artist) => ask(send, { type: "youtube-lookup", title, artist }, isYoutubeAnswer),
     bridge: (request) => ask(send, request, isBridgeLinkState),
-    openOnGenius: (title, artist, tabId) =>
+    openOnGenius: (title, artist, page) =>
       ask(
         send,
-        tabId === undefined ? { type: "genius-open", title, artist } : { type: "genius-open", title, artist, tabId },
+        page === undefined
+          ? { type: "genius-open", title, artist }
+          : { type: "genius-open", title, artist, tabId: page.tabId, pageUrl: page.url },
         isGeniusOpenAnswer,
       ),
     songMatches: (tabId) => ask(send, { type: "song-matches", tabId }, isSongMatchesAnswer),
