@@ -69,13 +69,15 @@ export interface GeniusOpenState {
   phase: GeniusPhase;
   /** The track's title as the messages name it. */
   title: string;
+  /** The track’s artist, for the Genius search link offered when nothing matched. */
+  artist: string;
   /** The matched song, when the worker found one. */
   song: GeniusSongLink | null;
   /** Every exact candidate, for "several". */
   songs: GeniusSongLink[];
 }
 
-export const NO_GENIUS: GeniusOpenState = { index: null, phase: "idle", title: "", song: null, songs: [] };
+export const NO_GENIUS: GeniusOpenState = { index: null, phase: "idle", title: "", artist: "", song: null, songs: [] };
 
 export interface PanelState {
   session: Session;

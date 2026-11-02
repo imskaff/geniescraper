@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { GeniusOpenAnswer, Result } from "../../src/shared/messages";
 import { PanelController } from "../../src/ui/controller";
 import { DEFAULT_SETTINGS } from "../../src/shared/settings";
+import { searchLink } from "../../src/ui/geniusText";
 import { PanelView } from "../../src/ui/view";
 import { ALBUM, deferred, fakeEnv } from "./fakes";
 
@@ -106,7 +107,7 @@ describe("Open on Genius button", () => {
 
 describe("what it says when it cannot go on", () => {
   const CASES: [string, GeniusOpenAnswer, string][] = [
-    ["none", { status: "none" }, "Genius has no song that matches “One” exactly"],
+    ["none", { status: "none" }, "Genius’s public search has no song that matches “One” exactly"],
     ["sign-in", { status: "sign-in", song: SONG }, "has no Edit Metadata button"],
     ["no-form", { status: "no-form", song: SONG }, "its edit form did not"],
     ["failed", { status: "failed" }, "Genius did not answer"],
@@ -120,6 +121,36 @@ describe("what it says when it cannot go on", () => {
     expect($(root, "#alert").textContent).toContain(words);
     expect($(root, '[data-key="genius-notice"]').classList.contains("attention")).toBe(true);
     expect(pasteCalls(env.api.calls)).toEqual([]);
+  });
+
+  it("offers the Genius search for the track when nothing matched, and says it may be visible only when signed in", async () => {
+    const { root } = await toReview({ api: { openOnGenius: () => ok({ status: "none" }) } });
+    button(root, "Open on Genius").click();
+    await flush();
+    const text = $(root, '[data-key="genius-notice"]').textContent;
+    expect(text).toContain("public search");
+    expect(text).toContain("signed in to Genius");
+    const link = $(root, ".genius-links a") as HTMLAnchorElement;
+    expect(link.href).toBe("https://genius.com/search?q=Demo%20Artist%20One");
+    expect(link.target).toBe("_blank");
+    expect(link.rel).toContain("noopener");
+  });
+
+  it("encodes the search link's query, and shows no search link when a song opened or several matched", async () => {
+    expect(searchLink("Insãne Shinobi & Mike Pratt", "Lay You Down (RED)")).toBe(
+      "https://genius.com/search?q=Ins%C3%A3ne%20Shinobi%20%26%20Mike%20Pratt%20Lay%20You%20Down%20(RED)",
+    );
+    const answers: GeniusOpenAnswer[] = [
+      { status: "opened", song: SONG },
+      { status: "several", songs: [SONG, SONG] },
+    ];
+    for (const answer of answers) {
+      const { root } = await toReview({ api: { openOnGenius: () => ok(answer) } });
+      button(root, "Open on Genius").click();
+      await flush();
+      const hrefs = [...root.querySelectorAll<HTMLAnchorElement>(".genius-links a")].map((a) => a.href);
+      expect(hrefs.some((h) => h.includes("/search?"))).toBe(false);
+    }
   });
 
   it("links the page that opened when sign-in or the form is the problem", async () => {
@@ -222,7 +253,7 @@ describe("the setting: open each song on Genius before pasting it", () => {
     await flush();
     // No exact match for the next song: nothing was pasted, and the finished screen says why.
     expect($(root, "h2").textContent).toBe("All credits entered");
-    expect($(root, '[data-key="genius-notice"]').textContent).toContain("Genius has no song that matches “Three”");
+    expect($(root, '[data-key="genius-notice"]').textContent).toContain("public search has no song that matches “Three”");
     expect(pasteCalls(env.api.calls).filter((call) => call === "paste:paste-start")).toHaveLength(1);
 
     button(root, "Paste next track").click();
