@@ -51,7 +51,7 @@ async function open(options: Options = {}) {
   document.body.replaceChildren();
   const root = document.createElement("div");
   document.body.append(root);
-  const env = fakeEnv({ tab: GENIUS_TAB, ...options });
+  const env = fakeEnv({ tab: GENIUS_TAB, settings: { onboarded: true, findPagesOnGenius: true }, ...options });
   const panel = await PanelController.create(env);
   new PanelView(root, panel);
   await flush();
@@ -98,7 +98,7 @@ describe("the card on a Genius song page", () => {
     expect($(root, '[data-key="match-spotify"]').textContent).toContain("Could not look this up");
     // The Get credits buttons are for found pages only.
     expect(has(root, 'button[data-key="match-apple"]')).toBe(false);
-    expect(has(root, '[data-key="song-matches-retry"]')).toBe(true);
+    expect(has(root, '[data-key="song-matches-find"]')).toBe(true);
   });
 
   it("shows a failed look-up with Try again, which asks again once and shows the answer", async () => {
@@ -115,7 +115,7 @@ describe("the card on a Genius song page", () => {
     });
     expect($(root, '[data-key="song-matches"]').textContent).toContain("Could not look this up");
     expect($(root, '[data-key="song-matches"]').textContent).toContain("did not finish loading");
-    $(root, '[data-key="song-matches-retry"]').click();
+    $(root, '[data-key="song-matches-find"]').click();
     await flush();
     expect(asks(env.api.calls)).toHaveLength(2);
     expect(has(root, 'button[data-key="match-apple"]')).toBe(true);
@@ -210,7 +210,7 @@ describe("Get credits from the card", () => {
           return Promise.resolve({ ok: true, data: { status: "opened" } });
         },
       },
-      settings: { onboarded: true, openOnGenius: true },
+      settings: { onboarded: true, openOnGenius: true, findPagesOnGenius: true },
     });
     await panel.getCreditsFromGenius(SPOTIFY_URL);
     await panel.setAllSelected(true);
@@ -248,5 +248,57 @@ describe("Get credits from the card", () => {
     await panel.getCreditsFromGenius(APPLE_URL);
     await panel.newAlbum();
     expect(panel.state.geniusSource).toBeNull();
+  });
+});
+
+describe("with the automatic look-up off (the default)", () => {
+  const manual = { onboarded: true };
+
+  it("shows a button on a Genius song page and looks nothing up, opening no tab, until it is pressed", async () => {
+    const { root, env } = await open({
+      settings: manual,
+      api: { songMatches: () => Promise.resolve(ready()) },
+    });
+    expect(asks(env.api.calls)).toEqual([]);
+    const card = $(root, '[data-key="song-matches"]');
+    expect(card.textContent).toContain("Nothing is looked up until you press the button");
+    expect(has(root, 'button[data-key="match-apple"]')).toBe(false);
+    $(root, '[data-key="song-matches-find"]').click();
+    await flush();
+    expect(asks(env.api.calls)).toEqual(["song-matches:5"]);
+    expect(has(root, 'button[data-key="match-apple"]')).toBe(true);
+  });
+
+  it("stays quiet through tab events and shows no button on a page that is not a Genius song page", async () => {
+    const { env, panel } = await open({ settings: manual });
+    await panel.refreshPage();
+    await panel.refreshPage();
+    expect(asks(env.api.calls)).toEqual([]);
+    const other = await open({ settings: manual, tab: { tabId: 5, url: "https://genius.com/artists/Taylor-swift" } });
+    expect(has(other.root, '[data-key="song-matches"]')).toBe(false);
+  });
+
+  it("starts the look-up for the page on screen when the setting is turned on", async () => {
+    const { env, panel } = await open({ settings: manual, api: { songMatches: () => Promise.resolve(ready()) } });
+    expect(asks(env.api.calls)).toEqual([]);
+    await panel.setSetting("findPagesOnGenius", true);
+    await flush();
+    expect(asks(env.api.calls)).toEqual(["song-matches:5"]);
+  });
+
+  it("shows an answer already found without asking again", async () => {
+    const { root, env, panel } = await open({
+      settings: manual,
+      api: { songMatches: () => Promise.resolve(ready()) },
+    });
+    $(root, '[data-key="song-matches-find"]').click();
+    await flush();
+    env.setTab({ tabId: 6, url: "https://example.com/" });
+    await panel.refreshPage();
+    env.setTab(GENIUS_TAB);
+    await panel.refreshPage();
+    await flush();
+    expect(has(root, 'button[data-key="match-apple"]')).toBe(true);
+    expect(asks(env.api.calls)).toHaveLength(1);
   });
 });

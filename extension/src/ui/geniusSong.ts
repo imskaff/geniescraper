@@ -27,6 +27,11 @@ export class GeniusSongMatches {
 
   constructor(private readonly host: PanelHost) {}
 
+  /** Whether the setting asks for the look-up as soon as a song page is on screen. */
+  private get automatic(): boolean {
+    return this.host.state.settings.findPagesOnGenius;
+  }
+
   /** Look at the page the user is on: a Genius song page gets its card, any other page none. */
   async refresh(tab: ActiveTab | null): Promise<void> {
     const key = tab ? geniusSongPage(tab.url) : null;
@@ -42,6 +47,10 @@ export class GeniusSongMatches {
     // changing its title) must not make the card flash and vanish again and again.
     if (key === this.notSong) return;
     const shown = this.host.state.geniusSong;
+    if (shown?.key === key && shown.phase === "idle" && this.automatic) {
+      await this.ask(key, tab.tabId);
+      return;
+    }
     if (shown?.key === key && shown.phase !== "failed") {
       // The same page (another tab event, or the page in another tab): keep the answer, follow the tab.
       if (shown.tabId !== tab.tabId) this.host.update({ geniusSong: { ...shown, tabId: tab.tabId } });
@@ -53,13 +62,30 @@ export class GeniusSongMatches {
       this.host.update({ geniusSong: { ...kept, tabId: tab.tabId } });
       return;
     }
-    await this.ask(key, tab.tabId);
+    if (this.automatic) {
+      await this.ask(key, tab.tabId);
+      return;
+    }
+    // Not automatic: the card offers a button, and nothing is looked up (no request, no tab) until it is pressed.
+    this.attempt++;
+    this.host.update({
+      geniusSong: {
+        key,
+        tabId: tab.tabId,
+        phase: "idle",
+        title: "",
+        artists: [],
+        apple: null,
+        spotify: null,
+        message: "",
+      },
+    });
   }
 
-  /** Ask again for the page on screen after a failed look-up. */
-  async retry(): Promise<void> {
+  /** Look the page on screen up now: the button of the card, and "Try again" after a failed look-up. */
+  async find(): Promise<void> {
     const shown = this.host.state.geniusSong;
-    if (!shown || shown.phase === "loading") return;
+    if (!shown || shown.phase === "loading" || shown.phase === "ready") return;
     this.known.delete(shown.key);
     await this.ask(shown.key, shown.tabId);
   }

@@ -74,6 +74,7 @@ function row(v: ViewContext, state: PanelState, key: string, service: string, ma
 export function songMatchesCard(v: ViewContext, state: PanelState): Node[] {
   const song = state.geniusSong;
   if (!song) return [];
+  if (song.phase === "idle") return idleCard(v, state);
   const loading = song.phase === "loading";
   const failed = song.phase === "failed";
   const anyFailed = song.apple?.status === "failed" || song.spotify?.status === "failed";
@@ -116,7 +117,7 @@ export function songMatchesCard(v: ViewContext, state: PanelState): Node[] {
         ),
       ),
       loading || failed ? null : matchRows(v, state, song),
-      failed || anyFailed ? retryButton(v, state) : null,
+      failed || anyFailed ? findButton(v, state, "Try again", "quiet") : null,
     ),
   ];
 }
@@ -130,12 +131,33 @@ function matchRows(v: ViewContext, state: PanelState, song: GeniusSongState): HT
   );
 }
 
-function retryButton(v: ViewContext, state: PanelState): HTMLElement {
-  return v.button(
-    "Try again",
-    "quiet",
-    "song-matches-retry",
-    () => void v.panel.retrySongMatches(),
-    state.busy !== null,
-  );
+function findButton(v: ViewContext, state: PanelState, text: string, variant: "primary" | "quiet"): HTMLElement {
+  return v.button(text, variant, "song-matches-find", () => void v.panel.findSongMatches(), state.busy !== null);
+}
+
+/** On a Genius song page with the automatic look-up off: a button, and nothing is looked up until it is pressed. */
+function idleCard(v: ViewContext, state: PanelState): Node[] {
+  return [
+    el(
+      "section",
+      {
+        class: "detector",
+        attrs: {
+          "data-key": "song-matches",
+          "data-state": "idle",
+          "aria-label": "This song on Apple Music and Spotify",
+        },
+      },
+      el(
+        "div",
+        { class: "detector-text" },
+        el("h3", { class: "detector-title", text: "This song on Apple Music and Spotify" }),
+        el("p", {
+          class: "detector-hint",
+          text: "You are on a Genius song page. Find its pages to get their credits. Nothing is looked up until you press the button.",
+        }),
+      ),
+      findButton(v, state, "Find on Apple Music and Spotify", "primary"),
+    ),
+  ];
 }

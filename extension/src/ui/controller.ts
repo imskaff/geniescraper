@@ -299,9 +299,9 @@ export class PanelController {
 
   // ── link ────────────────────────────────────────────────────────────
 
-  /** Ask again for the Genius page's song after a look-up that failed. */
-  retrySongMatches(): Promise<void> {
-    return this.songMatches.retry();
+  /** Look up the Genius page's song now (the card's button, and Try again after a failed look-up). */
+  findSongMatches(): Promise<void> {
+    return this.songMatches.find();
   }
 
   /** Get credits for a page listed on the Genius song page: the normal read, but pasting stays with that page. */
@@ -556,6 +556,8 @@ export class PanelController {
     // A new choice of how Start pasting works applies at once, ahead of however the last track was started.
     if (key === "pasteMode") this.lastMode = null;
     this.update({ settings: normalised });
+    // Turning the automatic look-up on starts it for the Genius page on screen.
+    if (key === "findPagesOnGenius" && normalised.findPagesOnGenius) void this.refreshPage();
     // Each countdown stops when its own setting says so; the other one is none of this change's business.
     if (
       (!normalised.autoReturn && this.current.doneCountdown !== null) ||

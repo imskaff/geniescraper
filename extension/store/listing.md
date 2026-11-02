@@ -22,7 +22,7 @@ Géniescraper copies the credits of an Apple Music or Spotify song into the Geni
 How it works:
 
 1. Open the side panel and paste an Apple Music album or song link (or open the page and the panel offers it; the Apple Music albums and songs you already have open are listed to pick from).
-   On a Genius song page the panel lists that song's Apple Music and Spotify pages, found from what Genius itself lists or by an exact title and artist search, to pick from.
+   On a Genius song page a button lists that song's Apple Music and Spotify pages, found from what Genius itself lists or by an exact title and artist search, to pick from (automatic with a setting that is off by default).
 2. Choose the tracks you want, and review the credits the extension read.
 3. Open the song's Edit Metadata form on Genius and press Start pasting: the extension fills the fields by itself, one after another.
    Open on Genius finds the song and opens that form for you (exact title and artist only; with no match or several, it stops and tells you).

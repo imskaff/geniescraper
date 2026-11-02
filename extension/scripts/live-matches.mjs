@@ -24,6 +24,7 @@ const chromePath = option("--chrome", process.env["CHROME_PATH"]);
 const shotsDir = option("--screenshots", "");
 const headless = args.includes("--headless");
 const getCredits = args.includes("--get-credits");
+const manual = args.includes("--manual");
 if (!chromePath) throw new Error("Pass --chrome <path to a Chromium or Chrome executable> (or set CHROME_PATH).");
 
 const GAP_MS = 15_000;
@@ -53,7 +54,9 @@ try {
   const workerTarget = await findServiceWorker(browser);
   worker = await connect(workerTarget.webSocketDebuggerUrl);
   await waitUntilReady(worker);
-  await worker.evaluate("chrome.storage.sync.set({ settings: { onboarded: true } })");
+  await worker.evaluate(
+    `chrome.storage.sync.set({ settings: { onboarded: true, findPagesOnGenius: ${String(!manual)} } })`,
+  );
   const extensionId = new URL(workerTarget.url).host;
   const panelUrl = `chrome-extension://${extensionId}/ui/panel.html`;
 
@@ -110,6 +113,13 @@ try {
     await worker.evaluate(`chrome.tabs.update(${String(tabId)}, { active: true }).then(() => true)`);
 
     if (c.expect === "ready") {
+      if (manual) {
+        // Nothing may be looked up before the button: the card shows only the button, then it is pressed.
+        const idle = await until("!!document.querySelector('[data-key=\"song-matches-find\"]')", 20_000);
+        check(`${c.name}: the card waits with a button`, idle);
+        await shot(`${c.name}-button`);
+        await panel.evaluate("document.querySelector('[data-key=\"song-matches-find\"]').click()");
+      }
       // Done once the card has stopped looking: its Looking title is gone.
       const settled = await until(
         "(() => { const h = document.querySelector('[data-key=\"song-matches\"] h3'); return !!h && !h.textContent.startsWith('Looking'); })()",

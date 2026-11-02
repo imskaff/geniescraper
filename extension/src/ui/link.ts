@@ -81,9 +81,9 @@ export function linkScreen(v: ViewContext, state: PanelState): Node[] {
   );
   return [
     v.heading("Get credits from Apple Music or Spotify"),
-    ...songMatchesCard(v, state),
     form,
     ...openPages(v, state),
+    ...songMatchesCard(v, state),
   ];
 }
 

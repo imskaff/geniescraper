@@ -12,7 +12,7 @@ The short version: it collects nothing, has no accounts, no analytics and no ser
   It reads the credits (songwriters, producers, other roles, copyright lines, title, artist) of the Apple Music or Spotify album or song page you give it, and it fills fields on the Genius song edit form that you have open.
   It reads and fills only while you ask it to, and it never presses Save on Genius: you check the form and save it yourself.
 - **The Genius song page you are on.**
-  When the panel is open on a Genius song page, the extension reads that page's own data: the song's title, its artists as separate names, and the Apple Music and Spotify ids Genius lists for it.
+  When you press "Find on Apple Music and Spotify" on a Genius song page (or at once, if you ticked "Find Apple Music and Spotify pages automatically on Genius song pages" in Settings, which is off by default), the extension reads that page's own data: the song's title, its artists as separate names, and the Apple Music and Spotify ids Genius lists for it.
   It does this with its content script on `genius.com`, the access it already has to fill the edit form, and reads nothing else from the page.
   The data is read as text and never run as code.
   The result is shown in the panel and kept in the memory of the extension's background part, per song page, until that background part stops (the browser stops it when it is idle); it is not written to disk.
@@ -44,7 +44,8 @@ The Genius search needs no extra permission: the extension already has access to
 When exactly one Genius song matches the title and artist, the extension opens that song's page in a new tab of your own browser and presses its Edit Metadata button, which is the only button it presses outside the form; it never presses Save or Cancel.
 With none or several matching songs it opens nothing and tells you.
 Requests carry no cookies and no referrer.
-On a Genius song page the panel lists the song's Apple Music and Spotify pages, so you can pick one and press Get credits.
+On a Genius song page the panel offers a button that lists the song's Apple Music and Spotify pages, so you can pick one and press Get credits.
+Nothing is looked up, and no window is opened, until you press it, unless you turned the automatic setting on.
 Nothing is read from those pages until you press it.
 Apple Music's page is found from the id Genius lists, with one look-up at `itunes.apple.com`.
 If that id does not resolve, the extension asks iTunes's search for exactly this title and artist, and only if that finds nothing, opens Apple Music's search page in a minimized window of your own browser, reads its song rows and closes it.

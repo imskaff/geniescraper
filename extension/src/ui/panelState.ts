@@ -84,7 +84,8 @@ export interface GeniusSongState {
   key: string;
   /** The tab it was read from, which a read started from here keeps pasting into. */
   tabId: number;
-  phase: "loading" | "ready" | "failed";
+  /** "idle": on a Genius song page, nothing looked up yet (the setting is off); the button starts it. */
+  phase: "idle" | "loading" | "ready" | "failed";
   title: string;
   artists: string[];
   apple: ServiceMatch | null;
