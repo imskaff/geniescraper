@@ -253,7 +253,9 @@ describe("the setting: open each song on Genius before pasting it", () => {
     await flush();
     // No exact match for the next song: nothing was pasted, and the finished screen says why.
     expect($(root, "h2").textContent).toBe("All credits entered");
-    expect($(root, '[data-key="genius-notice"]').textContent).toContain("public search has no song that matches “Three”");
+    expect($(root, '[data-key="genius-notice"]').textContent).toContain(
+      "public search has no song that matches “Three”",
+    );
     expect(pasteCalls(env.api.calls).filter((call) => call === "paste:paste-start")).toHaveLength(1);
 
     button(root, "Paste next track").click();
