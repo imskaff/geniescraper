@@ -137,29 +137,33 @@ function findButton(v: ViewContext, state: PanelState, text: string, variant: "p
   return v.button(text, variant, "song-matches-find", () => void v.panel.findSongMatches(), state.busy !== null);
 }
 
-/** On a Genius song page with the automatic look-up off: a button, and nothing is looked up until it is pressed. */
+const IDLE_NOTE = "Nothing is looked up until you press this button.";
+
+/** On a Genius song page with the automatic look-up off: one slim row, and nothing is looked up until its button is pressed. */
 function idleCard(v: ViewContext, state: PanelState): Node[] {
+  const button = v.button(
+    "Find",
+    "quiet",
+    "song-matches-find",
+    () => void v.panel.findSongMatches(),
+    state.busy !== null,
+  );
+  // The note is a tooltip and the button's description, not a paragraph.
+  button.setAttribute("title", IDLE_NOTE);
+  button.setAttribute("aria-label", `Find this song on Apple Music and Spotify. ${IDLE_NOTE}`);
   return [
     el(
       "section",
       {
-        class: "detector",
+        class: "match-bar",
         attrs: {
           "data-key": "song-matches",
           "data-state": "idle",
           "aria-label": "This song on Apple Music and Spotify",
         },
       },
-      el(
-        "div",
-        { class: "detector-text" },
-        el("h3", { class: "detector-title", text: "This song on Apple Music and Spotify" }),
-        el("p", {
-          class: "detector-hint",
-          text: "You are on a Genius song page. Find its pages to get their credits. Nothing is looked up until you press the button.",
-        }),
-      ),
-      findButton(v, state, "Find on Apple Music and Spotify", "primary"),
+      el("span", { class: "match-label", text: "This song on Apple Music and Spotify" }),
+      button,
     ),
   ];
 }

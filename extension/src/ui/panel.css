@@ -737,6 +737,39 @@ select.field {
   border-radius: 6px;
 }
 
+/* The card before the look-up is asked for: one slim row, a short label and a small button. */
+.match-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--surface-hi);
+  border-radius: 10px;
+}
+
+/* The Genius song card is a compact list, not a listener: no radar, the title stands as its label. */
+.detector[data-key="song-matches"] {
+  padding: var(--space-2) var(--space-3);
+}
+
+.detector[data-key="song-matches"] .radar {
+  display: none;
+}
+
+.match-label {
+  min-width: 0;
+  font-weight: 600;
+}
+
+.match-bar .button {
+  flex: none;
+  min-height: 28px;
+  padding: var(--space-1) var(--space-3);
+}
+
 .detector .button.quiet {
   margin-top: var(--space-3);
 }

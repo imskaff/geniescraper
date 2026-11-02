@@ -262,7 +262,10 @@ describe("with the automatic look-up off (the default)", () => {
     });
     expect(asks(env.api.calls)).toEqual([]);
     const card = $(root, '[data-key="song-matches"]');
-    expect(card.textContent).toContain("Nothing is looked up until you press the button");
+    expect(card.textContent).toContain("This song on Apple Music and Spotify");
+    // One slim row: the note is a tooltip, not a paragraph.
+    expect(card.querySelectorAll("p")).toHaveLength(0);
+    expect($(root, '[data-key="song-matches-find"]').getAttribute("title")).toContain("Nothing is looked up");
     expect(has(root, 'button[data-key="match-apple"]')).toBe(false);
     $(root, '[data-key="song-matches-find"]').click();
     await flush();

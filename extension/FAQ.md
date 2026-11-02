@@ -80,7 +80,7 @@ It never saves, and it never reuses a Genius tab that shows something else, beca
 
 ## Why does the panel list Apple Music and Spotify pages on a Genius song page?
 
-When you open the panel on a Genius song page, it shows "This song on Apple Music and Spotify" with a "Find on Apple Music and Spotify" button.
+When you open the panel on a Genius song page, it shows "This song on Apple Music and Spotify" with a "Find" button.
 Press it and the panel lists a page for each service, each with a Get credits button, so you do not have to find the song yourself.
 Nothing is looked up, and no window opens, until you press the button; to have it done as soon as the panel is open on a Genius song page, tick "Find Apple Music and Spotify pages automatically on Genius song pages" in Settings (off by default).
 The card sits below the list of music pages you already have open.
