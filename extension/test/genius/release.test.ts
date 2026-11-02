@@ -29,7 +29,7 @@ function setup(options: FakeOptions = {}, autoConfirm = true) {
 }
 
 const input = (fake: FakeGenius, label: string): HTMLInputElement => {
-  const found = releaseInput(fake.doc, label);
+  const found = releaseInput(fake.form, label);
   if (!found) throw new Error(`no ${label} dropdown`);
   return found;
 };
@@ -40,6 +40,26 @@ function expectSafe(fake: FakeGenius): void {
   expect(fake.strayEnters).toEqual([]);
   expect(fake.enters.filter((e) => !e.open)).toEqual([]);
 }
+
+describe("the song page's own Release Date widget", () => {
+  it("is never filled: the dropdowns are taken from the Edit Metadata form only", async () => {
+    const { fake, run } = setup({ release: { pageWidget: true } });
+    expect(await run(MONTH)).toEqual({ status: "filled", message: "Set the release month to May." });
+    expect(fake.chosen).toEqual(["Release Month: May"]);
+    const decoy = fake.doc.querySelectorAll<HTMLInputElement>("#song-info-release-date input");
+    expect([...decoy].map((el) => el.value)).toEqual(["", "", ""]);
+    expect(shown(fake, "Release Month")).toBe("May");
+  });
+
+  it("reports the form as missing instead of filling the page widget when the form is not open", async () => {
+    const { fake, run } = setup({ release: { pageWidget: true } });
+    fake.form.remove();
+    expect(await run(MONTH)).toEqual({
+      status: "unavailable",
+      message: "Open the song's Edit Metadata form on Genius first.",
+    });
+  });
+});
 
 describe("the three dropdowns", () => {
   it("chooses the month, the day and the year, and reports each", async () => {

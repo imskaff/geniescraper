@@ -62,8 +62,12 @@ export const RELEASE_LABELS = {
 
 export const TAGS_REGION_ID = "collapsible-tags_albums-content";
 
-export function releaseInput(doc: Document, label: string): HTMLInputElement | null {
-  return doc.querySelector<HTMLInputElement>(`input[role="combobox"][aria-label="${label}"]`);
+/**
+ * Searched inside the form only: the song page's own Song Info section has Release Date dropdowns with the same
+ * labels, and they come first in the page, so a document-wide search would fill those.
+ */
+export function releaseInput(form: HTMLFormElement, label: string): HTMLInputElement | null {
+  return form.querySelector<HTMLInputElement>(`input[role="combobox"][aria-label="${label}"]`);
 }
 
 /** Whether the Tags and Albums region is closed (its content is hidden). False when the page has no such region. */
