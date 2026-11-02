@@ -36,7 +36,12 @@ const itunesSong = (id: number, title: string, artist: string, release: string):
 /** A browser with the Genius tab showing `info`'s page (null: a page that is no song page). */
 function setup(
   info: GeniusSongInfo | null,
-  opts: { json?: (url: string) => unknown; search?: () => Promise<Result<SearchRow[]>>; deafAsks?: number } = {},
+  opts: {
+    json?: (url: string) => unknown;
+    search?: () => Promise<Result<SearchRow[]>>;
+    appleSearch?: () => Promise<Result<SearchRow[]>>;
+    deafAsks?: number;
+  } = {},
 ) {
   const browser = fakeBrowser({
     userTabs: { [TAB]: { status: "complete", url: info ? `https://genius.com${info.path}` : "https://genius.com/" } },
@@ -45,6 +50,7 @@ function setup(
   });
   const fetched: string[] = [];
   const searches: string[] = [];
+  const appleSearches: string[] = [];
   const getJson = (url: string): Promise<unknown> => {
     fetched.push(url);
     return Promise.resolve(opts.json ? opts.json(url) : null);
@@ -54,6 +60,10 @@ function setup(
       searches.push(query);
       return opts.search ? opts.search() : Promise.resolve({ ok: true, data: [] });
     },
+    appleSearch: (query) => {
+      appleSearches.push(query);
+      return opts.appleSearch ? opts.appleSearch() : Promise.resolve({ ok: true, data: [] });
+    },
   };
   const matches = createSongMatches(browser.ports, getJson, TIMING);
   const resolve = async (): Promise<SongMatchesAnswer> => {
@@ -61,8 +71,13 @@ function setup(
     if (!answer.ok) throw new Error(answer.error.message);
     return answer.data;
   };
-  return { browser, fetched, searches, resolve, matches, tools };
+  return { browser, fetched, searches, appleSearches, resolve, matches, tools };
 }
+
+const NO_TOOLS: SongMatchTools = {
+  spotifySearch: () => Promise.reject(new Error("no")),
+  appleSearch: () => Promise.reject(new Error("no")),
+};
 
 const lookupOf = (url: string): boolean => url.startsWith("https://itunes.apple.com/lookup");
 const searchOf = (url: string): boolean => url.startsWith("https://itunes.apple.com/search");
@@ -209,9 +224,66 @@ describe("finding the pages of a Genius song", () => {
     });
   });
 
-  it("says none for Apple when the id is retired and the search finds nothing exact", async () => {
+  it("says none for Apple when the id is retired and neither search finds anything exact", async () => {
     const t = setup(FORTNIGHT, { json: (url) => (lookupOf(url) || searchOf(url) ? { results: [] } : null) });
     expect(await t.resolve()).toMatchObject({ apple: { status: "none" } });
+    expect(t.appleSearches).toEqual(["Fortnight Taylor Swift"]);
+  });
+
+  it("opens Apple Music's search page only after the iTunes search missed, and takes an exact row from it", async () => {
+    const t = setup(FORTNIGHT, {
+      json: (url) => (lookupOf(url) || searchOf(url) ? { results: [] } : null),
+      appleSearch: () =>
+        Promise.resolve({
+          ok: true,
+          data: [
+            {
+              title: "Fortnight (feat. Post Malone)",
+              artists: ["Taylor Swift"],
+              album: "",
+              href: "https://music.apple.com/us/album/fortnight-acoustic-version/1?i=2",
+            },
+            {
+              title: "Fortnight (feat. Post Malone)",
+              artists: ["Taylor Swift"],
+              album: "",
+              href: "https://music.apple.com/us/album/the-tortured-poets-department/1736268215?i=1736268216",
+            },
+          ],
+        }),
+    });
+    expect(await t.resolve()).toMatchObject({
+      apple: { status: "found", source: "search", url: "https://music.apple.com/us/song/1736268216" },
+    });
+  });
+
+  it("does not open Apple Music's search page when the iTunes search found the song", async () => {
+    const t = setup(FORTNIGHT, {
+      json: (url) => {
+        if (lookupOf(url)) return { results: [] };
+        if (searchOf(url)) return { results: [itunesSong(8, "Fortnight (feat. Post Malone)", "Taylor Swift", "TTPD")] };
+        return null;
+      },
+    });
+    expect(await t.resolve()).toMatchObject({ apple: { status: "found", source: "search" } });
+    expect(t.appleSearches).toEqual([]);
+  });
+
+  it("does not open Apple Music's search page when Genius's id resolved", async () => {
+    const t = setup(FORTNIGHT, {
+      json: (url) =>
+        lookupOf(url) ? { results: [itunesSong(1736268216, "Fortnight", "Taylor Swift", "TTPD")] } : null,
+    });
+    await t.resolve();
+    expect(t.appleSearches).toEqual([]);
+  });
+
+  it("reports a failed Apple search page as failed, not none", async () => {
+    const t = setup(FORTNIGHT, {
+      json: (url) => (lookupOf(url) || searchOf(url) ? { results: [] } : null),
+      appleSearch: () => Promise.resolve({ ok: false, error: { code: "timeout", message: "slow" } }),
+    });
+    expect(await t.resolve()).toMatchObject({ apple: { status: "failed", message: "slow" } });
   });
 
   it("reports a look-up that could not be done as failed, not as none", async () => {
@@ -243,7 +315,7 @@ describe("reading the Genius tab", () => {
   it("answers not-song for a tab that is not on genius.com, without asking it anything", async () => {
     const browser = fakeBrowser({ userTabs: { [TAB]: { status: "complete", url: "https://example.com/x-lyrics" } } });
     const matches = createSongMatches(browser.ports, () => Promise.resolve(null), TIMING);
-    const answer = await matches.resolve(TAB, { spotifySearch: () => Promise.reject(new Error("no")) });
+    const answer = await matches.resolve(TAB, NO_TOOLS);
     expect(answer).toEqual({ ok: true, data: { status: "not-song" } });
     expect(browser.log).toEqual([]);
   });
@@ -270,7 +342,7 @@ describe("reading the Genius tab", () => {
       deaf: [TAB],
     });
     const matches = createSongMatches(browser.ports, () => Promise.resolve(null), TIMING);
-    expect(await matches.resolve(TAB, { spotifySearch: () => Promise.reject(new Error("no")) })).toMatchObject({
+    expect(await matches.resolve(TAB, NO_TOOLS)).toMatchObject({
       ok: false,
       error: { code: "tab-failed" },
     });
@@ -279,7 +351,7 @@ describe("reading the Genius tab", () => {
   it("gives an error when the page does not finish loading", async () => {
     const browser = fakeBrowser({ userTabs: { [TAB]: { status: "loading", url: PAGE } } });
     const matches = createSongMatches(browser.ports, () => Promise.resolve(null), TIMING);
-    expect(await matches.resolve(TAB, { spotifySearch: () => Promise.reject(new Error("no")) })).toMatchObject({
+    expect(await matches.resolve(TAB, NO_TOOLS)).toMatchObject({
       ok: false,
       error: { code: "timeout" },
     });

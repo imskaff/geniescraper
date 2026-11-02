@@ -2,7 +2,7 @@
 // Album detection runs one at a time. Track reads run as many at once as the panel asks for, never more than
 // MAX_OPEN_TABS, so a long album cannot open a tab per track. Paste changes are serialised by the paste service.
 import { isPasteCommand, isWorkerRequest, type AlbumInfo, type Result, type WorkerRequest } from "../shared/messages";
-import { detectAlbum, scrapeTrack, searchSpotify, type ClientTiming } from "./providerClient";
+import { detectAlbum, scrapeTrack, searchApple, searchSpotify, type ClientTiming } from "./providerClient";
 import type { CoverService } from "./covers";
 import { NO_YOUTUBE, type YoutubeService } from "./youtube";
 import type { KeyCheck } from "../shared/messages";
@@ -113,6 +113,7 @@ export function createRouter(
         .resolve(raw.tabId, {
           spotifySearch: (query) =>
             searches.run(() => politely(SPOTIFY_PROVIDER, () => searchSpotify(ports, query, timing))),
+          appleSearch: (query) => searches.run(() => keepingAlive(() => searchApple(ports, query, timing))),
         })
         .finally(stopKeepAlive);
     }

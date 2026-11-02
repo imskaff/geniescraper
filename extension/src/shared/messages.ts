@@ -77,6 +77,8 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: AppError };
 export type ContentRequest =
   | { type: "apple/detect"; url: string }
   | { type: "apple/scrape"; url: string; trackTitle: string }
+  /** Read the song rows of an Apple Music search page (`url` is that page's address). */
+  | { type: "apple/search"; url: string }
   | { type: "spotify/detect"; url: string }
   | { type: "spotify/scrape"; url: string; trackTitle: string }
   /** Read the rows of a Spotify search page (`url` is that page's address): the songs it lists, for an exact match. */
@@ -276,7 +278,12 @@ function hasUrl(value: Record<string, unknown>): boolean {
 
 export function isContentRequest(value: unknown): value is ContentRequest {
   if (!isRecord(value) || !hasUrl(value)) return false;
-  if (value["type"] === "apple/detect" || value["type"] === "spotify/detect" || value["type"] === "spotify/search") {
+  if (
+    value["type"] === "apple/detect" ||
+    value["type"] === "apple/search" ||
+    value["type"] === "spotify/detect" ||
+    value["type"] === "spotify/search"
+  ) {
     return true;
   }
   return (

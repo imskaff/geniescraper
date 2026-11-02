@@ -4,12 +4,26 @@ import type { Result } from "../shared/messages";
 import { isContentRequest } from "../shared/messages";
 import { detectAlbum, scrapeTrack, type Timing } from "./driver";
 import { AppleError } from "./errors";
+import { isAppleSearchUrl, readSearch } from "./search";
 import { parseAppleMusicUrl } from "./url";
 
 export async function handleRequest(raw: unknown, doc: Document, timing: Timing): Promise<Result<unknown>> {
   // Only this provider's own requests: the other provider's content script answers theirs.
   if (!isContentRequest(raw) || !raw.type.startsWith("apple/"))
     return { ok: false, error: { code: "bad-request", message: "Unrecognised request." } };
+  if (raw.type === "apple/search") {
+    if (!isAppleSearchUrl(raw.url)) {
+      return { ok: false, error: { code: "invalid-url", message: "Not an Apple Music search this request can read." } };
+    }
+    try {
+      return { ok: true, data: await readSearch(doc, timing.readyMs, timing.pollMs) };
+    } catch (error) {
+      return {
+        ok: false,
+        error: { code: "internal", message: error instanceof Error ? error.message : "Unexpected error." },
+      };
+    }
+  }
   const target = parseAppleMusicUrl(raw.url);
   // Scraping reads one track's own song page; an album link here would need the menu path, which does not exist.
   if (!target || (raw.type === "apple/scrape" && target.kind !== "song")) {

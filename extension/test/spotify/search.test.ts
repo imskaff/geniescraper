@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { handleRequest } from "../../src/spotify/handler";
 import { REAL_TIMING, type Timing } from "../../src/spotify/page";
@@ -19,6 +21,20 @@ const ID = "1jX3nPWUbEQVGxMBb7NPXp";
 
 beforeEach(() => {
   document.body.replaceChildren();
+});
+
+describe("the saved search page", () => {
+  it("reads the rows as Spotify serves them: title, every artist, album and the track link", () => {
+    setBody(readFileSync(join(import.meta.dirname, "search-page.html"), "utf8"));
+    const rows = searchRows(document);
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toEqual({
+      title: "Fortnight (feat. Post Malone)",
+      artists: ["Taylor Swift", "Post Malone"],
+      album: "THE TORTURED POETS DEPARTMENT",
+      href: "https://open.spotify.com/track/2OzhQlSqBEmt7hmkYxfT6m",
+    });
+  });
 });
 
 describe("searchRows", () => {

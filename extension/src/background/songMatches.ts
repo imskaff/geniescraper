@@ -31,6 +31,8 @@ const GENIUS_CONTENT_SCRIPT = "genius/content.js";
 /** What the router lends the resolver: the Spotify search page, read politely (one tab at a time, captcha pause). */
 export interface SongMatchTools {
   spotifySearch(query: string): Promise<Result<SearchRow[]>>;
+  /** Apple Music's search page, a last resort after iTunes's search API found nothing. */
+  appleSearch(query: string): Promise<Result<SearchRow[]>>;
 }
 
 export interface SongMatches {
@@ -66,8 +68,32 @@ function appleFound(song: AppleSong, source: "genius" | "search"): ServiceMatch 
 /** The id at the end of the address `appleHit` made for a song ("" for no hit). */
 const idOf = (hit: Hit | null): string => /(\d+)$/.exec(hit?.href ?? "")?.[1] ?? "";
 
-/** Apple Music: the id Genius gives; when it does not resolve, an exact match in iTunes's search. */
-async function resolveApple(getJson: GetJson, info: GeniusSongInfo): Promise<ServiceMatch> {
+/** The track id in the `?i=` of an Apple Music song link. */
+const TRACK_PARAM = /[?&]i=(\d{1,12})$/;
+
+/** The page for an exact match on Apple Music's own search page, as a song page built from the id in its link. */
+async function resolveAppleBySearchPage(tools: SongMatchTools, info: GeniusSongInfo): Promise<ServiceMatch> {
+  const rows = await tools.appleSearch(searchText(info));
+  if (!rows.ok) return { status: "failed", message: rows.error.message };
+  // The link's album name is the release; the page's own rows have no album text.
+  const hits: Hit[] = rows.data.map((row) => ({ title: row.title, artists: row.artists, href: row.href }));
+  const hit = pickHit("apple", songRef(info), hits);
+  const id = TRACK_PARAM.exec(hit?.href ?? "")?.[1];
+  if (!hit || !id) return { status: "none" };
+  return {
+    status: "found",
+    url: appleSongUrl(id),
+    name: `${hit.artists.join(", ")} - ${hit.title}`,
+    release: "",
+    source: "search",
+  };
+}
+
+/**
+ * Apple Music: the id Genius gives; when it does not resolve, an exact match in iTunes's search, and only when that
+ * finds nothing either, in Apple Music's own search page (one background tab).
+ */
+async function resolveApple(getJson: GetJson, tools: SongMatchTools, info: GeniusSongInfo): Promise<ServiceMatch> {
   let unreachable = false;
   if (info.appleId) {
     const song = await lookupAppleSong(getJson, info.appleId);
@@ -79,7 +105,7 @@ async function resolveApple(getJson: GetJson, info: GeniusSongInfo): Promise<Ser
   if (songs === null) return unreachable || !info.appleId ? appleDown : { status: "none" };
   const hit = pickHit("apple", songRef(info), songs.map(appleHit));
   const song = songs.find((candidate) => candidate.id === idOf(hit));
-  return song ? appleFound(song, "search") : { status: "none" };
+  return song ? appleFound(song, "search") : resolveAppleBySearchPage(tools, info);
 }
 
 function spotifyFound(
@@ -161,7 +187,7 @@ export function createSongMatches(ports: BrowserPorts, getJson: GetJson, timing:
 
   async function lookUp(info: GeniusSongInfo, tools: SongMatchTools): Promise<SongMatchesAnswer> {
     const [apple, spotify] = await Promise.all([
-      resolveApple(getJson, info).catch(() => appleDown),
+      resolveApple(getJson, tools, info).catch(() => appleDown),
       resolveSpotify(getJson, tools, info).catch(() => spotifyDown),
     ]);
     return {

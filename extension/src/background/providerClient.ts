@@ -3,6 +3,8 @@
 import { recogniseUrl, unsupportedLinkMessage } from "../providers/registry";
 import { SPOTIFY_PROVIDER } from "../providers/spotify";
 import { spotifySearchUrl } from "../spotify/url";
+import { appleSearchUrl } from "../apple/search";
+import { APPLE_PROVIDER } from "../providers/apple";
 import type { CreditsProvider } from "../providers/types";
 import {
   isAlbumInfo,
@@ -197,5 +199,19 @@ export async function searchSpotify(
   const url = spotifySearchUrl(query);
   return inBackgroundTab(ports, url, timing, provider, (id) =>
     ask(ports, id, { type: "spotify/search", url }, timing, provider, isSearchRows),
+  );
+}
+
+/** The songs Apple Music's search page lists for `query`, read in a background tab, as for `searchSpotify`. */
+export async function searchApple(
+  ports: BrowserPorts,
+  query: string,
+  baseTiming: ClientTiming,
+): Promise<Result<SearchRow[]>> {
+  const provider = APPLE_PROVIDER;
+  const timing = withOverrides(baseTiming, provider);
+  const url = appleSearchUrl(query);
+  return inBackgroundTab(ports, url, timing, provider, (id) =>
+    ask(ports, id, { type: "apple/search", url }, timing, provider, isSearchRows),
   );
 }
