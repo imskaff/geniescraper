@@ -78,6 +78,22 @@ If Genius shows no such song, it may not be on Genius yet, and nothing is opened
 If it says the page has no Edit Metadata button, you are not signed in to Genius in this browser.
 It never saves, and it never reuses a Genius tab that shows something else, because that tab may hold a form you have not saved.
 
+## Why does the panel list Apple Music and Spotify pages on a Genius song page?
+
+When you open the panel on a Genius song page, it shows "This song on Apple Music and Spotify" with a page for each service and a Get credits button, so you do not have to find the song yourself.
+Nothing is read from those pages until you press Get credits.
+The note under each page says where it came from:
+
+- **from Genius**: the page is the one Genius itself lists for the song (Genius has an Apple Music id on every song page, and a Spotify id on few, mostly older songs).
+  Genius may list another release of the song than the one you have open (a single or an album), which is why the release's name is shown.
+- **found by search**: Genius lists no page for that service, so the extension searched for exactly this title and artist and took a result only when both match exactly.
+  A look-alike (a live version, a remix, a cover, another artist's song with the same title) is never taken.
+
+"No exact match found" means nothing matched exactly (the song may not be on that service, or be credited to a different artist name there): paste its link instead.
+"Could not look this up" means the service did not answer; Try again asks once more.
+The card appears only on Genius song pages, not on album or artist pages.
+If Get credits was pressed from this card, Open on Genius opens the edit form on this same Genius page instead of searching for the song.
+
 ## Why does Chrome ask to read open.spotify.com?
 
 Spotify is a second source, and its host is a required permission, like Apple Music's, so Chrome shows it in the install prompt and never asks again.
@@ -104,7 +120,7 @@ It is a required permission of the extension, no longer an option in Settings, s
 
 ## What leaves my browser?
 
-Only song titles and artist names, to the services you turned on, or to Genius when you press Open on Genius, and nothing to the developer, because there is no server.
+Only song titles, artist names and the Apple Music or Spotify ids Genius lists for the song, to the services you turned on, to Apple Music, iTunes and Spotify when the panel lists a Genius song's pages, or to Genius when you press Open on Genius, and nothing to the developer, because there is no server.
 See [PRIVACY.md](PRIVACY.md) for the full list.
 
 ## How do I report a bug without sharing private data?

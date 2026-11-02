@@ -4,8 +4,10 @@
 // sparingly and never in a loop.
 //
 //   npm run build
-//   node scripts/live-matches.mjs --chrome <chrome.exe> [--screenshots <folder>] [--get-credits] [--headless]
+//   node scripts/live-matches.mjs --chrome <chrome.exe> [--screenshots <folder>] [--only <case>] [--get-credits] [--headless]
 //
+// --get-credits also presses Get credits on the Apple Music row of the Fortnight case and checks that the review
+// opens; it leaves the panel on the review screen, so use it with --only apple-id-only.
 // The browser starts minimized. (--headless runs it with no window at all, but Genius shows a human check to a
 // headless browser, so its pages cannot be read that way; that check is not something to get around.) The panel is opened as a page of its own
 // and the Genius tab is brought to the front, so the panel sees the Genius tab as the one the user is on. Nothing is
@@ -28,6 +30,7 @@ const GAP_MS = 15_000;
 const CASES = [
   { name: "both-ids", url: "https://genius.com/Olivia-rodrigo-good-4-u-lyrics", expect: "ready" },
   { name: "apple-id-only", url: "https://genius.com/Taylor-swift-fortnight-lyrics", expect: "ready" },
+  { name: "retired-apple-id", url: "https://genius.com/Dua-lipa-houdini-lyrics", expect: "ready" },
   { name: "no-spotify-match", url: "https://genius.com/Garth-brooks-friends-in-low-places-lyrics", expect: "ready" },
   { name: "not-a-song", url: "https://genius.com/artists/Taylor-swift", expect: "none" },
 ];

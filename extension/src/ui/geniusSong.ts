@@ -18,8 +18,8 @@ export function geniusSongPage(url: string): string | null {
 }
 
 export class GeniusSongMatches {
-  /** Answers kept for the session, by song page: a song is looked up once. `null` is "not a song page we can read". */
-  private readonly known = new Map<string, GeniusSongState | null>();
+  /** Answers kept for the session, by song page: a song is looked up once. */
+  private readonly known = new Map<string, GeniusSongState>();
   /** Bumped by every new question, so an answer for a page the user has left is not drawn. */
   private attempt = 0;
 
@@ -42,9 +42,9 @@ export class GeniusSongMatches {
       return;
     }
     if (shown?.key === key) return; // a failed look-up waits for the user's "Try again"
-    if (this.known.has(key)) {
-      const kept = this.known.get(key) ?? null;
-      this.host.update({ geniusSong: kept ? { ...kept, tabId: tab.tabId } : null });
+    const kept = this.known.get(key);
+    if (kept) {
+      this.host.update({ geniusSong: { ...kept, tabId: tab.tabId } });
       return;
     }
     await this.ask(key, tab.tabId);
@@ -81,7 +81,7 @@ export class GeniusSongMatches {
       return;
     }
     if (answer.data.status === "not-song") {
-      this.known.set(key, null);
+      // Not kept: a page that was not ready, or was navigated inside Genius, may be a song page on the next look.
       this.host.update({ geniusSong: null });
       return;
     }

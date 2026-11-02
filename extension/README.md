@@ -88,14 +88,15 @@ They read the saved Apple Music pages in `../tests/fixtures/` and the golden fil
 These drive a real Chrome against the live sites, so they send real traffic and are never run by CI.
 Each takes `--chrome <path to chrome.exe>` or the `CHROME_PATH` environment variable.
 
-| Command                             | What it checks                                                                                                                                                             |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run live:hidden-tab`           | Reading Apple Music in a background tab.                                                                                                                                   |
-| `npm run live:panel`                | The panel against live Apple Music.                                                                                                                                        |
-| `npm run live:sidepanel`            | The side panel opening and its layout.                                                                                                                                     |
-| `npm run live:parallel`             | Reading several tracks at once.                                                                                                                                            |
-| `npm run live:genius`               | The fill against a Genius edit form (needs you signed in); `-- --mode auto` runs it automatically and checks every pause. Use the Playwright Chromium, not branded Chrome. |
-| `node scripts/live-youtube-api.mjs` | The YouTube API lookup, with your own key in `YOUTUBE_API_KEY`.                                                                                                            |
+| Command                             | What it checks                                                                                                                                                                      |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run live:hidden-tab`           | Reading Apple Music in a background tab.                                                                                                                                            |
+| `npm run live:panel`                | The panel against live Apple Music.                                                                                                                                                 |
+| `npm run live:sidepanel`            | The side panel opening and its layout.                                                                                                                                              |
+| `npm run live:parallel`             | Reading several tracks at once.                                                                                                                                                     |
+| `npm run live:genius`               | The fill against a Genius edit form (needs you signed in); `-- --mode auto` runs it automatically and checks every pause. Use the Playwright Chromium, not branded Chrome.          |
+| `node scripts/live-matches.mjs`     | The card that lists a Genius song's Apple Music and Spotify pages, on five real Genius pages, one at a time (a minimized window; Genius shows a human check to a headless browser). |
+| `node scripts/live-youtube-api.mjs` | The YouTube API lookup, with your own key in `YOUTUBE_API_KEY`.                                                                                                                     |
 
 ## Permissions
 
@@ -106,6 +107,7 @@ Each takes `--chrome <path to chrome.exe>` or the `CHROME_PATH` environment vari
 | `scripting`                                                             | Reading an Apple Music page and filling the Genius form.                                                                                        |
 | `genius.com`, `music.apple.com`, `open.spotify.com`, `itunes.apple.com` | The pages it reads and fills (Apple Music and Spotify credits), Genius's own song search for Open on Genius, and Apple's catalog for cover art. |
 
+On a Genius song page the extension reads the page's own data with its content script (no extra access) and uses `itunes.apple.com` and `open.spotify.com` to find the song's pages on both services; see [PRIVACY.md](PRIVACY.md).
 `open.spotify.com` is a required host like `music.apple.com`: the extension reads a Spotify track or album page the way it reads an Apple Music one, never signs in and sends nothing read from it anywhere.
 Two hosts are optional and asked for in the panel only when you switch the feature on: `www.youtube.com` (finding a video link) and `www.googleapis.com` (finding it with your own YouTube key).
 `api.deezer.com` is a required host: it is the permanent cover fallback when Apple's catalog has no cover, and it is sent only the song title and artist.
