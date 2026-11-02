@@ -245,8 +245,8 @@ try {
   );
   // Automatic or one press per field: the paste mode set above decides which one starts.
   await pClick("Start pasting");
-  await pUntil("document.querySelector('h2')?.textContent === 'Paste into Genius'", "the paste screen");
-  check("the paste screen opens", (await pText("h2")) === "Paste into Genius");
+  await pUntil("document.querySelector('.progress')?.textContent?.startsWith('Step ')", "the paste screen");
+  check("the paste screen opens", /^Step \d+ of \d+/.test((await pText(".progress")) ?? ""));
   const total = Number(((await pText(".progress")) ?? "").match(/of (\d+)/)?.[1] ?? 0);
   check("the queue has steps", total > 10, String(total));
   await shot(panel, "genius-1-paste-screen");
@@ -426,7 +426,7 @@ try {
       "the credits again",
     );
     await pClick("Start pasting");
-    await pUntil("document.querySelector('h2')?.textContent === 'Paste into Genius'", "the paste screen again");
+    await pUntil("document.querySelector('.progress')?.textContent?.startsWith('Step ')", "the paste screen again");
     check("it finishes a second run over the same track", await runFor(total, 240000));
     const secondRows = await rowRoles();
     // A role Genius has no exact match for is typed into a row and skipped, which can leave one blank row behind;
