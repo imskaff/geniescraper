@@ -141,7 +141,14 @@ export function report(state: PasteState, position: number, outcome: Outcome): P
       });
     case "needs-choice":
       // A run keeps going: it waits for the user's choice, which is the one time the user is expected to act.
-      return { ...state, busy: false, awaiting: true, message: outcome.message, tone: "attention" };
+      // No message means the choice is just what the settings ask for: nothing to warn about.
+      return {
+        ...state,
+        busy: false,
+        awaiting: true,
+        message: outcome.message,
+        tone: outcome.message === "" ? "info" : "attention",
+      };
     case "unavailable": {
       const stuck: PasteState = { ...state, busy: false, awaiting: false, message: outcome.message, tone: "attention" };
       // A step that cannot be filled stops a run with Genius's own words; going on would only repeat the failure.

@@ -466,6 +466,22 @@ describe("roles the form already has", () => {
   });
 });
 
+describe("a deliberate manual choice (auto-confirm off)", () => {
+  it.each([true, false])("types the value and reports no message to warn about (auto %s)", async (auto) => {
+    const { fake, ctx } = setup();
+    const outcome = await fillStep(["written_by", "Billie Eilish"], { ...ctx, autoConfirm: false, auto });
+    expect(outcome).toEqual({ status: "needs-choice", message: "" });
+    expect(chipsIn(writerBox(fake))).toEqual([]);
+  });
+
+  it("still explains a failed automatic choice when auto-confirm is on", async () => {
+    const { ctx } = setup();
+    const outcome = await fillStep(["written_by", "zzqxv nobody 99"], ctx);
+    expect(outcome.status).toBe("needs-choice");
+    expect(outcome.message).not.toBe("");
+  });
+});
+
 describe("skipping a step leaves nothing of it in the field", () => {
   const inputOf = (box: Element | null): HTMLInputElement | null => box?.querySelector("input") ?? null;
 

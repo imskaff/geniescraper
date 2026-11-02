@@ -72,6 +72,11 @@ describe("a press", () => {
     expect(next).toMatchObject({ position: 1, busy: false, awaiting: false, message: "Added Writer One.", tone: "ok" });
   });
 
+  it("waits for a deliberate manual choice (no message) without any warning", () => {
+    const waiting = press(started(), { status: "needs-choice", message: "" });
+    expect(waiting).toMatchObject({ awaiting: true, message: "", tone: "info" });
+  });
+
   it("stays on a step Genius could not match, and treats the next press as the user's own choice", () => {
     const attention = press(started(), { status: "needs-choice", message: "No exact match." });
     expect(attention).toMatchObject({ position: 0, awaiting: true, busy: false, tone: "attention" });

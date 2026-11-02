@@ -182,7 +182,7 @@ describe("when the list has no exact option", () => {
     const { fake, run } = setup({}, false);
     const outcome = await run(MONTH);
     expect(outcome.status).toBe("needs-choice");
-    expect(outcome.message).toContain("Choose the release month from the list, then press Next");
+    expect(outcome.message).toBe("");
     expect(fake.chosen).toEqual([]);
     expect(input(fake, "Release Month").value).toBe("May");
   });
