@@ -1,16 +1,20 @@
 // The worker's side of reading a music site: open a hidden tab on a validated URL, inject the provider's content
 // script, ask it one question, and always close the tab again. Failures come back as data, never as exceptions.
 import { recogniseUrl, unsupportedLinkMessage } from "../providers/registry";
+import { SPOTIFY_PROVIDER } from "../providers/spotify";
+import { spotifySearchUrl } from "../spotify/url";
 import type { CreditsProvider } from "../providers/types";
 import {
   isAlbumInfo,
   isPageScrape,
   isResult,
+  isSearchRows,
   type AlbumInfo,
   type ContentRequest,
   type ErrorCode,
   type PageScrape,
   type Result,
+  type SearchRow,
 } from "../shared/messages";
 import type { BrowserPorts } from "./ports";
 import { sleep } from "../apple/wait";
@@ -175,5 +179,23 @@ export async function scrapeTrack(
   const message = request(provider, "scrape", url, trackTitle);
   return inBackgroundTab(ports, provider.openUrl(url), timing, provider, (id) =>
     ask(ports, id, message, timing, provider, isPageScrape),
+  );
+}
+
+/**
+ * The songs Spotify's search lists for `query`, read from a search page in a background tab (one page load, closed
+ * afterwards like every read). Only a title and artist ever go into the query; the caller decides which row, if any,
+ * is the wanted song.
+ */
+export async function searchSpotify(
+  ports: BrowserPorts,
+  query: string,
+  baseTiming: ClientTiming,
+): Promise<Result<SearchRow[]>> {
+  const provider = SPOTIFY_PROVIDER;
+  const timing = withOverrides(baseTiming, provider);
+  const url = spotifySearchUrl(query);
+  return inBackgroundTab(ports, url, timing, provider, (id) =>
+    ask(ports, id, { type: "spotify/search", url }, timing, provider, isSearchRows),
   );
 }

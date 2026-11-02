@@ -9,6 +9,7 @@ import {
   type GeniusSongLink,
   type KeyCheck,
   type PageScrape,
+  type ServiceMatch,
 } from "../shared/messages";
 import { type Session, type TrackResult } from "../shared/session";
 import { type Settings } from "../shared/settings";
@@ -77,6 +78,26 @@ export interface GeniusOpenState {
 
 export const NO_GENIUS: GeniusOpenState = { index: null, phase: "idle", title: "", song: null, songs: [] };
 
+/** The card for the Genius song page the user is on: its pages on Apple Music and Spotify, as far as they are found. */
+export interface GeniusSongState {
+  /** The song page's address (no query): what the card is about. */
+  key: string;
+  /** The tab it was read from, which a read started from here keeps pasting into. */
+  tabId: number;
+  phase: "loading" | "ready" | "failed";
+  title: string;
+  artists: string[];
+  apple: ServiceMatch | null;
+  spotify: ServiceMatch | null;
+  /** For "failed": what went wrong, worded for the user. */
+  message: string;
+}
+
+/** Where a read started from a Genius page came from; "Open on Genius" then uses that page, not a search. */
+export interface GeniusSource {
+  tabId: number;
+}
+
 export interface PanelState {
   session: Session;
   settings: Settings;
@@ -102,6 +123,10 @@ export interface PanelState {
   };
   /** Opening the current track's song on Genius. */
   genius: GeniusOpenState;
+  /** The Genius song page the user is on and the pages found for it; null on any other page. */
+  geniusSong: GeniusSongState | null;
+  /** Set when the session's read was started from a Genius song page. Not stored: a reopened panel has none. */
+  geniusSource: GeniusSource | null;
   /** What became of each track's YouTube look-up, shown in its credits so a missing link is never a mystery. */
   youtubeNotes: Record<number, string>;
   /** What was wrong with the YouTube link the user last pasted, or "". */

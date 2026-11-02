@@ -728,6 +728,19 @@ select.field {
   justify-content: space-between;
 }
 
+/* A service the Genius song page card found nothing for, or could not ask: a quiet row, not a button. */
+.open-pages li.match-note {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px dashed var(--surface-hi);
+  border-radius: 6px;
+}
+
+.detector .button.quiet {
+  margin-top: var(--space-3);
+}
+
 .button.detected .go {
   flex: none;
   color: var(--link);

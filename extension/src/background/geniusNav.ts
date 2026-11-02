@@ -22,7 +22,11 @@ export const REAL_GENIUS_NAV_TIMING: GeniusNavTiming = { loadMs: 30_000, askMs: 
 export type GeniusSearch = (title: string, artist: string) => Promise<GeniusHit[] | null>;
 
 export interface GeniusNavigator {
-  open(title: string, artist: string): Promise<GeniusOpenAnswer>;
+  /**
+   * Open the song's edit form. With `tabId`, a Genius song page the user is already on (the read started there) is
+   * used as it is: no search, no new tab. A tab that is gone or is no song page falls back to the search.
+   */
+  open(title: string, artist: string, tabId?: number): Promise<GeniusOpenAnswer>;
 }
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
@@ -71,11 +75,19 @@ export function createGeniusNavigator(
   }
 
   return {
-    async open(title, artist) {
+    async open(title, artist, pageTabId) {
       const paste = normalisePaste(await stores.session.get(PASTE_KEY).catch(() => undefined));
       // A new Genius page loading under a running automatic paste would pause it from the page; the panel pauses the
       // run first, and a run still going is left alone. A step-by-step paste or a finished one may open a page.
       if (paste.active && paste.auto === "running") return { status: "busy" };
+
+      if (pageTabId !== undefined) {
+        const tab = (await ports.geniusTabs().catch(() => [])).find((candidate) => candidate.id === pageTabId);
+        const page = tab ? pageOf(tab.url) : null;
+        if (tab && page) {
+          return { status: await askToOpen(tab.id), song: { title, artists: artist ? [artist] : [], url: page } };
+        }
+      }
 
       const hits = await search(title, artist).catch(() => null);
       if (hits === null) return { status: "failed" };

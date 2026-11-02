@@ -4,6 +4,7 @@ import { type AlbumInfo } from "../shared/messages";
 import { el } from "./dom";
 import { type PanelState } from "./controller";
 import { type ViewContext } from "./viewContext";
+import { songMatchesCard } from "./matchesView";
 
 export function linkScreen(v: ViewContext, state: PanelState): Node[] {
   const busy = state.busy === "detect";
@@ -78,7 +79,12 @@ export function linkScreen(v: ViewContext, state: PanelState): Node[] {
     }),
     go,
   );
-  return [v.heading("Get credits from Apple Music or Spotify"), form, ...openPages(v, state)];
+  return [
+    v.heading("Get credits from Apple Music or Spotify"),
+    ...songMatchesCard(v, state),
+    form,
+    ...openPages(v, state),
+  ];
 }
 
 /**

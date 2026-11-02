@@ -22,6 +22,7 @@ import {
   describeError,
   buildSong,
   type Env,
+  type GeniusSource,
   type PanelState,
 } from "./panelState";
 import type { PanelHost } from "./panelHost";
@@ -30,6 +31,7 @@ import { DesktopLink } from "./desktopLink";
 import { Countdown } from "./countdown";
 import { YoutubeLookups } from "./youtubeLookups";
 import { GeniusOpener } from "./geniusOpener";
+import { GeniusSongMatches } from "./geniusSong";
 
 export * from "./panelState";
 
@@ -58,6 +60,7 @@ export class PanelController {
   private readonly youtube: YoutubeLookups;
   private readonly desktop: DesktopLink;
   private readonly genius: GeniusOpener;
+  private readonly songMatches: GeniusSongMatches;
 
   constructor(
     private readonly env: Env,
@@ -72,7 +75,12 @@ export class PanelController {
     this.host = this.makeHost(env);
     this.key = new YoutubeKey(this.host, () => this.refreshHosts());
     this.desktop = new DesktopLink(this.host);
-    this.genius = new GeniusOpener(this.host, (index) => this.geniusTrack(index));
+    this.genius = new GeniusOpener(
+      this.host,
+      (index) => this.geniusTrack(index),
+      () => this.current.geniusSource?.tabId,
+    );
+    this.songMatches = new GeniusSongMatches(this.host);
     this.countdown = new Countdown(this.host, {
       leaveToMenu: () => this.leavePasting("menu"),
       startPaste: (index) => this.startPaste(index),
@@ -91,6 +99,8 @@ export class PanelController {
       youtubeKey: { saved: keySaved, message: "", tone: "", busy: false },
       bridge: { known: false, paired: false, connected: false, busy: false, message: "", tone: "" },
       genius: NO_GENIUS,
+      geniusSong: null,
+      geniusSource: null,
       youtubeNotes: {},
       youtubeLinkError: "",
       doneCountdown: null,
@@ -143,6 +153,8 @@ export class PanelController {
     );
     // A permission taken back in chrome://extensions, or granted elsewhere, changes the Settings box at once.
     env.hosts.subscribe(() => void controller.refreshHosts());
+    // On a Genius song page the panel lists the song's Apple Music and Spotify pages straight away.
+    void controller.songMatches.refresh(tab);
     // A page that is open but not rendered yet when the panel opens is read again shortly (see refreshPage).
     if (needsLabel(open)) void controller.refreshPage();
     // Tracks that were mid-read when the panel closed were restored as pending: carry on with them.
@@ -274,6 +286,7 @@ export class PanelController {
     const appleTabs = musicTabEntries(open);
     const same = JSON.stringify(appleTabs) === JSON.stringify(this.current.appleTabs);
     if (pageUrl !== this.current.pageUrl || !same) this.update({ pageUrl, appleTabs });
+    void this.songMatches.refresh(tab);
     // A page that was not rendered yet when it was read gets its name a moment later, without any tab event: a
     // playing song keeps the tab title still, so nothing else would ask again.
     if (needsLabel(open) && this.labelRetries < LABEL_RETRIES) {
@@ -286,8 +299,19 @@ export class PanelController {
 
   // ── link ────────────────────────────────────────────────────────────
 
-  /** Read the album or song behind `rawUrl` and move to the track list. */
-  async detect(rawUrl: string): Promise<void> {
+  /** Ask again for the Genius page's song after a look-up that failed. */
+  retrySongMatches(): Promise<void> {
+    return this.songMatches.retry();
+  }
+
+  /** Get credits for a page listed on the Genius song page: the normal read, but pasting stays with that page. */
+  getCreditsFromGenius(url: string): Promise<void> {
+    const song = this.current.geniusSong;
+    return this.detect(url, song ? { tabId: song.tabId } : null);
+  }
+
+  /** Read the album or song behind `rawUrl` and move to the track list. `source` is the Genius page it came from. */
+  async detect(rawUrl: string, source: GeniusSource | null = null): Promise<void> {
     const url = rawUrl.trim();
     const recognised = recogniseUrl(url);
     if (!recognised) {
@@ -295,7 +319,7 @@ export class PanelController {
       return;
     }
     this.run++;
-    this.update({ busy: "detect", error: "", status: "Reading the page…" });
+    this.update({ busy: "detect", error: "", status: "Reading the page…", geniusSource: source });
     const tab = await this.env.activeTab().catch(() => null);
     // The user's own tab is read in place when it shows this page: nothing opens, nothing flashes.
     const result = await this.env.api.detect(url, tab?.url === url ? tab.tabId : undefined);
@@ -455,7 +479,7 @@ export class PanelController {
     this.pasted.clear();
     this.genius.clear();
     await this.updateSession({ ...EMPTY_SESSION });
-    this.update({ busy: null, error: "", status: "" });
+    this.update({ busy: null, error: "", status: "", geniusSource: null });
   }
 
   /** The paste queue of one track under the current settings; empty until its credits are in. */
