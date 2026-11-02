@@ -82,7 +82,7 @@ export function launchChromium({ chromePath, dist, port, profileDir, loadVia = "
         chrome.kill();
       }
       await sleep(500);
-      if (!profileDir) rmSync(profile, { recursive: true, force: true });
+      if (!profileDir) rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
     },
   };
 }

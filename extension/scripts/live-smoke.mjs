@@ -144,7 +144,7 @@ try {
   );
   check("Start pasting is offered", started);
   const pasteScreen = await until(
-    "document.querySelector('h2')?.textContent === 'Paste into Genius'",
+    "document.querySelector('.progress')?.textContent?.startsWith('Step ')",
     "the paste screen",
   );
   check("the paste screen opens", pasteScreen);
