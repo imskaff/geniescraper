@@ -52,8 +52,12 @@ const songRef = (info: GeniusSongInfo): SongRef => ({
 
 const searchText = (info: GeniusSongInfo): string => `${info.title} ${info.primary.join(" ")}`;
 
-const appleDown: ServiceMatch = { status: "failed", message: "Apple Music could not be asked just now." };
-const spotifyDown: ServiceMatch = { status: "failed", message: "Spotify could not be asked just now." };
+/** A failed half, with the reason in its words and in the worker's console (chrome://extensions, service worker). */
+function failedWith(service: string, reason: unknown): ServiceMatch {
+  const text = reason instanceof Error ? reason.message : typeof reason === "string" ? reason : "unknown reason";
+  console.warn(`[Géniescraper] ${service} look-up failed: ${text}`);
+  return { status: "failed", message: `${service}: ${text}` };
+}
 
 function appleFound(song: AppleSong, source: "genius" | "search"): ServiceMatch {
   return {
@@ -74,7 +78,7 @@ const TRACK_PARAM = /[?&]i=(\d{1,12})$/;
 /** The page for an exact match on Apple Music's own search page, as a song page built from the id in its link. */
 async function resolveAppleBySearchPage(tools: SongMatchTools, info: GeniusSongInfo): Promise<ServiceMatch> {
   const rows = await tools.appleSearch(searchText(info));
-  if (!rows.ok) return { status: "failed", message: rows.error.message };
+  if (!rows.ok) return failedWith("Apple Music", `${rows.error.message} (${rows.error.code})`);
   // The link's album name is the release; the page's own rows have no album text.
   const hits: Hit[] = rows.data.map((row) => ({ title: row.title, artists: row.artists, href: row.href }));
   const hit = pickHit("apple", songRef(info), hits);
@@ -102,7 +106,9 @@ async function resolveApple(getJson: GetJson, tools: SongMatchTools, info: Geniu
     unreachable = song === null;
   }
   const songs = await searchAppleSongs(getJson, searchText(info));
-  if (songs === null) return unreachable || !info.appleId ? appleDown : { status: "none" };
+  if (songs === null) {
+    return unreachable || !info.appleId ? failedWith("Apple Music", "iTunes did not answer") : { status: "none" };
+  }
   const hit = pickHit("apple", songRef(info), songs.map(appleHit));
   const song = songs.find((candidate) => candidate.id === idOf(hit));
   return song ? appleFound(song, "search") : resolveAppleBySearchPage(tools, info);
@@ -138,7 +144,7 @@ async function resolveSpotify(getJson: GetJson, tools: SongMatchTools, info: Gen
     }
   }
   const rows = await tools.spotifySearch(searchText(info));
-  if (!rows.ok) return { status: "failed", message: rows.error.message };
+  if (!rows.ok) return failedWith("Spotify", `${rows.error.message} (${rows.error.code})`);
   const hits: Hit[] = rows.data.map((row) => ({
     title: row.title,
     artists: row.artists,
@@ -187,8 +193,8 @@ export function createSongMatches(ports: BrowserPorts, getJson: GetJson, timing:
 
   async function lookUp(info: GeniusSongInfo, tools: SongMatchTools): Promise<SongMatchesAnswer> {
     const [apple, spotify] = await Promise.all([
-      resolveApple(getJson, tools, info).catch(() => appleDown),
-      resolveSpotify(getJson, tools, info).catch(() => spotifyDown),
+      resolveApple(getJson, tools, info).catch((error: unknown) => failedWith("Apple Music", error)),
+      resolveSpotify(getJson, tools, info).catch((error: unknown) => failedWith("Spotify", error)),
     ]);
     return {
       status: "ready",

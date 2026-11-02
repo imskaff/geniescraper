@@ -72,6 +72,22 @@ describe("readSearch", () => {
     await expect(readSearch(document, FAST)).rejects.toMatchObject({ code: "tab-failed" });
   });
 
+  it("is not fooled by the word captcha in a script of the page, as a signed-in page ships config text", async () => {
+    setBody('<script>window.cfg = {"challenge":"captcha","note":"too many requests"}</script><p>Loading</p>');
+    setTimeout(() => {
+      setBody(`<script>window.cfg = {"challenge":"captcha"}</script>${row(ID, "Song", ["A"], "B")}`);
+    }, 40);
+    expect((await readSearch(document, FAST)).map((r) => r.title)).toEqual(["Song"]);
+  });
+
+  it("says what the page showed when no list came", async () => {
+    setBody("<p>Something went wrong. Reload the page.</p>");
+    await expect(readSearch(document, FAST)).rejects.toMatchObject({
+      code: "tab-failed",
+      message: expect.stringContaining("Something went wrong") as string,
+    });
+  });
+
   it("reports a captcha page as blocked", async () => {
     setBody("<p>Please solve this captcha to continue</p>");
     await expect(readSearch(document, FAST)).rejects.toMatchObject({ code: "blocked" });

@@ -283,7 +283,7 @@ describe("finding the pages of a Genius song", () => {
       json: (url) => (lookupOf(url) || searchOf(url) ? { results: [] } : null),
       appleSearch: () => Promise.resolve({ ok: false, error: { code: "timeout", message: "slow" } }),
     });
-    expect(await t.resolve()).toMatchObject({ apple: { status: "failed", message: "slow" } });
+    expect(await t.resolve()).toMatchObject({ apple: { status: "failed", message: "Apple Music: slow (timeout)" } });
   });
 
   it("reports a look-up that could not be done as failed, not as none", async () => {
@@ -297,7 +297,10 @@ describe("finding the pages of a Genius song", () => {
     });
     expect(await t.resolve()).toMatchObject({
       apple: { status: "failed" },
-      spotify: { status: "failed", message: "Spotify asked for a captcha a moment ago." },
+      spotify: {
+        status: "failed",
+        message: expect.stringContaining("Spotify asked for a captcha a moment ago.") as string,
+      },
     });
   });
 

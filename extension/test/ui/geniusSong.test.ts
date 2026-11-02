@@ -96,6 +96,7 @@ describe("the card on a Genius song page", () => {
     });
     expect($(root, '[data-key="match-apple"]').textContent).toContain("No exact match found");
     expect($(root, '[data-key="match-spotify"]').textContent).toContain("Could not look this up");
+    expect($(root, '[data-key="match-spotify"]').textContent).toContain("Spotify could not be asked.");
     // The Get credits buttons are for found pages only.
     expect(has(root, 'button[data-key="match-apple"]')).toBe(false);
     expect(has(root, '[data-key="song-matches-find"]')).toBe(true);

@@ -67,7 +67,9 @@ function noteRow(key: string, service: string, text: string): HTMLElement {
 function row(v: ViewContext, state: PanelState, key: string, service: string, match: ServiceMatch | null): HTMLElement {
   if (!match) return noteRow(key, service, "Looking…");
   if (match.status === "found") return foundRow(v, state, key, service, match);
-  return noteRow(key, service, match.status === "none" ? NO_MATCH : COULD_NOT);
+  if (match.status === "none") return noteRow(key, service, NO_MATCH);
+  // The reason is shown, so a failure can be told from a captcha, a timeout or a page that did not load.
+  return noteRow(key, service, `${COULD_NOT}. ${match.message}`);
 }
 
 /** The card for the Genius page on screen, or nothing when the user is not on a Genius song page. */

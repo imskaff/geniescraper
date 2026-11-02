@@ -3,7 +3,18 @@
 // row is the wanted song is decided by core/searchMatch.ts, never here.
 import type { SearchRow } from "../shared/messages";
 import { BLOCKED_MESSAGE, SpotifyError } from "./driver";
-import { isBlocked, until, type Timing } from "./page";
+import { until, type Timing } from "./page";
+
+/** The page's words as a visitor sees them: scripts, styles and templates (a signed-in page ships a lot of config text) are not words. */
+function visibleText(doc: Document): string {
+  const body = doc.body.cloneNode(true) as HTMLElement;
+  for (const node of body.querySelectorAll("script, style, noscript, template")) node.remove();
+  return body.textContent;
+}
+
+/** A bot wall, judged on what the visitor sees and only once no list has appeared. */
+const isWall = (doc: Document): boolean =>
+  /captcha|unusual traffic|access denied|too many requests/i.test(visibleText(doc).slice(0, 2000));
 
 const norm = (text: string | null | undefined): string => (text ?? "").replace(/\s+/g, " ").trim();
 
@@ -32,14 +43,14 @@ export function searchRows(doc: Document): SearchRow[] {
 
 /** Wait for the list, give it a moment to fill, and read it. Throws when the page is blocked or shows no list. */
 export async function readSearch(doc: Document, timing: Timing): Promise<SearchRow[]> {
-  const first = await until(
-    doc,
-    () => (searchRows(doc).length > 0 || isBlocked(doc) ? true : null),
-    timing.rowsMs,
-    timing.stepMs,
-  );
-  if (isBlocked(doc)) throw new SpotifyError("blocked", BLOCKED_MESSAGE);
-  if (!first) throw new SpotifyError("tab-failed", "Spotify's search results did not load.");
+  const first = await until(doc, () => (searchRows(doc).length > 0 ? true : null), timing.rowsMs, timing.stepMs);
+  if (!first && isWall(doc)) throw new SpotifyError("blocked", BLOCKED_MESSAGE);
+  if (!first) {
+    throw new SpotifyError(
+      "tab-failed",
+      `Spotify's search results did not load (the page said: "${visibleText(doc).replace(/\s+/g, " ").trim().slice(0, 80)}").`,
+    );
+  }
   // The rows come in together; a short pause lets a list that is still being drawn finish.
   await new Promise<void>((resolve) => setTimeout(resolve, Math.min(400, timing.settleMs)));
   return searchRows(doc);
