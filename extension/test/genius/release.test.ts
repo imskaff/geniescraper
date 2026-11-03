@@ -1,7 +1,7 @@
 // The three Release Date dropdowns (Month, Day, Year) of Genius's edit form, filled from a fake built on the captured
 // fixture tests/fixtures/genius-release-date.html. The real option texts are not known yet, so the fake spells them in
 // every plausible style and the fill must cope with each, and never choose a wrong option silently.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { QueueItem } from "../../src/core/models";
 import {
   clearTyped,
@@ -29,7 +29,7 @@ function setup(options: FakeOptions = {}, autoConfirm = true) {
 }
 
 const input = (fake: FakeGenius, label: string): HTMLInputElement => {
-  const found = releaseInput(fake.doc, label);
+  const found = releaseInput(fake.form, label);
   if (!found) throw new Error(`no ${label} dropdown`);
   return found;
 };
@@ -40,6 +40,45 @@ function expectSafe(fake: FakeGenius): void {
   expect(fake.strayEnters).toEqual([]);
   expect(fake.enters.filter((e) => !e.open)).toEqual([]);
 }
+
+describe("the song page's own Release Date widget", () => {
+  it("is never filled: the dropdowns are taken from the Edit Metadata form only", async () => {
+    const { fake, run } = setup({ release: { pageWidget: true } });
+    expect(await run(MONTH)).toEqual({ status: "filled", message: "Set the release month to May." });
+    expect(fake.chosen).toEqual(["Release Month: May"]);
+    const decoy = fake.doc.querySelectorAll<HTMLInputElement>("#song-info-release-date input");
+    expect([...decoy].map((el) => el.value)).toEqual(["", "", "", "", ""]);
+    expect(shown(fake, "Release Month")).toBe("May");
+  });
+
+  it("logs which element the date step targeted, and that it is in the form", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { run } = setup({ release: { pageWidget: true } });
+    await run(MONTH);
+    const line = warn.mock.calls.map((c) => c.join(" ")).find((l) => l.startsWith("Geniescraper: release_month"));
+    warn.mockRestore();
+    expect(line).toContain('aria-label="Release Month" inForm=true');
+    expect(line).toContain("(2 on the page with this label)");
+  });
+
+  it("leaves the page's producers and writers alone too", async () => {
+    const { fake, run } = setup({ release: { pageWidget: true } });
+    await run(["written_by", "Billie Eilish"]);
+    await run(["produced_by", "FINNEAS"]);
+    const decoy = fake.doc.querySelectorAll<HTMLInputElement>("#song-info-release-date input");
+    expect([...decoy].map((el) => el.value)).toEqual(["", "", "", "", ""]);
+    expect(fake.chosen.length).toBeGreaterThan(0);
+  });
+
+  it("reports the form as missing instead of filling the page widget when the form is not open", async () => {
+    const { fake, run } = setup({ release: { pageWidget: true } });
+    fake.form.remove();
+    expect(await run(MONTH)).toEqual({
+      status: "unavailable",
+      message: "Open the song's Edit Metadata form on Genius first.",
+    });
+  });
+});
 
 describe("the three dropdowns", () => {
   it("chooses the month, the day and the year, and reports each", async () => {
