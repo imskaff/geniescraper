@@ -155,6 +155,16 @@ describe("extractTitleArtist parity with scraper.apple_music._extract_title_arti
   });
 });
 
+describe("extractTitleArtist for singles and EPs with accented titles", () => {
+  it.each([
+    ["‎Jeżyk! - Single - Album by OKI & Nolyrics Beats - Apple Music", ["Jeżyk!", "OKI & Nolyrics Beats"]],
+    ["Zażółć - EP - EP by Łódź & Beatmaker - Apple Music", ["Zażółć", "Łódź & Beatmaker"]],
+    ["Café - Single - Single by Zoé - Apple Music", ["Café", "Zoé"]],
+  ])("%s", (input, output) => {
+    expect(extractTitleArtist(input)).toEqual(output);
+  });
+});
+
 describe("cover URL parity with scraper.apple_music", () => {
   it.each(vectors.normalise_cover_url)("normalise $input", ({ input, output }) => {
     expect(normaliseCoverUrl(input)).toBe(output);
