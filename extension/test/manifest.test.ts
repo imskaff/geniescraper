@@ -79,6 +79,23 @@ describe("manifest", () => {
     expect(manifest.optional_host_permissions ?? []).not.toContain("https://open.spotify.com/*");
   });
 
+  it("lists a Genius song's pages with no host or permission beyond today's five hosts and three permissions", () => {
+    // The card on a Genius song page reads the page with the genius.com content script and looks the song up at
+    // itunes.apple.com and open.spotify.com (and the two music sites' search pages): all already required.
+    expect([...(manifest.host_permissions ?? [])].sort()).toEqual([
+      "https://api.deezer.com/*",
+      "https://genius.com/*",
+      "https://itunes.apple.com/*",
+      "https://music.apple.com/*",
+      "https://open.spotify.com/*",
+    ]);
+    expect([...(manifest.permissions ?? [])].sort()).toEqual(["scripting", "sidePanel", "storage"]);
+    expect([...(manifest.optional_host_permissions ?? [])].sort()).toEqual([
+      "https://www.googleapis.com/*",
+      "https://www.youtube.com/*",
+    ]);
+  });
+
   it("never matches every site", () => {
     const patterns = [
       ...(manifest.host_permissions ?? []),

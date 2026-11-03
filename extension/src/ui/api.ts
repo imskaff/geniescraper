@@ -8,12 +8,14 @@ import {
   isPageScrape,
   isYoutubeAnswer,
   isResult,
+  isSongMatchesAnswer,
   type AlbumInfo,
   type GeniusOpenAnswer,
   type KeyCheck,
   type PageScrape,
   type PasteCommand,
   type Result,
+  type SongMatchesAnswer,
   type WorkerRequest,
   type YoutubeAnswer,
 } from "../shared/messages";
@@ -27,7 +29,9 @@ export interface WorkerApi {
   /** Try a YouTube key with one cheap call to Google; the key is checked, not stored, by the worker. */
   checkYoutubeKey(key: string): Promise<Result<KeyCheck>>;
   /** Find this track's song on Genius and open its Edit Metadata form; the answer says how far it got. */
-  openOnGenius(title: string, artist: string): Promise<Result<GeniusOpenAnswer>>;
+  openOnGenius(title: string, artist: string, page?: { tabId: number; url: string }): Promise<Result<GeniusOpenAnswer>>;
+  /** The Apple Music and Spotify pages of the song on the Genius page in this tab; nothing is read from them. */
+  songMatches(tabId: number): Promise<Result<SongMatchesAnswer>>;
   /** Change the paste session. The worker is its only writer; the answer is the state afterwards. */
   paste(command: PasteCommand): Promise<Result<PasteState>>;
   /** The link to the desktop app: pair with a code, unpair, or ask how it stands. The answer is the link afterwards. */
@@ -68,7 +72,15 @@ export function createWorkerApi(send: Send): WorkerApi {
     checkYoutubeKey: (key) => ask(send, { type: "youtube-key-check", key }, isKeyCheck),
     lookupYoutube: (title, artist) => ask(send, { type: "youtube-lookup", title, artist }, isYoutubeAnswer),
     bridge: (request) => ask(send, request, isBridgeLinkState),
-    openOnGenius: (title, artist) => ask(send, { type: "genius-open", title, artist }, isGeniusOpenAnswer),
+    openOnGenius: (title, artist, page) =>
+      ask(
+        send,
+        page === undefined
+          ? { type: "genius-open", title, artist }
+          : { type: "genius-open", title, artist, tabId: page.tabId, pageUrl: page.url },
+        isGeniusOpenAnswer,
+      ),
+    songMatches: (tabId) => ask(send, { type: "song-matches", tabId }, isSongMatchesAnswer),
     async paste(command) {
       const answer = await ask(send, command, isRecord);
       return answer.ok ? { ok: true, data: normalisePaste(answer.data) } : answer;

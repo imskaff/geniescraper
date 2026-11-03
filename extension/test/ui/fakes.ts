@@ -7,6 +7,7 @@ import type {
   PasteCommand,
   KeyCheck,
   Result,
+  SongMatchesAnswer,
   YoutubeAnswer,
 } from "../../src/shared/messages";
 import type { KeyValueStore, Stores } from "../../src/shared/storage";
@@ -84,7 +85,12 @@ export interface ApiScript {
   checkYoutubeKey?: (key: string) => Promise<Result<KeyCheck>>;
   paste?: (command: PasteCommand) => Promise<Result<PasteState>>;
   bridge?: (request: BridgeRequest) => Promise<Result<BridgeLinkState>>;
-  openOnGenius?: (title: string, artist: string) => Promise<Result<GeniusOpenAnswer>>;
+  openOnGenius?: (
+    title: string,
+    artist: string,
+    page?: { tabId: number; url: string },
+  ) => Promise<Result<GeniusOpenAnswer>>;
+  songMatches?: (tabId: number) => Promise<Result<SongMatchesAnswer>>;
 }
 
 export function fakeApi(script: ApiScript = {}): FakeApi {
@@ -93,10 +99,16 @@ export function fakeApi(script: ApiScript = {}): FakeApi {
     calls,
     pasteState: { ...IDLE_PASTE },
     link: { paired: false, connected: false },
-    openOnGenius(title, artist) {
-      calls.push(`genius-open:${artist}|${title}`);
-      if (script.openOnGenius) return script.openOnGenius(title, artist);
+    openOnGenius(title, artist, page) {
+      calls.push(`genius-open:${artist}|${title}${page === undefined ? "" : `@${String(page.tabId)}`}`);
+      if (script.openOnGenius) return script.openOnGenius(title, artist, page);
       return Promise.resolve({ ok: true, data: { status: "opened" } });
+    },
+    songMatches(tabId) {
+      calls.push(`song-matches:${String(tabId)}`);
+      return (script.songMatches ?? (() => Promise.resolve({ ok: true, data: { status: "not-song" } } as const)))(
+        tabId,
+      );
     },
     bridge(request) {
       calls.push(`bridge:${request.type}`);
@@ -195,6 +207,8 @@ export function fakeHosts(initial: Partial<Record<OptionalHost, boolean>> = {}):
 }
 
 export interface FakeEnv extends Env {
+  /** Move the user to another tab, as the browser would report it. */
+  setTab(tab: ActiveTab | null): void;
   /** The Apple Music tabs the browser has open; change it to simulate the user opening or closing pages. */
   openTabs: OpenTab[];
   api: FakeApi;
@@ -224,7 +238,7 @@ export function fakeEnv(
   const sessionStore = memoryStore(options.session === undefined ? {} : { session: options.session });
   const stores: Stores = { settings: settingsStore, session: sessionStore };
   const secretsStore = memoryStore(options.youtubeKey === undefined ? {} : { youtubeApiKey: options.youtubeKey });
-  const tab = options.tab ?? null;
+  let tab = options.tab ?? null;
   const openTabs = [...(options.openTabs ?? [])];
   return {
     openTabs,
@@ -234,6 +248,9 @@ export function fakeEnv(
     stores,
     secrets: secretsStore,
     activeTab: () => Promise.resolve(tab),
+    setTab: (next) => {
+      tab = next;
+    },
     settingsStore,
     secretsStore,
     sessionStore,

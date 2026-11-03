@@ -5,6 +5,7 @@ import { normaliseSettings, SETTINGS_KEY } from "../shared/settings";
 import { REAL_COMBOBOX_TIMING } from "./fill";
 import { REAL_OPEN_EDIT_TIMING, openEditForm } from "./openEdit";
 import { GeniusPage } from "./page";
+import { readSongInfo } from "./songState";
 
 declare global {
   interface Window {
@@ -66,6 +67,11 @@ if (!window.__geniescraperGenius) {
         sendResponse({ ok: true, data: { state } });
       });
       return true;
+    }
+    if (message.type === "genius/song-info") {
+      // A read of the page as it is, for the panel's list of the song's other pages; null when this is no song page.
+      sendResponse({ ok: true, data: readSongInfo(document, window.location.pathname) });
+      return false;
     }
     if (message.type === "genius/paste-active") page.setActive(message.active);
     else if (message.type === "genius/auto-state") page.setAuto(message.auto);

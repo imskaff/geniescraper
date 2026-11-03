@@ -17,7 +17,7 @@ It never presses Save: you check the form and save it yourself.
 <a href="#installation">Installation</a> ·
 <a href="#usage">Usage</a> ·
 <a href="#configuration">Configuration</a></b>
-   
+
 <a href="extension/FAQ.md">FAQ</a> ·
 <a href="extension/PRIVACY.md">Privacy</a> ·
 <a href="#contact">Contact</a> ·
@@ -27,7 +27,7 @@ It never presses Save: you check the form and save it yourself.
 </div>
 
 > [!TIP]
-> **<ins>Start with the browser extension.</ins>** It does everything inside your browser, fills the form by itself (***Auto-paste***), skips names that are already filled in and only ever picks an exact artist match.
+> **<ins>Start with the browser extension.</ins>** It does everything inside your browser, fills the form by itself (_**Auto-paste**_), skips names that are already filled in and only ever picks an exact artist match.
 > The desktop app works best with the extension connected; on its own it can only paste with hotkeys into whichever field you click.
 
 ## Features
@@ -39,26 +39,26 @@ It never presses Save: you check the form and save it yourself.
 - 🎼 **Complete credits** – Songwriters, producers, every additional role, the ℗ / © lines and the release date of an album or a song, with roles named the way Genius names them.
 - 🖼️ **Exact cover art** – The 1000×1000 PNG of the exact release you opened, found by its Apple Music catalog ID. For Spotify, which has no such ID, it is found by title and artist in Apple's catalog, and then on Deezer.
 - ▶️ **The right YouTube link** – No more manual search for the correct YouTube link.
-- ⚡ ***Extremely fast*** – The credits of a track take a few seconds and the next tracks of an album are read in the background while you paste.
+- ⚡ _**Extremely fast**_ – The credits of a track take a few seconds and the next tracks of an album are read in the background while you paste.
 
 ### Pasting into Genius
 
 - 🔗 **Open on Genius** – One press finds the song on Genius, opens it in a new tab and presses its Edit Metadata button for you. It only does so when exactly one Genius song matches the title and artist; with none or several, it stops and tells you instead of guessing. An existing Genius tab is never navigated away, so a form you are editing is safe.
-- 🤖 ***Auto-paste*** – The whole track is filled in field by field while you watch. It pauses the moment you click or type in the form, press `Esc` or close the panel, and carries on from the same step when you turn it back on.
+- 🤖 _**Auto-paste**_ – The whole track is filled in field by field while you watch. It pauses the moment you click or type in the form, press `Esc` or close the panel, and carries on from the same step when you turn it back on.
 - 👣 **Step by step** – Prefer control? Use the customizable shortcuts for pasting, going back or skipping a field in the form.
 - 🎯 **Exact matches only** – A suggestion is chosen only when it matches the typed name exactly (ignoring case, accents and symbols). Otherwise the text stays typed and the choice is yours, so a near match never ends up on a song.
 - ♻️ **Knows what is already there** – Names already filled in are skipped, empty rows are reused and artists are added to roles Genius already lists, instead of creating duplicates.
-- 🛡️ **Never saves for you** – The extension never clicks Save or Cancel, making *you* in control.
+- 🛡️ **Never saves for you** – The extension never clicks Save or Cancel, making _you_ in control.
 
 ### One workflow, two apps
 
-|                           | Browser extension                                   | Desktop app                                                  |
-|---------------------------|-----------------------------------------------------|--------------------------------------------------------------|
-| **Runs on**               | Chromium (Chrome, Brave, Opera, Arc, etc.) and Edge, Windows and macOS| Windows                                    |
-| **Reads the credits**     | Yes, Apple Music and Spotify, from the pages you have open | Yes, Apple Music only, with its own browser (Playwright) |
-| **Fills the Genius form** | Yes: Auto-paste or step by step, exact matches only | Through the extension once paired; otherwise manual hotkeys  |
-| **Finds open pages**      | Yes, Apple Music and Spotify                        | Yes, Apple Music pages, once paired                          |
-| **Install**               | Download, unzip, load                               | Clone, `uv sync`                                             |
+|                           | Browser extension                                                      | Desktop app                                                 |
+| ------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------- |
+| **Runs on**               | Chromium (Chrome, Brave, Opera, Arc, etc.) and Edge, Windows and macOS | Windows                                                     |
+| **Reads the credits**     | Yes, Apple Music and Spotify, from the pages you have open             | Yes, Apple Music only, with its own browser (Playwright)    |
+| **Fills the Genius form** | Yes: Auto-paste or step by step, exact matches only                    | Through the extension once paired; otherwise manual hotkeys |
+| **Finds open pages**      | Yes, Apple Music and Spotify                                           | Yes, Apple Music pages, once paired                         |
+| **Install**               | Download, unzip, load                                                  | Clone, `uv sync`                                            |
 
 ## Installation
 
@@ -100,18 +100,22 @@ The steps are the same on **Windows** and **macOS**, apart from how you unzip th
 **You need:** Windows, **Python 3.10 or newer** and **[uv](https://docs.astral.sh/uv/)** (`pip install uv`).
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/imskaff/geniescraper.git
    cd geniescraper
    ```
 
 2. **Install the dependencies** (creates `.venv` from the locked versions in `uv.lock`):
+
    ```bash
    uv sync
    ```
+
    Without uv, `pip install -r requirements.txt` also works, with unpinned versions.
 
 3. **Install the browser the app reads Apple Music with:**
+
    ```bash
    uv run playwright install chromium
    ```
@@ -136,19 +140,19 @@ Pair them once; the pairing is remembered. This is optional but recommended: it 
 
 ### With the browser extension
 
-1. **Open an album or a song on Apple Music or Spotify** and click the Géniescraper icon. The panel offers the page you are on, and any other Apple Music or Spotify pages you have open appear under **Listening for Apple Music or Spotify pages…**. Pick one, or paste a link and press **Get credits**.
+1. **Open an album or a song on Apple Music or Spotify** and click the Géniescraper icon. (On a Genius song page, press **Find** in the card to list that song's pages on both services, found from what Genius lists or by an exact title and artist search, then press **Get credits** on one. Settings can do the lookup automatically; it is off by default.) The panel offers the page you are on, and any other Apple Music or Spotify pages you have open appear under **Listening for Apple Music or Spotify pages…**. Pick one, or paste a link and press **Get credits**.
 2. **Choose the tracks** of an album with **Select all** or by ticking them (none are ticked for you). Their credits are read in the background.
 3. **Review** each track: the credits, the ℗ / © lines, the cover and the YouTube link that will be pasted. A track that says **Needs a look** is missing something; open it to see what.
 4. **Open the song's Edit Metadata form on Genius** (signed in, in the same browser) and press **Start pasting**. To let the extension do the opening, press **Open on Genius** in the panel (beside **Start pasting**, and next to the track's name while pasting): it finds the exact song, opens the page in a new tab and presses **Edit Metadata**. With none or several matches it says so and opens nothing; signed out, it tells you to sign in.
 5. **Paste.** The panel shows the current step and these controls:
 
-   | Control                | What it does                                                                                      |
-   |------------------------|---------------------------------------------------------------------------------------------------|
-   | **Auto-paste: ON/OFF** | ON fills the whole track by itself; OFF hands the steps to you. Pauses when you touch the form.   |
-   | **Next** (`F8`)        | Fills the next field. Shown while Auto-paste is off.                                              |
-   | **Previous** (`F7`)    | Goes back one step.                                                                               |
-   | **Skip**               | Leaves the current field alone.                                                                   |
-   | **Back to credits**    | Stops pasting and returns to the credits.                                                         |
+   | Control                | What it does                                                                                    |
+   | ---------------------- | ----------------------------------------------------------------------------------------------- |
+   | **Auto-paste: ON/OFF** | ON fills the whole track by itself; OFF hands the steps to you. Pauses when you touch the form. |
+   | **Next** (`F8`)        | Fills the next field. Shown while Auto-paste is off.                                            |
+   | **Previous** (`F7`)    | Goes back one step.                                                                             |
+   | **Skip**               | Leaves the current field alone.                                                                 |
+   | **Back to credits**    | Stops pasting and returns to the credits.                                                       |
 
 6. **Check the form and save it on Genius yourself.** Nothing is saved for you.
 
@@ -191,21 +195,21 @@ A glowing **Connect your browser extension** card on the start screen appears wh
 - Click the field on Genius, then press `F8` (or the **Next** button, which first switches back to the last Genius page you had in front, and pastes nothing if there is none) to paste the current value and move on. `F7` goes back, **Skip** leaves a field alone, `Esc` ends pasting for the song.
 - After each paste the app moves between Genius fields and confirms the suggestion for you:
 
-  | After pasting…                 | Action                                   |
-  |--------------------------------|------------------------------------------|
-  | Last songwriter                | `Tab` → Produced By field                |
+  | After pasting…                 | Action                                       |
+  | ------------------------------ | -------------------------------------------- |
+  | Last songwriter                | `Tab` → Produced By field                    |
   | Last songwriter (no producers) | `Tab` × 2 + `Enter` → Add additional credits |
-  | Last producer                  | `Tab` + `Enter` → Add additional credits |
-  | Last artist in a role          | `Tab` + `Enter` → Add additional credits |
-  | Last copyright label           | `Tab` × 3 → YouTube URL field            |
-  | YouTube URL                    | `Tab` × 3 → Cover Art field              |
+  | Last producer                  | `Tab` + `Enter` → Add additional credits     |
+  | Last artist in a role          | `Tab` + `Enter` → Add additional credits     |
+  | Last copyright label           | `Tab` × 3 → YouTube URL field                |
+  | YouTube URL                    | `Tab` × 3 → Cover Art field                  |
 
 ### Field order
 
 Fields are pasted in the order Genius expects them:
 
 | #   | Field                      | Notes                                    |
-|-----|----------------------------|------------------------------------------|
+| --- | -------------------------- | ---------------------------------------- |
 | 1   | Written By                 | One artist per press                     |
 | 2   | Produced By                | One artist per press                     |
 | 3   | Additional Credits         | Role name, then each artist in that role |
@@ -228,36 +232,36 @@ Both apps have a **Settings** screen. In the desktop app it opens over any scree
 
 ### Browser extension
 
-| Card                   | What you can set                                                                                                                      |
-|------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
-| **What to paste**      | Songwriters and producers, additional credits, copyright lines, YouTube link, PNG cover art link, release date.                                |
-| **Pasting on Genius**  | Auto-paste on or off, the pause between fields (0.6 s by default), the keys (`F8` and `F7`), how long to wait for suggestions, what happens after a track, and **Open each song on Genius before pasting it**. |
-| **Reading credits**    | How many tracks are read at the same time (3 by default).                                                                              |
-| **YouTube links**      | Find a YouTube link for each track (recommended), and an optional free YouTube key for more reliable links; the panel walks you through getting one. |
-| **Desktop app**        | Pair with the desktop app: pairing code, **Paste**, **Pair**, **Unpair**.                                                              |
+| Card                  | What you can set                                                                                                                                                                                               |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **What to paste**     | Songwriters and producers, additional credits, copyright lines, YouTube link, PNG cover art link, release date.                                                                                                |
+| **Pasting on Genius** | Auto-paste on or off, the pause between fields (0.6 s by default), the keys (`F8` and `F7`), how long to wait for suggestions, what happens after a track, and **Open each song on Genius before pasting it**. |
+| **Reading credits**   | How many tracks are read at the same time (3 by default).                                                                                                                                                      |
+| **YouTube links**     | Find a YouTube link for each track (recommended), and an optional free YouTube key for more reliable links; the panel walks you through getting one.                                                           |
+| **Desktop app**       | Pair with the desktop app: pairing code, **Paste**, **Pair**, **Unpair**.                                                                                                                                      |
 
 The YouTube lookup is off until you allow it (in the set-up's step 4 or in Settings); the browser then asks for permission to contact `www.youtube.com`, and you can take it back in Settings or in `chrome://extensions`.
 Deezer is always the cover fallback and has no setting.
 
 ### Desktop app
 
-| Setting                            | Default | Description                                                          |
-|------------------------------------|---------|----------------------------------------------------------------------|
-| **Auto-paste**                     | On      | Needs the extension to be connected; greyed out otherwise            |
-| Songwriters and producers          | On      | Written By and Produced By                                           |
-| Additional credits                 | On      | Every other role                                                     |
-| Copyright lines (℗ and ©)          | On      | From album links                                                     |
-| YouTube link                       | On      | Pasted into Genius's YouTube field                                   |
-| PNG cover art link                 | On      | 1000×1000 PNG of the exact release                                   |
-| Release date                       | On      | Month, day and year, in the three Release Date dropdowns             |
-| Keys                               | F8 / F7 | Paste next / go back one step                                        |
-| Wait for suggestions to settle     | 0.6 s   | Hotkeys only: how long to wait before pressing Enter                 |
-| Tracks read at the same time       | 3       | How many album tracks are read while you paste                       |
-| Find a YouTube link for each track | On      | Looks the link up on YouTube (recommended); off skips the search     |
-| Search Deezer for a cover          | On      | Only asked when Apple Music has no cover of its own                  |
-| Always on top                      | On      | Keep the window above the browser                                    |
-| Compact assistant                  | Off     | Hide the step list and shrink the window                             |
-| Start the assistant automatically  | Off     | Start pasting after a countdown (15 s by default)                    |
+| Setting                            | Default | Description                                                      |
+| ---------------------------------- | ------- | ---------------------------------------------------------------- |
+| **Auto-paste**                     | On      | Needs the extension to be connected; greyed out otherwise        |
+| Songwriters and producers          | On      | Written By and Produced By                                       |
+| Additional credits                 | On      | Every other role                                                 |
+| Copyright lines (℗ and ©)          | On      | From album links                                                 |
+| YouTube link                       | On      | Pasted into Genius's YouTube field                               |
+| PNG cover art link                 | On      | 1000×1000 PNG of the exact release                               |
+| Release date                       | On      | Month, day and year, in the three Release Date dropdowns         |
+| Keys                               | F8 / F7 | Paste next / go back one step                                    |
+| Wait for suggestions to settle     | 0.6 s   | Hotkeys only: how long to wait before pressing Enter             |
+| Tracks read at the same time       | 3       | How many album tracks are read while you paste                   |
+| Find a YouTube link for each track | On      | Looks the link up on YouTube (recommended); off skips the search |
+| Search Deezer for a cover          | On      | Only asked when Apple Music has no cover of its own              |
+| Always on top                      | On      | Keep the window above the browser                                |
+| Compact assistant                  | Off     | Hide the step list and shrink the window                         |
+| Start the assistant automatically  | Off     | Start pasting after a countdown (15 s by default)                |
 
 Settings are saved per user in `%APPDATA%\Geniescraper\settings.env`, so every copy of the app shares them.
 A `.env` in the project root from older versions is still read until the first save.
@@ -269,6 +273,7 @@ A `.env` in the project root from older versions is still read until the first s
 - No accounts, no analytics, no servers of ours. Everything stays in your browser and on your computer.
 - The link between the extension and the desktop app stays on your computer (`127.0.0.1`), needs a one-time pairing code and never shares your Genius sign-in: you stay signed in to Genius in your own browser.
 - **Open on Genius** sends the song title and artist to Genius's own search, only when you press it (or turn on opening each song before pasting). No cookies, no sign-in and nothing goes to anyone else.
+- On a Genius song page, only when you press **Find** (or have turned the automatic setting on), the panel reads the song's title, artists and Apple Music and Spotify ids from the page and uses them to find its pages on both services, with `itunes.apple.com` and `open.spotify.com` (and a minimized search window when an id is missing). Nothing is read from the pages found until you press **Get credits**.
 - YouTube lookups are optional and ask your permission first. An optional YouTube key stays in your browser and is sent only to Google.
 - Reading Spotify uses the `open.spotify.com` access that is part of the install, like Apple Music. Nothing read from Spotify is sent anywhere except the song title and artist, which go to Deezer for a cover when Apple's catalog has none, and to Genius only when you press **Open on Genius**.
 - When Apple's catalog has no cover for a song (always the case for a Spotify link), the extension asks Deezer, sending only the song title and artist. That permission is part of the install and cannot be switched off.

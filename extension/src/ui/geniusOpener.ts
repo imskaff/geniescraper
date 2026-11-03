@@ -18,6 +18,8 @@ export class GeniusOpener {
   constructor(
     private readonly host: PanelHost,
     private readonly track: (index: number) => GeniusTrack | null,
+    /** The Genius song page the read started from, when it did: its form is opened in place, with no search. */
+    private readonly pageTab: () => { tabId: number; url: string } | undefined = () => undefined,
   ) {}
 
   /** Change the state and say it in the live regions: a problem assertively, progress politely. */
@@ -57,7 +59,7 @@ export class GeniusOpener {
     const mine = ++this.attempt;
     const title = track.title;
     this.set({ index, phase: "working", title, song: null, songs: [] });
-    const answer = await this.host.env.api.openOnGenius(track.title, track.artist);
+    const answer = await this.host.env.api.openOnGenius(track.title, track.artist, this.pageTab());
     // The user moved on (another attempt, or the state was cleared) while Genius was being asked.
     if (mine !== this.attempt) return false;
     if (!answer.ok) {
