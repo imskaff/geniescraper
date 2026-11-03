@@ -35,8 +35,8 @@ It never presses Save: you check the form and save it yourself.
 ### Reading the credits
 
 - 🔍 **Finds what you have open** – The extension listens for Apple Music and Spotify albums and songs already open in your browser and offers each one in a single press, labelled with where it is from. The desktop app lists the Apple Music ones too once the two are paired.
-- 🎵 **Apple Music and 🟢 Spotify** – Spotify tracks and albums are read from their credits box by the extension. The desktop app does not read Spotify.
-- 🎼 **Complete credits** – Songwriters, producers, every additional role, the ℗ / © lines and the release date of an album or a song, with roles named the way Genius names them.
+- 🎵 **Apple Music and 🟢 Spotify** support
+- 🎼 **Complete credits** – Songwriters, producers, every additional role (including Distributors, Labels, Publishers), the ℗ / © lines and the release date of an album or a song, with roles named the way Genius names them.
 - 🖼️ **Exact cover art** – The 1000×1000 PNG of the exact release you opened, found by its Apple Music catalog ID. For Spotify, which has no such ID, it is found by title and artist in Apple's catalog, and then on Deezer.
 - ▶️ **The right YouTube link** – No more manual search for the correct YouTube link.
 - ⚡ _**Extremely fast**_ – The credits of a track take a few seconds and the next tracks of an album are read in the background while you paste.
@@ -54,7 +54,7 @@ It never presses Save: you check the form and save it yourself.
 
 |                           | Browser extension                                                      | Desktop app                                                 |
 | ------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------- |
-| **Runs on**               | Chromium (Chrome, Brave, Opera, Arc, etc.) and Edge, Windows and macOS | Windows                                                     |
+| **Runs on**               | Chromium (Chrome, Brave, Opera, etc.) and Edge, Windows and macOS      | Windows                                                     |
 | **Reads the credits**     | Yes, Apple Music and Spotify, from the pages you have open             | Yes, Apple Music only, with its own browser (Playwright)    |
 | **Fills the Genius form** | Yes: Auto-paste or step by step, exact matches only                    | Through the extension once paired; otherwise manual hotkeys |
 | **Finds open pages**      | Yes, Apple Music and Spotify                                           | Yes, Apple Music pages, once paired                         |
@@ -66,14 +66,12 @@ It never presses Save: you check the form and save it yourself.
 
 <img src="img/extension-demo.gif" alt="The side panel finding open Apple Music and Spotify pages, reading an album, reviewing credits with label, distributor and release date, opening the song on Genius and auto-pasting into the form until it pauses when touched" width="720">
 
-The steps are the same on **Windows** and **macOS**, apart from how you unzip the download (step 2) and how you check it.
-
 1. **Download.** Open the [Releases page](https://github.com/imskaff/geniescraper/releases), pick the newest **Géniescraper extension** and download `geniescraper-extension-<version>.zip`.
 2. **Unzip it into a folder you will keep.** The browser runs the extension from that folder, so do not delete or move it afterwards.
    - **Windows:** right-click the zip, choose **Extract All…** and pick a place you will keep, for example `Documents\Geniescraper-extension`.
    - **macOS:** double-click the zip in Finder: a folder with the same name appears next to it. Drag that folder into `Documents` (or any place you will keep) rather than leaving it in `Downloads`.
 3. **Add it to your browser** (the same on both systems).
-   - **Chrome:** open `chrome://extensions`, switch on **Developer mode** (top right), click **Load unpacked** and choose the folder from step 2, the one that contains `manifest.json`.
+   - **Chromium:** open `chrome://extensions`, switch on **Developer mode** (top right), click **Load unpacked** and choose the folder from step 2, the one that contains `manifest.json`.
    - **Edge:** open `edge://extensions`, switch on **Developer mode** (left side), click **Load unpacked** and choose the same folder.
 4. **Open it.** Click the puzzle-piece icon in the toolbar, pin Géniescraper, then click it. The side panel opens and a short set-up walks you through the options.
 
