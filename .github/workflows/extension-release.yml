@@ -32,8 +32,9 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           version=$(node -p "require('./package.json').version")
-          if [ "$TAG" != "extension-v$version" ]; then
-            echo "Tag $TAG does not match the extension version $version (expected extension-v$version)." >&2
+          # A single trailing letter (extension-v0.7.0f) marks a small fix of the same numbered version.
+          if [ "$TAG" != "extension-v$version" ] && ! [[ "$TAG" =~ ^extension-v${version}[a-z]$ ]]; then
+            echo "Tag $TAG does not match the extension version $version (expected extension-v$version, or extension-v${version}f for a small fix)." >&2
             exit 1
           fi
       - name: Check
