@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectAlbum, scrapeTrack } from "../../src/background/providerClient";
+import { detectAlbum, scrapeTrack, searchApple, searchSpotify } from "../../src/background/providerClient";
 import { ALBUM_INFO, ALBUM_URL, FAST_CLIENT, PAGE_SCRAPE, SONG_URL, fakeBrowser } from "./fakePorts";
 
 const NEVER = new Promise<never>(() => undefined);
@@ -149,5 +149,46 @@ describe("detectAlbum", () => {
     const result = await detectAlbum(browser.ports, "https://example.com/", undefined, FAST_CLIENT);
     expect(result).toMatchObject({ ok: false, error: { code: "invalid-url" } });
     expect(browser.log).toEqual([]);
+  });
+});
+
+describe("search pages that close the channel", () => {
+  const CLOSED =
+    "A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received";
+  const ROW = { title: "T", artists: ["A"], album: "B", href: "https://open.spotify.com/track/1jX3nPWUbEQVGxMBb7NPXp" };
+
+  /** A page that navigates under the first question (the channel closes) and answers the second. */
+  function reloading(times: number) {
+    let asked = 0;
+    return fakeBrowser({
+      answer: () => (asked++ < times ? Promise.reject(new Error(CLOSED)) : Promise.resolve({ ok: true, data: [ROW] })),
+    });
+  }
+
+  it("injects the reader again and asks once more, then closes the tab", async () => {
+    const browser = reloading(1);
+    expect(await searchSpotify(browser.ports, "x y", FAST_CLIENT)).toEqual({ ok: true, data: [ROW] });
+    expect(browser.log.filter((line) => line.startsWith("inject:"))).toHaveLength(2);
+    expect(browser.log.filter((line) => line.startsWith("send:"))).toHaveLength(2);
+    expect(browser.openTabs.size).toBe(0);
+  });
+
+  it("tries only once more, and keeps the real reason when the channel closes again", async () => {
+    const browser = reloading(5);
+    const result = await searchSpotify(browser.ports, "x y", FAST_CLIENT);
+    expect(result).toMatchObject({ ok: false, error: { code: "tab-failed" } });
+    expect(JSON.stringify(result)).toContain("message channel closed");
+    expect(browser.log.filter((line) => line.startsWith("send:"))).toHaveLength(2);
+    expect(browser.openTabs.size).toBe(0);
+  });
+
+  it("does the same for Apple Music's search page", async () => {
+    expect(await searchApple(reloading(1).ports, "x y", FAST_CLIENT)).toEqual({ ok: true, data: [ROW] });
+  });
+
+  it("does not ask again for a failure that is not a closed channel", async () => {
+    const browser = fakeBrowser({ answer: () => Promise.reject(new Error("boom")) });
+    expect(await searchSpotify(browser.ports, "x y", FAST_CLIENT)).toMatchObject({ ok: false });
+    expect(browser.log.filter((line) => line.startsWith("send:"))).toHaveLength(1);
   });
 });

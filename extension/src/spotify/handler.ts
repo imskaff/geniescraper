@@ -3,12 +3,27 @@
 import type { Result } from "../shared/messages";
 import { isContentRequest } from "../shared/messages";
 import { detectAlbum, scrapeTrack, SpotifyError, type Timing } from "./driver";
-import { parseSpotifyUrl } from "./url";
+import { albumRows, readSearch } from "./search";
+import { isAlbumSearchUrl, isSpotifySearchUrl, parseSpotifyUrl } from "./url";
 
 export async function handleRequest(raw: unknown, doc: Document, timing: Timing): Promise<Result<unknown>> {
   // Only this provider's own requests: the other provider's content script answers theirs.
   if (!isContentRequest(raw) || !raw.type.startsWith("spotify/")) {
     return { ok: false, error: { code: "bad-request", message: "Unrecognised request." } };
+  }
+  if (raw.type === "spotify/search") {
+    if (!isSpotifySearchUrl(raw.url)) {
+      return { ok: false, error: { code: "invalid-url", message: "Not a Spotify search this request can read." } };
+    }
+    try {
+      return { ok: true, data: await readSearch(doc, timing, isAlbumSearchUrl(raw.url) ? albumRows : undefined) };
+    } catch (error) {
+      if (error instanceof SpotifyError) return { ok: false, error: error.toJSON() };
+      return {
+        ok: false,
+        error: { code: "internal", message: error instanceof Error ? error.message : "Unexpected error." },
+      };
+    }
   }
   const target = parseSpotifyUrl(raw.url);
   // Credits are read from one track's own page; an album link here would need the album's per-row menus.

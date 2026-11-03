@@ -35,6 +35,8 @@ export interface Settings {
   nextTrackSeconds: number;
   /** Find the song on Genius and open its Edit Metadata form before pasting it. Off until chosen. */
   openOnGenius: boolean;
+  /** On a Genius song page, look up the song's Apple Music and Spotify pages as soon as the panel is open. Off: a button does it. */
+  findPagesOnGenius: boolean;
   /** The first-time set-up has been seen (finished or skipped). */
   onboarded: boolean;
 }
@@ -74,6 +76,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   returnSeconds: 30,
   nextTrackSeconds: 0,
   openOnGenius: false,
+  findPagesOnGenius: false,
   onboarded: false,
 };
 
@@ -155,6 +158,7 @@ export function normaliseSettings(raw: unknown): Settings {
     returnSeconds: seconds("returnSeconds", false),
     nextTrackSeconds: seconds("nextTrackSeconds", true),
     openOnGenius: flag("openOnGenius"),
+    findPagesOnGenius: flag("findPagesOnGenius"),
     onboarded,
   };
 }

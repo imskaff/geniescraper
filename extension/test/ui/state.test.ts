@@ -19,6 +19,9 @@ describe("normaliseSettings", () => {
 
   it("keeps opening songs on Genius off until it is chosen, and takes only a real boolean", () => {
     expect(DEFAULT_SETTINGS.openOnGenius).toBe(false);
+    expect(DEFAULT_SETTINGS.findPagesOnGenius).toBe(false);
+    expect(normaliseSettings({ findPagesOnGenius: true }).findPagesOnGenius).toBe(true);
+    expect(normaliseSettings({ findPagesOnGenius: "yes" }).findPagesOnGenius).toBe(false);
     expect(normaliseSettings({ openOnGenius: true }).openOnGenius).toBe(true);
     expect(normaliseSettings({ openOnGenius: 1 }).openOnGenius).toBe(false);
     expect(normaliseSettings({ scrapeCore: true }).openOnGenius).toBe(false);

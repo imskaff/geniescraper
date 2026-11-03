@@ -62,8 +62,15 @@ export const RELEASE_LABELS = {
 
 export const TAGS_REGION_ID = "collapsible-tags_albums-content";
 
-export function releaseInput(doc: Document, label: string): HTMLInputElement | null {
-  return doc.querySelector<HTMLInputElement>(`input[role="combobox"][aria-label="${label}"]`);
+/**
+ * Searched in the Edit Metadata form's Tags and Albums region (an id only that form has), or in the form itself while
+ * the region is not mounted. Never the whole page: the song page's own Song Info section has Release Date dropdowns
+ * with the same labels, and they come first. The region is looked up by id because it is not known whether Genius
+ * renders it inside the `<form>` element or in a portal beside it.
+ */
+export function releaseInput(form: HTMLFormElement, label: string): HTMLInputElement | null {
+  const root = form.ownerDocument.getElementById(TAGS_REGION_ID) ?? form;
+  return root.querySelector<HTMLInputElement>(`input[role="combobox"][aria-label="${label}"]`);
 }
 
 /** Whether the Tags and Albums region is closed (its content is hidden). False when the page has no such region. */

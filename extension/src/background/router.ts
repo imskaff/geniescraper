@@ -2,13 +2,15 @@
 // Album detection runs one at a time. Track reads run as many at once as the panel asks for, never more than
 // MAX_OPEN_TABS, so a long album cannot open a tab per track. Paste changes are serialised by the paste service.
 import { isPasteCommand, isWorkerRequest, type AlbumInfo, type Result, type WorkerRequest } from "../shared/messages";
-import { detectAlbum, scrapeTrack, type ClientTiming } from "./providerClient";
+import { detectAlbum, scrapeTrack, searchApple, searchSpotify, type ClientTiming } from "./providerClient";
 import type { CoverService } from "./covers";
 import { NO_YOUTUBE, type YoutubeService } from "./youtube";
 import type { KeyCheck } from "../shared/messages";
 import type { PasteService } from "./paste";
 import type { BrowserPorts } from "./ports";
 import type { GeniusNavigator } from "./geniusNav";
+import type { SongMatches } from "./songMatches";
+import { SPOTIFY_PROVIDER } from "../providers/spotify";
 import { recogniseUrl } from "../providers/registry";
 import type { CreditsProvider } from "../providers/types";
 import { Limiter, PoliteQueue, REAL_CLOCK, Serial, type Clock } from "./serial";
@@ -17,6 +19,7 @@ import { Limiter, PoliteQueue, REAL_CLOCK, Serial, type Clock } from "./serial";
 export const MAX_OPEN_TABS = 24;
 
 const NO_GENIUS: GeniusNavigator = { open: () => Promise.resolve({ status: "failed" }) };
+const NO_MATCHES: SongMatches = { resolve: () => Promise.resolve({ ok: true, data: { status: "not-song" } }) };
 /** After a site asks for a captcha, it is not read again for this long, so the user can look at it first. */
 export const BLOCKED_PAUSE_MS = 15 * 60_000;
 
@@ -64,8 +67,11 @@ export function createRouter(
   checkKey: (key: string) => Promise<KeyCheck> = () => Promise.resolve("failed"),
   genius: GeniusNavigator = NO_GENIUS,
   clock: Clock = REAL_CLOCK,
+  matches: SongMatches = NO_MATCHES,
 ): Router {
   const serial = new Serial();
+  // The search pages looked up for a Genius song are opened one after another, whatever else is being read.
+  const searches = new Serial();
   const reads = new Limiter(MAX_OPEN_TABS);
   const direct = { run: <T>(job: () => Promise<T>): Promise<T> => job() };
   // Sites read politely get a queue of their own, and are left alone for a while once they ask for a captcha.
@@ -95,8 +101,22 @@ export function createRouter(
     if (raw.type === "genius-open") {
       const stopKeepAlive = ports.keepAlive();
       return genius
-        .open(raw.title, raw.artist)
+        .open(raw.title, raw.artist, raw.tabId, raw.pageUrl)
         .then((data): Result<unknown> => ({ ok: true, data }))
+        .finally(stopKeepAlive);
+    }
+
+    // Finding a Genius song's pages waits for no queue of reads: its one tab (a Spotify search) is paced below.
+    if (raw.type === "song-matches") {
+      const stopKeepAlive = ports.keepAlive();
+      return matches
+        .resolve(raw.tabId, {
+          spotifySearch: (query) =>
+            searches.run(() => politely(SPOTIFY_PROVIDER, () => searchSpotify(ports, query, timing))),
+          appleSearch: (query) => searches.run(() => keepingAlive(() => searchApple(ports, query, timing))),
+          spotifyAlbumSearch: (query) =>
+            searches.run(() => politely(SPOTIFY_PROVIDER, () => searchSpotify(ports, query, timing, "albums"))),
+        })
         .finally(stopKeepAlive);
     }
 
@@ -113,30 +133,46 @@ export function createRouter(
         : raw.type === "scrape-track"
           ? reads
           : direct;
-    return queue.run(async () => {
-      if (provider && clock.now() < (blockedUntil.get(provider.id) ?? 0)) {
-        return {
-          ok: false,
-          error: {
-            code: "blocked",
-            message: `${provider.label} asked for a captcha a moment ago, so it is not being read for now. Open it in a tab, check it works, and try again in a while.`,
-          },
-        };
-      }
-      const stopKeepAlive = ports.keepAlive();
-      try {
-        const answer = await work(raw);
-        if (provider && !answer.ok) {
-          if (answer.error.code === "blocked") blockedUntil.set(provider.id, clock.now() + BLOCKED_PAUSE_MS);
-          // A read that failed for a reason that is not the track's own (a captcha, a page that would not open or
-          // answer) may mean the site is pushing back: from then on it is read one page at a time.
-          if (PUSHBACK_CODES.has(answer.error.code)) politeQueue(provider).setLimit(1);
-        }
-        return answer;
-      } finally {
-        stopKeepAlive();
-      }
-    });
+    return queue.run(() => (provider ? guarded(provider, () => work(raw)) : keepingAlive(() => work(raw))));
+  }
+
+  /** Run a job while the worker is kept awake. */
+  async function keepingAlive<T>(job: () => Promise<T>): Promise<T> {
+    const stopKeepAlive = ports.keepAlive();
+    try {
+      return await job();
+    } finally {
+      stopKeepAlive();
+    }
+  }
+
+  /**
+   * A read of a politely read site: refused while the site's captcha pause lasts, and a failure that says something
+   * about the site (not about this page) pauses it or drops it to one page at a time.
+   */
+  async function guarded<T>(provider: CreditsProvider, job: () => Promise<Result<T>>): Promise<Result<T>> {
+    if (clock.now() < (blockedUntil.get(provider.id) ?? 0)) {
+      return {
+        ok: false,
+        error: {
+          code: "blocked",
+          message: `${provider.label} asked for a captcha a moment ago, so it is not being read for now. Open it in a tab, check it works, and try again in a while.`,
+        },
+      };
+    }
+    const answer = await keepingAlive(job);
+    if (!answer.ok) {
+      if (answer.error.code === "blocked") blockedUntil.set(provider.id, clock.now() + BLOCKED_PAUSE_MS);
+      // A read that failed for a reason that is not the track's own (a captcha, a page that would not open or
+      // answer) may mean the site is pushing back: from then on it is read one page at a time.
+      if (PUSHBACK_CODES.has(answer.error.code)) politeQueue(provider).setLimit(1);
+    }
+    return answer;
+  }
+
+  /** A job on a politely read site, in its queue of page loads. */
+  function politely<T>(provider: CreditsProvider, job: () => Promise<Result<T>>): Promise<Result<T>> {
+    return politeQueue(provider).run(() => guarded(provider, job));
   }
 
   async function work(raw: WorkerRequest): Promise<Result<unknown>> {

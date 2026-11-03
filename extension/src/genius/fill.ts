@@ -213,12 +213,13 @@ function releaseTexts(kind: ReleaseKind, value: string): string[] {
  * Open the Tags and Albums section when it is closed and the dropdowns are not reachable. Only ever opens it: a
  * section that is already open is left alone. Resolves true when it pressed the control.
  */
-async function openTags(doc: Document, ctx: FillContext, label: string): Promise<boolean> {
-  if (releaseInput(doc, label) && !tagsCollapsed(doc)) return false;
+async function openTags(form: HTMLFormElement, ctx: FillContext, label: string): Promise<boolean> {
+  const doc = form.ownerDocument;
+  if (releaseInput(form, label) && !tagsCollapsed(doc)) return false;
   const expander = tagsExpander(doc);
   if (!expander) return false;
   expander.click();
-  await waitFor(() => releaseInput(doc, label) !== null && !tagsCollapsed(doc), ctx.timing);
+  await waitFor(() => releaseInput(form, label) !== null && !tagsCollapsed(doc), ctx.timing);
   return true;
 }
 
@@ -233,9 +234,9 @@ const KEPT_BY: Record<ReleaseKind, readonly ReleaseKind[]> = {
 };
 
 /** What the form already shows as its release date, as text ("June 9, 2023"), or "" when none of the relevant dropdowns holds one. */
-function existingDate(doc: Document, kind: ReleaseKind): string {
+function existingDate(form: HTMLFormElement, kind: ReleaseKind): string {
   const shownOf = (k: ReleaseKind): string => {
-    const input = releaseInput(doc, RELEASE_LABELS[k]);
+    const input = releaseInput(form, RELEASE_LABELS[k]);
     return input ? singleValueText(dropdownBox(input)) : "";
   };
   if (!KEPT_BY[kind].some((k) => shownOf(k) !== "")) return "";
@@ -243,11 +244,33 @@ function existingDate(doc: Document, kind: ReleaseKind): string {
   return [[month, day].filter(Boolean).join(" "), year].filter(Boolean).join(", ");
 }
 
-async function fillRelease(kind: ReleaseKind, value: string, ctx: FillContext): Promise<StepOutcome> {
+/**
+ * Which element a release date step targets, logged so a wrong target can be seen from the page console: its tag, id
+ * and label, whether it is inside the form, and how many elements in the whole page carry the same label.
+ */
+function logReleaseTarget(form: HTMLFormElement, kind: ReleaseKind, input: HTMLInputElement | null): void {
+  const label = RELEASE_LABELS[kind];
+  const onPage = form.ownerDocument.querySelectorAll(`[aria-label="${label}"]`).length;
+  console.warn(
+    `Geniescraper: ${kind} targets`,
+    input
+      ? `<${input.localName}> id="${input.id}" aria-label="${input.getAttribute("aria-label") ?? ""}" inForm=${String(form.contains(input))}`
+      : "nothing",
+    `(${String(onPage)} on the page with this label)`,
+  );
+}
+
+async function fillRelease(
+  form: HTMLFormElement,
+  kind: ReleaseKind,
+  value: string,
+  ctx: FillContext,
+): Promise<StepOutcome> {
   const label = RELEASE_LABELS[kind];
   const noun = RELEASE_NOUN[kind];
-  const opened = await openTags(ctx.doc, ctx, label);
-  const input = releaseInput(ctx.doc, label);
+  const opened = await openTags(form, ctx, label);
+  const input = releaseInput(form, label);
+  logReleaseTarget(form, kind, input);
   if (!input || tagsCollapsed(ctx.doc)) return { status: "unavailable", message: OPEN_TAGS };
   const box = dropdownBox(input);
   const prefix = opened ? "Opened the Tags and Albums section. " : "";
@@ -258,7 +281,7 @@ async function fillRelease(kind: ReleaseKind, value: string, ctx: FillContext): 
   }
   // A date Genius already has is kept: it may be a better one than Apple's, and half of one date with half of
   // another would be wrong. Only dropdowns this run cannot have filled yet are looked at (see KEPT_BY).
-  const kept = existingDate(ctx.doc, kind);
+  const kept = existingDate(form, kind);
   if (kept) {
     return {
       status: "filled",
@@ -333,7 +356,7 @@ function stepField(
     case "release_month":
     case "release_day":
     case "release_year": {
-      const input = releaseInput(form.ownerDocument, RELEASE_LABELS[kind]);
+      const input = releaseInput(form, RELEASE_LABELS[kind]);
       return input ? { box: dropdownBox(input), input } : {};
     }
   }
@@ -454,6 +477,6 @@ export async function fillStep(item: QueueItem, ctx: FillContext): Promise<StepO
     case "release_month":
     case "release_day":
     case "release_year":
-      return fillRelease(kind, value, ctx);
+      return fillRelease(form, kind, value, ctx);
   }
 }
