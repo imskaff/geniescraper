@@ -45,3 +45,17 @@ describe("the panel's spacing", () => {
     expect(off).toEqual([]);
   });
 });
+
+describe("ticks and their hints", () => {
+  it("keeps a gap below a list of ticks that is followed by more fields", () => {
+    expect(spacing()).toContainEqual({
+      selector: ".tracks.stack-end",
+      property: "margin-bottom",
+      value: "var(--space-3)",
+    });
+  });
+
+  it("has no browser margin on the checkbox, so the label and its indented hint line up", () => {
+    expect(spacing()).toContainEqual({ selector: ".check input", property: "margin", value: "0" });
+  });
+});
