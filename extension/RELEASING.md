@@ -74,6 +74,7 @@ CI also runs the repository's live Apple Music tests weekly, apart from pushes, 
 
 Pushing a tag named `extension-v<version>` runs `.github/workflows/extension-release.yml`: it checks the tag matches the version, runs `npm run check` and `npm run package`, and publishes a release with the zip and `SHA256SUMS.txt` attached, with GitHub's generated notes since the previous extension release, listing each change as its title and pull request number, without author names.
 The workflow stops with a message if the tag and the version differ.
+A tag with one trailing letter, such as `extension-v0.7.0f`, is accepted for a small fix of the same numbered version: the manifest, the package and the zip keep the number (Chrome allows digits only), and only the tag and the release title carry the letter.
 
 ```bash
 git tag extension-v0.6.2
