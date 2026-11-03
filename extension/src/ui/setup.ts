@@ -222,7 +222,7 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
         ),
         el(
           "ul",
-          { class: "tracks" },
+          { class: "tracks stack-end" },
           option(
             panel,
             state,

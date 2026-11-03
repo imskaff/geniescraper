@@ -45,3 +45,29 @@ describe("the panel's spacing", () => {
     expect(off).toEqual([]);
   });
 });
+
+describe("ticks and their hints", () => {
+  it("keeps a gap below a list of ticks that is followed by more fields", () => {
+    expect(spacing()).toContainEqual({
+      selector: ".tracks.stack-end",
+      property: "margin-bottom",
+      value: "var(--space-3)",
+    });
+  });
+
+  it("has no browser margin on the checkbox, so the label and its indented hint line up", () => {
+    expect(spacing()).toContainEqual({ selector: ".check input", property: "margin", value: "0" });
+  });
+});
+
+describe("settings cards", () => {
+  it("does not let a long label squeeze the checkbox", () => {
+    expect(spacing().length).toBeGreaterThan(0);
+    expect(css).toMatch(/\.check input \{[^}]*flex: none;/);
+  });
+
+  it("takes no room for an empty hint, and does not double a row's margin inside a card's gap", () => {
+    expect(css).toMatch(/\.help:empty \{\s*position: absolute;/);
+    expect(spacing()).toContainEqual({ selector: ".settings-card .row", property: "margin", value: "0" });
+  });
+});
