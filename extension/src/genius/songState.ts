@@ -36,12 +36,12 @@ export function decodeStringLiteral(body: string): string {
   );
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
 /** The embedded state of the page as parsed JSON, or null when there is none or it cannot be read. */
-function pageState(doc: Document): Record<string, unknown> | null {
+export function pageState(doc: Document): Record<string, unknown> | null {
   for (const script of doc.scripts) {
     const text = script.textContent;
     if (!text.includes("__PRELOADED_STATE__") || text.length > MAX_SCRIPT_CHARS) continue;
@@ -57,7 +57,7 @@ function pageState(doc: Document): Record<string, unknown> | null {
   return null;
 }
 
-function samePath(a: string, b: string): boolean {
+export function samePath(a: string, b: string): boolean {
   const decode = (path: string): string => {
     try {
       return decodeURIComponent(path);

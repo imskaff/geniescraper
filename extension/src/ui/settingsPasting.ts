@@ -235,7 +235,7 @@ export function pastingSettings(v: ViewContext, state: PanelState): HTMLElement 
           "label",
           { class: "check" },
           findPages,
-          el("span", { text: "Find Apple Music and Spotify pages automatically on Genius song pages" }),
+          el("span", { text: "Find Apple Music and Spotify pages automatically on Genius song and album pages" }),
         ),
         el("p", {
           class: "help",

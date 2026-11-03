@@ -304,10 +304,13 @@ export class PanelController {
     return this.songMatches.find();
   }
 
-  /** Get credits for a page listed on the Genius song page: the normal read, but pasting stays with that page. */
+  /**
+   * Get credits for a page listed on the Genius page: the normal read. For a song, pasting stays with that page (its
+   * own edit form); an album's page has no form, so each track is opened on Genius as usual.
+   */
   getCreditsFromGenius(url: string): Promise<void> {
     const song = this.current.geniusSong;
-    return this.detect(url, song ? { tabId: song.tabId, url: song.key } : null);
+    return this.detect(url, song && song.kind === "song" ? { tabId: song.tabId, url: song.key } : null);
   }
 
   /** Read the album or song behind `rawUrl` and move to the track list. `source` is the Genius page it came from. */

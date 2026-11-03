@@ -3,8 +3,8 @@
 import type { Result } from "../shared/messages";
 import { isContentRequest } from "../shared/messages";
 import { detectAlbum, scrapeTrack, SpotifyError, type Timing } from "./driver";
-import { readSearch } from "./search";
-import { isSpotifySearchUrl, parseSpotifyUrl } from "./url";
+import { albumRows, readSearch } from "./search";
+import { isAlbumSearchUrl, isSpotifySearchUrl, parseSpotifyUrl } from "./url";
 
 export async function handleRequest(raw: unknown, doc: Document, timing: Timing): Promise<Result<unknown>> {
   // Only this provider's own requests: the other provider's content script answers theirs.
@@ -16,7 +16,7 @@ export async function handleRequest(raw: unknown, doc: Document, timing: Timing)
       return { ok: false, error: { code: "invalid-url", message: "Not a Spotify search this request can read." } };
     }
     try {
-      return { ok: true, data: await readSearch(doc, timing) };
+      return { ok: true, data: await readSearch(doc, timing, isAlbumSearchUrl(raw.url) ? albumRows : undefined) };
     } catch (error) {
       if (error instanceof SpotifyError) return { ok: false, error: error.toJSON() };
       return {

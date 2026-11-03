@@ -37,6 +37,7 @@ const ready = (a: ServiceMatch = apple, s: ServiceMatch = spotify): Result<SongM
   ok: true,
   data: {
     status: "ready",
+    kind: "song",
     path: "/Taylor-swift-fortnight-lyrics",
     title: "Fortnight",
     artists: ["Taylor Swift", "Post Malone"],
@@ -127,11 +128,9 @@ describe("the card on a Genius song page", () => {
       api: { songMatches: () => Promise.resolve({ ok: true, data: { status: "not-song" } }) },
     });
     expect(has(notSong.root, '[data-key="song-matches"]')).toBe(false);
-    const album = await open({
-      tab: { tabId: 5, url: "https://genius.com/albums/Taylor-swift/The-tortured-poets-department" },
-    });
-    expect(asks(album.env.api.calls)).toEqual([]);
-    expect(has(album.root, '[data-key="song-matches"]')).toBe(false);
+    const artist = await open({ tab: { tabId: 5, url: "https://genius.com/artists/Taylor-swift" } });
+    expect(asks(artist.env.api.calls)).toEqual([]);
+    expect(has(artist.root, '[data-key="song-matches"]')).toBe(false);
     const music = await open({ tab: { tabId: 6, url: "https://music.apple.com/us/album/demo/100" } });
     expect(asks(music.env.api.calls)).toEqual([]);
   });

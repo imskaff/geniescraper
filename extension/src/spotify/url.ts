@@ -51,14 +51,17 @@ export const spotifyTrackUrl = (id: string): string => `${HOST}/track/${id}`;
 const MAX_QUERY = 200;
 
 /**
- * The address of Spotify's search page, songs only, as the worker opens it for an exact-match look-up: English
+ * The address of Spotify's search page (its songs tab, or its albums tab), as the worker opens it for an exact-match look-up: English
  * (`locale=en`, as for a read) and marked as a reader tab, so the playback guard is on. The query is encoded into the
  * path, and only a title and artist ever go into it.
  */
-export function spotifySearchUrl(query: string): string {
+export function spotifySearchUrl(query: string, tab: "tracks" | "albums" = "tracks"): string {
   const text = query.replace(/\s+/g, " ").trim().slice(0, MAX_QUERY);
-  return `${HOST}/search/${encodeURIComponent(text)}/tracks?locale=en&${READ_MARKER}=read`;
+  return `${HOST}/search/${encodeURIComponent(text)}/${tab}?locale=en&${READ_MARKER}=read`;
 }
+
+/** Whether a search page address built by `spotifySearchUrl` is the albums tab (the cards) rather than the songs tab. */
+export const isAlbumSearchUrl = (url: string): boolean => new URL(url).pathname.endsWith("/albums");
 
 /** Whether `url` is a search page address built by `spotifySearchUrl`; anything else is refused before it is read. */
 export function isSpotifySearchUrl(url: string): boolean {
@@ -66,7 +69,7 @@ export function isSpotifySearchUrl(url: string): boolean {
   const { origin, pathname, search, hash } = new URL(url);
   return (
     origin === HOST &&
-    /^\/search\/[^/]{1,1800}\/tracks$/.test(pathname) &&
+    /^\/search\/[^/]{1,1800}\/(?:tracks|albums)$/.test(pathname) &&
     search === `?locale=en&${READ_MARKER}=read` &&
     hash === ""
   );

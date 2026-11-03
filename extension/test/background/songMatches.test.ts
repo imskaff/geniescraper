@@ -64,6 +64,7 @@ function setup(
       appleSearches.push(query);
       return opts.appleSearch ? opts.appleSearch() : Promise.resolve({ ok: true, data: [] });
     },
+    spotifyAlbumSearch: () => Promise.reject(new Error("a song page never searches for albums")),
   };
   const matches = createSongMatches(browser.ports, getJson, TIMING);
   const resolve = async (): Promise<SongMatchesAnswer> => {
@@ -77,6 +78,7 @@ function setup(
 const NO_TOOLS: SongMatchTools = {
   spotifySearch: () => Promise.reject(new Error("no")),
   appleSearch: () => Promise.reject(new Error("no")),
+  spotifyAlbumSearch: () => Promise.reject(new Error("no")),
 };
 
 const lookupOf = (url: string): boolean => url.startsWith("https://itunes.apple.com/lookup");
@@ -94,6 +96,7 @@ describe("finding the pages of a Genius song", () => {
     });
     expect(await t.resolve()).toEqual({
       status: "ready",
+      kind: "song",
       path: GOOD4U.path,
       title: "good 4 u",
       artists: ["Olivia Rodrigo"],
