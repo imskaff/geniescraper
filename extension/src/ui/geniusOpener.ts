@@ -58,18 +58,19 @@ export class GeniusOpener {
     if (!track || this.busy()) return false;
     const mine = ++this.attempt;
     const title = track.title;
-    this.set({ index, phase: "working", title, song: null, songs: [] });
+    const artist = track.artist;
+    this.set({ index, phase: "working", title, artist, song: null, songs: [] });
     const answer = await this.host.env.api.openOnGenius(track.title, track.artist, this.pageTab());
     // The user moved on (another attempt, or the state was cleared) while Genius was being asked.
     if (mine !== this.attempt) return false;
     if (!answer.ok) {
-      this.set({ index, phase: "failed", title, song: null, songs: [] });
+      this.set({ index, phase: "failed", title, artist, song: null, songs: [] });
       // An old background part does not know the request: reloading the extension is the fix, not trying again.
       if (answer.error.code === "bad-request") this.host.update({ error: MESSAGES.workerOutOfDate, status: "" });
       return false;
     }
     const { status, song, songs } = answer.data;
-    this.set({ index, phase: status, title, song: song ?? null, songs: songs ?? [] });
+    this.set({ index, phase: status, title, artist, song: song ?? null, songs: songs ?? [] });
     return status === "opened";
   }
 }
