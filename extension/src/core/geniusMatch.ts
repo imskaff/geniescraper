@@ -97,6 +97,47 @@ export function searchQuery(title: string, artist: string): string {
   return `${clean(artist)} ${clean(title)}`.trim();
 }
 
+/** The separate names in an Apple artist line: "OKI & Nolyrics Beats" gives OKI and Nolyrics Beats. */
+export function artistNames(line: string): string[] {
+  return withoutFeaturing(line)
+    .split(/\s*(?:&|,|\+|\sand\s)\s*/i)
+    .map((name) => name.trim())
+    .filter((name) => artistKey([name]) !== "");
+}
+
+/**
+ * Hits that carry the exact title and only some of the Apple line's names as primary artists. Genius often credits a
+ * producer Apple lists as a co-artist only as a producer, so these are worth a look at the song's credits. Alone they
+ * are not a match: `creditedHit` decides.
+ */
+export function creditCandidates(title: string, artist: string, hits: readonly GeniusHit[]): GeniusHit[] {
+  const wantTitle = titleKey(title);
+  const names = new Set(artistNames(artist).map((name) => artistKey([name])));
+  return hits.filter(
+    (hit) =>
+      wantTitle !== "" &&
+      titleKey(hit.title) === wantTitle &&
+      hit.primary.length > 0 &&
+      hit.primary.length < names.size &&
+      hit.primary.every((name) => names.has(artistKey([name]))),
+  );
+}
+
+/**
+ * The hit with the Apple line's other names added as featured artists, for each of them that the Genius song's own
+ * credits (producers, writers, performers) name. A name the song does not credit is not added, so `matchSong` still
+ * sees an artist line that differs and says "none".
+ */
+export function creditedHit(artist: string, hit: GeniusHit, credits: readonly string[]): GeniusHit {
+  const known = new Set([...hit.primary, ...hit.featured].map((name) => artistKey([name])));
+  const credited = new Set(credits.map((name) => artistKey([name])));
+  const added = artistNames(artist).filter((name) => {
+    const key = artistKey([name]);
+    return !known.has(key) && credited.has(key);
+  });
+  return { ...hit, featured: [...hit.featured, ...added] };
+}
+
 /**
  * Which of the hits is this track. A hit counts only when its title is word for word the track's (version words such
  * as "Remix" or "Live" included) and its primary artists are the track's artists (or the primary and featured ones

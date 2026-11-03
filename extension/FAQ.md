@@ -74,6 +74,7 @@ If a track really has no credits on Apple Music, none can be read.
 ## Open on Genius says it found nothing, or several
 
 It only opens a song whose title and artist match exactly (a remix, a live version or a translation page is not the song).
+When Apple lists a producer as a co-artist that Genius lists only as a producer, the extension reads that Genius song's public credits and opens it only if they name that person.
 If Genius shows no such song, it may not be on Genius yet or may be visible only while you are signed in to Genius, nothing is opened, and a link opens Genius search for the song in a new tab; if it shows several, they are listed as links so you open the right one yourself.
 If it says the page has no Edit Metadata button, you are not signed in to Genius in this browser.
 It never saves, and it never reuses a Genius tab that shows something else, because that tab may hold a form you have not saved.
