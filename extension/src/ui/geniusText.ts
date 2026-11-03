@@ -1,4 +1,5 @@
 // What the panel says about "Open on Genius", in one place: the live regions announce it and the notice shows it.
+import { searchQuery } from "../core/geniusMatch";
 import { type GeniusOpenState } from "./panelState";
 
 export interface GeniusMessage {
@@ -6,6 +7,10 @@ export interface GeniusMessage {
   /** "problem" needs the user to act and is announced assertively; "info" is progress. */
   tone: "info" | "problem";
 }
+
+/** Genius’s own search page for a track: a normal tab the user reads, for a song the public search cannot see. */
+export const searchLink = (artist: string, title: string): string =>
+  `https://genius.com/search?q=${encodeURIComponent(searchQuery(title, artist))}`;
 
 export function geniusMessage(genius: GeniusOpenState): GeniusMessage | null {
   const name = genius.title ? `“${genius.title}”` : "this song";
@@ -19,7 +24,7 @@ export function geniusMessage(genius: GeniusOpenState): GeniusMessage | null {
     case "none":
       return {
         tone: "problem",
-        text: `Genius has no song that matches ${name} exactly, so nothing was opened. It may not be on Genius yet.`,
+        text: `Genius’s public search has no song that matches ${name} exactly, so nothing was opened. It may not be on Genius yet, or it may be visible only while you are signed in to Genius (for example a song without lyrics yet).`,
       };
     case "several":
       return {

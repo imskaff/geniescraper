@@ -78,6 +78,14 @@ The panel queries each provider's origins on its own (one that fails cannot hide
 The desktop link payload (`url`, `title`, `kind`, `current`) is unchanged; `source` is extra in the panel's entries only.
 The panel's state field is still called `appleTabs`; renaming it is left to a follow-up so this change stays out of `ui/`.
 
+## 4b. Search requests for a Genius song's pages
+
+`CreditsProvider` is unchanged.
+The panel's card on a Genius song page (`docs/genius-song-links.md`, `docs/match-search-fallback.md`) adds one worker request, `song-matches`, and two content requests, `apple/search` and `spotify/search`, each answered by that provider's own content script with the rows of a search page it was opened on (`src/apple/search.ts`, `src/spotify/search.ts`).
+The worker builds the search address itself (`appleSearchUrl`, `spotifySearchUrl`) and the content script refuses any other address.
+Which row, if any, is the wanted song is decided only in `core/searchMatch.ts`: the same title and the same set of artists, on a release that is not a different edition by name, else none.
+A new provider needs no search code to be listed from a Genius page unless Genius carries its id.
+
 ## 5. Host permissions and content script
 
 A provider declares:

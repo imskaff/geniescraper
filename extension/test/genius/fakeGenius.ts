@@ -47,6 +47,8 @@ export interface ReleaseOptions {
   noExpander?: boolean;
   /** Leave the Release Date fieldset out of the form. */
   absent?: boolean;
+  /** Put the song page's own Song Info Release Date dropdowns (same labels, not in the form) before the form. */
+  pageWidget?: boolean;
   /** A value the dropdowns already hold, by input label ("Release Month": "May"). */
   preset?: Record<string, string>;
 }
@@ -290,6 +292,26 @@ export function loadFakeGenius(options: FakeOptions = {}): FakeGenius {
   }
 
   if (!options.release?.absent) addReleaseDate(fake, options.release ?? {}, delay);
+  if (options.release?.pageWidget) {
+    const widget = doc.createElement("div");
+    widget.id = "song-info-release-date";
+    for (const label of ["Release Month", "Release Day", "Release Year"]) {
+      const input = doc.createElement("input");
+      input.setAttribute("role", "combobox");
+      input.setAttribute("aria-label", label);
+      widget.append(input);
+    }
+    for (const text of ["Producer", "Writer"]) {
+      const label = doc.createElement("label");
+      const span = doc.createElement("span");
+      span.textContent = text;
+      const input = doc.createElement("input");
+      input.setAttribute("role", "combobox");
+      label.append(span, input);
+      widget.append(label);
+    }
+    form.before(widget);
+  }
 
   // Additional credits: the fixture holds one empty row to copy from.
   const rows = form.querySelector<HTMLElement>('[class*="RepeatableInputPair__Rows"]');

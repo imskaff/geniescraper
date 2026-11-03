@@ -77,8 +77,12 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: AppError };
 export type ContentRequest =
   | { type: "apple/detect"; url: string }
   | { type: "apple/scrape"; url: string; trackTitle: string }
+  /** Read the song rows of an Apple Music search page (`url` is that page's address). */
+  | { type: "apple/search"; url: string }
   | { type: "spotify/detect"; url: string }
-  | { type: "spotify/scrape"; url: string; trackTitle: string };
+  | { type: "spotify/scrape"; url: string; trackTitle: string }
+  /** Read the rows of a Spotify search page (`url` is that page's address): the songs it lists, for an exact match. */
+  | { type: "spotify/search"; url: string };
 
 /** The pieces of the paste session an extension page can ask the worker to change. */
 export type PasteCommand =
@@ -102,7 +106,9 @@ export type WorkerRequest =
   /** Try a YouTube key the user typed, with one cheap call. The key is checked, not stored, by the worker. */
   | { type: "youtube-key-check"; key: string }
   /** Find this track's song on Genius and open its Edit Metadata form; nothing is typed or saved. */
-  | { type: "genius-open"; title: string; artist: string }
+  | { type: "genius-open"; title: string; artist: string; tabId?: number; pageUrl?: string }
+  /** The Apple Music and Spotify pages of the song on the Genius page in this tab (a read of that page, no credits). */
+  | { type: "song-matches"; tabId: number }
   | PasteCommand;
 
 /** How "Open on Genius" ended; only "opened" lets anything else go on. */
@@ -135,6 +141,87 @@ export interface GeniusOpenAnswer {
   song?: GeniusSongLink;
   /** Every exact candidate, for "several". */
   songs?: GeniusSongLink[];
+}
+
+/** What a Genius song page says about its own song (see genius/songState.ts). The ids are checked for their shape. */
+export interface GeniusSongInfo {
+  /** The song page's path, "/Artist-title-lyrics". */
+  path: string;
+  title: string;
+  /** The artists in the page's header, one name each ("Tyler, The Creator" is one name). */
+  primary: string[];
+  /** The "Featuring" credit, one name each. */
+  featured: string[];
+  /** Apple Music's catalogue id of the song ("" when the page has none). */
+  appleId: string;
+  /** Spotify's track id ("" when the page has none). */
+  spotifyId: string;
+}
+
+/** What a Genius album page says about its album (see genius/albumState.ts). It carries no Apple Music or Spotify id. */
+export interface GeniusAlbumInfo {
+  /** The album page's path, "/albums/<artist>/<album>". */
+  path: string;
+  title: string;
+  /** The album's artists, one name each ("Various Artists" is one name). */
+  primary: string[];
+  /** The release year, "" when the page has none. */
+  year: string;
+  /** How many tracks the page's tracklist lists, 0 when it lists none. */
+  tracks: number;
+  /** Genius's own type of release ("album", "single", "compilation", "soundtrack"...), "" when the page gives none. */
+  type: string;
+}
+
+/** Where a listed page came from: the Genius page's own ids, or an exact-match search. */
+export type MatchSource = "genius" | "search";
+
+/** How one service's page for the Genius song turned out. */
+export type FoundMatch = {
+  status: "found";
+  /** An address the worker built itself from an id or a result, never one taken from a page's text. */
+  url: string;
+  /** "Artist - Title", as the open-pages list names a page. */
+  name: string;
+  /** The release the page is on ("Fortnight - Single", "SOUR"), or for an album its year and size; "" when not known. */
+  release: string;
+  source: MatchSource;
+};
+
+export type ServiceMatch =
+  | FoundMatch
+  /** Several albums are exactly the Genius album as far as the service says (a reissue, a twin): all are listed. */
+  | { status: "several"; matches: FoundMatch[] }
+  /** The service has no page for this song that is exactly it: never a guess. */
+  | { status: "none" }
+  /** The look-up could not be done (the service did not answer, or asked for a captcha). */
+  | { status: "failed"; message: string };
+
+/** The worker's answer to `song-matches`. */
+export type SongMatchesAnswer =
+  /** The tab is not a Genius song or album page the extension can read. */
+  | { status: "not-song" }
+  | {
+      status: "ready";
+      /** What the page is: a song (its ids and a search) or an album (a search only). */
+      kind: "song" | "album";
+      /** The song page's path: what the answer belongs to. */
+      path: string;
+      title: string;
+      artists: string[];
+      apple: ServiceMatch;
+      spotify: ServiceMatch;
+    };
+
+/** What the worker asks of a Spotify search page. */
+export interface SearchRow {
+  title: string;
+  artists: string[];
+  album: string;
+  /** The address on Spotify, "https://open.spotify.com/track/<id>" (or "/album/<id>" on the albums tab). */
+  href: string;
+  /** Albums tab only: the release year, "" when the card shows none. */
+  year?: string;
 }
 
 /** What the Genius page says after being asked to open the edit form. */
@@ -195,6 +282,10 @@ export type GeniusNotice =
   | { type: "genius/fill-now" }
   /** Open the song's Edit Metadata form (press that one button); the page answers with an `OpenEditState`. */
   | { type: "genius/open-edit" }
+  /** What the song page says about its song; the page answers with a `GeniusSongInfo`, or null when it is not one. */
+  | { type: "genius/song-info" }
+  /** What the album page says about its album; the page answers with a `GeniusAlbumInfo`, or null when it is not one. */
+  | { type: "genius/album-info" }
   /** The paste session started or ended, so the page knows whether the hotkeys are live. */
   | { type: "genius/paste-active"; active: boolean }
   /** An automatic run started, paused, resumed or ended, so the page loop knows whether to go on. */
@@ -212,7 +303,14 @@ function hasUrl(value: Record<string, unknown>): boolean {
 
 export function isContentRequest(value: unknown): value is ContentRequest {
   if (!isRecord(value) || !hasUrl(value)) return false;
-  if (value["type"] === "apple/detect" || value["type"] === "spotify/detect") return true;
+  if (
+    value["type"] === "apple/detect" ||
+    value["type"] === "apple/search" ||
+    value["type"] === "spotify/detect" ||
+    value["type"] === "spotify/search"
+  ) {
+    return true;
+  }
   return (
     (value["type"] === "apple/scrape" || value["type"] === "spotify/scrape") && typeof value["trackTitle"] === "string"
   );
@@ -256,9 +354,12 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
       typeof value["title"] === "string" &&
       typeof value["artist"] === "string" &&
       value["title"].length <= MAX_TEXT &&
-      value["artist"].length <= MAX_TEXT
+      value["artist"].length <= MAX_TEXT &&
+      (value["tabId"] === undefined || Number.isInteger(value["tabId"])) &&
+      (value["pageUrl"] === undefined || (typeof value["pageUrl"] === "string" && value["pageUrl"].length <= 300))
     );
   }
+  if (value["type"] === "song-matches") return Number.isInteger(value["tabId"]);
   if (!hasUrl(value)) return false;
   if (value["type"] === "detect") return value["tabId"] === undefined || Number.isInteger(value["tabId"]);
   return value["type"] === "scrape-track" && typeof value["trackTitle"] === "string";
@@ -318,7 +419,14 @@ export function isPasteStatus(value: unknown): value is PasteStatus {
 
 export function isGeniusNotice(value: unknown): value is GeniusNotice {
   if (!isRecord(value)) return false;
-  if (value["type"] === "genius/fill-now" || value["type"] === "genius/open-edit") return true;
+  if (
+    value["type"] === "genius/fill-now" ||
+    value["type"] === "genius/open-edit" ||
+    value["type"] === "genius/song-info" ||
+    value["type"] === "genius/album-info"
+  ) {
+    return true;
+  }
   if (value["type"] === "genius/auto-state") return AUTO_MODES.has(value["auto"]);
   if (value["type"] === "genius/clear") {
     return isPair(value["item"]) && (value["role"] === undefined || typeof value["role"] === "string");
@@ -418,4 +526,78 @@ export function isGeniusOpenAnswer(value: unknown): value is GeniusOpenAnswer {
 
 export function isOpenEditState(value: unknown): value is OpenEditState {
   return OPEN_EDIT_STATES.has(value);
+}
+
+export function isGeniusSongInfo(value: unknown): value is GeniusSongInfo {
+  return (
+    isRecord(value) &&
+    typeof value["path"] === "string" &&
+    typeof value["title"] === "string" &&
+    isStringArray(value["primary"]) &&
+    isStringArray(value["featured"]) &&
+    typeof value["appleId"] === "string" &&
+    typeof value["spotifyId"] === "string"
+  );
+}
+
+export function isGeniusAlbumInfo(value: unknown): value is GeniusAlbumInfo {
+  return (
+    isRecord(value) &&
+    typeof value["path"] === "string" &&
+    typeof value["title"] === "string" &&
+    isStringArray(value["primary"]) &&
+    typeof value["year"] === "string" &&
+    typeof value["tracks"] === "number" &&
+    typeof value["type"] === "string"
+  );
+}
+
+function isServiceMatch(value: unknown): value is ServiceMatch {
+  if (!isRecord(value)) return false;
+  if (value["status"] === "none") return true;
+  if (value["status"] === "failed") return typeof value["message"] === "string";
+  if (value["status"] === "several") {
+    return Array.isArray(value["matches"]) && value["matches"].length > 1 && value["matches"].every(isFoundMatch);
+  }
+  return isFoundMatch(value);
+}
+
+function isFoundMatch(value: unknown): value is FoundMatch {
+  return (
+    isRecord(value) &&
+    value["status"] === "found" &&
+    typeof value["url"] === "string" &&
+    typeof value["name"] === "string" &&
+    typeof value["release"] === "string" &&
+    (value["source"] === "genius" || value["source"] === "search")
+  );
+}
+
+export function isSongMatchesAnswer(value: unknown): value is SongMatchesAnswer {
+  if (!isRecord(value)) return false;
+  if (value["status"] === "not-song") return true;
+  return (
+    value["status"] === "ready" &&
+    (value["kind"] === "song" || value["kind"] === "album") &&
+    typeof value["path"] === "string" &&
+    typeof value["title"] === "string" &&
+    isStringArray(value["artists"]) &&
+    isServiceMatch(value["apple"]) &&
+    isServiceMatch(value["spotify"])
+  );
+}
+
+export function isSearchRows(value: unknown): value is SearchRow[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (row) =>
+        isRecord(row) &&
+        typeof row["title"] === "string" &&
+        isStringArray(row["artists"]) &&
+        typeof row["album"] === "string" &&
+        typeof row["href"] === "string" &&
+        (row["year"] === undefined || typeof row["year"] === "string"),
+    )
+  );
 }

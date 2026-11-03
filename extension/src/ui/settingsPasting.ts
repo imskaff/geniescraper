@@ -56,6 +56,20 @@ export function pastingSettings(v: ViewContext, state: PanelState): HTMLElement 
   });
   openOnGenius.checked = settings.openOnGenius;
 
+  const findPages = el("input", {
+    attrs: {
+      type: "checkbox",
+      "data-key": "setting-findPagesOnGenius",
+      "aria-describedby": "setting-findPagesOnGenius-help",
+    },
+    on: {
+      change: (event) => {
+        void v.panel.setSetting("findPagesOnGenius", (event.target as HTMLInputElement).checked);
+      },
+    },
+  });
+  findPages.checked = settings.findPagesOnGenius;
+
   // A whole number of seconds; the model keeps it in range, so an out-of-range entry snaps back on the next draw.
   const seconds = (key: "returnSeconds" | "nextTrackSeconds", id: string, min: number): HTMLInputElement => {
     const input = el("input", {
@@ -212,6 +226,21 @@ export function pastingSettings(v: ViewContext, state: PanelState): HTMLElement 
           class: "help",
           attrs: { id: "setting-openOnGenius-help" },
           text: "Start pasting, and the next-track button, first search Genius for the song and open its Edit Metadata form in a new tab. It only goes on to paste when exactly one Genius song matches; otherwise it stops and tells you. The title and artist are sent to genius.com for the search. It never saves anything.",
+        }),
+      ),
+      el(
+        "div",
+        { class: "setting" },
+        el(
+          "label",
+          { class: "check" },
+          findPages,
+          el("span", { text: "Find Apple Music and Spotify pages automatically on Genius song and album pages" }),
+        ),
+        el("p", {
+          class: "help",
+          attrs: { id: "setting-findPagesOnGenius-help" },
+          text: "Off: on a Genius song page the panel shows a button, and looks the song up only when you press it. On: it looks up as soon as the panel is open there. A look-up reads the page's own data and asks iTunes and Spotify, and may open a minimized window for a search. Only the title, artists and ids are sent.",
         }),
       ),
       setting(

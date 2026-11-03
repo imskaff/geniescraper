@@ -2,7 +2,7 @@
 // how far the attempt got; the worker's answer is the only thing it reports, and for several matches it lists plain
 // links to the Genius pages so the user opens the right one themselves.
 import { el } from "./dom";
-import { geniusMessage } from "./geniusText";
+import { geniusMessage, searchLink } from "./geniusText";
 import { type PanelState } from "./panelState";
 import { type ViewContext } from "./viewContext";
 
@@ -15,15 +15,20 @@ export function geniusButton(
   busy: boolean,
   extraClass = "",
 ): HTMLElement {
+  // A read that started from the song's own Genius page opens that page's form: nothing is searched for or opened.
+  const inPlace = state.geniusSource !== null;
   const button = v.button(
-    "Open on Genius",
+    inPlace ? "Open the edit form" : "Open on Genius",
     "quiet",
     "genius-open",
     () => void v.panel.openOnGenius(index),
     busy || state.genius.phase === "working",
   );
   if (extraClass) button.classList.add(extraClass);
-  button.setAttribute("aria-label", title ? `Open ${title} on Genius` : "Open on Genius");
+  button.setAttribute(
+    "aria-label",
+    inPlace ? "Open the edit form on this Genius page" : title ? `Open ${title} on Genius` : "Open on Genius",
+  );
   return button;
 }
 
@@ -34,7 +39,13 @@ export function geniusNotice(state: PanelState, index: number | null): HTMLEleme
   const message = geniusMessage(genius);
   if (!message) return null;
   const links =
-    genius.phase === "several" ? genius.songs : genius.phase === "none" ? [] : genius.song ? [genius.song] : [];
+    genius.phase === "several"
+      ? genius.songs
+      : genius.phase === "none"
+        ? [{ title: "Search Genius for this song", artists: [], url: searchLink(genius.artist, genius.title) }]
+        : genius.song
+          ? [genius.song]
+          : [];
   const linkText = (title: string, artists: string[]): string =>
     artists.length ? `${title} by ${artists.join(", ")}` : title;
   return el(

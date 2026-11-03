@@ -1,16 +1,22 @@
 // The worker's side of reading a music site: open a hidden tab on a validated URL, inject the provider's content
 // script, ask it one question, and always close the tab again. Failures come back as data, never as exceptions.
 import { recogniseUrl, unsupportedLinkMessage } from "../providers/registry";
+import { SPOTIFY_PROVIDER } from "../providers/spotify";
+import { spotifySearchUrl } from "../spotify/url";
+import { appleSearchUrl } from "../apple/search";
+import { APPLE_PROVIDER } from "../providers/apple";
 import type { CreditsProvider } from "../providers/types";
 import {
   isAlbumInfo,
   isPageScrape,
   isResult,
+  isSearchRows,
   type AlbumInfo,
   type ContentRequest,
   type ErrorCode,
   type PageScrape,
   type Result,
+  type SearchRow,
 } from "../shared/messages";
 import type { BrowserPorts } from "./ports";
 import { sleep } from "../apple/wait";
@@ -176,4 +182,60 @@ export async function scrapeTrack(
   return inBackgroundTab(ports, provider.openUrl(url), timing, provider, (id) =>
     ask(ports, id, message, timing, provider, isPageScrape),
   );
+}
+
+/** The browser's error when the page navigated, reloaded or closed while the reader was still answering. */
+const CHANNEL_CLOSED = /message channel closed|Receiving end does not exist|context invalidated|back\/forward cache/i;
+
+/** Wait until the tab has settled (finished loading) so a page that redirected or reloaded can be read once more. */
+async function waitSettled(ports: BrowserPorts, tabId: number, timing: ClientTiming): Promise<void> {
+  const deadline = Date.now() + timing.tabLoadMs;
+  while (Date.now() < deadline) {
+    const tab = await ports.getTab(tabId);
+    if (!tab || tab.status === "complete") return;
+    await sleep(timing.pollMs);
+  }
+}
+
+/**
+ * One search page read in a background tab. A signed-in page may redirect or reload once after it opens, which closes
+ * the channel to a reader that is still answering: then the tab is let to settle, the reader is injected again and
+ * asked once more. Any other failure, and a second closed channel, is returned as it is, with its reason.
+ */
+function searchPage(
+  ports: BrowserPorts,
+  provider: CreditsProvider,
+  url: string,
+  message: ContentRequest,
+  baseTiming: ClientTiming,
+): Promise<Result<SearchRow[]>> {
+  const timing = withOverrides(baseTiming, provider);
+  return inBackgroundTab(ports, url, timing, provider, async (id) => {
+    const first = await ask(ports, id, message, timing, provider, isSearchRows);
+    if (first.ok || !CHANNEL_CLOSED.test(first.error.message)) return first;
+    await waitSettled(ports, id, timing);
+    await ports.injectContentScript(id, provider.contentScript);
+    return ask(ports, id, message, timing, provider, isSearchRows);
+  });
+}
+
+/**
+ * The songs (or, for `tab` "albums", the albums) Spotify's search lists for `query`, read from a search page in a background tab (one page load, closed
+ * afterwards like every read). Only a title and artist ever go into the query; the caller decides which row, if any,
+ * is the wanted song.
+ */
+export function searchSpotify(
+  ports: BrowserPorts,
+  query: string,
+  timing: ClientTiming,
+  tab: "tracks" | "albums" = "tracks",
+): Promise<Result<SearchRow[]>> {
+  const url = spotifySearchUrl(query, tab);
+  return searchPage(ports, SPOTIFY_PROVIDER, url, { type: "spotify/search", url }, timing);
+}
+
+/** The songs Apple Music's search page lists for `query`, read in a background tab, as for `searchSpotify`. */
+export function searchApple(ports: BrowserPorts, query: string, timing: ClientTiming): Promise<Result<SearchRow[]>> {
+  const url = appleSearchUrl(query);
+  return searchPage(ports, APPLE_PROVIDER, url, { type: "apple/search", url }, timing);
 }
