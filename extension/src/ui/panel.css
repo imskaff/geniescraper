@@ -259,6 +259,12 @@ label {
   min-height: 13em;
 }
 
+/* A live region with nothing in it yet (the key's result line) must stay in the page for screen readers, but take no
+   room, or the gaps either side of it add up to a hole. */
+.help:empty {
+  position: absolute;
+}
+
 h2 + .help {
   margin-bottom: var(--space-3);
 }
@@ -505,6 +511,8 @@ h2 + .help {
   height: 18px;
   /* No browser margin, so the label text starts exactly where a hint indented under it (18 + 8) does. */
   margin: 0;
+  /* A long label wraps instead of squeezing the box. */
+  flex: none;
   /* The link color, not the yellow: a checked box has to stand out from the page in both schemes. */
   accent-color: var(--link);
 }
@@ -1499,6 +1507,11 @@ main > .help {
 .settings-card .setting-label {
   margin: 0;
   font-weight: 600;
+}
+
+/* The card already spaces its children with a gap, so a row's own bottom margin would double it. */
+.settings-card .row {
+  margin: 0;
 }
 
 .settings-card .stack {

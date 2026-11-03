@@ -59,3 +59,15 @@ describe("ticks and their hints", () => {
     expect(spacing()).toContainEqual({ selector: ".check input", property: "margin", value: "0" });
   });
 });
+
+describe("settings cards", () => {
+  it("does not let a long label squeeze the checkbox", () => {
+    expect(spacing().length).toBeGreaterThan(0);
+    expect(css).toMatch(/\.check input \{[^}]*flex: none;/);
+  });
+
+  it("takes no room for an empty hint, and does not double a row's margin inside a card's gap", () => {
+    expect(css).toMatch(/\.help:empty \{\s*position: absolute;/);
+    expect(spacing()).toContainEqual({ selector: ".settings-card .row", property: "margin", value: "0" });
+  });
+});
