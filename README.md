@@ -125,6 +125,7 @@ It never presses Save: you check the form and save it yourself.
 
 ### Connect the desktop app to the extension
 
+Pairing works with Chrome and Edge. **Firefox is not supported for desktop app pairing.**
 Pair them once; the pairing is remembered. This is optional but recommended: it gives the desktop app Auto-paste, exact artist matching and the list of Apple Music pages you have open.
 
 1. In the desktop app, press **Connect browser extension** (on the start screen, or at the top of **Settings**). A code like `ABCD-EFGH` appears, with a **Copy** button.
