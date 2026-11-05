@@ -103,7 +103,8 @@ class TestGeniusQueue:
             ("Programming", "Programmer"),
             ("Drum Programming", "Drum Programmer"),
             ("Mixing Engineer", "Mixing Engineer"),
-            ("Editing Engineer", "Editing Engineer"),
+            ("Audio Editor", "Audio Editor"),
+            ("Assistant Audio Editor", "Assistant Audio Editor"),
         ],
     )
     def test_role_steps_use_genius_names(self, apple, genius):

@@ -3,8 +3,9 @@
 //
 // Measured on the live Genius form (the roles the golden credits use): Genius has "Programmer",
 // "Drum Programmer", "Additional Production" and "Vocal Engineer", and no "Programming", "Drum Programming",
-// "Additional Producer" or "Vocal Recording Engineer". It has nothing close to "Editing Engineer", so that role is
-// left as it is and the user decides.
+// "Additional Producer" or "Vocal Recording Engineer".
+// "Editing Engineer" is not on its list either, but ROLE_MAP maps it to "Audio Editor" (the page lists that name with
+// the AKA Editing Engineer), so it never needs a rename here.
 //
 // The desktop app maps the Programming family the same way (scraper/roles.py), so both apps type the same name; the
 // two other roles above are mapped here only.

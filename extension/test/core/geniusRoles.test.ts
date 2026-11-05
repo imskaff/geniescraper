@@ -27,8 +27,8 @@ describe("geniusRole", () => {
     "Assistant Mixing Engineer",
     "Phonographic Copyright",
     "Copyright",
-    // No Genius equivalent was found: left as it is, for the user to decide.
-    "Editing Engineer",
+    // No Genius equivalent: left as it is, for the user to decide.
+    "Film Director",
     // Not a role that ends in the word.
     "Programming Assistant",
     "Programmer",

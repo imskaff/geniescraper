@@ -285,7 +285,7 @@ Measured on the live Genius edit form (signed in, nothing saved):
   Decision (the owner chose it): choose only an exact match, ignoring case, accents and symbols; otherwise leave the typed text and the open suggestions for the user and say so.
   `Create "..."` is never chosen.
 - Genius's copyright roles are named "Phonographic Copyright ℗" and "Copyright ©", so matching ignores symbols.
-- Three Apple roles have no Genius role at all ("Vocal Recording Engineer", "Programming", "Editing Engineer"); those steps are left for the user, who can Skip them.
+- Three Apple roles had no Genius role of that name ("Vocal Recording Engineer", "Programming", "Editing Engineer"); later they were mapped to Vocal Engineer, Programmer and Audio Editor (see "Genius role names" below), so they are no longer left for the user.
   Waiting for suggestions that never come costs about 4 seconds.
 - Fields are targeted directly, so the desktop app's Auto-Tab tab counts are not needed; the plain URL inputs get a value and input/change events and never a key press.
 - Rows: a role goes into the last row if its role is still empty, otherwise "Add additional credits" is clicked; artists and copyright labels go into the last row.
@@ -342,7 +342,7 @@ From the owner's first try of the extension:
 - **Start pasting in the header.** It sits next to Settings and the header is sticky, so the way on and the way back are never a scroll away; it is hidden until a track's credits are in, disabled while reading, and its accessible name includes the track.
   It has a soft yellow halo that is always on plus a slow pulse that is dropped under reduced motion: this machine reports reduced motion (Windows animations off), where a pulse alone would have been invisible.
 - **Genius role names.** Apple's "Programming" is "Programmer" on Genius.
-  Checked on the live form against every role in the golden credits: Genius has Programmer, Drum Programmer, Additional Production and Vocal Engineer, and nothing for Editing Engineer.
+  Checked on the live form against every role in the golden credits: Genius has Programmer, Drum Programmer, Additional Production and Vocal Engineer, and nothing named Editing Engineer; on 2026-11-05 the owner decided to map "Editing Engineer" to "Audio Editor" and "Assistant Editing Engineer" to "Assistant Audio Editor" in `ROLE_MAP` (Genius's standardized-roles page lists Audio Editor with the AKA Editing Engineer; not re-measured on the live form).
   `geniusRole` maps "Programming" and "<X> Programming" to "... Programmer", "Additional Producer" to "Additional Production" and "Vocal Recording Engineer" to "Vocal Engineer"; the queue shows, and the extension types, the Genius name.
   Later the desktop app was fixed the same way for the Programming family: `scraper/roles.py` now maps "Programming" and "<X> Programming" to "Programmer" and "<X> Programmer" (the role values in four golden files were updated by hand to match, and the exports regenerated).
   The extension still maps "Additional Producer" and "Vocal Recording Engineer" itself; the desktop app does not.

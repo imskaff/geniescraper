@@ -157,7 +157,7 @@ describe("when Genius has no exact match", () => {
   it("carries on when the user picks a different role than Apple's for a role Genius does not have", async () => {
     const { fake, page, stored, begin } = setup({ roles: ["Vocal Engineer"] });
     await begin([
-      ["role", "Editing Engineer"],
+      ["role", "Film Director"],
       ["artist", "FINNEAS"],
       ["youtube_url", URL],
     ]);
