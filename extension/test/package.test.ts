@@ -14,7 +14,7 @@ interface ZipEntry {
 }
 declare function createZip(entries: ZipEntry[]): Buffer;
 declare function crc32(data: Uint8Array): number;
-declare function validateDist(dist: string, version?: string): string[];
+declare function validateDist(dist: string, version?: string, options?: { firefox?: boolean }): string[];
 declare function pngSize(buffer: Buffer): { width: number; height: number } | null;
 declare const MAX_DESCRIPTION_CHARS: number;
 
@@ -216,6 +216,62 @@ describe("the package check", () => {
   it("fails a package over the size limit", () => {
     const problems = validateDist(dist({ "ui/panel.js": "x".repeat(11 * 1024 * 1024) }), "1.2.3");
     expect(problems.join("\n")).toContain("bytes; the limit");
+  });
+});
+
+describe("the Firefox package check", () => {
+  const GECKO = { id: "a@b", strict_min_version: "140.0", data_collection_permissions: { required: ["none"] } };
+  const FIREFOX_MANIFEST = {
+    ...GOOD_MANIFEST,
+    side_panel: undefined,
+    background: { scripts: ["background/worker.js"] },
+    sidebar_action: { default_panel: "ui/panel.html" },
+    browser_specific_settings: { gecko: GECKO },
+  };
+  const firefox = (manifest: object, files: Record<string, string | Buffer | null> = {}): string =>
+    validateDist(dist({ "manifest.json": JSON.stringify(manifest), ...files }), "1.2.3", { firefox: true }).join("\n");
+
+  it("passes a good Firefox package", () => {
+    expect(firefox(FIREFOX_MANIFEST)).toBe("");
+  });
+
+  it.each([
+    [
+      "no gecko id",
+      { ...FIREFOX_MANIFEST, browser_specific_settings: { gecko: { ...GECKO, id: undefined } } },
+      "gecko.id",
+    ],
+    [
+      "no minimum version",
+      { ...FIREFOX_MANIFEST, browser_specific_settings: { gecko: { ...GECKO, strict_min_version: undefined } } },
+      "strict_min_version",
+    ],
+    [
+      "no data declaration",
+      {
+        ...FIREFOX_MANIFEST,
+        browser_specific_settings: { gecko: { ...GECKO, data_collection_permissions: undefined } },
+      },
+      "data_collection_permissions",
+    ],
+    [
+      "a service worker",
+      { ...FIREFOX_MANIFEST, background: { service_worker: "background/worker.js" } },
+      "background.scripts",
+    ],
+    ["no sidebar", { ...FIREFOX_MANIFEST, sidebar_action: undefined }, "sidebar_action"],
+    ["a version with a letter", { ...FIREFOX_MANIFEST, version: "1.2.3f" }, "is not a Chrome version"],
+  ])("fails %s", (_name, manifest, words) => {
+    expect(firefox(manifest)).toContain(words);
+  });
+
+  it("fails a missing event page file or sidebar page", () => {
+    expect(firefox(FIREFOX_MANIFEST, { "background/worker.js": null })).toContain("background/worker.js, which");
+    expect(firefox(FIREFOX_MANIFEST, { "ui/panel.html": null })).toContain("ui/panel.html, which");
+  });
+
+  it("does not ask the Chrome package for Firefox settings", () => {
+    expect(validateDist(dist(), "1.2.3")).toEqual([]);
   });
 });
 

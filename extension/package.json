@@ -10,6 +10,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "build:safari": "node scripts/build.mjs --safari",
+    "build:firefox": "node scripts/build.mjs --firefox",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
@@ -21,7 +22,9 @@
     "package": "node scripts/package.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build",
+    "lint:firefox": "npm run build:firefox && web-ext lint --source-dir dist-firefox",
+    "live:firefox": "node scripts/live-firefox.mjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -33,6 +36,7 @@
     "prettier": "3.9.10",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.1",
-    "vitest": "5.0.5"
+    "vitest": "5.0.5",
+    "web-ext": "10.8.0"
   }
 }

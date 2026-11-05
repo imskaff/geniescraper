@@ -34,7 +34,12 @@ const FORBIDDEN_CODE = [
   [/document\.write\s*\(/, "document.write()"],
 ];
 
-export function validateDist(dist, packageVersion) {
+/**
+ * @param {string} dist the built folder
+ * @param {string} [packageVersion] package.json's version, which the manifest must equal
+ * @param {{ firefox?: boolean }} [options] firefox: also check what addons.mozilla.org needs
+ */
+export function validateDist(dist, packageVersion, options = {}) {
   const problems = [];
   const problem = (text) => problems.push(text);
   let files;
@@ -100,10 +105,25 @@ export function validateDist(dist, packageVersion) {
       problem(`Icon ${path} is ${dimensions.width}x${dimensions.height}, not ${size}x${size}.`);
   }
 
+  if (options.firefox) {
+    const gecko = manifest.browser_specific_settings?.gecko;
+    if (typeof gecko?.id !== "string" || !gecko.id) problem("browser_specific_settings.gecko.id is missing.");
+    if (typeof gecko?.strict_min_version !== "string") problem("gecko.strict_min_version is missing.");
+    const declared = gecko?.data_collection_permissions;
+    if (typeof declared !== "object" || declared === null || !Array.isArray(declared.required))
+      problem("gecko.data_collection_permissions (with a required list) is missing.");
+    if (!manifest.background?.scripts?.length)
+      problem("background.scripts is missing (Firefox has no service workers).");
+    if (manifest.background?.service_worker) problem("background.service_worker must not be in the Firefox manifest.");
+    if (!manifest.sidebar_action?.default_panel) problem("sidebar_action.default_panel is missing.");
+  }
+
   // Everything the manifest points at must be in the package.
   const referenced = [
     manifest.background?.service_worker,
+    ...(manifest.background?.scripts ?? []),
     manifest.side_panel?.default_path,
+    manifest.sidebar_action?.default_panel,
     ...(manifest.content_scripts ?? []).flatMap((script) => [...(script.js ?? []), ...(script.css ?? [])]),
     ...Object.values(manifest.action?.default_icon ?? {}),
   ].filter(Boolean);

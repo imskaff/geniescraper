@@ -26,7 +26,7 @@ const FORBIDDEN_SYNTAX = [
 ];
 
 export default tseslint.config(
-  { ignores: ["dist/", "dist-safari/", "node_modules/", "test/vectors.json"] },
+  { ignores: ["dist/", "dist-safari/", "dist-firefox/", "node_modules/", "test/vectors.json"] },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   {
@@ -51,6 +51,16 @@ export default tseslint.config(
         Buffer: "readonly",
         URL: "readonly",
       },
+    },
+  },
+  {
+    // A Node socket's write() sends bytes to Firefox's Marionette port; the markup rule is about DOM nodes.
+    files: ["scripts/lib/marionette.mjs"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        ...FORBIDDEN_SYNTAX.filter((rule) => !rule.message.startsWith("Markup injection")),
+      ],
     },
   },
 );

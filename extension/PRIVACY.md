@@ -86,6 +86,17 @@ It does not send the Genius page's content, your Genius account, cookies, passwo
 Nothing on this connection leaves your computer, and the extension never connects until you pair.
 You can unpair at any time, which deletes the secret.
 
+## Firefox data declaration
+
+Firefox asks every add-on to declare, in its manifest, the kinds of data it transmits (`data_collection_permissions`).
+The Firefox build declares one required type, `websiteContent`, and no optional types.
+Why: the only data that leaves the browser is song titles, artist names and catalog ids that the extension read from the Apple Music, Spotify or Genius page you are on.
+Mozilla defines `websiteContent` as anything visible on a website, which is exactly that text.
+It goes to Genius, iTunes and Spotify in the normal flow (see the table above), and to Deezer and YouTube only if you turn those features on.
+Those optional services receive the same kind of data, so they add no second type; they are still off until you allow them.
+Nothing else is declared: no search history, no browsing history (page addresses are not sent, only the ids and titles read from them), no account data, no personal information.
+The link to the desktop app is not built for Firefox, so it is not declared.
+
 ## What the extension does not do
 
 - It does not collect, store or transmit personal data, browsing history, or anything about you.

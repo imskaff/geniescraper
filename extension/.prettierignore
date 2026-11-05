@@ -8,3 +8,4 @@ test/spotify/
 data/labels.json
 test/genius/pages/
 test/apple/search-page.html
+dist-firefox/

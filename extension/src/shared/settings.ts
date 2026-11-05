@@ -50,6 +50,33 @@ export const HOTKEY_CHOICES = ["F2", "F4", "F7", "F8", "F9"] as const;
 /** Choices for reading tracks at once; 0 stands for all of them. Three is the default: a good speed-up that stays modest. */
 export const PARALLEL_CHOICES = [1, 2, 3, 5, 0] as const;
 
+/**
+ * What tells Firefox from the other browsers. The user agent is used because it is the one signal every part of the
+ * extension has: content scripts (which read these settings on Genius) do not get Firefox's `sidebarAction`.
+ */
+export interface BrowserHost {
+  firefox?: boolean;
+}
+
+function currentHost(): BrowserHost {
+  return { firefox: typeof navigator !== "undefined" && /\bFirefox\//.test(navigator.userAgent) };
+}
+
+/** True in Firefox, which handles F7 (caret browsing) itself before a page ever sees the key. */
+export function firefoxKeepsF7(host: BrowserHost = currentHost()): boolean {
+  return host.firefox === true;
+}
+
+/**
+ * The keys a fresh install gets: F8 next and F7 back, except in Firefox, where F7 never reaches the page: there F9 is
+ * next and F8 is back. One pair per browser, never the same key twice.
+ */
+export function defaultHotkeys(host: BrowserHost = currentHost()): { next: string; back: string } {
+  return firefoxKeepsF7(host)
+    ? { next: "F9", back: "F8" }
+    : { next: DEFAULT_SETTINGS.nextHotkey, back: DEFAULT_SETTINGS.backHotkey };
+}
+
 export const WAIT_RANGE = { min: 0.2, max: 3 } as const;
 
 /** The pause between fields in an automatic run: short enough to feel quick, long enough not to hammer Genius. */
@@ -87,7 +114,7 @@ type BooleanKey = {
 }[keyof Settings];
 
 /** Every field of `raw` that is valid replaces its default; anything else is ignored. */
-export function normaliseSettings(raw: unknown): Settings {
+export function normaliseSettings(raw: unknown, host: BrowserHost = currentHost()): Settings {
   const source = typeof raw === "object" && raw !== null ? (raw as Record<string, unknown>) : {};
   const flag = (key: BooleanKey): boolean => {
     const value = source[key];
@@ -97,7 +124,9 @@ export function normaliseSettings(raw: unknown): Settings {
     const value = source[key];
     return typeof value === "string" && (HOTKEY_CHOICES as readonly string[]).includes(value)
       ? value
-      : DEFAULT_SETTINGS[key];
+      : key === "backHotkey"
+        ? defaultHotkeys(host).back
+        : defaultHotkeys(host).next;
   };
   // Someone who already has saved settings from before the set-up existed has been using the extension: they are not
   // welcomed as a new user. Only an empty store, or one that says so, shows the set-up.
@@ -137,8 +166,7 @@ export function normaliseSettings(raw: unknown): Settings {
   let backHotkey = hotkey("backHotkey");
   // One key cannot do two things: fall back to the defaults rather than guess which was meant.
   if (nextHotkey === backHotkey) {
-    nextHotkey = DEFAULT_SETTINGS.nextHotkey;
-    backHotkey = DEFAULT_SETTINGS.backHotkey;
+    ({ next: nextHotkey, back: backHotkey } = defaultHotkeys(host));
   }
   return {
     pasteMode,

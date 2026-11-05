@@ -83,20 +83,34 @@ Each can also be run alone:
 The tests need no network and no browser.
 They read the saved Apple Music pages in `../tests/fixtures/` and the golden files in `../tests/golden/`, which the desktop app's tests share.
 
+### Firefox
+
+```bash
+npm run build:firefox
+npm run lint:firefox
+```
+
+`build:firefox` writes the Firefox build to `dist-firefox/` (an event page, the sidebar instead of the side panel, and the add-on id and data declaration Firefox needs).
+`lint:firefox` builds it and runs `web-ext lint` on it; it reports no errors and two known warnings (Android's minimum version for the data declaration, which is out of scope, and `sidePanel`, which the worker only calls where it exists).
+To try it by hand, open `about:debugging#/runtime/this-firefox`, choose Load Temporary Add-on and pick `dist-firefox/manifest.json`.
+The add-on id `geniescraper@imskaff` can never change once published.
+The plan and findings are in [`../docs/firefox-support.md`](../docs/firefox-support.md).
+
 ### Live checks (optional)
 
 These drive a real Chrome against the live sites, so they send real traffic and are never run by CI.
 Each takes `--chrome <path to chrome.exe>` or the `CHROME_PATH` environment variable.
 
-| Command                             | What it checks                                                                                                                                                                                                           |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `npm run live:hidden-tab`           | Reading Apple Music in a background tab.                                                                                                                                                                                 |
-| `npm run live:panel`                | The panel against live Apple Music.                                                                                                                                                                                      |
-| `npm run live:sidepanel`            | The side panel opening and its layout.                                                                                                                                                                                   |
-| `npm run live:parallel`             | Reading several tracks at once.                                                                                                                                                                                          |
-| `npm run live:genius`               | The fill against a Genius edit form (needs you signed in); `-- --mode auto` runs it automatically and checks every pause. Use the Playwright Chromium, not branded Chrome.                                               |
-| `node scripts/live-matches.mjs`     | The card that lists a Genius song's Apple Music and Spotify pages, on five real Genius pages (`--albums`: on 14 real album pages), one at a time (a minimized window; Genius shows a human check to a headless browser). |
-| `node scripts/live-youtube-api.mjs` | The YouTube API lookup, with your own key in `YOUTUBE_API_KEY`.                                                                                                                                                          |
+| Command                             | What it checks                                                                                                                                                                                                                                                                                                                                               |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run live:hidden-tab`           | Reading Apple Music in a background tab.                                                                                                                                                                                                                                                                                                                     |
+| `npm run live:panel`                | The panel against live Apple Music.                                                                                                                                                                                                                                                                                                                          |
+| `npm run live:sidepanel`            | The side panel opening and its layout.                                                                                                                                                                                                                                                                                                                       |
+| `npm run live:parallel`             | Reading several tracks at once.                                                                                                                                                                                                                                                                                                                              |
+| `npm run live:genius`               | The fill against a Genius edit form (needs you signed in); `-- --mode auto` runs it automatically and checks every pause. Use the Playwright Chromium, not branded Chrome.                                                                                                                                                                                   |
+| `npm run live:firefox`              | The Firefox build in a real headless Firefox (140 or newer, found in the usual folders or via `--firefox`/`FIREFOX_PATH`): one Apple Music and one Spotify album read, hidden reader windows, the Spotify guard, the sidebar, and F8/F9 on a Genius page. Unattended: it uses no mouse or keyboard of the desktop and shows no window. About six page loads. |
+| `node scripts/live-matches.mjs`     | The card that lists a Genius song's Apple Music and Spotify pages, on five real Genius pages (`--albums`: on 14 real album pages), one at a time (a minimized window; Genius shows a human check to a headless browser).                                                                                                                                     |
+| `node scripts/live-youtube-api.mjs` | The YouTube API lookup, with your own key in `YOUTUBE_API_KEY`.                                                                                                                                                                                                                                                                                              |
 
 ## Permissions
 
