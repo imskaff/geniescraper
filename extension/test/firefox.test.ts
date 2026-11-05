@@ -11,7 +11,11 @@ interface FirefoxManifest {
   sidebar_action: unknown;
   permissions: string[];
   browser_specific_settings: {
-    gecko: { id: string; strict_min_version: string; data_collection_permissions: { required: string[] } };
+    gecko: {
+      id: string;
+      strict_min_version: string;
+      data_collection_permissions: { required: string[]; optional?: string[] };
+    };
   };
 }
 declare function toFirefoxManifest(manifest: unknown): FirefoxManifest;
@@ -42,6 +46,25 @@ describe("Firefox manifest", () => {
     expect(gecko.id).toBe(GECKO_ID);
     expect(gecko.strict_min_version).toBe(FIREFOX_MIN_VERSION);
     expect(Array.isArray(gecko.data_collection_permissions.required)).toBe(true);
+  });
+
+  it("declares real Mozilla data types and never claims to collect nothing", () => {
+    const allowed = new Set([
+      "personallyIdentifyingInfo",
+      "healthInfo",
+      "financialAndPaymentInfo",
+      "authenticationInfo",
+      "personalCommunications",
+      "locationInfo",
+      "browsingActivity",
+      "websiteContent",
+      "websiteActivity",
+      "searchTerms",
+      "bookmarksInfo",
+    ]);
+    const { required, optional } = firefox.browser_specific_settings.gecko.data_collection_permissions;
+    expect(required.length).toBeGreaterThan(0);
+    for (const type of [...required, ...(optional ?? [])]) expect(allowed.has(type)).toBe(true);
   });
 
   it("keeps hosts, content scripts and everything else as they are", () => {

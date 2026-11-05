@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { normaliseSession, EMPTY_SESSION } from "../../src/shared/session";
-import { DEFAULT_SETTINGS, normaliseSettings, queueOptions } from "../../src/shared/settings";
+import {
+  DEFAULT_SETTINGS,
+  defaultBackHotkey,
+  firefoxKeepsF7,
+  normaliseSettings,
+  queueOptions,
+} from "../../src/shared/settings";
 import { loadSession, loadSettings } from "../../src/shared/storage";
 import { ALBUM, fakeEnv, memoryStore } from "./fakes";
 
@@ -239,4 +245,31 @@ describe("the countdown settings", () => {
       expect([settings.returnSeconds, settings.nextTrackSeconds]).toEqual([30, 0]);
     },
   );
+});
+
+describe("the back hotkey default per browser", () => {
+  const firefox = { firefox: true };
+
+  it("is F7 in Chrome, Edge and Safari and F9 in Firefox, where F7 never reaches the page", () => {
+    expect(normaliseSettings({}, {}).backHotkey).toBe("F7");
+    expect(normaliseSettings({}, firefox).backHotkey).toBe("F9");
+    expect(defaultBackHotkey({})).toBe("F7");
+    expect(defaultBackHotkey(firefox)).toBe("F9");
+  });
+
+  it("leaves a saved choice alone, even F7 in Firefox", () => {
+    expect(normaliseSettings({ backHotkey: "F7", nextHotkey: "F8" }, firefox).backHotkey).toBe("F7");
+    expect(normaliseSettings({ backHotkey: "F2" }, firefox).backHotkey).toBe("F2");
+  });
+
+  it("falls back to the browser's default when both keys are the same", () => {
+    const same = normaliseSettings({ nextHotkey: "F4", backHotkey: "F4" }, firefox);
+    expect([same.nextHotkey, same.backHotkey]).toEqual(["F8", "F9"]);
+  });
+
+  it("only treats Firefox as Firefox", () => {
+    expect(firefoxKeepsF7({})).toBe(false);
+    expect(firefoxKeepsF7(firefox)).toBe(true);
+    expect(firefoxKeepsF7({ firefox: false })).toBe(false);
+  });
 });

@@ -63,10 +63,16 @@ The pass, using a public album with several tracks and a Genius song you can ope
 
 Write down the date, the browser and system versions, the extension version and anything odd, in the release notes or the pull request.
 
+### Firefox build
+
+`npm run lint:firefox` builds `dist-firefox/` and runs `web-ext lint` on it; run it before any Firefox submission.
+The add-on id `geniescraper@imskaff` is permanent once published (`GECKO_ID` in `scripts/lib/firefox-manifest.mjs`).
+Publishing to addons.mozilla.org is not set up yet (see `../docs/firefox-support.md`, slice 6).
+
 ### Live checks (optional, not part of `npm run check`)
 
 These send real traffic to Apple Music, Genius and YouTube, so run them sparingly and never in a loop.
-`npm run live:panel`, `live:sidepanel`, `live:hidden-tab`, `live:parallel` and `live:genius`, and `node scripts/live-youtube-api.mjs` with your own key.
+`npm run live:panel`, `live:sidepanel`, `live:hidden-tab`, `live:parallel`, `live:genius` and `live:firefox` (headless Firefox, unattended), and `node scripts/live-youtube-api.mjs` with your own key.
 See the [README](README.md) for what each does and how to point it at Chrome.
 CI also runs the repository's live Apple Music tests weekly, apart from pushes, so markup changes show up without blocking work.
 

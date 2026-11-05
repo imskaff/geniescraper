@@ -2,7 +2,7 @@
 // opens and from Settings ("Run the setup again"). It only reads and changes what Settings already holds; it adds no
 // state of its own except which step is showing. Every control here is one the Settings screen also has, so what is
 // chosen here can be changed there at any time.
-import { HOTKEY_CHOICES, PARALLEL_CHOICES, type Settings } from "../shared/settings";
+import { HOTKEY_CHOICES, PARALLEL_CHOICES, firefoxKeepsF7, type Settings } from "../shared/settings";
 import { el } from "./dom";
 import { SETUP_STEPS, type PanelController, type PanelState } from "./controller";
 
@@ -251,7 +251,9 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
           panel,
           "backHotkey",
           "Key that goes back one step",
-          "Pressed on the Genius page.",
+          firefoxKeepsF7()
+            ? "Pressed on the Genius page. Firefox keeps F7 for itself, so pick another key than F7."
+            : "Pressed on the Genius page.",
           HOTKEY_CHOICES,
           String,
           state.settings.backHotkey,

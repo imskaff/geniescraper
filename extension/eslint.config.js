@@ -53,4 +53,14 @@ export default tseslint.config(
       },
     },
   },
+  {
+    // A Node socket's write() sends bytes to Firefox's Marionette port; the markup rule is about DOM nodes.
+    files: ["scripts/lib/marionette.mjs"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        ...FORBIDDEN_SYNTAX.filter((rule) => !rule.message.startsWith("Markup injection")),
+      ],
+    },
+  },
 );
