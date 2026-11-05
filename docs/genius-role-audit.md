@@ -150,7 +150,7 @@ Nothing was checked on the live Genius form, so every alias below rests on the p
 | Chitarrone | Theorbo | Applied: the page lists it as an AKA and the instrument is the Roman theorbo. |
 | Bukkehorn | Goat Horn | Applied: the page lists `Bukkehorn (Norwegian)` as an AKA of Goat Horn, and the name means goat horn. |
 | Vocal Recording Engineer | Recording Engineer | Kept as `Vocal Engineer`: that name was measured on the live form and is listed too; the narrower role keeps the vocal meaning. |
-| Editing Engineer | Audio Editor | Left for the user for now: the page does list the AKA, but the earlier live measurement found nothing close and the autoPage test relies on it. Re-measure on the form before switching. |
+| Editing Engineer | Audio Editor | Applied (owner decision, 2026-11-05): the page lists Audio Editor with the AKA Editing Engineer, and Genius has no role named Editing Engineer. Not re-measured on the live form. Assistant Editing Engineer now maps to Assistant Audio Editor the same way. |
 | Rap | Vocals | Left out on purpose: drops the rap information. |
 | Gang Vocals | Additional Vocals | Left out on purpose: wider than additional. |
 | Score Editor | Preparer | Left out: not obviously the same job. |
@@ -173,7 +173,7 @@ Immersive Audio Engineer to Immersive Engineer (the page's AKAs are surround and
 Not applied, flagged for the owner:
 Illustrator to Illustration, Tap Dancer to Tap Dance and Cover Photography to Photography (person versus activity naming, and the cover scope is lost);
 Beats to Beatmaker (unclear what Apple means); Co-Executive Producer to Executive Producer, Studio Technician and Equipment Technician to Technician (each drops a qualifier);
-Post Production Mixing Engineer to Post Mixing Engineer and Assistant Editing Engineer to Assistant Audio Editor (the second depends on the Editing Engineer decision);
+Post Production Mixing Engineer to Post Mixing Engineer;
 Engraving to Engraving (Artwork) (Apple means music engraving, the listed role is artwork).
 
 ### Scan of the rest of the unlisted targets

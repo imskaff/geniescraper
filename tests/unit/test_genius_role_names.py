@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 
 from scraper.apple_music import _SKIP_ROLES
+from scraper.models import _PRODUCED_BY_ROLES, _WRITTEN_BY_ROLES
 from scraper.roles import ROLE_MAP
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
@@ -84,3 +85,32 @@ def test_unlisted_targets_are_not_a_respelling_of_a_listed_role():
 )
 def test_corrected_targets(apple, genius):
     assert ROLE_MAP[apple] == genius
+
+
+def test_editing_engineer_is_typed_as_audio_editor():
+    """Genius has no "Editing Engineer"; its page lists Audio Editor with that AKA (owner decision, 2026-11-05)."""
+    assert ROLE_MAP["editing engineer"] == "Audio Editor"
+    assert ROLE_MAP["assistant editing engineer"] == "Assistant Audio Editor"
+    assert {"Audio Editor", "Assistant Audio Editor"} <= LISTED
+    assert not {"Editing Engineer", "Assistant Editing Engineer"} & TARGETS
+
+
+# Roles that fill the Written By and Produced By fields are never typed into a credit row, so they have no Genius role.
+FIELD_ROLES = _WRITTEN_BY_ROLES | _PRODUCED_BY_ROLES
+
+
+def _golden_roles() -> set[str]:
+    roles: set[str] = set()
+    for path in sorted((FIXTURES.parent / "golden").glob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and "credits" in data:
+            roles |= {c["role"] for c in data["credits"]}
+    return roles
+
+
+def test_every_golden_role_is_typed_as_a_listed_genius_role():
+    from assistant.flow import genius_role
+
+    typed = {r: genius_role(r) for r in _golden_roles() if r.lower() not in FIELD_ROLES}
+    unlisted = {r: t for r, t in typed.items() if t not in LISTED}
+    assert not unlisted, f"golden roles whose typed name is not on Genius's list: {unlisted}"

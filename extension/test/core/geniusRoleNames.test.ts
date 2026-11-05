@@ -1,7 +1,8 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { geniusRole } from "../../src/core/geniusRoles";
 import { roleMap } from "../../src/core/roles";
 import { ROLE_TABLES } from "../../src/spotify/roleTables";
 import { spotifyRoleTargets } from "../../src/spotify/roles";
@@ -64,5 +65,47 @@ describe("role names against Genius's standardized list", () => {
   it("keeps the reviewed set free of stale entries", () => {
     expect([...UNLISTED].filter((t) => LISTED.has(t))).toEqual([]);
     expect([...UNLISTED].filter((t) => !appleTargets.includes(t))).toEqual([]);
+  });
+});
+
+// Roles that fill the Written By and Produced By fields are never typed into a credit row, so they have no Genius role
+// (the same sets as the Python models).
+const FIELD_ROLES = new Set([
+  "songwriter",
+  "composer",
+  "lyricist",
+  "lyrics",
+  "co-writer",
+  "writer",
+  "producer",
+  "co-producer",
+]);
+
+function goldenRoles(): Set<string> {
+  const dir = join(FIXTURES, "..", "golden");
+  const roles = new Set<string>();
+  for (const file of readdirSync(dir).filter((f) => f.endsWith(".json"))) {
+    const data = JSON.parse(readFileSync(join(dir, file), "utf-8")) as { credits?: { role: string }[] };
+    for (const credit of data.credits ?? []) roles.add(credit.role);
+  }
+  return roles;
+}
+
+describe("Editing Engineer and the golden credits", () => {
+  it("types Editing Engineer as Audio Editor, which Genius lists with that AKA", () => {
+    const map = roleMap();
+    expect(map["editing engineer"]).toBe("Audio Editor");
+    expect(map["assistant editing engineer"]).toBe("Assistant Audio Editor");
+    expect(LISTED.has("Audio Editor") && LISTED.has("Assistant Audio Editor")).toBe(true);
+    expect(appleTargets).not.toContain("Editing Engineer");
+    expect(appleTargets).not.toContain("Assistant Editing Engineer");
+  });
+
+  it("types every golden role as a role Genius lists", () => {
+    const unlisted = [...goldenRoles()]
+      .filter((role) => !FIELD_ROLES.has(role.toLowerCase()))
+      .map((role) => geniusRole(role))
+      .filter((typed) => !LISTED.has(typed));
+    expect(unlisted).toEqual([]);
   });
 });
