@@ -174,6 +174,10 @@ export interface FakeHosts extends HostPermissions {
   allow: boolean;
   /** Change a permission from outside, as chrome://extensions does, and tell the listeners. */
   changeElsewhere(host: OptionalHost, on: boolean): void;
+  /** Required sites the user has taken access away from (Firefox); empty by default, as in Chrome. */
+  missing: string[];
+  /** Whether the browser grants a request for them. */
+  allowRequired: boolean;
 }
 
 export function fakeHosts(initial: Partial<Record<OptionalHost, boolean>> = {}): FakeHosts {
@@ -182,6 +186,14 @@ export function fakeHosts(initial: Partial<Record<OptionalHost, boolean>> = {}):
     state: { youtube: false, youtubeApi: false, ...initial },
     log: [],
     allow: true,
+    missing: [],
+    allowRequired: true,
+    missingRequired: () => Promise.resolve([...hosts.missing]),
+    grantRequired(origins) {
+      hosts.log.push(`grant:${origins.join(",")}`);
+      if (hosts.allowRequired) hosts.missing = [];
+      return Promise.resolve(hosts.allowRequired);
+    },
     granted: () => Promise.resolve({ ...hosts.state }),
     request(host) {
       hosts.log.push(`request:${host}`);
@@ -226,6 +238,8 @@ export function fakeEnv(
     settings?: unknown;
     session?: unknown;
     hosts?: Partial<Record<OptionalHost, boolean>>;
+    /** Required sites the user has taken away from the extension (Firefox). */
+    missingHosts?: string[];
     youtubeKey?: string;
     /** Start with an empty settings store, as a new user's browser has, so the set-up shows. */
     firstRun?: boolean;
@@ -244,7 +258,7 @@ export function fakeEnv(
     openTabs,
     appleTabs: () => Promise.resolve(openTabs),
     api: fakeApi(options.api),
-    hosts: fakeHosts(options.hosts),
+    hosts: Object.assign(fakeHosts(options.hosts), { missing: [...(options.missingHosts ?? [])] }),
     stores,
     secrets: secretsStore,
     activeTab: () => Promise.resolve(tab),

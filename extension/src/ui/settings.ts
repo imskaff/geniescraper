@@ -1,6 +1,6 @@
 // The settings screen and its smaller sections (reading and YouTube).
 import { type OptionalHost } from "../lookups/http";
-import { PARALLEL_CHOICES } from "../shared/settings";
+import { PARALLEL_CHOICES, browserWords } from "../shared/settings";
 import { el } from "./dom";
 import { type PanelState } from "./controller";
 import { type ViewContext } from "./viewContext";
@@ -115,7 +115,7 @@ export function youtubeSettings(v: ViewContext, state: PanelState): HTMLElement 
       state,
       "youtube",
       "Find a YouTube link for each track (recommended)",
-      "Searches www.youtube.com's pages for the song, as the desktop app does. Off until you allow it. Chrome asks first; take the permission back here or in chrome://extensions. The link is pasted only while the YouTube link is ticked in Settings; the set-up ticks it when you allow this.",
+      `Searches www.youtube.com's pages for the song, as the desktop app does. Off until you allow it. ${browserWords().name} asks first; take the permission back here or in ${browserWords().extensionsPage}. The link is pasted only while the YouTube link is ticked in Settings; the set-up ticks it when you allow this.`,
     ),
     subgroup("Better YouTube links (optional)", ...youtubeKeyContent(v, state)),
   );

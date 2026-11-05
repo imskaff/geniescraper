@@ -31,6 +31,13 @@ export interface HostPermissions {
   remove(host: OptionalHost): Promise<boolean>;
   /** Called whenever any permission is added or removed, including from chrome://extensions. */
   subscribe(listener: () => void): void;
+  /**
+   * Manifest sites (Genius, Apple Music, Spotify and the look-up hosts) the user has taken access to away from. Only
+   * Firefox lets that happen to a required host; elsewhere this is always empty.
+   */
+  missingRequired(): Promise<string[]>;
+  /** Ask for the missing sites again. Must be called straight from the user's click. */
+  grantRequired(origins: string[]): Promise<boolean>;
 }
 
 /** The steps of the first-time set-up: welcome, what to paste, speed, look-ups, summary. */
@@ -117,6 +124,8 @@ export interface PanelState {
   pasteIndex: number | null;
   /** Which optional hosts the user has granted, as Chrome reports it. */
   hosts: Record<OptionalHost, boolean>;
+  /** Required sites whose access was taken away (Firefox only): the panel offers to grant them again. */
+  missingHosts: string[];
   /** The user's own YouTube key: whether one is saved (never the key itself), and how the last attempt went. */
   youtubeKey: { saved: boolean; message: string; tone: "" | "ok" | "error"; busy: boolean };
   /** The link to the desktop app: how it stands, and how the last pair or unpair attempt went. */

@@ -13,6 +13,8 @@
 // track read for each service, the hidden reader windows open minimized and close again, the Spotify guard is armed
 // and no playback starts, and a key on a Genius page reaches the content script (F9, the Firefox default next key, and
 // F8, its default back key). F7 is not checked: a headless Firefox hands it to the page, a normal one keeps it for caret browsing).
+// Permissions are driven with real mouse clicks inside the browser (not the desktop) and the permission prompt is
+// answered through the browser window's own notification, so grant, refuse and revoke are all exercised unattended.
 // What it cannot prove: a real click on the toolbar button (the browser chrome is not clicked here).
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -101,6 +103,47 @@ const pressKey = async (name) => {
   await cmd("WebDriver:ReleaseActions");
 };
 
+/** A real (trusted) mouse click on an element of the selected page, through the browser's own input pipeline. */
+const realClick = async (selector) => {
+  await inPage(`document.querySelector(${JSON.stringify(selector)})?.scrollIntoView({ block: "center" });`);
+  const found = await cmd("WebDriver:FindElement", { using: "css selector", value: selector });
+  const origin = found.value;
+  await cmd("WebDriver:PerformActions", {
+    actions: [
+      {
+        type: "pointer",
+        id: "mouse",
+        parameters: { pointerType: "mouse" },
+        actions: [
+          { type: "pointerMove", origin, x: 0, y: 0 },
+          { type: "pointerDown", button: 0 },
+          { type: "pointerUp", button: 0 },
+        ],
+      },
+    ],
+  });
+  await cmd("WebDriver:ReleaseActions");
+};
+/** Answer the browser's permission prompt (a notification in the browser window), as the user would with a button. */
+const answerPrompt = async (accept) => {
+  for (let i = 0; i < 30; i++) {
+    const answered = await inChrome(
+      `const done = arguments[arguments.length - 1];
+       const win = Services.wm.getMostRecentWindow("navigator:browser");
+       const note = (win.PopupNotifications._currentNotifications ?? []).find((n) => n.id === "addon-webext-permissions");
+       if (!note) { done(false); } else {
+         const action = ${accept ? "note.mainAction" : "note.secondaryActions[0]"};
+         action.callback({});
+         done(true);
+       }`,
+    );
+    if (answered) return true;
+    await sleep(200);
+  }
+  return false;
+};
+const textOf = (selector) => inPage(`return document.querySelector(${JSON.stringify(selector)})?.textContent ?? null;`);
+
 try {
   const version = await inChrome("const done = arguments[arguments.length - 1]; done(Services.appinfo.version);");
   console.log(`Firefox ${String(version)}, headless, throwaway profile`);
@@ -153,6 +196,59 @@ try {
     shown?.id === sidebarId && String(shown.url).endsWith("/ui/panel.html"),
     JSON.stringify(shown),
   );
+
+  // Permissions, driven with real clicks. The user's revoking of a required site is made through the extension's own
+  // permissions.remove (Firefox allows it for manifest sites too); the prompt is answered the way a button would.
+  await inPage("await chrome.permissions.remove({ origins: ['https://genius.com/*', 'https://music.apple.com/*'] });");
+  await until("the grant-access banner", async () =>
+    (await textOf("#access"))?.includes("genius.com, music.apple.com"),
+  );
+  check(
+    "revoked required sites show the Grant access state",
+    (await textOf("#access"))?.includes("Grant access") === true,
+  );
+  await realClick("[data-key=grant-access]");
+  check("the click shows the browser's permission prompt, and refusing it works", await answerPrompt(false));
+  await until("the refusal", async () => (await textOf("#alert"))?.includes("did not grant access"));
+  check("a refusal keeps the banner and says so", (await textOf("#access"))?.includes("Grant access") === true);
+  await realClick("[data-key=grant-access]");
+  check("the second click shows the prompt, and accepting it works", await answerPrompt(true));
+  await until("the banner to go", async () => (await textOf("#access")) === "");
+  check(
+    "granting clears the banner and the sites are granted again",
+    (await inPage(
+      "return await chrome.permissions.contains({ origins: ['https://genius.com/*', 'https://music.apple.com/*'] });",
+    )) === true,
+  );
+
+  // The optional YouTube switch in Settings: asks from a click, handles a refusal, follows the grant and a revoke.
+  await realClick("#settings-toggle");
+  await until("the settings", async () => inPage("return !!document.querySelector('[data-key=host-youtube]');"));
+  await realClick("[data-key=host-youtube]");
+  check("ticking the YouTube switch shows the prompt, and refusing it works", await answerPrompt(false));
+  await until("the refusal", async () => (await textOf("#alert"))?.includes("did not grant access"));
+  check(
+    "a refused YouTube switch goes back to unticked",
+    (await inPage("return document.querySelector('[data-key=host-youtube]').checked;")) === false,
+  );
+  await realClick("[data-key=host-youtube]");
+  check("ticking it again shows the prompt, and accepting it works", await answerPrompt(true));
+  await until("the switch to tick", async () =>
+    inPage("return document.querySelector('[data-key=host-youtube]').checked;"),
+  );
+  check(
+    "an accepted YouTube switch is ticked and granted",
+    (await inPage("return await chrome.permissions.contains({ origins: ['https://www.youtube.com/*'] });")) === true,
+  );
+  await inPage("await chrome.permissions.remove({ origins: ['https://www.youtube.com/*'] });");
+  await until("the switch to untick", async () =>
+    inPage("return !document.querySelector('[data-key=host-youtube]').checked;"),
+  );
+  check(
+    "revoking YouTube later unticks the switch",
+    (await inPage("return document.querySelector('[data-key=host-youtube]').checked;")) === false,
+  );
+  await realClick("#settings-toggle");
 
   // One read of a service: submit the link in the real form, pick a track, read it, and watch the reader windows.
   const readAlbum = async (name, url) => {

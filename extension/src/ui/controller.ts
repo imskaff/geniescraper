@@ -9,7 +9,7 @@ import { typedQueue, type QueueItem } from "../core/models";
 import type { PasteCommand } from "../shared/messages";
 import { IDLE_PASTE, type PasteState } from "../core/paste";
 import { EMPTY_SESSION, type Session, type TrackResult } from "../shared/session";
-import { normaliseSettings, queueOptions, type PasteMode, type Settings } from "../shared/settings";
+import { browserWords, normaliseSettings, queueOptions, type PasteMode, type Settings } from "../shared/settings";
 import { loadPaste, loadSession, loadSettings, saveSession, saveSettings } from "../shared/storage";
 import type { OptionalHost } from "../lookups/http";
 import { loadYoutubeKey } from "../shared/secrets";
@@ -71,6 +71,7 @@ export class PanelController {
     paste: PasteState = { ...IDLE_PASTE },
     hosts: Record<OptionalHost, boolean> = { ...NO_HOSTS },
     keySaved = false,
+    missingHosts: string[] = [],
   ) {
     this.host = this.makeHost(env);
     this.key = new YoutubeKey(this.host, () => this.refreshHosts());
@@ -96,6 +97,7 @@ export class PanelController {
       paste,
       pasteIndex,
       hosts,
+      missingHosts,
       youtubeKey: { saved: keySaved, message: "", tone: "", busy: false },
       bridge: { known: false, paired: false, connected: false, busy: false, message: "", tone: "" },
       genius: NO_GENIUS,
@@ -131,7 +133,7 @@ export class PanelController {
 
   /** Load settings, the stored session and the active tab, and build the controller from them. */
   static async create(env: Env): Promise<PanelController> {
-    const [settings, session, paste, tab, hosts, key, open] = await Promise.all([
+    const [settings, session, paste, tab, hosts, key, open, missing] = await Promise.all([
       loadSettings(env.stores),
       loadSession(env.stores),
       loadPaste(env.stores),
@@ -139,6 +141,7 @@ export class PanelController {
       env.hosts.granted().catch(() => ({ ...NO_HOSTS })),
       loadYoutubeKey(env.secrets),
       env.appleTabs().catch(() => []),
+      env.hosts.missingRequired().catch(() => []),
     ]);
     const pageUrl = tab && recogniseUrl(tab.url) ? tab.url : "";
     const controller = new PanelController(
@@ -150,6 +153,7 @@ export class PanelController {
       paste,
       hosts,
       key !== "",
+      missing,
     );
     // A permission taken back in chrome://extensions, or granted elsewhere, changes the Settings box at once.
     env.hosts.subscribe(() => void controller.refreshHosts());
@@ -193,11 +197,34 @@ export class PanelController {
 
   /** Read the permissions again from Chrome, the only place that knows them. */
   async refreshHosts(): Promise<void> {
-    const hosts = await this.env.hosts.granted().catch(() => this.current.hosts);
+    const [hosts, missing] = await Promise.all([
+      this.env.hosts.granted().catch(() => this.current.hosts),
+      this.env.hosts.missingRequired().catch(() => this.current.missingHosts),
+    ]);
     const now = this.current.hosts;
-    if (hosts.youtube !== now.youtube || hosts.youtubeApi !== now.youtubeApi) {
-      this.update({ hosts });
+    const sameMissing =
+      missing.length === this.current.missingHosts.length &&
+      missing.every((o, i) => o === this.current.missingHosts[i]);
+    if (hosts.youtube !== now.youtube || hosts.youtubeApi !== now.youtubeApi || !sameMissing) {
+      this.update({ hosts, missingHosts: missing });
     }
+  }
+
+  /**
+   * Ask again for required sites whose access was taken away. The request is the first thing done, before any wait,
+   * because the browser only shows its prompt for a call made straight from the user's click.
+   */
+  async grantAccess(): Promise<void> {
+    const asked = this.env.hosts.grantRequired([...this.current.missingHosts]);
+    const ok = await asked.catch(() => false);
+    await this.refreshHosts();
+    const { name } = browserWords();
+    this.update({
+      error:
+        ok && this.current.missingHosts.length === 0
+          ? ""
+          : `${name} did not grant access, so reading and pasting stay off for those sites.`,
+    });
   }
 
   /**
@@ -206,6 +233,7 @@ export class PanelController {
    */
   async setHost(host: OptionalHost, on: boolean): Promise<void> {
     const asked = on ? this.env.hosts.request(host) : this.env.hosts.remove(host);
+    const { name, extensionsPage } = browserWords();
     let problem = "";
     let ok = false;
     try {
@@ -213,9 +241,9 @@ export class PanelController {
     } catch (error) {
       // Typically a manifest that was not reloaded: Chrome rejects a host the loaded manifest does not list.
       const reason = error instanceof Error ? error.message : "";
-      problem = `Chrome refused the permission request${reason ? ` (${reason})` : ""}. If you just updated the extension, reload it in chrome://extensions and try again.`;
+      problem = `${name} refused the permission request${reason ? ` (${reason})` : ""}. If you just updated the extension, reload it in ${extensionsPage} and try again.`;
     }
-    if (on && !ok && !problem) problem = "Chrome did not grant access, so that look-up stays off.";
+    if (on && !ok && !problem) problem = `${name} did not grant access, so that look-up stays off.`;
     await this.refreshHosts();
     // Redraw even when nothing changed, so a box the user ticked and Chrome refused goes back to unticked.
     this.update({ hosts: { ...this.current.hosts }, error: problem });

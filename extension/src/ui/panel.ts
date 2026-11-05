@@ -9,6 +9,7 @@ import { tabChangeNeedsRefresh } from "./tabEvents";
 import type { PageLabel } from "../providers/types";
 import { PASTE_KEY, normalisePaste } from "../core/paste";
 import { chromeStores } from "../shared/storage";
+import { isFirefox } from "../shared/settings";
 import { footer } from "./footer";
 import { POPUP_CLASS, isPopupSurface, reportsClosing } from "./surface";
 
@@ -23,6 +24,16 @@ const hosts: HostPermissions = {
   },
   request: (host) => chrome.permissions.request({ origins: [hostOrigin(host)] }),
   remove: (host) => chrome.permissions.remove({ origins: [hostOrigin(host)] }),
+  async missingRequired() {
+    // Chrome grants the manifest's sites at install and a user who sets "on click" site access still has them as far
+    // as this extension's own pages are concerned, so only Firefox, where access can be taken away, is asked.
+    if (!isFirefox()) return [];
+    const wanted = (chrome.runtime.getManifest() as { host_permissions?: string[] }).host_permissions ?? [];
+    const missing: string[] = [];
+    for (const origin of wanted) if (!(await chrome.permissions.contains({ origins: [origin] }))) missing.push(origin);
+    return missing;
+  },
+  grantRequired: (origins) => chrome.permissions.request({ origins }),
   subscribe(listener) {
     chrome.permissions.onAdded.addListener(listener);
     chrome.permissions.onRemoved.addListener(listener);
