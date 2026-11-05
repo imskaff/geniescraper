@@ -35,6 +35,8 @@
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 24px;
+  /* Role labels that stand out, such as Songwriter and Producer in the credits list. */
+  --weight-strong: 700;
 }
 
 @media (prefers-color-scheme: light) {
@@ -544,6 +546,10 @@ h2 + .help {
   max-width: 11rem;
   color: var(--muted);
   overflow-wrap: anywhere;
+}
+
+.credits dt.core {
+  font-weight: var(--weight-strong);
 }
 
 .credits dd {

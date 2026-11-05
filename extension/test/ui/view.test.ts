@@ -252,6 +252,56 @@ describe("review screen", () => {
     expect(queue).toContain("Cover art URLhttps://example.com/album-cover.png");
   });
 
+  describe("the order and weight of the credits", () => {
+    const mixed = (title: string): Result<PageScrape> => ({
+      ok: true,
+      data: {
+        ...scrapeFor(title),
+        credits: [
+          { role: "Mixing Engineer", artists: ["Mixer One"] },
+          { role: "Producer", artists: ["Producer One"] },
+          { role: "Songwriter", artists: ["Writer One"] },
+          { role: "Co-Producer", artists: ["Producer Two"] },
+          { role: "Lyricist", artists: ["Writer Two"] },
+          { role: "Drums", artists: ["Drummer One"] },
+        ],
+      },
+    });
+
+    it("lists writers, then producers, then the rest in their own order, without changing the paste queue", async () => {
+      const { root } = await withFirstOpen({
+        api: { scrapeTrack: (_url: string, title: string) => Promise.resolve(mixed(title)) },
+      });
+      const roles = [...root.querySelectorAll("dl.credits dt")].map((dt) => dt.textContent);
+      const start = roles.indexOf("Songwriter");
+      expect(roles.slice(start, start + 6)).toEqual([
+        "Songwriter",
+        "Lyricist",
+        "Producer",
+        "Co-Producer",
+        "Mixing Engineer",
+        "Drums",
+      ]);
+      const queue = [...root.querySelectorAll('ol[aria-label="Paste queue"] li')].map((li) => li.textContent);
+      expect(queue.slice(0, 5)).toEqual([
+        "Written ByWriter One",
+        "Written ByWriter Two",
+        "Produced ByProducer One",
+        "Produced ByProducer Two",
+        "Additional roleMixing Engineer",
+      ]);
+    });
+
+    it("marks only the writer and producer role labels as strong", async () => {
+      const { root } = await withFirstOpen({
+        api: { scrapeTrack: (_url: string, title: string) => Promise.resolve(mixed(title)) },
+      });
+      const strong = [...root.querySelectorAll("dl.credits dt.core")].map((dt) => dt.textContent);
+      expect(strong).toEqual(["Songwriter", "Lyricist", "Producer", "Co-Producer"]);
+      expect(root.querySelectorAll("dl.credits dd.core")).toHaveLength(0);
+    });
+  });
+
   it("shows when the song was released, from its own page", async () => {
     const { root } = await withFirstOpen();
     expect(byText(root, "dt", "Released").nextElementSibling?.textContent).toBe("May 17, 2024");

@@ -109,6 +109,16 @@ function isProducedBy(credit: Credit): boolean {
   return PRODUCED_BY_ROLES.has(credit.role.toLowerCase());
 }
 
+/** Display only: writers, then producers, then the rest, each group in its own order. The paste queue does not use this. */
+export function creditsForDisplay(credits: readonly Credit[]): { credit: Credit; core: boolean }[] {
+  const tagged = credits.map((credit) => ({ credit, core: isWrittenBy(credit) || isProducedBy(credit) }));
+  return [
+    ...tagged.filter((c) => isWrittenBy(c.credit)),
+    ...tagged.filter((c) => !isWrittenBy(c.credit) && isProducedBy(c.credit)),
+    ...tagged.filter((c) => !c.core),
+  ];
+}
+
 export function additionalCredits(song: Pick<SongCredits, "credits">): Credit[] {
   return mergedCredits(song.credits).filter((credit) => !isWrittenBy(credit) && !isProducedBy(credit));
 }
