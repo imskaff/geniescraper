@@ -4,12 +4,16 @@ import { build } from "esbuild";
 import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { toFirefoxManifest } from "./lib/firefox-manifest.mjs";
 import { toSafariManifest } from "./lib/safari-manifest.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 // `--safari` builds the Safari variant (popup instead of side panel) into dist-safari/, for the Mac converter step.
 const safari = process.argv.includes("--safari");
-const outDir = safari ? "dist-safari" : "dist";
+// `--firefox` builds the Firefox variant (event page, sidebar, gecko settings) into dist-firefox/.
+const firefox = process.argv.includes("--firefox");
+if (safari && firefox) throw new Error("Pass only one of --safari and --firefox.");
+const outDir = safari ? "dist-safari" : firefox ? "dist-firefox" : "dist";
 const dist = join(root, outDir);
 
 const ENTRY_POINTS = {
@@ -38,7 +42,7 @@ await build({
   outdir: outDir,
   bundle: true,
   format: "iife",
-  target: "chrome120",
+  target: firefox ? "firefox140" : "chrome120",
   platform: "browser",
   legalComments: "none",
   logLevel: "info",
@@ -56,4 +60,9 @@ for (const [from, to] of Object.entries(STATIC_FILES)) {
 if (safari) {
   const chromeManifest = JSON.parse(await readFile(join(root, "manifest.json"), "utf-8"));
   await writeFile(join(dist, "manifest.json"), JSON.stringify(toSafariManifest(chromeManifest), null, 2) + "\n");
+}
+
+if (firefox) {
+  const chromeManifest = JSON.parse(await readFile(join(root, "manifest.json"), "utf-8"));
+  await writeFile(join(dist, "manifest.json"), JSON.stringify(toFirefoxManifest(chromeManifest), null, 2) + "\n");
 }

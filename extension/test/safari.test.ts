@@ -16,6 +16,7 @@ describe("popup surface", () => {
   it("is a popup exactly when the browser has no side panel API", () => {
     expect(isPopupSurface({})).toBe(true);
     expect(isPopupSurface({ sidePanel: { open: () => undefined } })).toBe(false);
+    expect(isPopupSurface({ sidebarAction: { toggle: () => undefined } })).toBe(false);
   });
 
   it("only a side panel reports closing, since a popup closes whenever it loses focus", () => {

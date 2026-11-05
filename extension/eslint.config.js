@@ -26,7 +26,7 @@ const FORBIDDEN_SYNTAX = [
 ];
 
 export default tseslint.config(
-  { ignores: ["dist/", "dist-safari/", "node_modules/", "test/vectors.json"] },
+  { ignores: ["dist/", "dist-safari/", "dist-firefox/", "node_modules/", "test/vectors.json"] },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   {

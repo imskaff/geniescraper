@@ -1,5 +1,6 @@
 // Service worker entry point. MV3 workers are ephemeral, so nothing here relies on in-memory state between
 // requests: each request opens, reads and closes its own tab, and the paste session lives in storage.
+import { toggleSidebarOnClick } from "./sidebar";
 import { isGeniusRequest, type Result } from "../shared/messages";
 import { isBridgeRequest, type BridgeRequest } from "../shared/bridge";
 import { PASTE_KEY, normalisePaste } from "../core/paste";
@@ -102,6 +103,8 @@ const route = createRouter(
 // The toolbar button opens the side panel. The setting persists, so this is harmless on every worker start.
 // Browsers without a side panel (Safari) have no such API: the worker must still start there.
 if ("sidePanel" in chrome) chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => undefined);
+// Firefox has a sidebar instead, which a toolbar click must open itself.
+toggleSidebarOnClick(chrome);
 
 const GENIUS_ORIGIN = "https://genius.com";
 
