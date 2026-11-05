@@ -1,5 +1,5 @@
 // The review screen: the track list with health marks, each track's credits and its YouTube link.
-import { labelInfo, releaseDateText, type SongCredits, type VideoKind } from "../core/models";
+import { creditsForDisplay, labelInfo, releaseDateText, type SongCredits, type VideoKind } from "../core/models";
 import { shownTrack, type TrackResult } from "../shared/session";
 import { trackHealth, type Health, type HealthLevel } from "../core/trackHealth";
 import { youtubeSearchUrl } from "../core/youtubeLink";
@@ -191,8 +191,11 @@ export function trackDetail(v: ViewContext, state: PanelState, result: TrackResu
   const groups = el("dl", { class: "credits" });
   const released = releaseDateText(song);
   if (released) groups.append(el("dt", { text: "Released" }), el("dd", { text: released }));
-  for (const credit of song.credits) {
-    groups.append(el("dt", { text: credit.role }), el("dd", { text: credit.artists.join(", ") }));
+  for (const { credit, core } of creditsForDisplay(song.credits)) {
+    groups.append(
+      el("dt", { class: core ? "core" : "", text: credit.role }),
+      el("dd", { text: credit.artists.join(", ") }),
+    );
   }
   const { missing } = healthOf(v, state, result);
   // What the read should have found and did not is spelled out in the list, in the colour of the "Needs a look" mark.
