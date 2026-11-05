@@ -89,11 +89,14 @@ You can unpair at any time, which deletes the secret.
 ## Firefox data declaration
 
 Firefox asks every add-on to declare, in its manifest, the kinds of data it transmits (`data_collection_permissions`).
-The Firefox build declares one required type, `websiteContent`, and no optional types.
-Why: the only data that leaves the browser is song titles, artist names and catalog ids that the extension read from the Apple Music, Spotify or Genius page you are on.
+The Firefox build declares one required type, `websiteContent`, and one optional type, `authenticationInfo`.
+Why `websiteContent`: the data that leaves the browser in the normal flow is song titles, artist names and catalog ids that the extension read from the Apple Music, Spotify or Genius page you are on.
 Mozilla defines `websiteContent` as anything visible on a website, which is exactly that text.
-It goes to Genius, iTunes and Spotify in the normal flow (see the table above), and to Deezer and YouTube only if you turn those features on.
-Those optional services receive the same kind of data, so they add no second type; they are still off until you allow them.
+It goes to Genius, iTunes, Spotify and Deezer (see the table above), and to YouTube only if you turn that on.
+YouTube receives the same kind of data, so it adds no second type.
+Why `authenticationInfo`, optional: if you add your own YouTube key, it is sent to Google's YouTube service in a request header.
+That is your own credential, so it is declared; it is asked for (together with access to `www.googleapis.com`) only when you press Save on a key, in one prompt, and you can take it back in `about:addons`.
+Without a key nothing of the kind is sent.
 Nothing else is declared: no search history, no browsing history (page addresses are not sent, only the ids and titles read from them), no account data, no personal information.
 The link to the desktop app is not built for Firefox, so it is not declared.
 

@@ -5,14 +5,14 @@ Researched on 2026-11-05 from MDN and Mozilla's Extension Workshop, plus a read 
 
 ## Decisions (from the owner, 2026-11-05)
 
-| Question                           | Decision                                                                                                          |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Distribution                       | Listed on addons.mozilla.org (AMO). Mozilla signs the build, so it installs on normal Firefox and updates itself. |
-| Panel                              | Firefox's sidebar (`sidebar_action`), the counterpart of Chrome's side panel. The UI stays one page.              |
-| Oldest Firefox                     | 140 and newer. Mozilla's built-in data declaration starts there.                                                  |
-| Desktop app link                   | Very low priority. Design so it can work in Firefox later; do not build or test it now.                           |
-| Optional YouTube and Deezer access | In scope for the first release.                                                                                   |
-| Firefox for Android                | Out of scope. Android has no sidebars and no separate windows.                                                    |
+| Question                | Decision                                                                                                          |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Distribution            | Listed on addons.mozilla.org (AMO). Mozilla signs the build, so it installs on normal Firefox and updates itself. |
+| Panel                   | Firefox's sidebar (`sidebar_action`), the counterpart of Chrome's side panel. The UI stays one page.              |
+| Oldest Firefox          | 140 and newer. Mozilla's built-in data declaration starts there.                                                  |
+| Desktop app link        | Very low priority. Design so it can work in Firefox later; do not build or test it now.                           |
+| Optional YouTube access | In scope for the first release (Deezer is a required host, see "Permissions on Firefox").                         |
+| Firefox for Android     | Out of scope. Android has no sidebars and no separate windows.                                                    |
 
 ## Spike results (2026-11-05, Firefox 159.0, Windows, web-ext 10.8.0, throwaway profile)
 
@@ -80,6 +80,30 @@ So the default pair is per browser (`defaultHotkeys` in `src/shared/settings.ts`
 The two keys of a pair are never equal (tested).
 Settings already saved keep their value.
 
+## Permissions on Firefox (slice 4)
+
+What the manifest really does: `host_permissions` (required) are `genius.com`, `music.apple.com`, `open.spotify.com`, `itunes.apple.com` and `api.deezer.com`; `optional_host_permissions` are only `www.youtube.com` and `www.googleapis.com`.
+Earlier text in this doc that listed Deezer with the optional hosts was wrong.
+
+Findings in Firefox 159.0.1 (headless, driven by `npm run live:firefox`):
+
+- The extension can revoke even its required sites with `permissions.remove`, as the user can in about:addons. `permissions.contains` is then false and `permissions.onRemoved` fires.
+- `permissions.request` from a trusted click shows the browser's prompt (the `addon-webext-permissions` notification); accepting grants the sites and fires `onAdded`, refusing resolves false. Without a click it rejects (seen in the spike).
+- Chrome never withdraws required sites, so the panel only checks them in Firefox (`isFirefox()`); in Chrome the Grant access state can never show.
+
+What changed: a small "Grant access" banner at the top of the panel lists the required sites that are not granted and a button that calls `permissions.request` first thing in the click, then re-checks; a refusal leaves the banner with a message.
+The optional YouTube switches already did the right things (request first in the click, a refusal unticks the box with a message, `onAdded` and `onRemoved` refresh them, and every look-up re-checks `permissions.contains`); only their wording said "Chrome", and now names the browser and its extensions page.
+
+### Data declaration revisited
+
+Now `required: ["websiteContent"]` and `optional: ["authenticationInfo"]` (owner approved the second on 2026-11-05).
+The optional hosts YouTube and Google's YouTube API receive the same kind of data (`websiteContent`) the required hosts already get, so they add no type.
+The user's own YouTube API key, sent to `www.googleapis.com` in a header when they add one, is `authenticationInfo`.
+`permissionSet` in `src/lookups/http.ts` is the one place that decides what a host needs: in Firefox the key's host is requested, checked and removed together with `data_collection: ["authenticationInfo"]` (one prompt, from the click on Save); everywhere else it is the site alone, so Chrome and Safari are unchanged.
+The worker's own check before sending the key uses the same set, so revoking the consent in about:addons stops the key being sent.
+Refusal and revoke behave like the other optional switches (a message under the key box, the state follows `onRemoved`).
+The headless check drives the prompt: refuse leaves the consent off, accept grants site and consent together, remove takes both back.
+
 ## What Firefox needs, difference by difference
 
 Each row says what the extension does today, what Firefox does, and the change.
@@ -119,7 +143,7 @@ Each slice leaves `main` working and tested, like the Safari slices (`docs/exten
 3. **Reads and paste.**
    Hidden reader windows, the page-world Spotify guard, the Genius content script and the paste flow, including hotkeys, work.
    Done when: the live checks used for Chrome (`live:smoke`, `live:hidden-tab`, `live:genius`) have a Firefox run, or the spike names a better harness (Playwright cannot load Firefox extensions; `web-ext run` or geckodriver can).
-4. **Permissions.**
+4. **Permissions (done).**
    Revoked required hosts show a grant state; the YouTube and Deezer switches ask for access and react to `onAdded` and `onRemoved`.
    Done when: tests with a fake browser cover grant, revoke and refuse, and the real flow was tried once in Firefox.
 5. **CI.**

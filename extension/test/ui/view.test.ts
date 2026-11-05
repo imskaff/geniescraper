@@ -981,3 +981,31 @@ describe("the YouTube link section in the credits", () => {
     expect(box(root).value).toBe("");
   });
 });
+
+describe("the grant access banner", () => {
+  it("shows the missing sites and a button that asks again, and goes away once granted", async () => {
+    document.body.replaceChildren();
+    const root = document.createElement("div");
+    document.body.append(root);
+    const env = fakeEnv({ missingHosts: ["https://genius.com/*", "https://music.apple.com/*"] });
+    const panel = await PanelController.create(env);
+    new PanelView(root, panel);
+    const text = root.querySelector("#access")?.textContent ?? "";
+    expect(text).toContain("genius.com, music.apple.com");
+    const button = root.querySelector<HTMLButtonElement>('[data-key="grant-access"]');
+    expect(button?.textContent).toBe("Grant access");
+    button?.click();
+    for (let i = 0; i < 50; i++) await Promise.resolve();
+    expect(env.hosts.log).toEqual(["grant:https://genius.com/*,https://music.apple.com/*"]);
+    expect(root.querySelector("#access")?.textContent).toBe("");
+    expect(root.querySelector('[data-key="grant-access"]')).toBeNull();
+  });
+
+  it("is absent when nothing is missing", async () => {
+    document.body.replaceChildren();
+    const root = document.createElement("div");
+    document.body.append(root);
+    new PanelView(root, await PanelController.create(fakeEnv()));
+    expect(root.querySelector("#access")?.textContent).toBe("");
+  });
+});

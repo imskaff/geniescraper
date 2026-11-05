@@ -8,9 +8,10 @@ export const GECKO_ID = "geniescraper@imskaff";
 export const FIREFOX_MIN_VERSION = "140.0";
 // What the extension transmits, in Mozilla's words (docs/firefox-support.md "Data declaration", extension/PRIVACY.md).
 // Song titles and artist names read from the page the user is on go to Genius, iTunes and Spotify in the core flow
-// (and to Deezer and YouTube when the user turns those on): that is "websiteContent". Nothing else leaves the browser,
-// and the optional services send the same kind of data, so no optional type is needed.
-export const DATA_COLLECTION = { required: ["websiteContent"], optional: [] };
+// (and to Deezer and YouTube when the user turns those on): that is "websiteContent". The one other thing that leaves
+// the browser is the user's own YouTube key, sent to Google only if they add one: optional "authenticationInfo",
+// requested when the key is saved (see permissionSet in src/lookups/http.ts).
+export const DATA_COLLECTION = { required: ["websiteContent"], optional: ["authenticationInfo"] };
 
 /** @param {Record<string, any>} chrome the Chrome/Edge manifest */
 export function toFirefoxManifest(chrome) {

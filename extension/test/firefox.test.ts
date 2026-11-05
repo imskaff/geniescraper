@@ -67,6 +67,11 @@ describe("Firefox manifest", () => {
     for (const type of [...required, ...(optional ?? [])]) expect(allowed.has(type)).toBe(true);
   });
 
+  it("declares the user's own YouTube key as optional authentication data", () => {
+    const { optional } = firefox.browser_specific_settings.gecko.data_collection_permissions;
+    expect(optional).toEqual(["authenticationInfo"]);
+  });
+
   it("keeps hosts, content scripts and everything else as they are", () => {
     const changed = new Set([
       "background",

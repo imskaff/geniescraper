@@ -269,6 +269,10 @@ h2 + .help {
   margin-bottom: var(--space-3);
 }
 
+.access:not(:empty) {
+  margin: 0 0 var(--space-3);
+}
+
 .status,
 .alert {
   margin: 0 0 var(--space-2);

@@ -1,7 +1,7 @@
 // Panel entry point: wire the real worker, storage and tabs into the controller and mount the view.
 import { createWorkerApi, chromeSend } from "./api";
 import { PanelController, type Env, type HostPermissions } from "./controller";
-import { OPTIONAL_LOOKUP_HOSTS, hostOrigin, type OptionalHost } from "../lookups/http";
+import { OPTIONAL_LOOKUP_HOSTS, hostOrigin, permissionSet, type OptionalHost } from "../lookups/http";
 import { PROVIDERS } from "../providers/registry";
 import { PanelView } from "./view";
 import { withPageTitles } from "./pageTitles";
@@ -9,20 +9,34 @@ import { tabChangeNeedsRefresh } from "./tabEvents";
 import type { PageLabel } from "../providers/types";
 import { PASTE_KEY, normalisePaste } from "../core/paste";
 import { chromeStores } from "../shared/storage";
+import { isFirefox } from "../shared/settings";
 import { footer } from "./footer";
 import { POPUP_CLASS, isPopupSurface, reportsClosing } from "./surface";
 
 const HOSTS = Object.keys(OPTIONAL_LOOKUP_HOSTS) as OptionalHost[];
 
+/** A host's permission; in Firefox the YouTube key's host also carries the data consent (see permissionSet). */
+const setFor = (host: OptionalHost): chrome.permissions.Permissions => permissionSet(hostOrigin(host), isFirefox());
+
 const hosts: HostPermissions = {
   async granted() {
     const entries = await Promise.all(
-      HOSTS.map(async (host) => [host, await chrome.permissions.contains({ origins: [hostOrigin(host)] })] as const),
+      HOSTS.map(async (host) => [host, await chrome.permissions.contains(setFor(host))] as const),
     );
     return Object.fromEntries(entries) as Record<OptionalHost, boolean>;
   },
-  request: (host) => chrome.permissions.request({ origins: [hostOrigin(host)] }),
-  remove: (host) => chrome.permissions.remove({ origins: [hostOrigin(host)] }),
+  request: (host) => chrome.permissions.request(setFor(host)),
+  remove: (host) => chrome.permissions.remove(setFor(host)),
+  async missingRequired() {
+    // Chrome grants the manifest's sites at install and a user who sets "on click" site access still has them as far
+    // as this extension's own pages are concerned, so only Firefox, where access can be taken away, is asked.
+    if (!isFirefox()) return [];
+    const wanted = (chrome.runtime.getManifest() as { host_permissions?: string[] }).host_permissions ?? [];
+    const missing: string[] = [];
+    for (const origin of wanted) if (!(await chrome.permissions.contains({ origins: [origin] }))) missing.push(origin);
+    return missing;
+  },
+  grantRequired: (origins) => chrome.permissions.request({ origins }),
   subscribe(listener) {
     chrome.permissions.onAdded.addListener(listener);
     chrome.permissions.onRemoved.addListener(listener);

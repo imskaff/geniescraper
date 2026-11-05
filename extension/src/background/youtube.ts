@@ -1,5 +1,14 @@
 // The worker's YouTube lookup behind an interface, so the router can be tested without the network.
-import { fetchResult, fetchText, hostOrigin, type GetResult, type GetText, type PostJson } from "../lookups/http";
+import { isFirefox } from "../shared/settings";
+import {
+  fetchResult,
+  fetchText,
+  hostOrigin,
+  permissionSet,
+  type GetResult,
+  type GetText,
+  type PostJson,
+} from "../lookups/http";
 import { innertubePages } from "../lookups/innertube";
 import { apiPages } from "../lookups/youtubeApi";
 import { extractVar, findYoutube, type YoutubeLink, type YoutubePages } from "../lookups/youtube";
@@ -157,7 +166,8 @@ export function youtubePages(
 export const API_QUERIES_PER_PHASE = 1;
 
 const youtubeGranted = (): Promise<boolean> => chrome.permissions.contains({ origins: [hostOrigin("youtube")] });
-const apiGranted = (): Promise<boolean> => chrome.permissions.contains({ origins: [hostOrigin("youtubeApi")] });
+const apiGranted = (): Promise<boolean> =>
+  chrome.permissions.contains(permissionSet(hostOrigin("youtubeApi"), isFirefox()));
 
 export interface YoutubeOptions {
   getText?: GetText;

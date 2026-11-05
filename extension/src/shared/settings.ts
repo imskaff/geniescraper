@@ -62,9 +62,18 @@ function currentHost(): BrowserHost {
   return { firefox: typeof navigator !== "undefined" && /\bFirefox\//.test(navigator.userAgent) };
 }
 
-/** True in Firefox, which handles F7 (caret browsing) itself before a page ever sees the key. */
-export function firefoxKeepsF7(host: BrowserHost = currentHost()): boolean {
+export function isFirefox(host: BrowserHost = currentHost()): boolean {
   return host.firefox === true;
+}
+
+/** True in Firefox, which handles F7 (caret browsing) itself before a page ever sees the key. */
+export const firefoxKeepsF7 = isFirefox;
+
+/** The browser's name and its page for managing extensions, for wording about permissions. */
+export function browserWords(host: BrowserHost = currentHost()): { name: string; extensionsPage: string } {
+  return isFirefox(host)
+    ? { name: "Firefox", extensionsPage: "about:addons" }
+    : { name: "Chrome", extensionsPage: "chrome://extensions" };
 }
 
 /**

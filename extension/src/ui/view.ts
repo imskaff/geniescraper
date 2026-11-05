@@ -10,6 +10,7 @@ import { reviewScreen } from "./review";
 import { doneScreen, pasteScreen } from "./paste";
 import { settings, youtubeSettings } from "./settings";
 import { geniusMessage } from "./geniusText";
+import { browserWords } from "../shared/settings";
 
 export class PanelView implements ViewContext {
   private screenKey = "";
@@ -69,6 +70,7 @@ export class PanelView implements ViewContext {
         ),
       ),
       // Both regions exist from the start and only their text changes, so screen readers announce updates.
+      el("div", { class: "access", attrs: { id: "access" } }),
       el("div", { class: "alert", attrs: { id: "alert", role: "alert" } }),
       el("div", { class: "status", attrs: { id: "status", role: "status", "aria-live": "polite" } }),
       el("main", { attrs: { id: "screen" } }),
@@ -100,6 +102,33 @@ export class PanelView implements ViewContext {
     });
   }
 
+  /** The banner for required sites the user took access away from (Firefox only; empty everywhere else). */
+  private renderAccess(missing: string[]): void {
+    const box = this.region("access");
+    if (missing.length === 0) {
+      box.replaceChildren();
+      return;
+    }
+    const names = missing.map((origin) => origin.replace(/^https:\/\//, "").replace(/\/\*$/, "")).join(", ");
+    box.replaceChildren(
+      el("p", {
+        class: "problem",
+        text: `${browserWords().name} no longer lets Géniescraper use ${names}. Reading credits and pasting need it.`,
+      }),
+      el("button", {
+        class: "button primary",
+        text: "Grant access",
+        attrs: { type: "button", "data-key": "grant-access" },
+        on: {
+          // Straight from the click: the browser shows its permission prompt only for a call made in the gesture.
+          click: () => {
+            void this.panel.grantAccess();
+          },
+        },
+      }),
+    );
+  }
+
   /** True once: the first time the welcome is drawn. */
   private playWelcome(): boolean {
     const first = !this.welcomePlayed;
@@ -120,6 +149,7 @@ export class PanelView implements ViewContext {
     // Rebuilding replaces the heading, so a heading that held focus has to be given it again.
     const headingHadFocus = document.activeElement?.tagName === "H2";
 
+    this.renderAccess(state.missingHosts);
     this.region("alert").textContent = state.error;
     this.region("status").textContent = state.status;
     // The Open on Genius notice shows its own words, so the live regions above must not show them twice.

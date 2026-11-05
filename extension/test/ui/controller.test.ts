@@ -537,6 +537,61 @@ describe("optional hosts", () => {
   });
 });
 
+describe("required sites taken away (Firefox)", () => {
+  const GENIUS = "https://genius.com/*";
+  const APPLE = "https://music.apple.com/*";
+
+  it("shows nothing when every required site is granted, as always in Chrome", async () => {
+    const { panel } = await open();
+    expect(panel.state.missingHosts).toEqual([]);
+  });
+
+  it("knows which required sites are missing when the panel opens", async () => {
+    const { panel } = await open({ missingHosts: [GENIUS, APPLE] });
+    expect(panel.state.missingHosts).toEqual([GENIUS, APPLE]);
+  });
+
+  it("asks for them before it waits for anything, because the prompt needs the click", async () => {
+    const { env, panel } = await open({ missingHosts: [GENIUS, APPLE] });
+    void panel.grantAccess();
+    expect(env.hosts.log).toEqual([`grant:${GENIUS},${APPLE}`]);
+  });
+
+  it("clears the state when the browser grants them", async () => {
+    const { panel } = await open({ missingHosts: [GENIUS] });
+    await panel.grantAccess();
+    expect(panel.state.missingHosts).toEqual([]);
+    expect(panel.state.error).toBe("");
+  });
+
+  it("keeps the state, and says so, when the user refuses", async () => {
+    const { env, panel } = await open({ missingHosts: [GENIUS] });
+    env.hosts.allowRequired = false;
+    await panel.grantAccess();
+    expect(panel.state.missingHosts).toEqual([GENIUS]);
+    expect(panel.state.error).toContain("did not grant access");
+  });
+
+  it("notices access taken away, or given back, while the panel is open", async () => {
+    const { env, panel } = await open();
+    env.hosts.missing = [APPLE];
+    env.hosts.changeElsewhere("youtube", false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(panel.state.missingHosts).toEqual([APPLE]);
+    env.hosts.missing = [];
+    env.hosts.changeElsewhere("youtube", false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(panel.state.missingHosts).toEqual([]);
+  });
+
+  it("survives a browser that cannot tell", async () => {
+    const { env, panel } = await open();
+    env.hosts.missingRequired = () => Promise.reject(new Error("no"));
+    await panel.refreshHosts();
+    expect(panel.state.missingHosts).toEqual([]);
+  });
+});
+
 describe("the YouTube link of a track", () => {
   const LINK = "https://www.youtube.com/watch?v=abcDEF_-123";
   const FOUND = {

@@ -2,7 +2,14 @@
 // opens and from Settings ("Run the setup again"). It only reads and changes what Settings already holds; it adds no
 // state of its own except which step is showing. Every control here is one the Settings screen also has, so what is
 // chosen here can be changed there at any time.
-import { HOTKEY_CHOICES, PARALLEL_CHOICES, defaultHotkeys, firefoxKeepsF7, type Settings } from "../shared/settings";
+import {
+  HOTKEY_CHOICES,
+  PARALLEL_CHOICES,
+  browserWords,
+  defaultHotkeys,
+  firefoxKeepsF7,
+  type Settings,
+} from "../shared/settings";
 import { el } from "./dom";
 import { SETUP_STEPS, type PanelController, type PanelState } from "./controller";
 
@@ -265,7 +272,7 @@ export function renderSetup(state: PanelState, panel: PanelController, parts: Se
         parts.heading("YouTube links (optional)"),
         el("p", {
           class: "help",
-          text: "This finds the official video or audio for each song, to paste into Genius's YouTube field. It looks on YouTube, so Chrome asks your permission. Allowing it, or saving a key, turns the YouTube link on. Skip it and the link stays off; everything else still works.",
+          text: `This finds the official video or audio for each song, to paste into Genius's YouTube field. It looks on YouTube, so ${browserWords().name} asks your permission. Allowing it, or saving a key, turns the YouTube link on. Skip it and the link stays off; everything else still works.`,
         }),
         el("p", {
           text: "Recommended: allow it to find a link for each track; a free key from Google makes that reliable, and the steps walk you through it.",
