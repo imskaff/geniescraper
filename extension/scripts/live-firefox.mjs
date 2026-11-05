@@ -248,6 +248,42 @@ try {
     "revoking YouTube later unticks the switch",
     (await inPage("return document.querySelector('[data-key=host-youtube]').checked;")) === false,
   );
+  // The user's own YouTube key: saving it asks for Google's site together with the optional data consent (a fake key
+  // of the right shape is used, so Google answers "not accepted" and nothing is kept; one request goes out).
+  const FAKE_KEY = "AIza" + "x".repeat(35);
+  await inPage(
+    `const box = document.querySelector('[data-key=youtube-key]'); box.value = ${JSON.stringify(FAKE_KEY)}; box.dispatchEvent(new Event('input', { bubbles: true }));`,
+  );
+  await realClick("[data-key=youtube-key-save]");
+  check("saving a key shows the prompt, and refusing it works", await answerPrompt(false));
+  await until(
+    "the refusal",
+    async () =>
+      (await textOf("[data-key=youtube-key-state]"))?.includes("needs your OK") ||
+      (await textOf("#youtube-key-message"))?.includes("needs your OK"),
+  );
+  const refused = await inPage(
+    "return await chrome.permissions.contains({ data_collection: ['authenticationInfo'] });",
+  );
+  check("a refused key leaves the data consent off", refused === false, String(refused));
+  await realClick("[data-key=youtube-key-save]");
+  check("saving again shows the prompt, and accepting it works", await answerPrompt(true));
+  await until("the key check", async () =>
+    /did not accept this key|Could not reach/.test((await textOf("#youtube-key-message")) ?? ""),
+  );
+  const consent = await inPage(
+    "return await chrome.permissions.contains({ origins: ['https://www.googleapis.com/*'], data_collection: ['authenticationInfo'] });",
+  );
+  check(
+    "an accepted key request grants the site and the optional data consent together",
+    consent === true,
+    String(consent),
+  );
+  await inPage(
+    "await chrome.permissions.remove({ origins: ['https://www.googleapis.com/*'], data_collection: ['authenticationInfo'] });",
+  );
+  const after = await inPage("return await chrome.permissions.contains({ data_collection: ['authenticationInfo'] });");
+  check("revoking takes the data consent back", after === false, String(after));
   await realClick("#settings-toggle");
 
   // One read of a service: submit the link in the real form, pick a track, read it, and watch the reader windows.

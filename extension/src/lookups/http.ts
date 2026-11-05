@@ -1,6 +1,7 @@
 // The one place the extension fetches third-party data. It only ever talks to hosts it has been given permission
 // for, sends no cookies and no referrer, refuses redirects, and turns every failure into null so a lookup can
 // never break a read.
+import { isFirefox } from "../shared/settings";
 import type { GetJson } from "./itunes";
 
 /** Lookup hosts the manifest grants outright. */
@@ -22,6 +23,24 @@ export type OptionalHost = keyof typeof OPTIONAL_LOOKUP_HOSTS;
 
 /** The manifest match pattern for an optional host. */
 export const hostOrigin = (host: OptionalHost): string => `https://${OPTIONAL_LOOKUP_HOSTS[host]}/*`;
+
+/**
+ * What Firefox's built-in data consent calls the user's own YouTube key: it is sent to Google, so the add-on declares it
+ * as optional data and asks for it together with the host. Chrome and Safari have no such permission.
+ */
+export const API_KEY_DATA = ["authenticationInfo"] as const;
+
+/** The slice of a permissions request or check this extension makes (`data_collection` is Firefox only). */
+export interface PermissionSet {
+  origins: string[];
+  data_collection?: string[];
+}
+
+/** The permission a host needs: its site, and in Firefox also the data consent for the one host that gets the key. */
+export function permissionSet(origin: string, firefox: boolean): PermissionSet {
+  const needsKeyConsent = firefox && origin === hostOrigin("youtubeApi");
+  return needsKeyConsent ? { origins: [origin], data_collection: [...API_KEY_DATA] } : { origins: [origin] };
+}
 
 /** Hosts a lookup may contact. A new host needs the owner's approval and a manifest permission. */
 export const LOOKUP_HOSTS: ReadonlySet<string> = new Set([
@@ -112,7 +131,7 @@ export const createFetchPost = (granted: Granted): PostJson => {
   return (url, body) => send(url, { "content-type": "application/json" }, JSON.stringify(body));
 };
 
-const chromeGranted: Granted = (origin) => chrome.permissions.contains({ origins: [origin] });
+const chromeGranted: Granted = (origin) => chrome.permissions.contains(permissionSet(origin, isFirefox()));
 
 export const fetchJson: GetJson = createFetchJson(chromeGranted);
 export const fetchText: GetText = createFetchText(chromeGranted);

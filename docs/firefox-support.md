@@ -96,10 +96,13 @@ The optional YouTube switches already did the right things (request first in the
 
 ### Data declaration revisited
 
-Unchanged: `required: ["websiteContent"]`, no optional types.
-The only optional hosts, YouTube and Google's YouTube API, receive the same kind of data (song titles and artist names) that the required hosts already receive, so there is no second type to declare as optional.
-One open question for the owner: the user's own YouTube API key, if they add one, is sent to `www.googleapis.com` in a request header; that could be declared as an optional `authenticationInfo`, which would also mean requesting it with `permissions.request({ data_collection: [...] })` when the key is saved.
-It is not declared now, because it is the user's own key sent only to the service it belongs to, at the user's explicit request.
+Now `required: ["websiteContent"]` and `optional: ["authenticationInfo"]` (owner approved the second on 2026-11-05).
+The optional hosts YouTube and Google's YouTube API receive the same kind of data (`websiteContent`) the required hosts already get, so they add no type.
+The user's own YouTube API key, sent to `www.googleapis.com` in a header when they add one, is `authenticationInfo`.
+`permissionSet` in `src/lookups/http.ts` is the one place that decides what a host needs: in Firefox the key's host is requested, checked and removed together with `data_collection: ["authenticationInfo"]` (one prompt, from the click on Save); everywhere else it is the site alone, so Chrome and Safari are unchanged.
+The worker's own check before sending the key uses the same set, so revoking the consent in about:addons stops the key being sent.
+Refusal and revoke behave like the other optional switches (a message under the key box, the state follows `onRemoved`).
+The headless check drives the prompt: refuse leaves the consent off, accept grants site and consent together, remove takes both back.
 
 ## What Firefox needs, difference by difference
 

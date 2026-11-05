@@ -6,6 +6,7 @@ import {
   createFetchJson,
   fetchJson,
   hostOrigin,
+  permissionSet,
 } from "../../src/lookups/http";
 
 afterEach(() => {
@@ -134,5 +135,22 @@ describe("an optional host", () => {
     stubFetch(ok({}));
     const get = createFetchJson(() => Promise.reject(new Error("no chrome")));
     expect(await get(URLS.youtube)).toBeNull();
+  });
+});
+
+describe("permissionSet", () => {
+  const API = "https://www.googleapis.com/*";
+
+  it("asks for the data consent only for the key's host, and only in Firefox", () => {
+    expect(permissionSet(API, true)).toEqual({ origins: [API], data_collection: ["authenticationInfo"] });
+    expect(permissionSet(API, false)).toEqual({ origins: [API] });
+  });
+
+  it("never adds it to any other host", () => {
+    for (const host of ["youtube", "youtubeApi"] as const) {
+      const origin = hostOrigin(host);
+      expect("data_collection" in permissionSet(origin, true)).toBe(host === "youtubeApi");
+    }
+    expect(permissionSet("https://genius.com/*", true)).toEqual({ origins: ["https://genius.com/*"] });
   });
 });

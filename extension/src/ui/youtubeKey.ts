@@ -1,5 +1,6 @@
 // The user's own YouTube key: checking it, keeping it, and what the key box says about it.
 import { cleanKey, looksLikeApiKey, saveYoutubeKey } from "../shared/secrets";
+import { browserWords } from "../shared/settings";
 import { type KeyCheck } from "../shared/messages";
 import { KEY_CHECK_MESSAGES, type PanelState } from "./panelState";
 import { type PanelHost } from "./panelHost";
@@ -46,8 +47,7 @@ export class YoutubeKey {
       this.setState({
         busy: false,
         tone: "error",
-        message:
-          "Chrome needs your OK before the extension can talk to Google's YouTube service. Press Save again and choose Allow.",
+        message: `${browserWords().name} needs your OK before the extension can talk to Google's YouTube service. Press Save again and choose Allow.`,
       });
       return;
     }
