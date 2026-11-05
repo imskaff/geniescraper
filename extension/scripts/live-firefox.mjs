@@ -11,8 +11,8 @@
 //
 // What it proves: the add-on installs, its panel renders (in a tab and as the sidebar), an album is detected and one
 // track read for each service, the hidden reader windows open minimized and close again, the Spotify guard is armed
-// and no playback starts, and a key on a Genius page reaches the content script (F8 does, and F9, the Firefox default
-// back key). F7 is not checked: a headless Firefox hands it to the page, a normal one keeps it for caret browsing).
+// and no playback starts, and a key on a Genius page reaches the content script (F9, the Firefox default next key, and
+// F8, its default back key). F7 is not checked: a headless Firefox hands it to the page, a normal one keeps it for caret browsing).
 // What it cannot prove: a real click on the toolbar button (the browser chrome is not clicked here).
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -258,7 +258,7 @@ try {
       script: `window.__keys = []; window.addEventListener("keydown", (e) => window.__keys.push([e.key, e.defaultPrevented]), true);`,
       args: [],
     });
-    for (const key of ["F8", "F9", "F7"]) {
+    for (const key of ["F9", "F8", "F7"]) {
       await pressKey(key);
       await sleep(400);
     }
@@ -266,11 +266,12 @@ try {
       .value;
     const pressed = JSON.parse(keys);
     const prevented = (name) => pressed.find(([key]) => key === name)?.[1] ?? null;
-    check("Genius: the content script took F8 (the next key)", prevented("F8") === true, JSON.stringify(pressed));
     check(
-      "Genius: F9, the Firefox default back key, reaches the page and the script takes it",
+      "Genius: the content script took F9, the Firefox default next key",
       prevented("F9") === true,
+      JSON.stringify(pressed),
     );
+    check("Genius: the content script took F8, the Firefox default back key", prevented("F8") === true);
     await switchTo(panel);
     await inPage(`await chrome.runtime.sendMessage({ type: "paste-stop" });`);
   }

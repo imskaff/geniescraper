@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { normaliseSession, EMPTY_SESSION } from "../../src/shared/session";
 import {
   DEFAULT_SETTINGS,
-  defaultBackHotkey,
+  defaultHotkeys,
   firefoxKeepsF7,
   normaliseSettings,
   queueOptions,
@@ -247,29 +247,40 @@ describe("the countdown settings", () => {
   );
 });
 
-describe("the back hotkey default per browser", () => {
+describe("the default hotkey pair per browser", () => {
   const firefox = { firefox: true };
 
-  it("is F7 in Chrome, Edge and Safari and F9 in Firefox, where F7 never reaches the page", () => {
-    expect(normaliseSettings({}, {}).backHotkey).toBe("F7");
-    expect(normaliseSettings({}, firefox).backHotkey).toBe("F9");
-    expect(defaultBackHotkey({})).toBe("F7");
-    expect(defaultBackHotkey(firefox)).toBe("F9");
+  it("is F8 next and F7 back in Chrome, Edge and Safari, F9 next and F8 back in Firefox", () => {
+    expect(defaultHotkeys({})).toEqual({ next: "F8", back: "F7" });
+    expect(defaultHotkeys(firefox)).toEqual({ next: "F9", back: "F8" });
+    const fresh = normaliseSettings({}, firefox);
+    expect([fresh.nextHotkey, fresh.backHotkey]).toEqual(["F9", "F8"]);
+    const other = normaliseSettings({}, {});
+    expect([other.nextHotkey, other.backHotkey]).toEqual(["F8", "F7"]);
   });
 
-  it("leaves a saved choice alone, even F7 in Firefox", () => {
-    expect(normaliseSettings({ backHotkey: "F7", nextHotkey: "F8" }, firefox).backHotkey).toBe("F7");
-    expect(normaliseSettings({ backHotkey: "F2" }, firefox).backHotkey).toBe("F2");
+  it("never gives the same key to both steps", () => {
+    for (const host of [{}, firefox]) {
+      const { next, back } = defaultHotkeys(host);
+      expect(next).not.toBe(back);
+    }
   });
 
-  it("falls back to the browser's default when both keys are the same", () => {
+  it("leaves saved choices alone, even F7 in Firefox", () => {
+    const saved = normaliseSettings({ nextHotkey: "F8", backHotkey: "F7" }, firefox);
+    expect([saved.nextHotkey, saved.backHotkey]).toEqual(["F8", "F7"]);
+    const other = normaliseSettings({ nextHotkey: "F4", backHotkey: "F2" }, firefox);
+    expect([other.nextHotkey, other.backHotkey]).toEqual(["F4", "F2"]);
+  });
+
+  it("falls back to the browser's own pair when both keys are the same", () => {
     const same = normaliseSettings({ nextHotkey: "F4", backHotkey: "F4" }, firefox);
-    expect([same.nextHotkey, same.backHotkey]).toEqual(["F8", "F9"]);
+    expect([same.nextHotkey, same.backHotkey]).toEqual(["F9", "F8"]);
   });
 
   it("only treats Firefox as Firefox", () => {
     expect(firefoxKeepsF7({})).toBe(false);
-    expect(firefoxKeepsF7(firefox)).toBe(true);
     expect(firefoxKeepsF7({ firefox: false })).toBe(false);
+    expect(firefoxKeepsF7(firefox)).toBe(true);
   });
 });

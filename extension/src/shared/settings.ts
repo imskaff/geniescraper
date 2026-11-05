@@ -67,9 +67,14 @@ export function firefoxKeepsF7(host: BrowserHost = currentHost()): boolean {
   return host.firefox === true;
 }
 
-/** The back key a fresh install gets: F7 everywhere, except Firefox where F7 never reaches the page. */
-export function defaultBackHotkey(host: BrowserHost = currentHost()): string {
-  return firefoxKeepsF7(host) ? "F9" : DEFAULT_SETTINGS.backHotkey;
+/**
+ * The keys a fresh install gets: F8 next and F7 back, except in Firefox, where F7 never reaches the page: there F9 is
+ * next and F8 is back. One pair per browser, never the same key twice.
+ */
+export function defaultHotkeys(host: BrowserHost = currentHost()): { next: string; back: string } {
+  return firefoxKeepsF7(host)
+    ? { next: "F9", back: "F8" }
+    : { next: DEFAULT_SETTINGS.nextHotkey, back: DEFAULT_SETTINGS.backHotkey };
 }
 
 export const WAIT_RANGE = { min: 0.2, max: 3 } as const;
@@ -120,8 +125,8 @@ export function normaliseSettings(raw: unknown, host: BrowserHost = currentHost(
     return typeof value === "string" && (HOTKEY_CHOICES as readonly string[]).includes(value)
       ? value
       : key === "backHotkey"
-        ? defaultBackHotkey(host)
-        : DEFAULT_SETTINGS[key];
+        ? defaultHotkeys(host).back
+        : defaultHotkeys(host).next;
   };
   // Someone who already has saved settings from before the set-up existed has been using the extension: they are not
   // welcomed as a new user. Only an empty store, or one that says so, shows the set-up.
@@ -161,8 +166,7 @@ export function normaliseSettings(raw: unknown, host: BrowserHost = currentHost(
   let backHotkey = hotkey("backHotkey");
   // One key cannot do two things: fall back to the defaults rather than guess which was meant.
   if (nextHotkey === backHotkey) {
-    nextHotkey = DEFAULT_SETTINGS.nextHotkey;
-    backHotkey = defaultBackHotkey(host);
+    ({ next: nextHotkey, back: backHotkey } = defaultHotkeys(host));
   }
   return {
     pasteMode,
