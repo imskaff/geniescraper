@@ -3,7 +3,7 @@
 // edition words of the title must agree on both sides, the artists must be the same set, the release year must be
 // (nearly) the same and, where a service tells the number of tracks, so must that be. Several results may pass; the
 // caller then lists them all (at most MAX_SHOWN) instead of picking one, and none passing is "no match", never a guess.
-import { fold, sameArtistsJoined, sameSet, type SearchService } from "./searchMatch";
+import { fold, sameArtists, sameArtistsJoined, type SearchService } from "./searchMatch";
 
 /** A Genius album as the matcher needs it. */
 export interface AlbumRef {
@@ -76,7 +76,7 @@ export function acceptsAlbum(service: SearchService, album: AlbumRef, hit: Album
   if (normAlbumTitle(hit.title) !== normAlbumTitle(album.title)) return false;
   const artistsOk =
     service === "spotify"
-      ? sameSet(hit.artists, album.primary)
+      ? sameArtists(hit.artists, album.primary)
       : sameArtistsJoined(hit.artists.join(" and "), album.primary);
   if (!artistsOk || !yearsClose(album.year, hit.year)) return false;
   // "X - Single" and "X - EP" claim a kind of release the name alone does not show: they are the album "X" only when

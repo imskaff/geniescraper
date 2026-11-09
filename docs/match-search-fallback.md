@@ -293,3 +293,41 @@ A full "Get credits" press costs one iTunes GET plus, only when that fails, one 
 The probe scripts were not committed (research only).
 The data came from `itunes.apple.com/search?media=music&entity=song&country=us&limit=25&term=...`, and from a throwaway Chromium extension that opened one background tab per search URL and read the rows described in section 3, 8 s apart.
 Re-run it sparingly and one request at a time; the sample file lists every query input.
+
+## 10. Artist names Genius writes differently from the services (found 2026-11-09)
+
+Report: `genius.com/Mike-mike-stud-ghost-lyrics`, "mike. (Mike Stud)", found nothing on Apple Music or Spotify.
+
+### 10.1 Cause
+
+The page has no `appleMusicId` and no `spotifyUuid`, so only the name search ran, with the query "ghost mike. (Mike Stud)".
+Two things failed:
+
+- Query: iTunes answered that query with two unrelated Bea Miller songs ("to the grave (feat. Mike Stud)"); the song was not in the 25 results.
+  The query "ghost mike." returns it first (`ghost` by `mike.`, id 6813641826).
+  Spotify finds the song with either query.
+- Compare: both services list the artist as "mike.", and the exact artist compare read it against the whole Genius name, so a correct first result was rejected.
+
+### 10.2 How common (Genius search API, 2026-11-09, a few dozen requests 4 s apart)
+
+- 100 songs from five general queries (love, rap, remix, Kid Cudi, DJ): 0 primary artists with a trailing parenthetical, 6 with symbols ("P!nk", "$uicideboy$", "A$AP", "J. Cole"), 59 with featured artists in the artist field ("(Ft. ...)").
+  So the pattern is rare in popular songs; it appears where Genius needs to tell two artists apart or show a real name.
+- Targeted queries found, among primary artists: "mike. (Mike Stud)" (real name, 20 of 20 hits of his), "ЭВСЭ (EVSE)" (Latin spelling beside a non-Latin name), and disambiguation suffixes "bôa (UK)", "The Prodigy (UK)", "BM (UK)", "PIXY (UK)", "GP (US Rapper)", "Us (Rapper)", "Spectre (Rapper)", "Industry Plant (US Rapper)", plus "Floki (RUS)", "Breeze (US rapper)", "Jace (ATL)" among featured artists.
+  "Kid Cudi", "Ke$ha"/"Kesha", "P!nk", "$uicideboy$" are plain names; stylised punctuation was already handled by `fold`.
+
+### 10.3 Design
+
+Rule: the same title, and every Genius artist matches one result artist exactly, plus one rule about a trailing parenthetical.
+
+- A parenthetical is dropped (for the compare and for the search query) only when it reads as a real name: two or more words, none a role, place or kind (US, UK, rapper, band, ...).
+  Single words and role words are how Genius separates two artists of one name, so dropping them could merge two artists: those songs stay "none".
+- A non-Latin name with a Latin spelling in the parenthetical may be listed under either.
+- The whole name is always tried first; two Genius artists that shorten to the same name never use the shortened form; "several" and "none" are unchanged.
+- Rejected: using the credits on the streaming page as a second check (a tab per candidate, and the credits are what the user asked to read); searching twice, full name then short name (the full name is the query that returns noise).
+- Residual risk: a different artist with the same display name and the same exact title as a real-name artist; not seen, cannot be excluded.
+
+### 10.4 Live check (one page at a time, 15 s apart)
+
+11 pages: three songs of "mike. (Mike Stud)", a featured "mike. (Mike Stud)", "bôa (UK)", "The Prodigy (UK)", "ЭВСЭ (EVSE) & Floki (RUS)", "P!nk", "$uicideboy$", "Kesha", Gorillaz.
+Of 22 service answers: 18 found, all correct (0 wrong), 4 none ("bôa (UK)" and the EVSE song, both services; right for a disambiguated name).
+Found by search, with no Genius id: "ghost" and the featured "to the grave" on both services, and one more Apple row; the rest came from Genius's own ids, which this change does not touch.

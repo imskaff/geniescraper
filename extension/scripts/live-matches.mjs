@@ -11,6 +11,10 @@
 // search tab per album) and tells, for every service, whether the page found is the expected album: found / correct /
 // none / wrong. A wrong match fails the run; "none" never does, because a missed album is better than a wrong one.
 //
+// --aliases runs real Genius song pages whose artist names carry a real name in a parenthetical ("mike. (Mike Stud)"),
+// a disambiguation suffix ("bôa (UK)") or stylised punctuation ("P!nk"), and tells for every service whether the page
+// found is the expected song (found / correct / none / wrong); a wrong match fails the run, "none" never does.
+//
 // --get-credits also presses Get credits on the Apple Music row of the Fortnight case and checks that the review
 // opens; it leaves the panel on the review screen, so use it with --only apple-id-only.
 // The browser starts minimized. (--headless runs it with no window at all, but Genius shows a human check to a
@@ -100,6 +104,54 @@ const ALBUM_CASES = [
     expect: "none",
   },
 ];
+// Songs whose artist names are written in a way the services are not. `accepts` tells whether a found "Artist - Title"
+// is the right song; a service that finds nothing is counted as none (right for a disambiguated name).
+const folded = (text) =>
+  text
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+const song = (artist, title) => (name) => folded(name).includes(folded(artist)) && folded(name).includes(folded(title));
+const ALIAS_CASES = [
+  { name: "alias-ghost", url: "https://genius.com/Mike-mike-stud-ghost-lyrics", accepts: song("mike.", "ghost") },
+  {
+    name: "alias-these-days",
+    url: "https://genius.com/Mike-mike-stud-these-days-lyrics",
+    accepts: song("mike.", "These Days"),
+  },
+  { name: "alias-swish", url: "https://genius.com/Mike-mike-stud-swish-lyrics", accepts: song("mike.", "Swish") },
+  {
+    name: "alias-featured",
+    url: "https://genius.com/Bea-miller-to-the-grave-lyrics",
+    accepts: song("Bea Miller", "to the grave"),
+  },
+  { name: "suffix-uk", url: "https://genius.com/Boa-uk-duvet-lyrics", accepts: song("bôa", "Duvet") },
+  {
+    name: "suffix-uk-band",
+    url: "https://genius.com/The-prodigy-uk-firestarter-lyrics",
+    accepts: song("The Prodigy", "Firestarter"),
+  },
+  {
+    name: "translit",
+    url: "https://genius.com/Evse-and-floki-rus-stealing-alcohol-lyrics",
+    accepts: song("EVSE", "Ворую алкоголь (Stealing Alcohol)"),
+  },
+  { name: "punct-pink", url: "https://genius.com/P-nk-what-about-us-lyrics", accepts: song("P!nk", "What About Us") },
+  {
+    name: "punct-suicideboys",
+    url: "https://genius.com/Uicideboy-paris-lyrics",
+    accepts: song("$uicideboy$", "Paris"),
+  },
+  { name: "punct-kesha", url: "https://genius.com/Kesha-tik-tok-lyrics", accepts: song("Kesha", "TiK ToK") },
+  {
+    name: "feat-gorillaz",
+    url: "https://genius.com/Gorillaz-momentary-bliss-lyrics",
+    accepts: song("Gorillaz", "Momentary Bliss"),
+  },
+];
+const aliases = args.includes("--aliases");
 const albums = args.includes("--albums");
 const tally = {
   apple: { found: 0, correct: 0, none: 0, wrong: 0, failed: 0 },
@@ -169,7 +221,7 @@ try {
 
   let first = true;
   const only = option("--only", "");
-  for (const c of (albums ? ALBUM_CASES : CASES).filter((c) => !only || c.name === only)) {
+  for (const c of (albums ? ALBUM_CASES : aliases ? ALIAS_CASES : CASES).filter((c) => !only || c.name === only)) {
     if (!first) await sleep(GAP_MS);
     first = false;
     await browser.openTab(c.url);
@@ -182,7 +234,7 @@ try {
     if (tabId === null) continue;
     await worker.evaluate(`chrome.tabs.update(${String(tabId)}, { active: true }).then(() => true)`);
 
-    if (c.expect === "ready" || c.names) {
+    if (c.expect === "ready" || c.names || c.accepts) {
       if (manual) {
         // Nothing may be looked up before the button: the card shows only the button, then it is pressed.
         const idle = await until("!!document.querySelector('[data-key=\"song-matches-find\"]')", 20_000);
@@ -200,7 +252,7 @@ try {
       console.log(`      ${String(await text('[data-key="song-matches"]')).replace(/\s+/g, " ")}`);
       check(`${c.name}: the Apple Music row shows`, await exists('[data-key^="match-apple"]'));
       check(`${c.name}: the Spotify row shows`, await exists('[data-key^="match-spotify"]'));
-      if (c.names) {
+      if (c.names || c.accepts) {
         for (const service of ["apple", "spotify"]) {
           // Each found album is a button of its own ("several" gives more than one); a note row means none or failed.
           const found = JSON.parse(
@@ -215,10 +267,10 @@ try {
           }
           for (const name of found) {
             tally[service].found++;
-            const right = c.names.some((n) => n.toLowerCase() === name.toLowerCase());
+            const right = c.accepts ? c.accepts(name) : c.names.some((n) => n.toLowerCase() === name.toLowerCase());
             tally[service][right ? "correct" : "wrong"]++;
             console.log(`      ${service}: ${name}${right ? "" : "   <-- NOT the expected name: check by hand"}`);
-            check(`${c.name}: ${service} found the expected album`, right, name);
+            check(`${c.name}: ${service} found the expected ${c.accepts ? "song" : "album"}`, right, name);
           }
         }
       }

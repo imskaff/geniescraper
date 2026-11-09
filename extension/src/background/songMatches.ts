@@ -3,7 +3,7 @@
 // missing or does not hold, a search runs and only an exact match counts (core/searchMatch.ts), otherwise the answer
 // is "none" and never a guess. Nothing is read from the pages found: the user presses Get credits for that. Every
 // failure is data (`failed`), the two services are resolved in parallel, and one song page is resolved once.
-import { normTitle, pickHit, type Hit, type SongRef } from "../core/searchMatch";
+import { normTitle, pickHit, searchName, type Hit, type SongRef } from "../core/searchMatch";
 import {
   appleHit,
   appleSongUrl,
@@ -54,7 +54,7 @@ const songRef = (info: GeniusSongInfo): SongRef => ({
   featured: info.featured,
 });
 
-const searchText = (info: GeniusSongInfo): string => `${info.title} ${info.primary.join(" ")}`;
+const searchText = (info: GeniusSongInfo): string => [info.title, ...info.primary.map(searchName)].join(" ");
 
 function appleFound(song: AppleSong, source: "genius" | "search"): ServiceMatch {
   return {

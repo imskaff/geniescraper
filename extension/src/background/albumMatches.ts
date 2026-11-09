@@ -4,6 +4,7 @@
 // is listed, a few are all listed, none is "none" and never a guess. Apple is asked through iTunes's search API, Spotify
 // through the albums tab of its search page in one background tab. Nothing is read from the pages found.
 import { MAX_SHOWN, pickAlbumHits, type AlbumHit, type AlbumRef } from "../core/albumMatch";
+import { searchName } from "../core/searchMatch";
 import { appleAlbumHit, searchAppleAlbums } from "../lookups/albumLinks";
 import type { GetJson } from "../lookups/itunes";
 import type { FoundMatch, GeniusAlbumInfo, Result, SearchRow, ServiceMatch } from "../shared/messages";
@@ -24,7 +25,7 @@ const albumRef = (info: GeniusAlbumInfo): AlbumRef => ({
 
 /** Title and artists; for a compilation by "Various Artists" the title alone, which is what the services index it by. */
 function searchText(info: GeniusAlbumInfo): string {
-  const artists = info.primary.filter((name) => name.toLowerCase() !== "various artists");
+  const artists = info.primary.filter((name) => name.toLowerCase() !== "various artists").map(searchName);
   return [info.title, ...artists].join(" ");
 }
 
