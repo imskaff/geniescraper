@@ -62,19 +62,68 @@ export function normTitle(title: string, artists: string[]): string {
   return fold(text.replace(EDITION, " ").replace(NON_LATIN_BRACKET, " "));
 }
 
-export const sameSet = (a: string[], b: string[]): boolean => {
-  const x = new Set(a.map(fold));
-  const y = new Set(b.map(fold));
-  return x.size === y.size && [...x].every((name) => y.has(name));
-};
+// Genius sometimes names an artist "display name (Real Name)" or "name (US)", the services list the name alone. A
+// trailing parenthetical is therefore dropped for the search and as a second spelling in the compare, whatever it
+// says; the whole name is still tried first. A non-Latin name with its Latin spelling in the parenthetical
+// ("ЭВСЭ (EVSE)") may be listed under either spelling.
+const TRAILING_PAREN = /^(.*\S)\s*\(([^()]+)\)$/;
+
+interface NameForms {
+  /** Every folded spelling a service may list this artist under; the first is the whole name. */
+  keys: string[];
+  /** The spelling to put in a search query. */
+  search: string;
+}
+
+function formsOf(name: string): NameForms {
+  const whole = { keys: [fold(name)], search: name };
+  const m = TRAILING_PAREN.exec(name.trim());
+  const base = m?.[1]?.trim();
+  const inner = m?.[2]?.trim();
+  if (!base || !inner || fold(base) === "") return whole;
+  if (!/[A-Za-z]/.test(base) && /\p{L}/u.test(base) && /^[A-Za-z0-9 .'’-]+$/.test(inner) && fold(inner) !== "") {
+    return { keys: [fold(name), fold(base), fold(inner)], search: inner };
+  }
+  return { keys: [fold(name), fold(base)], search: base };
+}
+
+/** The name as a search query should spell it: without the real-name parenthetical the services do not index. */
+export const searchName = (name: string): string => formsOf(name).search;
+
+/**
+ * The spellings of each Genius name, one list per distinct name. A shortened spelling shared with another name of the
+ * song is dropped, so two different artists can never be read as one.
+ */
+function formsOfAll(names: string[]): NameForms[] {
+  const distinct = [...new Map(names.map((name) => [fold(name), formsOf(name)])).values()];
+  return distinct.map((form, i) => ({
+    ...form,
+    keys: form.keys.filter(
+      (key, k) => key !== "" && (k === 0 || !distinct.some((other, j) => j !== i && other.keys.includes(key))),
+    ),
+  }));
+}
+
+/** True when the result's artists are exactly the Genius artists, each under any one of its spellings. */
+export function sameArtists(hit: string[], names: string[]): boolean {
+  const listed = new Set(hit.map(fold));
+  const used = new Set<string>();
+  for (const { keys } of formsOfAll(names)) {
+    const key = keys.find((k) => listed.has(k) && !used.has(k));
+    if (key === undefined) return false;
+    used.add(key);
+  }
+  return used.size === listed.size;
+}
 
 /** Whether Apple's one joined artist string is exactly these names, with nothing but "and", "x" or "with" between. */
 export function sameArtistsJoined(joined: string, names: string[]): boolean {
   let rest = ` ${fold(joined)} `;
-  for (const name of [...names].sort((a, b) => b.length - a.length)) {
-    const folded = ` ${fold(name)} `;
-    if (!rest.includes(folded)) return false;
-    rest = rest.replace(folded, " ");
+  const forms = formsOfAll(names).sort((a, b) => (b.keys[0]?.length ?? 0) - (a.keys[0]?.length ?? 0));
+  for (const { keys } of forms) {
+    const key = keys.map((k) => ` ${k} `).find((k) => rest.includes(k));
+    if (key === undefined) return false;
+    rest = rest.replace(key, " ");
   }
   return rest
     .trim()
@@ -107,9 +156,9 @@ export function acceptsHit(service: SearchService, song: SongRef, hit: Hit): boo
   if (normTitle(hit.title, all) !== normTitle(song.title, all)) return false;
   const artistsOk =
     service === "spotify"
-      ? sameSet(hit.artists, all)
+      ? sameArtists(hit.artists, all)
       : sameArtistsJoined(hit.artists.join(" and "), song.primary) &&
-        sameSet(featuredInTitle(hit.title), song.featured);
+        sameArtists(featuredInTitle(hit.title), song.featured);
   if (!artistsOk) return false;
   // Every flag word of the release ("Live", "Remixes") must be one the Genius title has too.
   const allowed = flagWords(song.title);

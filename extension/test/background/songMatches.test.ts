@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { createSongMatches, type SongMatchTools } from "../../src/background/songMatches";
 import type { GeniusSongInfo, Result, SearchRow, SongMatchesAnswer } from "../../src/shared/messages";
+import { readSongInfo } from "../../src/genius/songState";
 import { fakeBrowser } from "./fakePorts";
 
 const TIMING = { loadMs: 200, askMs: 100, pollMs: 5 };
@@ -398,5 +401,84 @@ describe("one look-up per song page", () => {
     fail = false;
     expect(await t.resolve()).toMatchObject({ spotify: { status: "none" } });
     expect(t.searches).toHaveLength(2);
+  });
+});
+
+describe("a Genius artist named with the real name in a parenthetical", () => {
+  // The real saved Genius page of https://genius.com/Mike-mike-stud-ghost-lyrics: no Apple Music or Spotify id, the
+  // artist "mike. (Mike Stud)". The answers below are real, cut to their first rows.
+  const GHOST = readSongInfo(
+    new DOMParser().parseFromString(
+      readFileSync(join(import.meta.dirname, "..", "genius", "pages", "ghost-mike-stud.html"), "utf8"),
+      "text/html",
+    ),
+    "/Mike-mike-stud-ghost-lyrics",
+  );
+  if (GHOST === null) throw new Error("the saved page must read");
+  const ITUNES_FULL_NAME = {
+    resultCount: 2,
+    results: [
+      itunesSong(1444856071, "to the grave (feat. Mike Stud)", "Bea Miller", "chapter three: yellow - Single"),
+      itunesSong(1391263864, "To the Grave (feat. Mike Stud)", "Bea Miller", "Cloak & Dagger"),
+    ],
+  };
+  const ITUNES_DISPLAY_NAME = {
+    resultCount: 4,
+    results: [
+      itunesSong(6813641826, "ghost", "mike.", "ghost - Single"),
+      itunesSong(1512133117, "Ghost Town", "Mike Ryan", "Ghost Town - Single"),
+      itunesSong(193239047, "Ghost", "Pearl Jam", "Riot Act"),
+      itunesSong(992313701, "Ghost", "Mike Dunn & The Kings of New England", "Hard Luck Soft Rock"),
+    ],
+  };
+  const SPOTIFY_ROWS: SearchRow[] = [
+    {
+      title: "ghost",
+      artists: ["mike."],
+      album: "ghost",
+      href: "https://open.spotify.com/track/0dIip4WO8ugZYMvitt4vcW",
+    },
+    {
+      title: "Ghost",
+      artists: ["Michael Williams"],
+      album: "x",
+      href: "https://open.spotify.com/track/1aMbgp8fbQ4rr1eKDbNYcn",
+    },
+  ];
+
+  it("reads as display name plus real name, with no ids", () => {
+    expect(GHOST).toMatchObject({ primary: ["mike. (Mike Stud)"], featured: [], appleId: "", spotifyId: "" });
+  });
+
+  it("finds the song on both services by searching the display name", async () => {
+    const t = setup(GHOST, {
+      // iTunes answers the way it really did: junk for the whole name, the song for the display name.
+      json: (url) =>
+        searchOf(url)
+          ? new URL(url).searchParams.get("term") === "ghost mike."
+            ? ITUNES_DISPLAY_NAME
+            : ITUNES_FULL_NAME
+          : null,
+      search: () => Promise.resolve({ ok: true, data: SPOTIFY_ROWS }),
+    });
+    const answer = await t.resolve();
+    if (answer.status !== "ready") throw new Error("not ready");
+    expect(answer.apple).toMatchObject({ status: "found", url: "https://music.apple.com/us/song/6813641826" });
+    expect(answer.spotify).toMatchObject({
+      status: "found",
+      url: "https://open.spotify.com/track/0dIip4WO8ugZYMvitt4vcW",
+    });
+    expect(t.searches).toEqual(["ghost mike."]);
+  });
+
+  it("lists nothing when the display name's results are other artists' songs", async () => {
+    const t = setup(GHOST, {
+      json: (url) => (searchOf(url) ? { resultCount: 3, results: ITUNES_DISPLAY_NAME.results.slice(1) } : null),
+      search: () => Promise.resolve({ ok: true, data: SPOTIFY_ROWS.slice(1) }),
+    });
+    const answer = await t.resolve();
+    if (answer.status !== "ready") throw new Error("not ready");
+    expect(answer.apple).toEqual({ status: "none" });
+    expect(answer.spotify).toEqual({ status: "none" });
   });
 });
