@@ -183,7 +183,11 @@ const VARIED_CASES = [
     url: "https://genius.com/Post-malone-congratulations-lyrics",
     accepts: song("Post Malone", "Congratulations"),
   },
-  { name: "japanese", url: "https://genius.com/Yoasobi-idol-lyrics", accepts: (n) => song("YOASOBI", "Idol")(n) || song("YOASOBI", "アイドル")(n) },
+  {
+    name: "japanese",
+    url: "https://genius.com/Yoasobi-idol-lyrics",
+    accepts: (n) => song("YOASOBI", "Idol")(n) || song("YOASOBI", "アイドル")(n),
+  },
   {
     name: "japanese-title",
     url: "https://genius.com/Yoasobi-yoru-ni-kakeru-lyrics",
