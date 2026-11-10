@@ -15,6 +15,9 @@
 // a disambiguation suffix ("bôa (UK)") or stylised punctuation ("P!nk"), and tells for every service whether the page
 // found is the expected song (found / correct / none / wrong); a wrong match fails the run, "none" never does.
 //
+// --varied runs everyday songs of every shape (one or several artists, featured, accents, non-Latin scripts, symbols)
+// and tells for every service whether the song found is the expected one.
+//
 // --get-credits also presses Get credits on the Apple Music row of the Fortnight case and checks that the review
 // opens; it leaves the panel on the review screen, so use it with --only apple-id-only.
 // The browser starts minimized. (--headless runs it with no window at all, but Genius shows a human check to a
@@ -151,6 +154,83 @@ const ALIAS_CASES = [
     accepts: song("Gorillaz", "Momentary Bliss"),
   },
 ];
+// Everyday songs of every shape: one artist, several primary artists, featured artists, accents, non-Latin scripts,
+// digits and symbols in names. Run with --varied; a page that is not a Genius song (a wrong slug) fails "card settled".
+const VARIED_CASES = [
+  {
+    name: "one-artist",
+    url: "https://genius.com/Taylor-swift-blank-space-lyrics",
+    accepts: song("Taylor Swift", "Blank Space"),
+  },
+  {
+    name: "one-artist-2",
+    url: "https://genius.com/Ed-sheeran-shape-of-you-lyrics",
+    accepts: song("Ed Sheeran", "Shape of You"),
+  },
+  {
+    name: "two-primary",
+    url: "https://genius.com/Lady-gaga-and-bruno-mars-die-with-a-smile-lyrics",
+    accepts: song("Lady Gaga", "Die With A Smile"),
+  },
+  { name: "two-primary-2", url: "https://genius.com/Cardi-b-wap-lyrics", accepts: song("Cardi B", "WAP") },
+  {
+    name: "featured",
+    url: "https://genius.com/Travis-scott-sicko-mode-lyrics",
+    accepts: song("Travis Scott", "SICKO MODE"),
+  },
+  {
+    name: "featured-2",
+    url: "https://genius.com/Post-malone-congratulations-lyrics",
+    accepts: song("Post Malone", "Congratulations"),
+  },
+  { name: "japanese", url: "https://genius.com/Yoasobi-idol-lyrics", accepts: (n) => song("YOASOBI", "Idol")(n) || song("YOASOBI", "アイドル")(n) },
+  {
+    name: "japanese-title",
+    url: "https://genius.com/Yoasobi-yoru-ni-kakeru-lyrics",
+    accepts: (n) => song("YOASOBI", "Yoru ni kakeru")(n) || song("YOASOBI", "夜に駆ける")(n),
+  },
+  { name: "korean", url: "https://genius.com/Bts-dynamite-lyrics", accepts: song("BTS", "Dynamite") },
+  {
+    name: "korean-2",
+    url: "https://genius.com/Blackpink-how-you-like-that-lyrics",
+    accepts: song("BLACKPINK", "How You Like That"),
+  },
+  { name: "accent-artist", url: "https://genius.com/Rosalia-despecha-lyrics", accepts: song("Rosalia", "DESPECHÁ") },
+  {
+    name: "accent-title",
+    url: "https://genius.com/Bad-bunny-titi-me-pregunto-lyrics",
+    accepts: song("Bad Bunny", "Tití Me Preguntó"),
+  },
+  { name: "accent-beyonce", url: "https://genius.com/Beyonce-halo-lyrics", accepts: song("Beyoncé", "Halo") },
+  { name: "digit-artist", url: "https://genius.com/21-savage-a-lot-lyrics", accepts: song("21 Savage", "a lot") },
+  {
+    name: "slash-artist",
+    url: "https://genius.com/Ac-dc-back-in-black-lyrics",
+    accepts: song("AC/DC", "Back In Black"),
+  },
+  {
+    name: "ampersand-artist",
+    url: "https://genius.com/Simon-and-garfunkel-the-sound-of-silence-lyrics",
+    accepts: song("Simon & Garfunkel", "Sound"),
+  },
+  {
+    name: "and-artist",
+    url: "https://genius.com/Earth-wind-and-fire-september-lyrics",
+    accepts: song("Earth, Wind & Fire", "September"),
+  },
+  {
+    name: "comma-artist",
+    url: "https://genius.com/Tyler-the-creator-earfquake-lyrics",
+    accepts: song("Tyler, The Creator", "EARFQUAKE"),
+  },
+  { name: "german", url: "https://genius.com/Rammstein-du-hast-lyrics", accepts: song("Rammstein", "Du Hast") },
+  {
+    name: "one-artist-3",
+    url: "https://genius.com/Hozier-take-me-to-church-lyrics",
+    accepts: song("Hozier", "Take Me To Church"),
+  },
+];
+const varied = args.includes("--varied");
 const aliases = args.includes("--aliases");
 const albums = args.includes("--albums");
 const tally = {
@@ -221,7 +301,9 @@ try {
 
   let first = true;
   const only = option("--only", "");
-  for (const c of (albums ? ALBUM_CASES : aliases ? ALIAS_CASES : CASES).filter((c) => !only || c.name === only)) {
+  for (const c of (albums ? ALBUM_CASES : varied ? VARIED_CASES : aliases ? ALIAS_CASES : CASES).filter(
+    (c) => !only || c.name === only,
+  )) {
     if (!first) await sleep(GAP_MS);
     first = false;
     await browser.openTab(c.url);

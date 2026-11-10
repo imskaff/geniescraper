@@ -87,3 +87,23 @@ describe("the search name", () => {
     expect(searchName("ЭВСЭ (EVSE)")).toBe("EVSE");
   });
 });
+
+describe("a non-Latin title with its Latin spelling in a parenthetical", () => {
+  const idol: SongRef = { title: "アイドル (Idol)", primary: ["YOASOBI"], featured: [] };
+  const hit = (title: string, ...artists: string[]): Hit => ({ title, artists, album: "x" });
+  it("matches the Latin spelling, the original or the whole title", () => {
+    for (const title of ["Idol", "アイドル", "アイドル (Idol)"]) {
+      expect(acceptsHit("spotify", idol, hit(title, "YOASOBI")), title).toBe(true);
+      expect(acceptsHit("apple", idol, hit(title, "YOASOBI")), title).toBe(true);
+    }
+  });
+  it("still rejects another song, another artist or a flagged version", () => {
+    expect(acceptsHit("spotify", idol, hit("Idol", "ShiroNeko"))).toBe(false);
+    expect(acceptsHit("spotify", idol, hit("Idol Remix", "YOASOBI"))).toBe(false);
+    expect(acceptsHit("spotify", idol, hit("Monotone", "YOASOBI"))).toBe(false);
+  });
+  it("does not touch a Latin title with a bracket", () => {
+    const stay: SongRef = { title: "Stay (Blue)", primary: ["A"], featured: [] };
+    expect(acceptsHit("spotify", stay, hit("Blue", "A"))).toBe(false);
+  });
+});

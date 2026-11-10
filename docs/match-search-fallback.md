@@ -331,3 +331,7 @@ Rule: the same title, and every Genius artist matches one result artist exactly,
 11 pages: three songs of "mike. (Mike Stud)", a featured "mike. (Mike Stud)", "bôa (UK)", "The Prodigy (UK)", "ЭВСЭ (EVSE) & Floki (RUS)", "P!nk", "$uicideboy$", "Kesha", Gorillaz.
 Of 22 service answers: 18 found, all correct (0 wrong), 4 none (the live run predates the suffix change: "bôa (UK)" and the EVSE song, both services, were none then).
 Found by search, with no Genius id: "ghost" and the featured "to the grave" on both services, and one more Apple row; the rest came from Genius's own ids, which this change does not touch.
+
+### 10.5 Non-Latin titles with a Latin spelling, and a wider live run
+
+A wider live run (20 everyday songs: one artist, several primary artists, featured artists, accents, Japanese, Korean, digits and symbols in names) found 38 of 40 service answers correct. The two misses were songs Genius titles "アイドル (Idol)" and "夜に駆ける (Yoru ni Kakeru)": the services list them as "Idol" or "アイドル", and the whole Genius title was compared. Either spelling, or the whole title, is now accepted; the search query is unchanged (iTunes already returned the song for the whole title). Flag words, artists and other titles are still compared exactly.

@@ -62,6 +62,19 @@ export function normTitle(title: string, artists: string[]): string {
   return fold(text.replace(EDITION, " ").replace(NON_LATIN_BRACKET, " "));
 }
 
+// Genius writes some non-Latin titles as "アイドル (Idol)": the original, then its Latin spelling in a parenthetical. The
+// services list the song under one of the two, so either spelling is accepted and the Latin one is searched.
+const NON_LATIN_THEN_LATIN = /^(.*\S)\s*\(([^()]+)\)\s*$/;
+function titleKeys(title: string): string[] {
+  const m = NON_LATIN_THEN_LATIN.exec(title.trim());
+  const base = m?.[1]?.trim();
+  const inner = m?.[2]?.trim();
+  if (base && inner && !/[A-Za-z]/.test(base) && /\p{L}/u.test(base) && /^[A-Za-z0-9 .,'’!?&-]+$/.test(inner)) {
+    return [fold(base), fold(inner)].filter((k) => k !== "");
+  }
+  return [];
+}
+
 // Genius sometimes names an artist "display name (Real Name)" or "name (US)", the services list the name alone. A
 // trailing parenthetical is therefore dropped for the search and as a second spelling in the compare, whatever it
 // says; the whole name is still tried first. A non-Latin name with its Latin spelling in the parenthetical
@@ -153,7 +166,10 @@ function releaseOf(hit: Hit): string {
 /** True when the result is exactly this song: same title, same artists, and not an edition the title does not name. */
 export function acceptsHit(service: SearchService, song: SongRef, hit: Hit): boolean {
   const all = [...song.primary, ...song.featured];
-  if (normTitle(hit.title, all) !== normTitle(song.title, all)) return false;
+  const wanted = normTitle(song.title, all);
+  const spellings = titleKeys(song.title);
+  const heard = normTitle(hit.title, all);
+  if (heard !== wanted && !spellings.includes(heard)) return false;
   const artistsOk =
     service === "spotify"
       ? sameArtists(hit.artists, all)
