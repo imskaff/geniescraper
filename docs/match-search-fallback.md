@@ -319,8 +319,8 @@ Two things failed:
 
 Rule: the same title, and every Genius artist matches one result artist exactly, plus one rule about a trailing parenthetical.
 
-- A parenthetical is dropped (for the compare and for the search query) only when it reads as a real name: two or more words, none a role, place or kind (US, UK, rapper, band, ...).
-  Single words and role words are how Genius separates two artists of one name, so dropping them could merge two artists: those songs stay "none".
+- A trailing parenthetical is dropped (for the compare and for the search query) whatever it says: a real name, or a disambiguation suffix such as "(US)", "(UK)", "(US rapper)". The best match for the plain name is taken.
+  A suffix is how Genius separates two artists of one name, so a plain-name match may be the other artist; this is accepted, and the artists must still match exactly.
 - A non-Latin name with a Latin spelling in the parenthetical may be listed under either.
 - The whole name is always tried first; two Genius artists that shorten to the same name never use the shortened form; "several" and "none" are unchanged.
 - Rejected: using the credits on the streaming page as a second check (a tab per candidate, and the credits are what the user asked to read); searching twice, full name then short name (the full name is the query that returns noise).
@@ -329,5 +329,5 @@ Rule: the same title, and every Genius artist matches one result artist exactly,
 ### 10.4 Live check (one page at a time, 15 s apart)
 
 11 pages: three songs of "mike. (Mike Stud)", a featured "mike. (Mike Stud)", "bôa (UK)", "The Prodigy (UK)", "ЭВСЭ (EVSE) & Floki (RUS)", "P!nk", "$uicideboy$", "Kesha", Gorillaz.
-Of 22 service answers: 18 found, all correct (0 wrong), 4 none ("bôa (UK)" and the EVSE song, both services; right for a disambiguated name).
+Of 22 service answers: 18 found, all correct (0 wrong), 4 none (the live run predates the suffix change: "bôa (UK)" and the EVSE song, both services, were none then).
 Found by search, with no Genius id: "ghost" and the featured "to the grave" on both services, and one more Apple row; the rest came from Genius's own ids, which this change does not touch.

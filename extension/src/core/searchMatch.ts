@@ -62,15 +62,11 @@ export function normTitle(title: string, artists: string[]): string {
   return fold(text.replace(EDITION, " ").replace(NON_LATIN_BRACKET, " "));
 }
 
-// Genius sometimes names an artist "display name (Real Name)", the services list the display name alone. That
-// parenthetical is dropped only when it reads as a real name: two or more words, none of them a role, place or kind
-// ("US rapper", "Houston", "UK", "Band"), because a suffix like that is how Genius tells two artists of one name apart,
-// and dropping it would make them the same artist. A non-Latin name with its Latin spelling in the parenthetical
+// Genius sometimes names an artist "display name (Real Name)" or "name (US)", the services list the name alone. A
+// trailing parenthetical is therefore dropped for the search and as a second spelling in the compare, whatever it
+// says; the whole name is still tried first. A non-Latin name with its Latin spelling in the parenthetical
 // ("ЭВСЭ (EVSE)") may be listed under either spelling.
 const TRAILING_PAREN = /^(.*\S)\s*\(([^()]+)\)$/;
-const NOT_A_NAME =
-  /\b(us|uk|usa|rapper|singer|band|group|duo|dj|producer|musician|artist|songwriter|rock|pop|metal|punk|american|british|canadian|australian|german|french|swedish|norwegian|irish|scottish|hip|hop)\b/i;
-const NAME_WORDS = /^[\p{L}][\p{L}.'’-]*(?:\s+[\p{L}][\p{L}.'’-]*)+$/u;
 
 interface NameForms {
   /** Every folded spelling a service may list this artist under; the first is the whole name. */
@@ -88,8 +84,7 @@ function formsOf(name: string): NameForms {
   if (!/[A-Za-z]/.test(base) && /\p{L}/u.test(base) && /^[A-Za-z0-9 .'’-]+$/.test(inner) && fold(inner) !== "") {
     return { keys: [fold(name), fold(base), fold(inner)], search: inner };
   }
-  if (NAME_WORDS.test(inner) && !NOT_A_NAME.test(inner)) return { keys: [fold(name), fold(base)], search: base };
-  return whole;
+  return { keys: [fold(name), fold(base)], search: base };
 }
 
 /** The name as a search query should spell it: without the real-name parenthetical the services do not index. */

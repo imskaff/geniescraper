@@ -50,11 +50,12 @@ describe("wrong matches stay rejected", () => {
   it("rejects a bare real name when Genius gives none", () => {
     expect(acceptsHit("spotify", ghost(["Mike Stud"]), by("mike."))).toBe(false);
   });
-  it("does not turn a disambiguation suffix into an alias", () => {
+  it("reads a disambiguation suffix as the plain name, still exact", () => {
     for (const name of ["MIKE (US)", "MIKE (UK)", "bôa (UK)", "Breeze (US rapper)", "Us (Rapper)", "Mike (Houston)"]) {
       const base = name.replace(/\s*\(.*\)$/, "");
-      expect(acceptsHit("spotify", ghost([name]), by(base)), name).toBe(false);
-      expect(acceptsHit("apple", ghost([name]), by(base)), name).toBe(false);
+      expect(acceptsHit("spotify", ghost([name]), by(base)), name).toBe(true);
+      expect(acceptsHit("apple", ghost([name]), by(base)), name).toBe(true);
+      expect(acceptsHit("spotify", ghost([name]), by(base, "Someone")), name).toBe(false);
     }
   });
   it("does not let two different Genius artists collapse into one", () => {
@@ -73,8 +74,12 @@ describe("the search name", () => {
     expect(searchName("mike. (Mike Stud)")).toBe("mike.");
     expect(searchName("Kid Cudi (Scott Mescudi)")).toBe("Kid Cudi");
   });
+  it("drops a disambiguation suffix too", () => {
+    expect(searchName("MIKE (US)")).toBe("MIKE");
+    expect(searchName("Us (Rapper)")).toBe("Us");
+  });
   it("leaves every other name alone", () => {
-    for (const name of ["Taylor Swift", "P!nk", "$uicideboy$", "MIKE (US)", "Us (Rapper)", "AC/DC"]) {
+    for (const name of ["Taylor Swift", "P!nk", "$uicideboy$", "AC/DC"]) {
       expect(searchName(name)).toBe(name);
     }
   });
