@@ -133,7 +133,7 @@ try {
   for (const [step, title] of [
     [1, "What should it paste?"],
     [2, "Speed and comfort"],
-    [3, "Better covers and links (optional)"],
+    [3, "YouTube links (optional)"],
     [4, "You're all set"],
   ]) {
     await clickButton(step === 1 ? "Get started" : "Next");
@@ -166,7 +166,7 @@ try {
     "finishing the set-up shows the Settings button again",
     (await panel.evaluate("document.querySelector('#settings-toggle').hidden")) === false,
   );
-  check("panel opens on the link screen", (await text("h2")) === "Get credits from Apple Music");
+  check("panel opens on the link screen", (await text("h2")) === "Get credits from Apple Music or Spotify");
   check("focus starts on the heading", (await focused()) === "H2");
   await shot("1-link");
 
@@ -321,13 +321,12 @@ try {
     top.first && top.withBack && top.withMenu && !top.inHeader,
     JSON.stringify(top),
   );
-  check("Start pasting pulses when motion is allowed", top.animation === "glow", top.animation);
+  // Automatic pasting is the default, so the button says so for screen readers (the manual wording is checked below).
   check(
-    "Start pasting has a halo",
-    (await style('main [data-key="start"]', "boxShadow")) !== "none",
-    String(await style('main [data-key="start"]', "boxShadow")),
+    "Start pasting names its track and says it pastes automatically",
+    /^Start pasting CHIHIRO automatically\./.test(top.label ?? ""),
+    String(top.label),
   );
-  check("Start pasting names its track for screen readers", top.label === "Start pasting CHIHIRO", String(top.label));
   check(
     "the main menu button is a different color from Settings",
     (await style('[data-key="menu"]', "color")) !== (await style("#settings-toggle", "color")) &&
@@ -379,20 +378,6 @@ try {
     programmer.join(" | "),
   );
 
-  await panel.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
-  await sleep(200);
-  check(
-    "the pulse stops when the system asks for reduced motion",
-    (await style('main [data-key="start"]', "animationName")) === "none",
-  );
-  check(
-    "the halo stays, so the button still stands out",
-    (await style('main [data-key="start"]', "boxShadow")) !== "none",
-  );
-  await panel.send("Emulation.setEmulatedMedia", {
-    features: [{ name: "prefers-reduced-motion", value: "no-preference" }],
-  });
-
   const credits = await panel.evaluate(`Object.fromEntries(
     [...document.querySelectorAll('dl.credits dt')].map((dt) => [dt.textContent, dt.nextElementSibling.textContent]))`);
   const wanted = {};
@@ -443,6 +428,18 @@ try {
   await sleep(300);
   await shot("5-settings-light");
   await click('[data-key="setting-scrapeCore"]');
+  // Pasting by itself is the default. The rest of this run walks the one-key-at-a-time paste screen, so switch to
+  // that here, like a user would, and check the switch says so.
+  check(
+    "Auto-paste is on by default in Settings",
+    (await panel.evaluate("document.querySelector('[data-key=\"setting-pasteMode\"]').dataset.state")) === "on",
+  );
+  await click('[data-key="setting-pasteMode"]');
+  await until(
+    "document.querySelector('[data-key=\"setting-pasteMode\"]')?.dataset.state === 'off'",
+    "Auto-paste to switch off",
+    5000,
+  );
   await clickButton("Back");
   await until("document.querySelector('h2')?.textContent === 'Credits'", "the review screen again");
   await shot("6-review-light");
@@ -453,9 +450,14 @@ try {
   check("turning off songwriters and producers removes them from the queue", !queueAfter.includes("Written By"));
 
   // ── the paste screen (opening it needs no Genius sign-in) ──
+  check(
+    "with Auto-paste off, Start pasting says it fills one field at a time",
+    (await panel.evaluate("document.querySelector('main [data-key=\"start\"]').getAttribute('aria-label')")) ===
+      "Start pasting CHIHIRO one field at a time using the selected hotkey.",
+  );
   await clickButton("Start pasting");
-  await until("document.querySelector('h2')?.textContent === 'Paste into Genius'", "the paste screen");
-  check("Start pasting opens the paste screen", (await text("h2")) === "Paste into Genius");
+  await until("!!document.querySelector('.progress')", "the paste screen");
+  check("Start pasting opens the paste screen", ((await text("h2")) ?? "").endsWith("CHIHIRO"));
   check("focus moved to the paste heading", (await focused()) === "H2");
   const progress = (await text(".progress")) ?? "";
   const stepCount = Number(progress.match(/of (\d+)/)?.[1] ?? 0);
@@ -463,7 +465,10 @@ try {
   check("all steps are open from the start", await panel.evaluate("document.querySelector('details.disclosure').open"));
   check(
     "the current step is filled yellow, like the primary buttons",
-    (await style("ol.steps li.here", "backgroundColor")) === (await style('[data-key="fill"]', "backgroundColor")),
+    (await style("ol.steps li.here", "backgroundColor")) ===
+      (await panel.evaluate(
+        "(() => { const p = document.createElement('span'); p.style.backgroundColor = 'var(--accent)'; document.body.append(p); const c = getComputedStyle(p).backgroundColor; p.remove(); return c; })()",
+      )),
     String(await style("ol.steps li.here", "backgroundColor")),
   );
   check(
@@ -477,22 +482,22 @@ try {
     /Press F8/.test((await text(".step + p")) ?? "") && !/click/i.test((await text(".step + p")) ?? ""),
   );
   check(
-    "Back is disabled at the first step",
+    "Previous is disabled at the first step",
     await panel.evaluate(
-      "[...document.querySelectorAll('button')].find((b) => b.textContent.startsWith('Back (')).disabled",
+      "[...document.querySelectorAll('button')].find((b) => b.textContent.startsWith('Previous (')).disabled",
     ),
   );
   await shot("9-paste-screen-dark");
 
-  // Keyboard: Tab from the heading reaches Fill next, then Skip (Back is disabled), then Back to credits.
+  // Keyboard: Tab from the heading reaches Open on Genius, Auto-paste, Next, Skip (Previous is disabled), Back to credits.
   const tabOrder = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 5; i++) {
     await press("Tab");
     tabOrder.push(await focused());
   }
   check(
-    "Tab visits Fill next, Skip, Back to credits (the disabled Back is skipped)",
-    tabOrder.join(",") === "fill,pskip,pstop",
+    "Tab visits Open on Genius, Auto-paste, Next, Skip, Back to credits (the disabled Previous is skipped)",
+    tabOrder.join(",") === "genius-open,auto-toggle,fill,pskip,pstop",
     tabOrder.join(","),
   );
   await shot("9b-paste-screen-focus");
@@ -502,10 +507,9 @@ try {
   await shot("9c-paste-screen-light");
   await panel.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "dark" }] });
 
-  // Skip to the last step, which is the long song art URL, and check nothing overflows at 400 and 320 px.
+  // Skip to the long song art URL step (the last steps are the release date), and check nothing overflows at 400 and 320 px.
   for (let i = 0; i < stepCount + 2; i++) {
-    const text_ = (await text(".progress")) ?? "";
-    if (text_ === `Step ${String(stepCount)} of ${String(stepCount)}` || text_ === "All steps done") break;
+    if (((await text(".step .value")) ?? "").startsWith("https://")) break;
     await clickButton("Skip");
     await sleep(120);
   }
@@ -521,7 +525,7 @@ try {
   check("a done step is a compact row, not a tall centred box", doneRow > 0 && doneRow < 70, String(doneRow));
   await shot("9i-steps-done-open");
   const lastValue = (await text(".step .value")) ?? "";
-  check("the last step is the long song art URL", lastValue.startsWith("https://"), lastValue.slice(0, 40));
+  check("a step with the long song art URL is reached", lastValue.startsWith("https://"), lastValue.slice(0, 40));
   const pasteOverflow = await horizontalOverflow();
   check(
     "the paste screen has no horizontal scrollbar at 400 px",
@@ -538,6 +542,12 @@ try {
   );
   await shot("9d-paste-screen-last-step-320px");
   await setWidth(400);
+  // On to the last step, which is a release date field.
+  for (let i = 0; i < stepCount + 2; i++) {
+    if ((await text(".progress")) === `Step ${String(stepCount)} of ${String(stepCount)}`) break;
+    await clickButton("Skip");
+    await sleep(120);
+  }
 
   // Settings, with the new Pasting on Genius fieldset, in both schemes.
   await clickButton("Settings");
@@ -555,9 +565,9 @@ try {
   await panel.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "dark" }] });
   await panel.evaluate("document.querySelector('[data-key=\"host-youtube\"]').scrollIntoView({ block: 'end' })");
   check(
-    "the look-ups on other sites start unticked, with no permission asked",
+    "the YouTube look-up starts unticked, with no permission asked",
     (await panel.evaluate(
-      "['deezer', 'youtube'].every((h) => document.querySelector('[data-key=\"host-' + h + '\"]').checked === false)",
+      "['youtube'].every((h) => document.querySelector('[data-key=\"host-' + h + '\"]').checked === false)",
     )) === true,
   );
   await shot("9j-settings-lookups");
@@ -583,7 +593,7 @@ try {
   const settingsOverflow = await horizontalOverflow();
   check("the settings screen has no horizontal scrollbar", settingsOverflow.scroll <= settingsOverflow.client);
   await clickButton("Back");
-  await until("document.querySelector('h2')?.textContent === 'Paste into Genius'", "the paste screen again");
+  await until("!!document.querySelector('.progress')", "the paste screen again");
 
   // From the last step, one more step finishes the paste: the screen in front of it says so.
   await clickButton("Skip");
@@ -633,7 +643,7 @@ try {
 
   // Stop with the keyboard and land back on the credits.
   await clickButton("Start pasting");
-  await until("document.querySelector('h2')?.textContent === 'Paste into Genius'", "the paste screen once more");
+  await until("!!document.querySelector('.progress')", "the paste screen once more");
   let onStop = false;
   for (let i = 0; i < 8 && !onStop; i++) {
     await press("Tab");
