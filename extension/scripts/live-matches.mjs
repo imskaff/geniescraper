@@ -160,27 +160,27 @@ const VARIED_CASES = [
   {
     name: "russian-1",
     url: "https://genius.com/Max-korzh-live-dope-lyrics",
-    accepts: (n) => song("Макс Корж", "Жить в кайф")(n) || song("Max Korzh", "Live Dope")(n),
+    accepts: (n) => ["Макс Корж", "Max Korzh"].some((a) => ["Жить в кайф", "Live Dope"].some((t) => song(a, t)(n))),
   },
   {
     name: "russian-2",
     url: "https://genius.com/Kino-blood-type-lyrics",
-    accepts: (n) => song("КИНО", "Группа крови")(n) || song("Kino", "Blood Type")(n),
+    accepts: (n) => ["КИНО", "Kino"].some((a) => ["Группа крови", "Blood Type"].some((t) => song(a, t)(n))),
   },
   {
     name: "russian-3",
     url: "https://genius.com/Zemfira-i-was-looking-lyrics",
-    accepts: (n) => song("Земфира", "Искала")(n) || song("Zemfira", "Iskala")(n),
+    accepts: (n) => ["Земфира", "Zemfira"].some((a) => ["Искала", "Iskala"].some((t) => song(a, t)(n))),
   },
   {
     name: "russian-4",
     url: "https://genius.com/Basta-samsara-lyrics",
-    accepts: (n) => song("Баста", "Сансара")(n) || song("Basta", "Samsara")(n),
+    accepts: (n) => ["Баста", "Basta"].some((a) => ["Сансара", "Samsara"].some((t) => song(a, t)(n))),
   },
   {
     name: "russian-5",
     url: "https://genius.com/Skryptonite-position-lyrics",
-    accepts: (n) => song("Скриптонит", "Положение")(n) || song("Skryptonite", "Position")(n),
+    accepts: (n) => ["Скриптонит", "Skryptonite"].some((a) => ["Положение", "Position"].some((t) => song(a, t)(n))),
   },
   {
     name: "russian-translation",
@@ -216,12 +216,12 @@ const VARIED_CASES = [
   {
     name: "japanese",
     url: "https://genius.com/Yoasobi-idol-lyrics",
-    accepts: (n) => song("YOASOBI", "Idol")(n) || song("YOASOBI", "アイドル")(n),
+    accepts: (n) => ["YOASOBI", "YOASOBI"].some((a) => ["Idol", "アイドル"].some((t) => song(a, t)(n))),
   },
   {
     name: "japanese-title",
     url: "https://genius.com/Yoasobi-yoru-ni-kakeru-lyrics",
-    accepts: (n) => song("YOASOBI", "Yoru ni kakeru")(n) || song("YOASOBI", "夜に駆ける")(n),
+    accepts: (n) => ["YOASOBI", "YOASOBI"].some((a) => ["Yoru ni kakeru", "夜に駆ける"].some((t) => song(a, t)(n))),
   },
   { name: "korean", url: "https://genius.com/Bts-dynamite-lyrics", accepts: song("BTS", "Dynamite") },
   {

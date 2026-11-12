@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { acceptsHit, fold, type Hit, type SongRef } from "../../src/core/searchMatch";
+import { acceptsHit, fold, titleSearches, type Hit, type SongRef } from "../../src/core/searchMatch";
 
 const song = (title: string, primary: string[], featured: string[] = []): SongRef => ({ title, primary, featured });
 const hit = (title: string, ...artists: string[]): Hit => ({ title, artists, album: "x" });
@@ -182,4 +182,12 @@ describe("a Genius name written as native plus Latin, in every script", () => {
       both(song(title, [artist]), hit(t, `${a} Other`), false, `${name} other artist`);
     });
   }
+});
+
+describe("Genius text with no-break spaces", () => {
+  it("still reads a native title with its Latin spelling, and searches the other spelling", () => {
+    const nbsp = song("ИСКАЛА\u00a0(I\u00a0WAS\u00a0LOOKING)", ["Земфира\u00a0(Zemfira)"]);
+    both(nbsp, hit("ИСКАЛА", "Zemfira"), true, "no-break spaces");
+    expect(titleSearches(nbsp.title)).toEqual([nbsp.title, "ИСКАЛА", "I\u00a0WAS\u00a0LOOKING"]);
+  });
 });

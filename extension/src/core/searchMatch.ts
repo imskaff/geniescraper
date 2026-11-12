@@ -98,7 +98,7 @@ export function normTitle(title: string, artists: string[]): string {
 const TITLE_WITH_PAREN = /^(.*\S)\s*\(([^()]+)\)\s*$/;
 // "Latin" is the script, not just A-Z: Vietnamese, Turkish, Polish, Czech and the like are Latin with accents.
 const isNonLatin = (text: string): boolean => !/\p{Script=Latin}/u.test(text) && /\p{L}/u.test(text);
-const isLatin = (text: string): boolean => /^[\p{Script=Latin}\p{N} .,'’!?&-]+$/u.test(text) && /\p{L}/u.test(text);
+const isLatin = (text: string): boolean => /^[\p{Script=Latin}\p{N}\s.,'’!?&-]+$/u.test(text) && /\p{L}/u.test(text);
 function titleKeys(title: string): string[] {
   const m = TITLE_WITH_PAREN.exec(title.trim());
   const base = m?.[1]?.trim();
