@@ -20,20 +20,51 @@ export interface Hit {
 
 export type SearchService = "spotify" | "apple";
 
-/** Folded text: no accents or case, no apostrophes, "&" as "and", every other run of symbols one space. */
-export const fold = (text: string): string =>
-  text
+// Letters that Unicode does not split into a base letter and an accent, spelled the way a Latin keyboard would.
+const LETTER_MAP: Record<string, string> = {
+  ø: "o",
+  ł: "l",
+  đ: "d",
+  ð: "d",
+  ß: "ss",
+  æ: "ae",
+  œ: "oe",
+  ı: "i",
+  þ: "th",
+  // Arabic letters that Arabic and Persian text writes in two shapes; Greek final sigma.
+  ي: "ی",
+  ى: "ی",
+  ك: "ک",
+  ة: "ه",
+  ς: "σ",
+};
+// Accents on Latin, Greek and Cyrillic letters, and the optional vowel marks of Arabic and Hebrew, are dropped: the
+// services and Genius disagree on them. Every other mark (the vowel signs of Hindi and Thai, the voicing marks of
+// Japanese kana) changes the word and stays.
+// Ranges: U+0300-036F combining accents, U+0591-05C7 Hebrew niqqud, U+0610-061A and U+064B-065F and U+0670 Arabic marks.
+const OPTIONAL_MARKS = new RegExp(String.raw`[̀-֑ͯ-ׇؐ-ًؚ-ٰٟ]`, "gu");
+
+/**
+ * Folded text: no accents or case, no apostrophes, "&" as "and", every other run of symbols one space. A text of
+ * nothing but symbols ("!!!", "♥") keeps them, so two of them are not read as the same empty text.
+ */
+export const fold = (text: string): string => {
+  const letters = text
     .normalize("NFKD")
-    .replace(/\p{M}/gu, "")
+    .replace(OPTIONAL_MARKS, "")
+    .normalize("NFC")
     .toLowerCase()
+    .replace(/[øłđðßæœıþيىكةأإآٱς]/g, (c) => LETTER_MAP[c] ?? c)
     .replace(/[’‘'`´]/g, "")
     .replace(/&/g, " and ")
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/[^\p{L}\p{N}\p{M}]+/gu, " ")
     .trim();
+  return letters !== "" ? letters : text.normalize("NFKC").toLowerCase().replace(/\s+/g, "");
+};
 
 const FEAT = /[([]\s*(?:feat\.?|ft\.?|featuring)\s[^)\]]*[)\]]|\s[-–]\s*(?:feat\.?|ft\.?|featuring)\s.*$/gi;
 const WITH = /[([]\s*with\s+([^)\]]*)[)\]]/i;
-const NON_LATIN_BRACKET = /[([](?=[^)\]]*\p{L})(?![^)\]]*[A-Za-z0-9])[^)\]]*[)\]]/gu;
+const NON_LATIN_BRACKET = /[([](?=[^)\]]*\p{L})(?![^)\]]*[\p{Script=Latin}0-9])[^)\]]*[)\]]/gu;
 const REMASTER = String.raw`(?:\d{4}\s+)?(?:digital\s+)?remaster(?:ed)?(?:\s+\d{4})?`;
 const EDITION = new RegExp(
   String.raw`[(\[]\s*(?:${REMASTER}|radio edit|single version|album version|deluxe(?: edition)?|explicit)\s*[)\]]` +
@@ -64,15 +95,17 @@ export function normTitle(title: string, artists: string[]): string {
 
 // Genius writes some non-Latin titles as "アイドル (Idol)": the original, then its Latin spelling in a parenthetical. The
 // services list the song under one of the two, so either spelling is accepted and the Latin one is searched.
-const NON_LATIN_THEN_LATIN = /^(.*\S)\s*\(([^()]+)\)\s*$/;
+const TITLE_WITH_PAREN = /^(.*\S)\s*\(([^()]+)\)\s*$/;
+// "Latin" is the script, not just A-Z: Vietnamese, Turkish, Polish, Czech and the like are Latin with accents.
+const isNonLatin = (text: string): boolean => !/\p{Script=Latin}/u.test(text) && /\p{L}/u.test(text);
+const isLatin = (text: string): boolean => /^[\p{Script=Latin}\p{N} .,'’!?&-]+$/u.test(text) && /\p{L}/u.test(text);
 function titleKeys(title: string): string[] {
-  const m = NON_LATIN_THEN_LATIN.exec(title.trim());
+  const m = TITLE_WITH_PAREN.exec(title.trim());
   const base = m?.[1]?.trim();
   const inner = m?.[2]?.trim();
-  if (base && inner && !/[A-Za-z]/.test(base) && /\p{L}/u.test(base) && /^[A-Za-z0-9 .,'’!?&-]+$/.test(inner)) {
-    return [fold(base), fold(inner)].filter((k) => k !== "");
-  }
-  return [];
+  if (!base || !inner) return [];
+  const pair = (isNonLatin(base) && isLatin(inner)) || (isLatin(base) && isNonLatin(inner));
+  return pair ? [fold(base), fold(inner)].filter((k) => k !== "") : [];
 }
 
 // Genius sometimes names an artist "display name (Real Name)" or "name (US)", the services list the name alone. A
@@ -94,10 +127,32 @@ function formsOf(name: string): NameForms {
   const base = m?.[1]?.trim();
   const inner = m?.[2]?.trim();
   if (!base || !inner || fold(base) === "") return whole;
-  if (!/[A-Za-z]/.test(base) && /\p{L}/u.test(base) && /^[A-Za-z0-9 .'’-]+$/.test(inner) && fold(inner) !== "") {
-    return { keys: [fold(name), fold(base), fold(inner)], search: inner };
+  // Several brackets in a row ("Ант (Ant) (RUS)"): every shorter spelling is a form of the name too.
+  const shorter = formsOf(base);
+  if (isNonLatin(base) && isLatin(inner)) {
+    return { keys: [fold(name), ...shorter.keys, fold(inner)], search: inner };
   }
-  return { keys: [fold(name), fold(base)], search: base };
+  return { keys: [fold(name), ...shorter.keys], search: shorter.search };
+}
+
+/** Every spelling of a name worth searching: the one the services index, then the Genius name without its brackets. */
+export function nameSearches(name: string): string[] {
+  const spellings = [formsOf(name).search];
+  let rest = name.trim();
+  for (let m = TRAILING_PAREN.exec(rest); m?.[1] !== undefined; m = TRAILING_PAREN.exec(rest)) {
+    rest = m[1].trim();
+    spellings.push(rest);
+  }
+  return [...new Set(spellings)];
+}
+
+/** The title as written, then each half of "native (Latin)" or "Latin (native)" when it is written that way. */
+export function titleSearches(title: string): string[] {
+  const m = TITLE_WITH_PAREN.exec(title.trim());
+  const base = m?.[1]?.trim();
+  const inner = m?.[2]?.trim();
+  const pair = !!base && !!inner && ((isNonLatin(base) && isLatin(inner)) || (isLatin(base) && isNonLatin(inner)));
+  return pair ? [title, base, inner] : [title];
 }
 
 /** The name as a search query should spell it: without the real-name parenthetical the services do not index. */

@@ -3,7 +3,15 @@
 // missing or does not hold, a search runs and only an exact match counts (core/searchMatch.ts), otherwise the answer
 // is "none" and never a guess. Nothing is read from the pages found: the user presses Get credits for that. Every
 // failure is data (`failed`), the two services are resolved in parallel, and one song page is resolved once.
-import { normTitle, pickHit, searchName, type Hit, type SongRef } from "../core/searchMatch";
+import {
+  nameSearches,
+  normTitle,
+  pickHit,
+  searchName,
+  titleSearches,
+  type Hit,
+  type SongRef,
+} from "../core/searchMatch";
 import {
   appleHit,
   appleSongUrl,
@@ -56,6 +64,22 @@ const songRef = (info: GeniusSongInfo): SongRef => ({
 
 const searchText = (info: GeniusSongInfo): string => [info.title, ...info.primary.map(searchName)].join(" ");
 
+/**
+ * The queries worth trying, best first: the title and artists the way the services index them, then the other
+ * spellings of a title or an artist Genius writes in two scripts. Most songs have just the one.
+ */
+export function searchTexts(info: GeniusSongInfo): string[] {
+  const first = searchText(info);
+  const queries = [first];
+  const artistSets = [info.primary.map(searchName), info.primary.map((name) => nameSearches(name).at(-1) ?? name)];
+  for (const titles of [titleSearches(info.title)]) {
+    for (const artists of artistSets) {
+      for (const title of titles) queries.push([title, ...artists].join(" "));
+    }
+  }
+  return [...new Set(queries)].slice(0, 5);
+}
+
 function appleFound(song: AppleSong, source: "genius" | "search"): ServiceMatch {
   return {
     status: "found",
@@ -74,20 +98,24 @@ const TRACK_PARAM = /[?&]i=(\d{1,12})$/;
 
 /** The page for an exact match on Apple Music's own search page, as a song page built from the id in its link. */
 async function resolveAppleBySearchPage(tools: SongMatchTools, info: GeniusSongInfo): Promise<ServiceMatch> {
-  const rows = await tools.appleSearch(searchText(info));
-  if (!rows.ok) return failedWith("Apple Music", `${rows.error.message} (${rows.error.code})`);
-  // The link's album name is the release; the page's own rows have no album text.
-  const hits: Hit[] = rows.data.map((row) => ({ title: row.title, artists: row.artists, href: row.href }));
-  const hit = pickHit("apple", songRef(info), hits);
-  const id = TRACK_PARAM.exec(hit?.href ?? "")?.[1];
-  if (!hit || !id) return { status: "none" };
-  return {
-    status: "found",
-    url: appleSongUrl(id),
-    name: `${hit.artists.join(", ")} - ${hit.title}`,
-    release: "",
-    source: "search",
-  };
+  for (const query of searchTexts(info).slice(0, 3)) {
+    const rows = await tools.appleSearch(query);
+    if (!rows.ok) return failedWith("Apple Music", `${rows.error.message} (${rows.error.code})`);
+    // The link's album name is the release; the page's own rows have no album text.
+    const hits: Hit[] = rows.data.map((row) => ({ title: row.title, artists: row.artists, href: row.href }));
+    const hit = pickHit("apple", songRef(info), hits);
+    const id = TRACK_PARAM.exec(hit?.href ?? "")?.[1];
+    if (hit && id) {
+      return {
+        status: "found",
+        url: appleSongUrl(id),
+        name: `${hit.artists.join(", ")} - ${hit.title}`,
+        release: "",
+        source: "search",
+      };
+    }
+  }
+  return { status: "none" };
 }
 
 /**
@@ -102,13 +130,19 @@ async function resolveApple(getJson: GetJson, tools: SongMatchTools, info: Geniu
     // About 4 in 100 ids are retired and answer nothing: that is not a failure, the search below takes over.
     unreachable = song === null;
   }
-  const songs = await searchAppleSongs(getJson, searchText(info));
-  if (songs === null) {
+  let answered = false;
+  for (const query of searchTexts(info)) {
+    const songs = await searchAppleSongs(getJson, query);
+    if (songs === null) continue;
+    answered = true;
+    const hit = pickHit("apple", songRef(info), songs.map(appleHit));
+    const song = songs.find((candidate) => candidate.id === idOf(hit));
+    if (song) return appleFound(song, "search");
+  }
+  if (!answered) {
     return unreachable || !info.appleId ? failedWith("Apple Music", "iTunes did not answer") : { status: "none" };
   }
-  const hit = pickHit("apple", songRef(info), songs.map(appleHit));
-  const song = songs.find((candidate) => candidate.id === idOf(hit));
-  return song ? appleFound(song, "search") : resolveAppleBySearchPage(tools, info);
+  return resolveAppleBySearchPage(tools, info);
 }
 
 function spotifyFound(
@@ -140,17 +174,20 @@ async function resolveSpotify(getJson: GetJson, tools: SongMatchTools, info: Gen
       return spotifyFound(info.spotifyId, info.primary, title ?? info.title, "", "genius");
     }
   }
-  const rows = await tools.spotifySearch(searchText(info));
-  if (!rows.ok) return failedWith("Spotify", `${rows.error.message} (${rows.error.code})`);
-  const hits: Hit[] = rows.data.map((row) => ({
-    title: row.title,
-    artists: row.artists,
-    album: row.album,
-    href: row.href,
-  }));
-  const hit = pickHit("spotify", songRef(info), hits);
-  const id = SPOTIFY_TRACK_ID.exec(hit?.href ?? "")?.[1];
-  return hit && id ? spotifyFound(id, hit.artists, hit.title, hit.album ?? "", "search") : { status: "none" };
+  for (const query of searchTexts(info).slice(0, 3)) {
+    const rows = await tools.spotifySearch(query);
+    if (!rows.ok) return failedWith("Spotify", `${rows.error.message} (${rows.error.code})`);
+    const hits: Hit[] = rows.data.map((row) => ({
+      title: row.title,
+      artists: row.artists,
+      album: row.album,
+      href: row.href,
+    }));
+    const hit = pickHit("spotify", songRef(info), hits);
+    const id = SPOTIFY_TRACK_ID.exec(hit?.href ?? "")?.[1];
+    if (hit && id) return spotifyFound(id, hit.artists, hit.title, hit.album ?? "", "search");
+  }
+  return { status: "none" };
 }
 
 export function createSongMatches(ports: BrowserPorts, getJson: GetJson, timing: GeniusNavTiming): SongMatches {

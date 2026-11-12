@@ -158,6 +158,36 @@ const ALIAS_CASES = [
 // digits and symbols in names. Run with --varied; a page that is not a Genius song (a wrong slug) fails "card settled".
 const VARIED_CASES = [
   {
+    name: "russian-1",
+    url: "https://genius.com/Max-korzh-live-dope-lyrics",
+    accepts: (n) => song("Макс Корж", "Жить в кайф")(n) || song("Max Korzh", "Live Dope")(n),
+  },
+  {
+    name: "russian-2",
+    url: "https://genius.com/Kino-blood-type-lyrics",
+    accepts: (n) => song("КИНО", "Группа крови")(n) || song("Kino", "Blood Type")(n),
+  },
+  {
+    name: "russian-3",
+    url: "https://genius.com/Zemfira-i-was-looking-lyrics",
+    accepts: (n) => song("Земфира", "Искала")(n) || song("Zemfira", "Iskala")(n),
+  },
+  {
+    name: "russian-4",
+    url: "https://genius.com/Basta-samsara-lyrics",
+    accepts: (n) => song("Баста", "Сансара")(n) || song("Basta", "Samsara")(n),
+  },
+  {
+    name: "russian-5",
+    url: "https://genius.com/Skryptonite-position-lyrics",
+    accepts: (n) => song("Скриптонит", "Положение")(n) || song("Skryptonite", "Position")(n),
+  },
+  {
+    name: "russian-translation",
+    url: "https://genius.com/Genius-english-translations-max-korzh-live-dope-english-translation-lyrics",
+    accepts: () => false,
+  },
+  {
     name: "one-artist",
     url: "https://genius.com/Taylor-swift-blank-space-lyrics",
     accepts: song("Taylor Swift", "Blank Space"),
@@ -234,7 +264,8 @@ const VARIED_CASES = [
     accepts: song("Hozier", "Take Me To Church"),
   },
 ];
-const varied = args.includes("--varied");
+const russian = args.includes("--russian");
+const varied = args.includes("--varied") || russian;
 const aliases = args.includes("--aliases");
 const albums = args.includes("--albums");
 const tally = {
@@ -305,9 +336,14 @@ try {
 
   let first = true;
   const only = option("--only", "");
-  for (const c of (albums ? ALBUM_CASES : varied ? VARIED_CASES : aliases ? ALIAS_CASES : CASES).filter(
-    (c) => !only || c.name === only,
-  )) {
+  for (const c of (albums
+    ? ALBUM_CASES
+    : varied
+      ? VARIED_CASES.filter((c) => !russian || c.name.startsWith("russian"))
+      : aliases
+        ? ALIAS_CASES
+        : CASES
+  ).filter((c) => !only || c.name === only)) {
     if (!first) await sleep(GAP_MS);
     first = false;
     await browser.openTab(c.url);
